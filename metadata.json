@@ -1,0 +1,8 @@
+{
+  "name": "ControlClin",
+  "description": "Um SaaS completo, multi-clínica para gestão de consultórios com análise de exames via IA, agendamento inteligente e RBAC. (v1.0.4 - Hotfix)",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
