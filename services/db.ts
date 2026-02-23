@@ -277,6 +277,14 @@ class DatabaseService {
                 this.exams = data.exams || [];
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
+
+                // Keep track of when we last touched local storage
+                if (data.lastModified) {
+                    (this as any)._localLastModified = new Date(data.lastModified).getTime();
+                } else {
+                    (this as any)._localLastModified = Date.now();
+                }
+
             } catch (err) {
                 console.error("DatabaseService: Shared database corrupted. Resetting to defaults.", err);
                 this.seedInitialData();
@@ -320,7 +328,8 @@ class DatabaseService {
                 exams: this.exams,
                 alerts: this.alerts,
                 patientEvents: this.patientEvents,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                lastModified: (this as any)._localLastModified || Date.now()
             };
 
             // Using a fixed doc ID 'global_v1' for the demo/scaling phase
@@ -343,6 +352,20 @@ class DatabaseService {
             const snap = await getDoc(doc(firestore, "system_data", "global_v1"));
             if (snap.exists()) {
                 const data = snap.data();
+
+                // CRITICAL FIX: Timestamp Comparison
+                // If the local data is newer than the remote data, DO NOT overwrite it.
+                // This prevents silent save failures from causing loops that wipe out local data.
+                const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
+                const localModified = (this as any)._localLastModified || 0;
+
+                if (localModified > remoteModified) {
+                    console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
+                    // We should trigger a save to force the new local data up to Firebase
+                    this.saveToRemote().catch(console.error);
+                    return;
+                }
+
                 this.clinics = data.clinics || [];
                 this.users = data.users || [];
                 this.professionals = data.professionals || [];
@@ -352,7 +375,9 @@ class DatabaseService {
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
 
-                // Refresh LocalStorage
+                // Refresh LocalStorage with the older but legitimate remote state
+                // Update our local tracking so it matches what we just pulled down
+                (this as any)._localLastModified = remoteModified;
                 this.saveToStorage(false); // don't trigger remote again
                 console.log(`[DB] ✅ Firebase carregado: ${this.patients.length} pacientes.`);
             } else {
@@ -364,6 +389,8 @@ class DatabaseService {
     }
 
     private saveToStorage(syncRemote = true) {
+        (this as any)._localLastModified = Date.now();
+
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
             clinics: this.clinics,
             users: this.users,
@@ -372,7 +399,8 @@ class DatabaseService {
             appointments: this.appointments,
             exams: this.exams,
             alerts: this.alerts,
-            patientEvents: this.patientEvents
+            patientEvents: this.patientEvents,
+            lastModified: (this as any)._localLastModified
         }));
 
         if (syncRemote && this.isRemoteEnabled) {
