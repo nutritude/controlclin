@@ -240,6 +240,23 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             setPregnancyTrimestre((plan.inputsUsed as any).pregnancyTrimestre || 1);
             setAmputations(plan.inputsUsed.amputations || []);
             setCaloricGoalAdjustment(plan.inputsUsed.caloricGoalAdjustment || 0);
+
+            // Restore manual weight and height gracefully
+            const savedWeight = plan.inputsUsed.weight;
+            const savedHeight = plan.inputsUsed.height;
+            if (savedWeight) setManualWeight(savedWeight);
+            if (savedHeight) setManualHeight(savedHeight);
+
+            // Auto-detect if manual mode should be enabled based on divergence from patient anthropometry
+            const lastAnthro = patient.anthropometry;
+            const ptWeight = lastAnthro?.weight || 0;
+            const ptHeight = lastAnthro?.height ? lastAnthro.height * 100 : 0;
+
+            if (savedWeight && savedHeight && (savedWeight !== ptWeight || savedHeight !== ptHeight)) {
+                setIsManualMode(true);
+            } else {
+                setIsManualMode(false);
+            }
         }
 
         // Load Meals (ensure dynamic)
