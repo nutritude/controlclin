@@ -117,8 +117,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [proteinGrams, setProteinGrams] = useState<number>(0);
     const [fatGrams, setFatGrams] = useState<number>(0);
 
-    // Meal Management State (Dynamic)
+    // Meal Management State    // Meal State
     const [meals, setMeals] = useState<Meal[]>([]);
+    const mealsRef = useRef<Meal[]>([]);
+
+    // Keep ref sync with state to avoid stale closures in save handlers
+    useEffect(() => {
+        mealsRef.current = meals;
+    }, [meals]);
 
     // --- MODAL STATES ---
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -360,7 +366,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 carbs: macroResults.carbs,
                 fat: macroResults.fat
             },
-            meals: meals
+            meals: mealsRef.current // USE REF TO AVOID STALE CLOSURE
         };
 
         try {
@@ -717,7 +723,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 plan: {
                     id: currentPlanId || 'draft',
                     title: planTitle || 'Plano Alimentar',
-                    meals: meals,
+                    meals: mealsRef.current, // FIX: USE REF TO AVOID STALE CLOSURE
                 },
                 totals: dailyTotals,
             };
