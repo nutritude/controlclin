@@ -336,8 +336,9 @@ class DatabaseService {
             // Ideally this should be per clinic.
             await setDoc(doc(firestore, "system_data", "global_v1"), data);
             console.log("DatabaseService: Remote sync successful.");
-        } catch (err) {
+        } catch (err: any) {
             console.error("DatabaseService: Remote sync failed.", err);
+            throw new Error(`Firebase Error: ${err.code || 'unknown'} - ${err.message || err}`);
         }
     }
 
@@ -419,8 +420,8 @@ class DatabaseService {
         try {
             await this.saveToRemote();
             return { success: true, message: 'Sincronização com Firebase realizada com sucesso! ✅' };
-        } catch (err) {
-            return { success: false, message: `Falha na sincronização: ${err}` };
+        } catch (err: any) {
+            return { success: false, message: `Falha na sincronização na nuvem: ${err.message || err}` };
         }
     }
 
