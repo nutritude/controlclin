@@ -334,7 +334,14 @@ class DatabaseService {
 
             // Using a fixed doc ID 'global_v1' for the demo/scaling phase
             // Ideally this should be per clinic.
-            await setDoc(doc(firestore, "system_data", "global_v1"), data);
+
+            // FIREBASE FIX: Firestore strictly rejects 'undefined' field values.
+            // Since our UI often generates undefined (e.g. pregnancyTrimestre: undefined),
+            // we must strip these out before sending to Firestore. 
+            // JSON.stringify naturally drops 'undefined' keys.
+            const sanitizedData = JSON.parse(JSON.stringify(data));
+
+            await setDoc(doc(firestore, "system_data", "global_v1"), sanitizedData);
             console.log("DatabaseService: Remote sync successful.");
         } catch (err: any) {
             console.error("DatabaseService: Remote sync failed.", err);
