@@ -121,6 +121,30 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [meals, setMeals] = useState<Meal[]>([]);
     const mealsRef = useRef<Meal[]>([]);
 
+    const patientAge = useMemo(() => {
+        if (!patient.birthDate) return 0;
+        const birth = new Date(patient.birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        return age;
+    }, [patient.birthDate]);
+
+    const lastAnthro = patient.anthropometry;
+    const patientWeight = lastAnthro?.weight || 0;
+    const patientHeight = lastAnthro?.height ? lastAnthro.height * 100 : 0;
+    const hasAnthroData = patientWeight > 0 && patientHeight > 0;
+
+    // --- CALCULATIONS ---
+    const calculationInputs = useMemo(() => ({
+        weight: isManualMode ? manualWeight : patientWeight,
+        height: isManualMode ? manualHeight : patientHeight,
+        age: patientAge,
+        gender: patient.gender,
+        leanMass: lastAnthro?.leanMass
+    }), [isManualMode, manualWeight, patientWeight, manualHeight, patientHeight, patientAge, patient.gender, lastAnthro?.leanMass]);
+
     // Keep ref sync with state to avoid stale closures in save handlers
     useEffect(() => {
         mealsRef.current = meals;
@@ -248,30 +272,6 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         // Reset Calc inputs to patient defaults if needed, or keep last used
     };
 
-    const patientAge = useMemo(() => {
-        if (!patient.birthDate) return 0;
-        const birth = new Date(patient.birthDate);
-        const today = new Date();
-        let age = today.getFullYear() - birth.getFullYear();
-        const m = today.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-        return age;
-    }, [patient.birthDate]);
-
-    const lastAnthro = patient.anthropometry;
-    const patientWeight = lastAnthro?.weight || 0;
-    const patientHeight = lastAnthro?.height ? lastAnthro.height * 100 : 0;
-
-    const hasAnthroData = patientWeight > 0 && patientHeight > 0;
-
-    // --- CALCULATIONS ---
-    const calculationInputs = useMemo(() => ({
-        weight: isManualMode ? manualWeight : patientWeight,
-        height: isManualMode ? manualHeight : patientHeight,
-        age: patientAge,
-        gender: patient.gender,
-        leanMass: lastAnthro?.leanMass
-    }), [isManualMode, manualWeight, patientWeight, manualHeight, patientHeight, patientAge, patient.gender, lastAnthro?.leanMass]);
 
     const calculatedResults = useMemo(() => {
         const { weight, height, age, gender } = calculationInputs;
@@ -323,11 +323,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         const fCals = fatGrams * 9;
         const remainingCals = targetKcal - (pCals + fCals);
         const carbsGrams = Math.max(0, Math.round(remainingCals / 4));
-        return {
+        const results = {
             protein: { g: proteinGrams, kcal: pCals, pct: targetKcal > 0 ? Math.round((pCals / targetKcal) * 100) : 0 },
             fat: { g: fatGrams, kcal: fCals, pct: targetKcal > 0 ? Math.round((fCals / targetKcal) * 100) : 0 },
             carbs: { g: carbsGrams, kcal: carbsGrams * 4, pct: targetKcal > 0 ? Math.round(((carbsGrams * 4) / targetKcal) * 100) : 0 }
         };
+        stateRef.current.macroResults = results; // Keep ref updated manually
+        return results;
     }, [targetKcal, proteinGrams, fatGrams]);
 
     // --- PLAN ACTIONS ---
@@ -339,34 +341,36 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
         const planIdToSave = currentPlanId || `plan-${Date.now()}`;
 
+        const state = stateRef.current; // GUARANTEED FRESH STATE
+
         const planToSave: NutritionalPlan = {
             id: planIdToSave,
             createdAt: activePlan?.createdAt || new Date().toISOString(),
             authorId: user.professionalId || user.id,
-            status: 'ATIVO', // Making it active by default on save
-            title: planTitle,
-            strategyName: planStrategy,
-            methodology: planMethodology,
+            status: 'ATIVO',
+            title: state.planTitle,
+            strategyName: state.planStrategy,
+            methodology: state.planMethodology,
             inputsUsed: {
-                weight: calculationInputs.weight,
-                height: calculationInputs.height,
-                age: calculationInputs.age,
-                gender: calculationInputs.gender,
-                formula: calcFormula as any,
-                activityFactor: calcActivityFactor,
-                injuryFactor: calcInjuryFactor,
-                patientProfile: patientProfile as any,
-                pregnancyTrimestre: patientProfile === 'GESTANTE' ? pregnancyTrimestre : undefined,
-                amputations,
-                caloricGoalAdjustment
+                weight: state.calculationInputs.weight,
+                height: state.calculationInputs.height,
+                age: state.calculationInputs.age,
+                gender: state.calculationInputs.gender,
+                formula: state.calcFormula as any,
+                activityFactor: state.calcActivityFactor,
+                injuryFactor: state.calcInjuryFactor,
+                patientProfile: state.patientProfile as any,
+                pregnancyTrimestre: state.patientProfile === 'GESTANTE' ? state.pregnancyTrimestre : undefined,
+                amputations: state.amputations,
+                caloricGoalAdjustment: state.caloricGoalAdjustment
             },
-            caloricTarget: targetKcal,
+            caloricTarget: state.targetKcal,
             macroTargets: {
-                protein: macroResults.protein,
-                carbs: macroResults.carbs,
-                fat: macroResults.fat
+                protein: state.macroResults.protein,
+                carbs: state.macroResults.carbs,
+                fat: state.macroResults.fat
             },
-            meals: mealsRef.current // USE REF TO AVOID STALE CLOSURE
+            meals: state.meals
         };
 
         try {
@@ -704,6 +708,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         setIsGeneratingPdf(true);
 
         try {
+            const state = stateRef.current; // ALWAYS FRESH
+
             // Monta snapshot a partir do estado local
             const localSnapshot = {
                 patient: {
@@ -712,18 +718,18 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     gender: patient.gender,
                     diagnoses: patient.clinicalSummary?.activeDiagnoses || [],
                     objective: patient.clinicalSummary?.clinicalGoal || 'Manutenção da saúde',
-                    activityFactor: calcActivityFactor,
-                    kcalTarget: targetKcal,
+                    activityFactor: state.calcActivityFactor,
+                    kcalTarget: state.targetKcal,
                     macroTargets: {
-                        protein: macroResults.protein.g,
-                        carbs: macroResults.carbs.g,
-                        fat: macroResults.fat.g,
+                        protein: state.macroResults.protein.g,
+                        carbs: state.macroResults.carbs.g,
+                        fat: state.macroResults.fat.g,
                     }
                 },
                 plan: {
                     id: currentPlanId || 'draft',
-                    title: planTitle || 'Plano Alimentar',
-                    meals: mealsRef.current, // FIX: USE REF TO AVOID STALE CLOSURE
+                    title: state.planTitle || 'Plano Alimentar',
+                    meals: state.meals,
                 },
                 totals: dailyTotals,
             };
