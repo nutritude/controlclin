@@ -7,8 +7,9 @@ import {
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot
 } from '../types';
-import { db as firestore } from './firebase';
+import { db as firestore, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 // --- CONFIGURATION CONSTANTS (Single Source of Truth) ---
 export const CIRCUMFERENCES_CONFIG: { key: keyof Anthropometry; label: string }[] = [
@@ -312,12 +313,11 @@ class DatabaseService {
         this.saveToStorage(false);
     }
 
-    private async saveToRemote() {
+    private async saveToRemote(clinicId?: string) {
         if (!this.isRemoteEnabled) return;
 
-        // We sync the entire clinic data to a document named after the clinic ID or a global ID for now
-        // In a real multi-tenant app, we would sync collections and documents individually.
-        // For this phase, we'll sync the "shared" state to Firestore to ensure consistency.
+        const targetClinicId = clinicId || this.clinics[0]?.id || 'global_v1';
+
         try {
             const data = {
                 clinics: this.clinics,
@@ -332,45 +332,46 @@ class DatabaseService {
                 lastModified: (this as any)._localLastModified || Date.now()
             };
 
-            // Using a fixed doc ID 'global_v1' for the demo/scaling phase
-            // Ideally this should be per clinic.
-
-            // FIREBASE FIX: Firestore strictly rejects 'undefined' field values.
-            // Since our UI often generates undefined (e.g. pregnancyTrimestre: undefined),
-            // we must strip these out before sending to Firestore. 
-            // JSON.stringify naturally drops 'undefined' keys.
             const sanitizedData = JSON.parse(JSON.stringify(data));
 
-            await setDoc(doc(firestore, "system_data", "global_v1"), sanitizedData);
-            console.log("DatabaseService: Remote sync successful.");
+            // PATH CHANGE: clinics/{clinicId}/data/main
+            await setDoc(doc(firestore, "clinics", targetClinicId, "data", "main"), sanitizedData);
+            console.log(`[DB] Remote sync successful for clinic: ${targetClinicId}`);
         } catch (err: any) {
             console.error("DatabaseService: Remote sync failed.", err);
             throw new Error(`Firebase Error: ${err.code || 'unknown'} - ${err.message || err}`);
         }
     }
 
-    public async loadFromRemote() {
+    public async loadFromRemote(clinicId?: string) {
         if (!this.isRemoteEnabled) {
             console.warn('[DB] loadFromRemote() ignorado — Firebase não configurado.');
             return;
         }
 
-        try {
-            console.log('[DB] 🔄 Carregando dados do Firebase...');
-            const snap = await getDoc(doc(firestore, "system_data", "global_v1"));
-            if (snap.exists()) {
-                const data = snap.data();
+        const targetClinicId = clinicId || this.clinics[0]?.id || 'global_v1';
 
-                // CRITICAL FIX: Timestamp Comparison
-                // If the local data is newer than the remote data, DO NOT overwrite it.
-                // This prevents silent save failures from causing loops that wipe out local data.
+        try {
+            console.log(`[DB] 🔄 Carregando dados da clínica ${targetClinicId} do Firebase...`);
+            const snap = await getDoc(doc(firestore, "clinics", targetClinicId, "data", "main"));
+
+            // Fallback to legacy path if new path doesn't exist yet
+            let data = snap.exists() ? snap.data() : null;
+            if (!data) {
+                const legacySnap = await getDoc(doc(firestore, "system_data", "global_v1"));
+                if (legacySnap.exists()) {
+                    data = legacySnap.data();
+                    console.log("[DB] ⚠️ Usando dados do caminho legado (migration needed).");
+                }
+            }
+
+            if (data) {
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
                 const localModified = (this as any)._localLastModified || 0;
 
                 if (localModified > remoteModified) {
                     console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
-                    // We should trigger a save to force the new local data up to Firebase
-                    this.saveToRemote().catch(console.error);
+                    this.saveToRemote(targetClinicId).catch(console.error);
                     return;
                 }
 
@@ -383,13 +384,11 @@ class DatabaseService {
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
 
-                // Refresh LocalStorage with the older but legitimate remote state
-                // Update our local tracking so it matches what we just pulled down
                 (this as any)._localLastModified = remoteModified;
-                this.saveToStorage(false); // don't trigger remote again
+                this.saveToStorage(false);
                 console.log(`[DB] ✅ Firebase carregado: ${this.patients.length} pacientes.`);
             } else {
-                console.warn('[DB] ⚠️ Documento global_v1 não encontrado no Firebase. Usando dados locais.');
+                console.warn(`[DB] ⚠️ Nenhum dado encontrado para a clínica ${targetClinicId} no Firebase.`);
             }
         } catch (err) {
             console.error('[DB] ❌ loadFromRemote() falhou:', err);
@@ -655,11 +654,38 @@ class DatabaseService {
 
     // --- STANDARD CRUD METHODS (Abbreviated for focus on Nutritional Plan) ---
     async login(email: string, pass: string, slug: string): Promise<{ user: User, clinic: Clinic } | null> {
-        const clinic = this.clinics.find(c => c.slug === slug);
-        if (!clinic) return null;
-        const user = this.users.find(u => u.email === email && u.password === pass);
-        if (!user) return null;
-        return { user, clinic };
+        try {
+            // 1. Find clinic by slug
+            const clinic = this.clinics.find(c => c.slug === slug);
+            if (!clinic) throw new Error("Clínica não encontrada.");
+
+            // 2. Real Auth with Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+            const fbUser = userCredential.user;
+
+            // 3. Find our internal user record by email (or UID later)
+            const user = this.users.find(u => u.email === email);
+            if (!user) throw new Error("Usuário não cadastrado nesta clínica.");
+
+            // 4. Update the user UID if it was missing (transition phase)
+            if (!user.id.startsWith('u-')) {
+                // user.id = fbUser.uid; // Optional: alignment
+            }
+
+            console.log(`[DB] Login real bem-sucedido: ${user.name}`);
+
+            // 5. Load data for this specific clinic
+            await this.loadFromRemote(clinic.id);
+
+            return { user, clinic };
+        } catch (error: any) {
+            console.error("[DB] Erro no login real:", error);
+            throw error; // Re-throw to show in UI
+        }
+    }
+
+    async logout() {
+        await signOut(auth);
     }
     async getUsers(clinicId: string) { return this.users.filter(u => u.clinicId === clinicId); }
     async getClinic(clinicId: string) { return this.clinics.find(c => c.id === clinicId); }
@@ -1293,7 +1319,7 @@ class DatabaseService {
         this.patients.forEach(patient => {
             if (patient.clinicId !== id || patient.status !== 'ATIVO') return;
 
-            // 1. Logic for ANTHROMETRY_OVERDUE
+            // 1. Logic for ANTHROMETRY_OVERDUE (Eval > 30 days)
             const history = patient.anthropometryHistory || [];
             if (history.length > 0) {
                 const historyDates = history.map(h => new Date(h.date).getTime());
@@ -1309,19 +1335,76 @@ class DatabaseService {
                     );
 
                     if (!existing) {
-                        const newAlert: ClinicalAlert = {
+                        this.alerts.push({
                             id: 'alt_' + Math.random().toString(36).substr(2, 9),
                             clinicId: id,
                             patientId: patient.id,
                             patientName: patient.name,
                             type: 'ANTHROMETRY_OVERDUE',
                             severity: 'MEDIUM',
-                            description: `Paciente está há ${diffDays} dias sem nova avaliação antropométrica (última em ${lastDate.toLocaleDateString('pt-BR')}).`,
+                            description: `Paciente está há ${diffDays} dias sem nova avaliação antropométrica.`,
                             createdAt: today.toISOString(),
                             status: 'ACTIVE'
-                        };
-                        this.alerts.push(newAlert);
+                        });
                         newAlertsCount++;
+                    }
+                }
+            }
+
+            // 2. Logic for RETURN_OVERDUE (Last appt > 45 days, and NO future appt)
+            const patientAppts = this.appointments.filter(a => a.patientId === patient.id);
+            const pastAppts = patientAppts.filter(a => new Date(a.startTime).getTime() < today.getTime());
+            const futureAppts = patientAppts.filter(a => new Date(a.startTime).getTime() > today.getTime() && a.status !== 'CANCELADO');
+
+            if (pastAppts.length > 0 && futureAppts.length === 0) {
+                const lastApptDate = new Date(Math.max(...pastAppts.map(a => new Date(a.startTime).getTime())));
+                const diffDays = Math.ceil((today.getTime() - lastApptDate.getTime()) / (1000 * 3600 * 24));
+
+                if (diffDays > 45) {
+                    const existing = this.alerts.find(a => a.patientId === patient.id && a.type === 'RETURN_OVERDUE' && a.status === 'ACTIVE');
+                    if (!existing) {
+                        this.alerts.push({
+                            id: 'alt_' + Math.random().toString(36).substr(2, 9),
+                            clinicId: id,
+                            patientId: patient.id,
+                            patientName: patient.name,
+                            type: 'RETURN_OVERDUE',
+                            severity: 'HIGH',
+                            description: `Paciente realizou última consulta há ${diffDays} dias e não possui retorno agendado.`,
+                            createdAt: today.toISOString(),
+                            status: 'ACTIVE'
+                        });
+                        newAlertsCount++;
+                    }
+                }
+            }
+
+            // 3. Logic for EXAM_ATTENTION (Exam uploaded in last 15 days, no appt since)
+            const patientExams = this.exams.filter(e => e.patientId === patient.id);
+            if (patientExams.length > 0) {
+                const newestExam = patientExams.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                const examDate = new Date(newestExam.date);
+                const diffDays = Math.ceil((today.getTime() - examDate.getTime()) / (1000 * 3600 * 24));
+
+                if (diffDays < 15) {
+                    // Check if there was an appt AFTER the exam
+                    const apptAfterExam = pastAppts.find(a => new Date(a.startTime).getTime() > examDate.getTime());
+                    if (!apptAfterExam) {
+                        const existing = this.alerts.find(a => a.patientId === patient.id && a.type === 'EXAM_ATTENTION' && a.status === 'ACTIVE');
+                        if (!existing) {
+                            this.alerts.push({
+                                id: 'alt_' + Math.random().toString(36).substr(2, 9),
+                                clinicId: id,
+                                patientId: patient.id,
+                                patientName: patient.name,
+                                type: 'EXAM_ATTENTION',
+                                severity: 'MEDIUM',
+                                description: `Novo exame anexado em ${examDate.toLocaleDateString('pt-BR')} sem consulta de revisão realizada.`,
+                                createdAt: today.toISOString(),
+                                status: 'ACTIVE'
+                            });
+                            newAlertsCount++;
+                        }
                     }
                 }
             }
