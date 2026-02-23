@@ -428,6 +428,16 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         setMeals(newMeals);
     };
 
+    const handleDuplicateMeal = (meal: Meal) => {
+        const duplicatedMeal: Meal = {
+            ...meal,
+            id: `meal-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            name: `${meal.name} (Cópia)`,
+            items: meal.items.map(item => ({ ...item }))
+        };
+        setMeals(prev => [...prev, duplicatedMeal]);
+    };
+
     // --- ITEM MANAGEMENT (REFACTORED) ---
     const openAddItemModal = (mealId: string, substitutionMode = false, itemIndex = -1, originalFoodId?: string) => {
         setCurrentMealId(mealId);
@@ -1001,7 +1011,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className={`p-3 rounded-xl text-center border ${isManagerMode ? 'bg-gray-700/50 border-gray-600 text-gray-200' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
-                                    <p className="text-[9px] uppercase font-black opacity-60">TMB Basal</p>
+                                    <p className="text-[9px] uppercase font-black opacity-60">TMB Basal ({calcFormula})</p>
                                     <p className="text-xl font-bold">{calculatedResults.bmr} <span className="text-[10px] font-medium opacity-50">kcal</span></p>
                                 </div>
                                 <div className={`p-3 rounded-xl text-center border ring-2 ring-emerald-500/10 ${isManagerMode ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
@@ -1221,9 +1231,30 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-4 text-center">
-                                <div><span className="text-blue-500 font-bold text-xs">Prot</span> <input type="number" value={proteinGrams} onChange={e => setProteinGrams(parseFloat(e.target.value))} className="w-12 text-center border-b bg-transparent" />g</div>
-                                <div><span className="text-yellow-500 font-bold text-xs">Gord</span> <input type="number" value={fatGrams} onChange={e => setFatGrams(parseFloat(e.target.value))} className="w-12 text-center border-b bg-transparent" />g</div>
-                                <div><span className="text-green-500 font-bold text-xs">Carb</span> <span className="font-bold">{macroResults.carbs.g}</span>g</div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-blue-500 font-bold text-[10px] uppercase">Prot (g | g/kg)</span>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={proteinGrams} onChange={e => setProteinGrams(parseFloat(e.target.value))} className="w-12 text-center border-b bg-transparent" />
+                                        <span className="text-[10px] text-gray-400">|</span>
+                                        <input type="number" value={calculationInputs.weight > 0 ? parseFloat((proteinGrams / calculationInputs.weight).toFixed(1)) : 0} onChange={e => setProteinGrams(parseFloat(e.target.value) * calculationInputs.weight)} className="w-10 text-center border-b bg-transparent text-gray-500 text-[10px]" step="0.1" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-yellow-500 font-bold text-[10px] uppercase">Gord (g | g/kg)</span>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={fatGrams} onChange={e => setFatGrams(parseFloat(e.target.value))} className="w-12 text-center border-b bg-transparent" />
+                                        <span className="text-[10px] text-gray-400">|</span>
+                                        <input type="number" value={calculationInputs.weight > 0 ? parseFloat((fatGrams / calculationInputs.weight).toFixed(1)) : 0} onChange={e => setFatGrams(parseFloat(e.target.value) * calculationInputs.weight)} className="w-10 text-center border-b bg-transparent text-gray-500 text-[10px]" step="0.1" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-green-500 font-bold text-[10px] uppercase">Carb (g | g/kg)</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold">{macroResults.carbs.g}</span>
+                                        <span className="text-[10px] text-gray-400">|</span>
+                                        <span className="text-[10px] text-gray-500">{calculationInputs.weight > 0 ? (macroResults.carbs.g / calculationInputs.weight).toFixed(1) : 0}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1262,6 +1293,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
+                                            <button onClick={() => handleDuplicateMeal(meal)} className={`text-xs px-2 py-1 text-emerald-500 hover:text-emerald-700`} title="Duplicar Refeição">👯</button>
                                             <button onClick={() => handleDeleteMeal(meal.id)} className={`text-xs px-2 py-1 text-red-400 hover:text-red-600`} title="Remover Refeição">🗑️</button>
                                             <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-gray-500 text-gray-300 hover:bg-gray-600' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
                                         </div>

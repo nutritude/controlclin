@@ -225,20 +225,33 @@ class DatabaseService {
     private remoteSyncPromise: Promise<void> | null = null;
 
     constructor() {
-        const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-        if (apiKey && apiKey.length > 0) {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (apiKey && apiKey.length > 0 && apiKey !== 'PLACEHOLDER') {
             try {
                 this.ai = new GoogleGenAI({ apiKey });
+                console.log("DatabaseService: AI initialized successfully.");
             } catch (error) {
                 console.warn("GoogleGenAI init failed, AI features disabled.", error);
                 this.ai = null;
             }
         } else {
-            console.warn("GEMINI_API_KEY missing. AI features will be disabled.");
+            console.warn("GEMINI_API_KEY missing or placeholder. AI features will be disabled.");
             this.ai = null;
         }
-        this.loadFromStorage();
+
         this.checkRemoteConfig();
+        this.initializeData();
+    }
+
+    private async initializeData() {
+        // First try to load from local storage to have something immediate
+        this.loadFromStorage();
+
+        // Then if remote is enabled, try to load from remote and update
+        if (this.isRemoteEnabled) {
+            console.log("DatabaseService: Attempting remote sync on init...");
+            await this.loadFromRemote();
+        }
     }
 
     private checkRemoteConfig() {
@@ -266,34 +279,29 @@ class DatabaseService {
                 this.patientEvents = data.patientEvents || [];
             } catch (err) {
                 console.error("DatabaseService: Shared database corrupted. Resetting to defaults.", err);
-                this.clinics = [...DEFAULT_CLINICS];
-                this.users = [...DEFAULT_USERS];
-                this.professionals = [...DEFAULT_PROFESSIONALS];
-                this.patients = [...DEFAULT_PATIENTS];
-                this.saveToStorage();
+                this.seedInitialData();
             }
 
-            // AUTO-FIX: Ensure Meire is imported if missing (Real data test)
+            // Ensure consistent patient data if missing, but NO forced history override
             const stdMeire = DEFAULT_PATIENTS.find(p => p.id === 'pt_meire')!;
             const meire = this.patients.find(p => p.id === 'pt_meire');
             if (!meire) {
-                console.log("DatabaseService: Importing real patient Meire Mendes for testing...");
+                console.log("DatabaseService: Adding patient Meire Mendes...");
                 this.patients.push(stdMeire);
-                this.saveToStorage();
-            } else {
-                // FORCE OVERRIDE HISTORY: Ensure local storage pulls the newly added raw measurements
-                console.log("DatabaseService: Overriding Meire's local history with full raw metrics...");
-                meire.anthropometryHistory = [...stdMeire.anthropometryHistory!];
-                this.saveToStorage();
+                this.saveToStorage(false);
             }
         } else {
-            // Seed initial data
-            this.clinics = [...DEFAULT_CLINICS];
-            this.users = [...DEFAULT_USERS];
-            this.professionals = [...DEFAULT_PROFESSIONALS];
-            this.patients = [...DEFAULT_PATIENTS];
-            this.saveToStorage();
+            this.seedInitialData();
         }
+    }
+
+    private seedInitialData() {
+        console.log("DatabaseService: Seeding initial mock data...");
+        this.clinics = [...DEFAULT_CLINICS];
+        this.users = [...DEFAULT_USERS];
+        this.professionals = [...DEFAULT_PROFESSIONALS];
+        this.patients = [...DEFAULT_PATIENTS];
+        this.saveToStorage(false);
     }
 
     private async saveToRemote() {
