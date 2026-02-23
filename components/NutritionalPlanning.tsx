@@ -155,6 +155,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [adherenceAnalysis, setAdherenceAnalysis] = useState<AdherenceAnalysis | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<string | null>(null);
     const pdfRef = useRef<HTMLDivElement>(null);
     const [snapshotForPdf, setSnapshotForPdf] = useState<any>(null);
 
@@ -367,7 +369,16 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             const updatedList = await db.listNutritionalPlans(patient.id);
             setPlansList(updatedList);
             loadPlanIntoState(saved);
-            alert("Plano Salvo com Sucesso!");
+
+            // Force Firebase sync after save
+            setSyncStatus(null);
+            setIsSyncing(true);
+            const syncResult = await db.forceSync();
+            setSyncStatus(syncResult.success ? '✅ Sincronizado com Firebase!' : '⚠️ Salvo localmente (Firebase indisponível)');
+            setIsSyncing(false);
+            setTimeout(() => setSyncStatus(null), 4000);
+
+            alert("Plano Salvo com Sucesso! " + (syncResult.success ? 'E sincronizado na nuvem.' : '(Apenas local — verifique Firebase)'));
         } catch (err) {
             alert("Erro ao salvar plano. Nenhuma outra área foi afetada. " + err);
         }
@@ -803,11 +814,31 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 </div>
 
                 <div className="flex items-center gap-2 w-full justify-end">
+                    {syncStatus && (
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full border ${syncStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }`}>{syncStatus}</span>
+                    )}
                     {currentPlanId && (
                         <>
                             <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-purple-900 text-purple-200' : 'bg-purple-50 text-purple-700')}`}>{isAnalyzing ? '...' : <><Icons.Brain /> Analisar</>}</button>
                             <button type="button" onClick={handleGenerateAdherenceTips} data-html2pdf-ignore disabled={isAnalyzing} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700')}`}>{isAnalyzing ? '...' : <>🚀 Adesão</>}</button>
                             <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-gray-700 text-gray-200' : 'bg-white text-slate-700')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText /> PDF</>}</button>
+                            <button
+                                type="button"
+                                data-html2pdf-ignore
+                                disabled={isSyncing}
+                                onClick={async () => {
+                                    setIsSyncing(true);
+                                    const result = await db.forceSync();
+                                    setSyncStatus(result.message);
+                                    setIsSyncing(false);
+                                    setTimeout(() => setSyncStatus(null), 5000);
+                                }}
+                                className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isSyncing ? 'bg-gray-200' : 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'}`}
+                                title="Forçar sincronização com Firebase"
+                            >
+                                {isSyncing ? '🔄 Sincronizando...' : '☁️ Sync'}
+                            </button>
                         </>
                     )}
                     <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`px-6 py-2 text-sm font-bold rounded text-white shadow-sm flex items-center gap-2 ${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'}`}>

@@ -257,9 +257,9 @@ class DatabaseService {
     private checkRemoteConfig() {
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'PLACEHOLDER') {
             this.isRemoteEnabled = true;
-            console.log("DatabaseService: Remote DB enabled (Firebase).");
+            console.log("[DB] ✅ Remote DB enabled (Firebase). ProjectID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
         } else {
-            console.warn("DatabaseService: Remote DB disabled (Config missing). Using LocalStorage only.");
+            console.warn("[DB] ❌ Remote DB DISABLED — VITE_FIREBASE_API_KEY não configurada. Usando apenas LocalStorage.");
         }
     }
 
@@ -333,9 +333,13 @@ class DatabaseService {
     }
 
     public async loadFromRemote() {
-        if (!this.isRemoteEnabled) return;
+        if (!this.isRemoteEnabled) {
+            console.warn('[DB] loadFromRemote() ignorado — Firebase não configurado.');
+            return;
+        }
 
         try {
+            console.log('[DB] 🔄 Carregando dados do Firebase...');
             const snap = await getDoc(doc(firestore, "system_data", "global_v1"));
             if (snap.exists()) {
                 const data = snap.data();
@@ -350,10 +354,12 @@ class DatabaseService {
 
                 // Refresh LocalStorage
                 this.saveToStorage(false); // don't trigger remote again
-                console.log("DatabaseService: Remote data loaded and synced local.");
+                console.log(`[DB] ✅ Firebase carregado: ${this.patients.length} pacientes.`);
+            } else {
+                console.warn('[DB] ⚠️ Documento global_v1 não encontrado no Firebase. Usando dados locais.');
             }
         } catch (err) {
-            console.error("DatabaseService: Remote load failed.", err);
+            console.error('[DB] ❌ loadFromRemote() falhou:', err);
         }
     }
 
@@ -369,8 +375,24 @@ class DatabaseService {
             patientEvents: this.patientEvents
         }));
 
-        if (syncRemote) {
-            this.saveToRemote();
+        if (syncRemote && this.isRemoteEnabled) {
+            // Fire-and-forget with explicit error logging
+            this.saveToRemote().catch(err => {
+                console.error('[DB] ❌ saveToRemote() falhou silenciosamente:', err);
+            });
+        }
+    }
+
+    // Método público para forçar sincronização manual com o Firebase
+    public async forceSync(): Promise<{ success: boolean; message: string }> {
+        if (!this.isRemoteEnabled) {
+            return { success: false, message: 'Firebase não configurado (variáveis de ambiente ausentes).' };
+        }
+        try {
+            await this.saveToRemote();
+            return { success: true, message: 'Sincronização com Firebase realizada com sucesso! ✅' };
+        } catch (err) {
+            return { success: false, message: `Falha na sincronização: ${err}` };
         }
     }
 
