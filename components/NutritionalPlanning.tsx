@@ -303,6 +303,51 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         };
     }, [calculationInputs, calcFormula, calcActivityFactor, calcInjuryFactor, amputations, caloricGoalAdjustment]);
 
+    // --- AVOID STALE CLOSURES HACK ---
+    // Because handleSavePlan is a callback that might run without re-binding,
+    // it captures the INITIAL render state of all these variables.
+    // We use a ref to always have the latest state on hand.
+    const stateRef = useRef({
+        meals,
+        planTitle,
+        planStrategy,
+        planMethodology,
+        calculationInputs,
+        calcFormula,
+        calcActivityFactor,
+        calcInjuryFactor,
+        patientProfile,
+        pregnancyTrimestre,
+        amputations,
+        caloricGoalAdjustment,
+        targetKcal,
+        macroResults: { protein: { g: 0, kcal: 0, pct: 0 }, fat: { g: 0, kcal: 0, pct: 0 }, carbs: { g: 0, kcal: 0, pct: 0 } } // Updated via effect
+    });
+
+    // Sync ref continually
+    useEffect(() => {
+        stateRef.current = {
+            meals,
+            planTitle,
+            planStrategy,
+            planMethodology,
+            calculationInputs,
+            calcFormula,
+            calcActivityFactor,
+            calcInjuryFactor,
+            patientProfile,
+            pregnancyTrimestre,
+            amputations,
+            caloricGoalAdjustment,
+            targetKcal,
+            macroResults: stateRef.current.macroResults // Updated separately
+        };
+    }, [
+        meals, planTitle, planStrategy, planMethodology, calculationInputs,
+        calcFormula, calcActivityFactor, calcInjuryFactor, patientProfile,
+        pregnancyTrimestre, amputations, caloricGoalAdjustment, targetKcal
+    ]);
+
     // Auto-set TDEE for Drafts if calc valid
     useEffect(() => {
         if (isDrafting && !currentPlanId && calculatedResults.isValid && targetKcal === 0) {
