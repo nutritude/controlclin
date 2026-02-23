@@ -433,7 +433,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             setIsSyncing(false);
             setTimeout(() => setSyncStatus(null), 4000);
 
-            alert("Plano Salvo com Sucesso! " + (syncResult.success ? 'E sincronizado na nuvem.' : '(Apenas local — verifique Firebase)'));
+            if (syncResult.success) {
+                alert("Plano Salvo com Sucesso e sincronizado na nuvem! ✅");
+            } else {
+                alert(`ATENÇÃO: Os dados foram salvos APENAS no seu computador.\n\nMotivo da falha na nuvem:\n${syncResult.message}`);
+            }
         } catch (err) {
             alert("Erro ao salvar plano. Nenhuma outra área foi afetada. " + err);
         }
