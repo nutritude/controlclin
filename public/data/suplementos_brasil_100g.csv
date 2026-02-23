@@ -1,0 +1,151 @@
+﻿Categoria,Marca,Energia (kcal/100g ou 100ml),Proteina (g/100g ou 100ml),Carboidratos (g/100g ou 100ml),Gorduras (g/100g ou 100ml)
+Whey Protein Concentrado,Growth Supplements,400,80,13,6
+Whey Protein Concentrado,Max Titanium,380,67,20,4
+Whey Protein Concentrado,Integralmedica,390,70,15,5
+Whey Protein Concentrado,Dux Nutrition,405,73,12,7
+Whey Protein Concentrado,Optimum Nutrition,393,77,10,5
+Creatina Monohidratada,Growth Supplements,0,0,0,0
+Creatina Monohidratada,Max Titanium,0,0,0,0
+Creatina Monohidratada,Integralmedica,0,0,0,0
+Creatina Monohidratada,Dux Nutrition,0,0,0,0
+Creatina Monohidratada,Probiótica,0,0,0,0
+Multivitamínico,Growth Supplements,0,0,0,0
+Multivitamínico,Integralmedica,0,0,0,0
+Multivitamínico,Centrum,0,0,0,0
+Multivitamínico,Dux Nutrition,0,0,0,0
+Multivitamínico,Max Titanium,0,0,0,0
+BCAA,Integralmedica,360,90,0,0
+BCAA,Max Titanium,360,90,0,0
+BCAA,Growth Supplements,360,90,0,0
+BCAA,Probiótica,360,90,0,0
+BCAA,Black Skull,360,90,0,0
+Pré-Treino,Max Titanium (Horus),150,0,37,0
+Pré-Treino,Integralmedica (Evora),120,0,30,0
+Pré-Treino,Dux Nutrition,160,0,40,0
+Pré-Treino,Growth (Haze),140,0,35,0
+Pré-Treino,Black Skull,155,0,38,0
+Ômega 3,Essential Nutrition,900,0,0,100
+Ômega 3,Dux Nutrition,900,0,0,100
+Ômega 3,Vitafor,900,0,0,100
+Ômega 3,Growth Supplements,900,0,0,100
+Ômega 3,Catarinense,900,0,0,100
+Colágeno,Sanavita,360,90,0,0
+Colágeno,Essential Nutrition,350,88,0,0
+Colágeno,Vitafor,360,90,0,0
+Colágeno,Growth Supplements,360,90,0,0
+Colágeno,Dux Nutrition,355,89,0,0
+Glutamina,Integralmedica,400,100,0,0
+Glutamina,Max Titanium,400,100,0,0
+Glutamina,Growth Supplements,400,100,0,0
+Glutamina,Dux Nutrition,400,100,0,0
+Glutamina,Vitafor,400,100,0,0
+Hipercalórico,Integralmedica,380,15,78,1
+Hipercalórico,Max Titanium,375,12,80,1
+Hipercalórico,Growth Supplements,390,18,75,2
+Hipercalórico,Probiótica,382,14,79,1
+Hipercalórico,Black Skull,378,13,81,1
+Termogênico,Integralmedica,0,0,0,0
+Termogênico,Max Titanium,0,0,0,0
+Termogênico,Growth Supplements,0,0,0,0
+Termogênico,Black Skull,0,0,0,0
+Termogênico,Probiótica,0,0,0,0
+Beta-Alanina,Growth Supplements,0,0,0,0
+Beta-Alanina,Max Titanium,0,0,0,0
+Beta-Alanina,Integralmedica,0,0,0,0
+Beta-Alanina,Dux Nutrition,0,0,0,0
+Beta-Alanina,Probiótica,0,0,0,0
+Albumina,Naturovos,350,80,5,0
+Albumina,Saltos,350,80,5,0
+Albumina,Growth Supplements,350,80,5,0
+Albumina,Integralmedica,340,75,8,0
+Albumina,Probiótica,345,78,6,0
+Vitamina C,Catarinense,0,0,0,0
+Vitamina C,Cimed,0,0,0,0
+Vitamina C,Growth Supplements,0,0,0,0
+Vitamina C,Sundown,0,0,0,0
+Vitamina C,Bio-C,0,0,0,0
+Vitamina D,Addera,0,0,0,0
+Vitamina D,Catarinense,0,0,0,0
+Vitamina D,Cimed,0,0,0,0
+Vitamina D,Growth Supplements,0,0,0,0
+Vitamina D,Vitafor,0,0,0,0
+Magnésio,Catarinense,0,0,0,0
+Magnésio,Growth Supplements,0,0,0,0
+Magnésio,Dux Nutrition,0,0,0,0
+Magnésio,Vitafor,0,0,0,0
+Magnésio,Essential Nutrition,0,0,0,0
+Zinco,Catarinense,0,0,0,0
+Zinco,Growth Supplements,0,0,0,0
+Zinco,Cimed,0,0,0,0
+Zinco,Vitafor,0,0,0,0
+Zinco,Sundown,0,0,0,0
+Melatonina,Catarinense,0,0,0,0
+Melatonina,Growth Supplements,0,0,0,0
+Melatonina,Dux Nutrition,0,0,0,0
+Melatonina,Vitafor,0,0,0,0
+Melatonina,Max Titanium,0,0,0,0
+Pasta de Amendoim,Growth Supplements,600,28,10,50
+Pasta de Amendoim,Dr. Peanut,580,25,15,48
+Pasta de Amendoim,Putz!,590,30,12,49
+Pasta de Amendoim,Max Titanium,600,28,10,50
+Pasta de Amendoim,Integralmedica,600,28,10,50
+Barra de Proteína,Bold,350,33,25,15
+Barra de Proteína,Integralmedica,380,30,35,12
+Barra de Proteína,Max Titanium,370,30,38,10
+Barra de Proteína,Growth Supplements,360,35,30,10
+Barra de Proteína,Dux Nutrition,365,32,32,12
+L-Carnitina,Integralmedica,0,0,0,0
+L-Carnitina,Max Titanium,0,0,0,0
+L-Carnitina,Growth Supplements,0,0,0,0
+L-Carnitina,Probiótica,0,0,0,0
+L-Carnitina,Black Skull,0,0,0,0
+Suplemento Hipercalórico Líquido (Hospitalar),Ensure (Abbott),150,6,20,5
+Suplemento Hipercalórico Líquido (Hospitalar),Fortifit (Danone),150,10,15,5
+Suplemento Hipercalórico Líquido (Hospitalar),Nutren Senior (Nestlé),150,9,18,4
+Suplemento Hipercalórico Líquido (Hospitalar),Fresubin (Fresenius),150,6,19,6
+Suplemento Hipercalórico Líquido (Hospitalar),Isosource (Nestlé),120,5,15,4
+Módulo de Proteína (Pó),Caseical (Abbott),370,90,0,1
+Módulo de Proteína (Pó),Protein PT (Prodiet),370,90,0,1
+Módulo de Proteína (Pó),Resource Protein (Nestlé),370,90,0,1
+Módulo de Proteína (Pó),Fresubin Protein (Fresenius),360,87,1,1
+Módulo de Proteína (Pó),Protifar (Danone),373,89,1,2
+Espessante Alimentar,ThickenUp Clear (Nestlé),300,1,60,0
+Espessante Alimentar,Nutilis (Danone),290,0,58,0
+Espessante Alimentar,Thick & Easy (Fresenius),310,0,62,0
+Espessante Alimentar,Resource ThickenUp (Nestlé),370,0,90,0
+Espessante Alimentar,Bioserv (Prodiet),300,0,60,0
+Controle Glicêmico,Glucerna (Abbott),93,4,9,4
+Controle Glicêmico,Diasip (Danone),100,5,9,5
+Controle Glicêmico,Diben (Fresenius),100,5,9,5
+Controle Glicêmico,Diamax (Prodiet),100,5,10,4
+Controle Glicêmico,Isosource GC (Nestlé),100,4,11,4
+Cicatrização (Arginina/Zinco),Cubitan (Danone),125,9,14,4
+Cicatrização (Arginina/Zinco),Abound (Abbott),370,80,10,0
+Cicatrização (Arginina/Zinco),Impact (Nestlé),100,6,12,3
+Cicatrização (Arginina/Zinco),ArgiMent (Prodiet),350,70,15,0
+Cicatrização (Arginina/Zinco),Fresubin Protein Powder (Fresenius),360,87,1,1
+Dieta Enteral Padrão,Jevity (Abbott),106,4,15,4
+Dieta Enteral Padrão,Isosource Standard (Nestlé),100,4,13,4
+Dieta Enteral Padrão,Nutrison (Danone),100,4,12,4
+Dieta Enteral Padrão,Fresubin Original (Fresenius),100,4,13,3
+Dieta Enteral Padrão,Trophic Basic (Prodiet),100,4,14,3
+Módulo de Carboidrato,Maltodextrina (Growth),380,0,95,0
+Módulo de Carboidrato,Nutilis (Danone),290,0,58,0
+Módulo de Carboidrato,Resource Dextrose (Nestlé),380,0,95,0
+Módulo de Carboidrato,Fantomalt (Danone),380,0,95,0
+Módulo de Carboidrato,Carbofuel (Prodiet),380,0,95,0
+Suplemento Infantil,Pediasure (Abbott),100,3,11,5
+Suplemento Infantil,Fortini (Danone),150,3,19,7
+Suplemento Infantil,Nutren Kids (Nestlé),400,12,65,10
+Suplemento Infantil,Frebini (Fresenius),150,4,19,7
+Suplemento Infantil,Trophic Infant (Prodiet),100,3,12,4
+Pacientes Renais,Nepro (Abbott),180,8,16,10
+Pacientes Renais,Renilon (Danone),200,4,20,10
+Pacientes Renais,Renal (Fresenius),200,6,19,11
+Pacientes Renais,Isosource Renal (Nestlé),200,7,20,10
+Pacientes Renais,Trophic Renal (Prodiet),150,4,18,7
+Suplemento de Fibras,FiberMais (Nestlé),200,0,90,0
+Suplemento de Fibras,Stimulance (Danone),150,0,75,0
+Suplemento de Fibras,Benefiber (GSK),200,0,90,0
+Suplemento de Fibras,Fiberfos (Prodiet),180,0,85,0
+Suplemento de Fibras,Fresubin Fiber (Fresenius),100,4,13,3
