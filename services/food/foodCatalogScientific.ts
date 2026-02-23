@@ -407,6 +407,17 @@ function getSmartPortions(record: FoodRecord): PortionRecord[] {
         portions.push({ uid: record.uid, label: 'Colher de chá (3g)', grams: 3 });
     }
 
+    // 12. SUPLEMENTOS
+    else if (grupo.includes('suplementos') || grupo.includes('suplemento') ||
+        nome.includes('whey') || nome.includes('creatina') || nome.includes('bcaa') ||
+        nome.includes('albumina') || nome.includes('colágeno') || nome.includes('maltodextrina') ||
+        nome.includes('proteína') || nome.includes('pré-treino') || nome.includes('caseína')) {
+        portions.push({ uid: record.uid, label: 'Scoop (30g)', grams: 30 });
+        portions.push({ uid: record.uid, label: 'Scoop duplo (60g)', grams: 60 });
+        portions.push({ uid: record.uid, label: 'Colher de sopa (10g)', grams: 10 });
+        portions.push({ uid: record.uid, label: 'Sachê (25g)', grams: 25 });
+    }
+
     return portions;
 }
 

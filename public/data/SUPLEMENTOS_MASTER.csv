@@ -1,0 +1,151 @@
+uid,nome_canonico,energia_kcal_100g,proteina_g_100g,carboidratos_g_100g,lipidios_g_100g,fibra_alimentar_g_100g,sodio_mg_100g,calcio_mg_100g,ferro_mg_100g,potassio_mg_100g,vitamina_c_mg_100g,grupo,subgrupo,preparo_detectado,__fonte,__prio
+85ae1bb5-430d-541d-a0e7-3f2d296804f2,Whey Protein Concentrado - Growth Supplements,400,80,13,6,,,,,,,Suplementos,Whey Protein Concentrado,,suplementos_brasil,1
+d0ab06a1-69b1-5fc1-b6f1-3de7d55d78a9,Whey Protein Concentrado - Max Titanium,380,67,20,4,,,,,,,Suplementos,Whey Protein Concentrado,,suplementos_brasil,1
+2368d05f-a53a-56f7-8d9e-4e397f196425,Whey Protein Concentrado - Integralmedica,390,70,15,5,,,,,,,Suplementos,Whey Protein Concentrado,,suplementos_brasil,1
+29db759a-d84d-5540-b68b-0791f58007af,Whey Protein Concentrado - Dux Nutrition,405,73,12,7,,,,,,,Suplementos,Whey Protein Concentrado,,suplementos_brasil,1
+f16fd3bc-20f4-5aa4-aaeb-3ca42fb8e25e,Whey Protein Concentrado - Optimum Nutrition,393,77,10,5,,,,,,,Suplementos,Whey Protein Concentrado,,suplementos_brasil,1
+60fe2827-86e9-5508-842c-c62965e5c278,Creatina Monohidratada - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Creatina Monohidratada,,suplementos_brasil,1
+c41aa741-7a1a-5cb0-a767-56b7e8dda70d,Creatina Monohidratada - Max Titanium,0,0,0,0,,,,,,,Suplementos,Creatina Monohidratada,,suplementos_brasil,1
+b669af6c-2bf8-5d33-89b9-7317f624361c,Creatina Monohidratada - Integralmedica,0,0,0,0,,,,,,,Suplementos,Creatina Monohidratada,,suplementos_brasil,1
+56080e0c-18f3-5d5e-a29e-3107e6be2a3f,Creatina Monohidratada - Dux Nutrition,0,0,0,0,,,,,,,Suplementos,Creatina Monohidratada,,suplementos_brasil,1
+2e50c4d8-a3df-50a0-9ae5-84390947d27d,Creatina Monohidratada - Probiótica,0,0,0,0,,,,,,,Suplementos,Creatina Monohidratada,,suplementos_brasil,1
+f2d926df-afb0-5d45-9390-07d9b9dea187,Multivitamínico - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Multivitamínico,,suplementos_brasil,1
+611617fc-525a-5a95-9dbb-b47d5eaf9958,Multivitamínico - Integralmedica,0,0,0,0,,,,,,,Suplementos,Multivitamínico,,suplementos_brasil,1
+2ba81e03-d400-5d51-a02c-795b04062db9,Multivitamínico - Centrum,0,0,0,0,,,,,,,Suplementos,Multivitamínico,,suplementos_brasil,1
+a15fadb9-df0a-518a-89d8-0dcd8160b180,Multivitamínico - Dux Nutrition,0,0,0,0,,,,,,,Suplementos,Multivitamínico,,suplementos_brasil,1
+3269a5c4-fafb-5a78-af54-952592d68d02,Multivitamínico - Max Titanium,0,0,0,0,,,,,,,Suplementos,Multivitamínico,,suplementos_brasil,1
+4cd5125f-d9f8-56d9-8426-dcd9f478e4ad,BCAA - Integralmedica,360,90,0,0,,,,,,,Suplementos,BCAA,,suplementos_brasil,1
+6dafa0cd-d21d-5504-8116-608196993e67,BCAA - Max Titanium,360,90,0,0,,,,,,,Suplementos,BCAA,,suplementos_brasil,1
+471ddb3c-60d6-5b38-b93f-ab22ca0cf1e8,BCAA - Growth Supplements,360,90,0,0,,,,,,,Suplementos,BCAA,,suplementos_brasil,1
+c3661bf5-c362-5f67-a11b-2aa92743fdb2,BCAA - Probiótica,360,90,0,0,,,,,,,Suplementos,BCAA,,suplementos_brasil,1
+b8b728d0-0a37-5dd2-a3b9-3d96146ff930,BCAA - Black Skull,360,90,0,0,,,,,,,Suplementos,BCAA,,suplementos_brasil,1
+fa6cd648-6b23-5492-9612-4452d7f80c25,Pré-Treino - Max Titanium (Horus),150,0,37,0,,,,,,,Suplementos,Pré-Treino,,suplementos_brasil,1
+ae03cc5c-2f26-5fb4-9029-488b45983fc5,Pré-Treino - Integralmedica (Evora),120,0,30,0,,,,,,,Suplementos,Pré-Treino,,suplementos_brasil,1
+2fb5989c-bbea-549c-815f-402176a06086,Pré-Treino - Dux Nutrition,160,0,40,0,,,,,,,Suplementos,Pré-Treino,,suplementos_brasil,1
+1f503664-d2d8-50f9-9f35-b4dbf6c7f0ec,Pré-Treino - Growth (Haze),140,0,35,0,,,,,,,Suplementos,Pré-Treino,,suplementos_brasil,1
+e0f2cccc-6d25-5a64-82fe-7f6657339dd3,Pré-Treino - Black Skull,155,0,38,0,,,,,,,Suplementos,Pré-Treino,,suplementos_brasil,1
+3969c0c8-5b9a-531d-b7b2-800d07cdd3e5,Ômega 3 - Essential Nutrition,900,0,0,100,,,,,,,Suplementos,Ômega 3,,suplementos_brasil,1
+ec0e95e5-9bee-5932-8153-b0d639b2b564,Ômega 3 - Dux Nutrition,900,0,0,100,,,,,,,Suplementos,Ômega 3,,suplementos_brasil,1
+f94f0126-cb5f-5918-92bd-9f40e7b0fac0,Ômega 3 - Vitafor,900,0,0,100,,,,,,,Suplementos,Ômega 3,,suplementos_brasil,1
+21e16a57-c852-53c7-9f85-394577325575,Ômega 3 - Growth Supplements,900,0,0,100,,,,,,,Suplementos,Ômega 3,,suplementos_brasil,1
+34dc230c-4edf-5633-9dc7-4c25e947985e,Ômega 3 - Catarinense,900,0,0,100,,,,,,,Suplementos,Ômega 3,,suplementos_brasil,1
+0116d8bb-b720-558b-b87b-b7dc0ee8bcf9,Colágeno - Sanavita,360,90,0,0,,,,,,,Suplementos,Colágeno,,suplementos_brasil,1
+92962375-6da4-598f-88b3-9fb9958eea99,Colágeno - Essential Nutrition,350,88,0,0,,,,,,,Suplementos,Colágeno,,suplementos_brasil,1
+58b1994d-3d1f-5d85-80c8-ef13a9ff6ad1,Colágeno - Vitafor,360,90,0,0,,,,,,,Suplementos,Colágeno,,suplementos_brasil,1
+2558056d-bbb2-5afc-b1d0-2915aa1e7c9d,Colágeno - Growth Supplements,360,90,0,0,,,,,,,Suplementos,Colágeno,,suplementos_brasil,1
+498b89ed-5eeb-5613-8535-df1a3b88c625,Colágeno - Dux Nutrition,355,89,0,0,,,,,,,Suplementos,Colágeno,,suplementos_brasil,1
+3246ba1f-dc63-51ef-b52c-76031eb12fe0,Glutamina - Integralmedica,400,100,0,0,,,,,,,Suplementos,Glutamina,,suplementos_brasil,1
+e3bc1843-2ac7-5c65-97b6-fa32c28a2d7c,Glutamina - Max Titanium,400,100,0,0,,,,,,,Suplementos,Glutamina,,suplementos_brasil,1
+5c500587-178b-58cd-8a56-51c3a02bf51e,Glutamina - Growth Supplements,400,100,0,0,,,,,,,Suplementos,Glutamina,,suplementos_brasil,1
+b8c7d5d5-d363-5960-bf0c-2d38560b5144,Glutamina - Dux Nutrition,400,100,0,0,,,,,,,Suplementos,Glutamina,,suplementos_brasil,1
+a84fa577-aad5-5f7d-b83b-0f75502f04ae,Glutamina - Vitafor,400,100,0,0,,,,,,,Suplementos,Glutamina,,suplementos_brasil,1
+611e1ade-db93-514a-9738-6b694d94049a,Hipercalórico - Integralmedica,380,15,78,1,,,,,,,Suplementos,Hipercalórico,,suplementos_brasil,1
+0a60bd9b-0920-50ee-a471-b8ddfeaf7003,Hipercalórico - Max Titanium,375,12,80,1,,,,,,,Suplementos,Hipercalórico,,suplementos_brasil,1
+6d1b92bf-c28f-5135-9b08-680e54cb0562,Hipercalórico - Growth Supplements,390,18,75,2,,,,,,,Suplementos,Hipercalórico,,suplementos_brasil,1
+abc0c905-6a8b-5ef6-bc8a-d810f1124028,Hipercalórico - Probiótica,382,14,79,1,,,,,,,Suplementos,Hipercalórico,,suplementos_brasil,1
+e7561257-07fe-5656-baf9-5799df3a39c4,Hipercalórico - Black Skull,378,13,81,1,,,,,,,Suplementos,Hipercalórico,,suplementos_brasil,1
+b87c6e06-db8b-5204-9c78-13e7500a1ecf,Termogênico - Integralmedica,0,0,0,0,,,,,,,Suplementos,Termogênico,,suplementos_brasil,1
+211a134e-0c8b-51cd-86ce-4e94b6d07a76,Termogênico - Max Titanium,0,0,0,0,,,,,,,Suplementos,Termogênico,,suplementos_brasil,1
+bb553314-23aa-566f-8275-03372cbe634e,Termogênico - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Termogênico,,suplementos_brasil,1
+b82272a8-af4a-579e-9220-b2da285d3312,Termogênico - Black Skull,0,0,0,0,,,,,,,Suplementos,Termogênico,,suplementos_brasil,1
+3bede625-f205-5676-acd1-3197f81c9c61,Termogênico - Probiótica,0,0,0,0,,,,,,,Suplementos,Termogênico,,suplementos_brasil,1
+5c93ab82-68fd-5269-a033-94c7c324779e,Beta-Alanina - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Beta-Alanina,,suplementos_brasil,1
+c54560ef-c317-5546-bfe6-33920397d858,Beta-Alanina - Max Titanium,0,0,0,0,,,,,,,Suplementos,Beta-Alanina,,suplementos_brasil,1
+b1b4e165-86ef-55fd-b4a0-13d5cb7f9931,Beta-Alanina - Integralmedica,0,0,0,0,,,,,,,Suplementos,Beta-Alanina,,suplementos_brasil,1
+d6390608-5382-5fbe-9393-57ab4ba8cc94,Beta-Alanina - Dux Nutrition,0,0,0,0,,,,,,,Suplementos,Beta-Alanina,,suplementos_brasil,1
+6243316b-00e8-5a48-9a23-c165bdb9db2b,Beta-Alanina - Probiótica,0,0,0,0,,,,,,,Suplementos,Beta-Alanina,,suplementos_brasil,1
+a1b050a4-4c03-5a1f-b8c4-cc228e84932f,Albumina - Naturovos,350,80,5,0,,,,,,,Suplementos,Albumina,,suplementos_brasil,1
+c6d44bef-fb25-5914-9baf-41ccd3ee8d9d,Albumina - Saltos,350,80,5,0,,,,,,,Suplementos,Albumina,,suplementos_brasil,1
+1a1d6b52-a437-576d-a93f-49049b2722c0,Albumina - Growth Supplements,350,80,5,0,,,,,,,Suplementos,Albumina,,suplementos_brasil,1
+879c5a94-1291-5741-83f1-da86abddb32f,Albumina - Integralmedica,340,75,8,0,,,,,,,Suplementos,Albumina,,suplementos_brasil,1
+06d0adf6-f489-5d6a-b0e9-66bf8cdabda1,Albumina - Probiótica,345,78,6,0,,,,,,,Suplementos,Albumina,,suplementos_brasil,1
+c75bc996-d4af-51c7-ac8a-ceec17239a2e,Vitamina C - Catarinense,0,0,0,0,,,,,,,Suplementos,Vitamina C,,suplementos_brasil,1
+e1cb42ca-06c6-5d60-94bf-48d0ef02f5ec,Vitamina C - Cimed,0,0,0,0,,,,,,,Suplementos,Vitamina C,,suplementos_brasil,1
+6dd9f064-7966-53fc-8e73-22b450785b93,Vitamina C - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Vitamina C,,suplementos_brasil,1
+319463de-5b09-5e6d-99cf-24adfb73ac14,Vitamina C - Sundown,0,0,0,0,,,,,,,Suplementos,Vitamina C,,suplementos_brasil,1
+bff4b425-8ba3-5132-a2fd-7286bf1961aa,Vitamina C - Bio-C,0,0,0,0,,,,,,,Suplementos,Vitamina C,,suplementos_brasil,1
+618d3c0a-19e6-5de3-9f96-07117f3f0f84,Vitamina D - Addera,0,0,0,0,,,,,,,Suplementos,Vitamina D,,suplementos_brasil,1
+622782a7-6aca-5f5e-9e14-5b6b3b619e0b,Vitamina D - Catarinense,0,0,0,0,,,,,,,Suplementos,Vitamina D,,suplementos_brasil,1
+ecd256c0-91b0-5642-864a-e737e82546ce,Vitamina D - Cimed,0,0,0,0,,,,,,,Suplementos,Vitamina D,,suplementos_brasil,1
+c58ec87f-98af-5600-8835-b60a4ae42e4b,Vitamina D - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Vitamina D,,suplementos_brasil,1
+ddf4e75b-c88e-5f40-b754-0019ab875d00,Vitamina D - Vitafor,0,0,0,0,,,,,,,Suplementos,Vitamina D,,suplementos_brasil,1
+d1650976-49c6-5a52-8fd7-c2d2832ecd69,Magnésio - Catarinense,0,0,0,0,,,,,,,Suplementos,Magnésio,,suplementos_brasil,1
+ac02436f-3f86-5004-b3fa-ad3aac78efc0,Magnésio - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Magnésio,,suplementos_brasil,1
+2ce9ae51-7a70-5db6-84dd-088e99b9a757,Magnésio - Dux Nutrition,0,0,0,0,,,,,,,Suplementos,Magnésio,,suplementos_brasil,1
+ff40f559-4f89-51ee-80b7-774c3ccaacc6,Magnésio - Vitafor,0,0,0,0,,,,,,,Suplementos,Magnésio,,suplementos_brasil,1
+89c49fb9-c679-55cc-b057-8914b8920569,Magnésio - Essential Nutrition,0,0,0,0,,,,,,,Suplementos,Magnésio,,suplementos_brasil,1
+7a79be29-2c17-5c34-80f0-c0c92749c9eb,Zinco - Catarinense,0,0,0,0,,,,,,,Suplementos,Zinco,,suplementos_brasil,1
+0739547e-3def-5488-9ad6-f886b0734194,Zinco - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Zinco,,suplementos_brasil,1
+18f0b2c7-0e27-5ba8-9a5e-8d8230acba6d,Zinco - Cimed,0,0,0,0,,,,,,,Suplementos,Zinco,,suplementos_brasil,1
+db6c7e57-7111-561e-bde8-59b7f57bdedf,Zinco - Vitafor,0,0,0,0,,,,,,,Suplementos,Zinco,,suplementos_brasil,1
+9d1554c4-2f20-57e4-97c8-5f98da58484f,Zinco - Sundown,0,0,0,0,,,,,,,Suplementos,Zinco,,suplementos_brasil,1
+738a80b2-b8b9-5365-9e0c-9748fb1aacdc,Melatonina - Catarinense,0,0,0,0,,,,,,,Suplementos,Melatonina,,suplementos_brasil,1
+ded04b5f-3334-5ee3-8e4e-de4a4255cf2d,Melatonina - Growth Supplements,0,0,0,0,,,,,,,Suplementos,Melatonina,,suplementos_brasil,1
+6b4dd26e-8d66-5b16-a7bf-ffe9f8ed8414,Melatonina - Dux Nutrition,0,0,0,0,,,,,,,Suplementos,Melatonina,,suplementos_brasil,1
+2f877e2a-0c3e-5b9c-b7dd-25d262c5ca32,Melatonina - Vitafor,0,0,0,0,,,,,,,Suplementos,Melatonina,,suplementos_brasil,1
+f3172c81-f114-5fd8-9132-e3ef0828316f,Melatonina - Max Titanium,0,0,0,0,,,,,,,Suplementos,Melatonina,,suplementos_brasil,1
+a58e3311-fcbb-52c5-ac4f-dd6c332a70f8,Pasta de Amendoim - Growth Supplements,600,28,10,50,,,,,,,Suplementos,Pasta de Amendoim,,suplementos_brasil,1
+d81fe9ef-6378-5345-ac9c-f50c43552a0c,Pasta de Amendoim - Dr. Peanut,580,25,15,48,,,,,,,Suplementos,Pasta de Amendoim,,suplementos_brasil,1
+36084a93-eb42-582e-98e2-20af1520f376,Pasta de Amendoim - Putz!,590,30,12,49,,,,,,,Suplementos,Pasta de Amendoim,,suplementos_brasil,1
+47b58b7c-87d2-5e50-9af3-1538218e4202,Pasta de Amendoim - Max Titanium,600,28,10,50,,,,,,,Suplementos,Pasta de Amendoim,,suplementos_brasil,1
+67d1c96b-3acd-52af-95cc-c57369f75233,Pasta de Amendoim - Integralmedica,600,28,10,50,,,,,,,Suplementos,Pasta de Amendoim,,suplementos_brasil,1
+4f4f5bbd-5e17-5b83-9e00-d056c639263c,Barra de Proteína - Bold,350,33,25,15,,,,,,,Suplementos,Barra de Proteína,,suplementos_brasil,1
+88b25a4c-45ab-510e-838d-b74bed6cccf4,Barra de Proteína - Integralmedica,380,30,35,12,,,,,,,Suplementos,Barra de Proteína,,suplementos_brasil,1
+f82f5129-9dbf-5fa5-8c6b-87a8121c6dcf,Barra de Proteína - Max Titanium,370,30,38,10,,,,,,,Suplementos,Barra de Proteína,,suplementos_brasil,1
+8accd355-ce65-58fa-96be-6a0e5a9fb995,Barra de Proteína - Growth Supplements,360,35,30,10,,,,,,,Suplementos,Barra de Proteína,,suplementos_brasil,1
+58843a4f-d86a-5cb0-8382-cc1be8873045,Barra de Proteína - Dux Nutrition,365,32,32,12,,,,,,,Suplementos,Barra de Proteína,,suplementos_brasil,1
+3be8f6dc-72bd-52bf-95a4-5984ff83bc95,L-Carnitina - Integralmedica,0,0,0,0,,,,,,,Suplementos,L-Carnitina,,suplementos_brasil,1
+1e830124-22f4-5ddf-8be3-0182c9f20835,L-Carnitina - Max Titanium,0,0,0,0,,,,,,,Suplementos,L-Carnitina,,suplementos_brasil,1
+91b2bc94-dae0-571b-adb2-4cdb2876860b,L-Carnitina - Growth Supplements,0,0,0,0,,,,,,,Suplementos,L-Carnitina,,suplementos_brasil,1
+92386aeb-4bde-5d9b-8222-5088b116b797,L-Carnitina - Probiótica,0,0,0,0,,,,,,,Suplementos,L-Carnitina,,suplementos_brasil,1
+24e9a0ba-f432-5d18-8c59-8ce6cca78b71,L-Carnitina - Black Skull,0,0,0,0,,,,,,,Suplementos,L-Carnitina,,suplementos_brasil,1
+252dd1b6-c623-5929-a470-9e3de08322b5,Suplemento Hipercalórico Líquido (Hospitalar) - Ensure (Abbott),150,6,20,5,,,,,,,Suplementos,Suplemento Hipercalórico Líquido (Hospitalar),,suplementos_brasil,1
+82b0164e-1d04-5d4b-9ef5-c7769a9cb8cd,Suplemento Hipercalórico Líquido (Hospitalar) - Fortifit (Danone),150,10,15,5,,,,,,,Suplementos,Suplemento Hipercalórico Líquido (Hospitalar),,suplementos_brasil,1
+10792da3-3c4c-52bf-bacb-74806b2436af,Suplemento Hipercalórico Líquido (Hospitalar) - Nutren Senior (Nestlé),150,9,18,4,,,,,,,Suplementos,Suplemento Hipercalórico Líquido (Hospitalar),,suplementos_brasil,1
+773b290b-ab6a-5372-b1f4-eee6309334eb,Suplemento Hipercalórico Líquido (Hospitalar) - Fresubin (Fresenius),150,6,19,6,,,,,,,Suplementos,Suplemento Hipercalórico Líquido (Hospitalar),,suplementos_brasil,1
+1ead7a0a-6432-5a3d-b60a-45ad98317c97,Suplemento Hipercalórico Líquido (Hospitalar) - Isosource (Nestlé),120,5,15,4,,,,,,,Suplementos,Suplemento Hipercalórico Líquido (Hospitalar),,suplementos_brasil,1
+4f4fce11-f795-52bd-9be5-5a11a0a5e511,Módulo de Proteína (Pó) - Caseical (Abbott),370,90,0,1,,,,,,,Suplementos,Módulo de Proteína (Pó),,suplementos_brasil,1
+4d2df5b0-860e-5f31-9c23-463bad982182,Módulo de Proteína (Pó) - Protein PT (Prodiet),370,90,0,1,,,,,,,Suplementos,Módulo de Proteína (Pó),,suplementos_brasil,1
+65009eee-b002-5b57-9c4f-ce4a9395d470,Módulo de Proteína (Pó) - Resource Protein (Nestlé),370,90,0,1,,,,,,,Suplementos,Módulo de Proteína (Pó),,suplementos_brasil,1
+a0efd2bc-cded-5f46-9e5d-f4a4d9c79d59,Módulo de Proteína (Pó) - Fresubin Protein (Fresenius),360,87,1,1,,,,,,,Suplementos,Módulo de Proteína (Pó),,suplementos_brasil,1
+f354dcb5-b3ac-556e-8067-4171f9a904bb,Módulo de Proteína (Pó) - Protifar (Danone),373,89,1,2,,,,,,,Suplementos,Módulo de Proteína (Pó),,suplementos_brasil,1
+c32a69fa-dd5d-58f4-b2bb-b52d122b73f2,Espessante Alimentar - ThickenUp Clear (Nestlé),300,1,60,0,,,,,,,Suplementos,Espessante Alimentar,,suplementos_brasil,1
+119f1822-116d-59b6-a46b-b62ba577acc5,Espessante Alimentar - Nutilis (Danone),290,0,58,0,,,,,,,Suplementos,Espessante Alimentar,,suplementos_brasil,1
+54fb029b-c3d9-5e50-b5a4-fdd25aa193ac,Espessante Alimentar - Thick & Easy (Fresenius),310,0,62,0,,,,,,,Suplementos,Espessante Alimentar,,suplementos_brasil,1
+65fa32dd-f605-5448-893b-e99eb52ff511,Espessante Alimentar - Resource ThickenUp (Nestlé),370,0,90,0,,,,,,,Suplementos,Espessante Alimentar,,suplementos_brasil,1
+44a5a885-d560-5ea1-9c37-65144eb4fae3,Espessante Alimentar - Bioserv (Prodiet),300,0,60,0,,,,,,,Suplementos,Espessante Alimentar,,suplementos_brasil,1
+8691dc25-768f-5398-b8a6-7a45953a8083,Controle Glicêmico - Glucerna (Abbott),93,4,9,4,,,,,,,Suplementos,Controle Glicêmico,,suplementos_brasil,1
+8e25fcf8-25b5-5f3c-a924-420cc2b3f689,Controle Glicêmico - Diasip (Danone),100,5,9,5,,,,,,,Suplementos,Controle Glicêmico,,suplementos_brasil,1
+4c37cc55-d687-5b64-96d3-669803cbbab3,Controle Glicêmico - Diben (Fresenius),100,5,9,5,,,,,,,Suplementos,Controle Glicêmico,,suplementos_brasil,1
+e9c25f88-9907-5118-816f-0fb86057a102,Controle Glicêmico - Diamax (Prodiet),100,5,10,4,,,,,,,Suplementos,Controle Glicêmico,,suplementos_brasil,1
+feae45cd-3fc8-525a-8d93-e97e7fda9a26,Controle Glicêmico - Isosource GC (Nestlé),100,4,11,4,,,,,,,Suplementos,Controle Glicêmico,,suplementos_brasil,1
+474ddd4a-78d2-5c8d-8c70-e55a3a53ed90,Cicatrização (Arginina/Zinco) - Cubitan (Danone),125,9,14,4,,,,,,,Suplementos,Cicatrização (Arginina/Zinco),,suplementos_brasil,1
+a91fd854-aa7b-5f3c-bd26-a940e754f510,Cicatrização (Arginina/Zinco) - Abound (Abbott),370,80,10,0,,,,,,,Suplementos,Cicatrização (Arginina/Zinco),,suplementos_brasil,1
+4e599ed6-a3eb-5a02-ad18-6271214fb259,Cicatrização (Arginina/Zinco) - Impact (Nestlé),100,6,12,3,,,,,,,Suplementos,Cicatrização (Arginina/Zinco),,suplementos_brasil,1
+3ff7cebd-a085-5907-a1c1-c7770b7680c1,Cicatrização (Arginina/Zinco) - ArgiMent (Prodiet),350,70,15,0,,,,,,,Suplementos,Cicatrização (Arginina/Zinco),,suplementos_brasil,1
+4f17877e-e84b-5737-a4f5-10bb00c778f0,Cicatrização (Arginina/Zinco) - Fresubin Protein Powder (Fresenius),360,87,1,1,,,,,,,Suplementos,Cicatrização (Arginina/Zinco),,suplementos_brasil,1
+9807a085-80c8-5d5e-b017-65c7ba734c01,Dieta Enteral Padrão - Jevity (Abbott),106,4,15,4,,,,,,,Suplementos,Dieta Enteral Padrão,,suplementos_brasil,1
+482b3cfd-08a6-5703-89e4-a01c35803a05,Dieta Enteral Padrão - Isosource Standard (Nestlé),100,4,13,4,,,,,,,Suplementos,Dieta Enteral Padrão,,suplementos_brasil,1
+2d9040f3-cef2-553a-9d10-b09aedf58396,Dieta Enteral Padrão - Nutrison (Danone),100,4,12,4,,,,,,,Suplementos,Dieta Enteral Padrão,,suplementos_brasil,1
+780bbac2-15f0-5354-80c5-8ddf0239571c,Dieta Enteral Padrão - Fresubin Original (Fresenius),100,4,13,3,,,,,,,Suplementos,Dieta Enteral Padrão,,suplementos_brasil,1
+d4722b8d-81e6-5327-b304-4a5147883f00,Dieta Enteral Padrão - Trophic Basic (Prodiet),100,4,14,3,,,,,,,Suplementos,Dieta Enteral Padrão,,suplementos_brasil,1
+c584c077-e1c3-54a0-8dbb-5cf114ab498d,Módulo de Carboidrato - Maltodextrina (Growth),380,0,95,0,,,,,,,Suplementos,Módulo de Carboidrato,,suplementos_brasil,1
+aa464b55-d904-53d4-b869-31bd9a10a8b9,Módulo de Carboidrato - Nutilis (Danone),290,0,58,0,,,,,,,Suplementos,Módulo de Carboidrato,,suplementos_brasil,1
+6fbf7238-389b-5636-93aa-0694b29f5213,Módulo de Carboidrato - Resource Dextrose (Nestlé),380,0,95,0,,,,,,,Suplementos,Módulo de Carboidrato,,suplementos_brasil,1
+461ef783-cb0d-5d47-8ef2-bdd0f9efc299,Módulo de Carboidrato - Fantomalt (Danone),380,0,95,0,,,,,,,Suplementos,Módulo de Carboidrato,,suplementos_brasil,1
+bb2ca9d0-53ee-5b9c-8bc6-5d88dd84e69a,Módulo de Carboidrato - Carbofuel (Prodiet),380,0,95,0,,,,,,,Suplementos,Módulo de Carboidrato,,suplementos_brasil,1
+812b8609-51a1-5044-b903-3e22ad997078,Suplemento Infantil - Pediasure (Abbott),100,3,11,5,,,,,,,Suplementos,Suplemento Infantil,,suplementos_brasil,1
+35217221-96ba-5b25-a217-40bf8da09993,Suplemento Infantil - Fortini (Danone),150,3,19,7,,,,,,,Suplementos,Suplemento Infantil,,suplementos_brasil,1
+2f170ad0-2879-5896-90bb-15cb3fd1b98c,Suplemento Infantil - Nutren Kids (Nestlé),400,12,65,10,,,,,,,Suplementos,Suplemento Infantil,,suplementos_brasil,1
+2c6fea96-9cdf-5a3e-864e-c8a381643466,Suplemento Infantil - Frebini (Fresenius),150,4,19,7,,,,,,,Suplementos,Suplemento Infantil,,suplementos_brasil,1
+f80f3d88-0c56-5d36-8d3d-8b93cdc1c66f,Suplemento Infantil - Trophic Infant (Prodiet),100,3,12,4,,,,,,,Suplementos,Suplemento Infantil,,suplementos_brasil,1
+b091073b-b314-5894-b0f7-3e87c77b858a,Pacientes Renais - Nepro (Abbott),180,8,16,10,,,,,,,Suplementos,Pacientes Renais,,suplementos_brasil,1
+cec286d6-b120-50ce-b7b5-4c96243b514c,Pacientes Renais - Renilon (Danone),200,4,20,10,,,,,,,Suplementos,Pacientes Renais,,suplementos_brasil,1
+51a33eaf-0d6f-5475-bc76-505493dc082e,Pacientes Renais - Renal (Fresenius),200,6,19,11,,,,,,,Suplementos,Pacientes Renais,,suplementos_brasil,1
+2193487b-ead5-5a9c-9fea-eb2156e5a06e,Pacientes Renais - Isosource Renal (Nestlé),200,7,20,10,,,,,,,Suplementos,Pacientes Renais,,suplementos_brasil,1
+7f578dbf-bdd6-5576-8e58-b861ec79c694,Pacientes Renais - Trophic Renal (Prodiet),150,4,18,7,,,,,,,Suplementos,Pacientes Renais,,suplementos_brasil,1
+92ced347-2e36-578c-b3ba-671062a09b59,Suplemento de Fibras - FiberMais (Nestlé),200,0,90,0,,,,,,,Suplementos,Suplemento de Fibras,,suplementos_brasil,1
+cc2fabd6-88d3-5e2c-bfa3-b8490ed114fd,Suplemento de Fibras - Stimulance (Danone),150,0,75,0,,,,,,,Suplementos,Suplemento de Fibras,,suplementos_brasil,1
+ae5d2433-6057-504c-8fc4-c5b4c3b501c7,Suplemento de Fibras - Benefiber (GSK),200,0,90,0,,,,,,,Suplementos,Suplemento de Fibras,,suplementos_brasil,1
+5a8ca644-18b6-51a7-a18d-c3c1e1218cbc,Suplemento de Fibras - Fiberfos (Prodiet),180,0,85,0,,,,,,,Suplementos,Suplemento de Fibras,,suplementos_brasil,1
+cfc0d577-2e06-5cf7-b3a5-9ff74a25666e,Suplemento de Fibras - Fresubin Fiber (Fresenius),100,4,13,3,,,,,,,Suplementos,Suplemento de Fibras,,suplementos_brasil,1
