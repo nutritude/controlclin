@@ -7,10 +7,10 @@ export const AIPlanAnalysisService = {
    * Analyzes the nutritional plan using Gemini Flash 2.5 or falls back to a deterministic analysis.
    */
   analyzePlan: async (snapshot: PlanSnapshot): Promise<AIAnalysisResult> => {
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
 
     if (!apiKey || apiKey.length === 0) {
-      console.warn("API_KEY missing. Returning fallback analysis.");
+      console.warn("GEMINI_API_KEY missing. Returning fallback analysis.");
       return getFallbackAnalysis(snapshot);
     }
 
@@ -100,9 +100,9 @@ function buildPrompt(snapshot: PlanSnapshot): string {
 function getFallbackAnalysis(snapshot: PlanSnapshot): AIAnalysisResult {
   const diffKcal = snapshot.totals.kcal - snapshot.patient.kcalTarget;
   const percentDiff = (diffKcal / snapshot.patient.kcalTarget) * 100;
-  
+
   const adherence = Math.abs(percentDiff) < 10 ? "HIGH" : Math.abs(percentDiff) < 20 ? "MEDIUM" : "LOW";
-  
+
   const risks = [];
   if (snapshot.totals.fiber < 25) risks.push("Fibras abaixo da recomendação geral (25g).");
   if (percentDiff < -20) risks.push("Déficit calórico muito agressivo (>20%).");

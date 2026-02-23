@@ -26,6 +26,7 @@ export interface CalculationInput {
     injuryFactor: number;
     amputations: Array<{ limb: string; percent: number }>;
     caloricGoalAdjustment: number;
+    leanMass?: number;
     patientProfile?: string;
     pregnancyTrimestre?: 1 | 2 | 3;
 }
@@ -152,6 +153,25 @@ export class EnergyExpenditureService {
 
                 tmb = baseTmb + adicional;
                 memory = `IOM Gestante: Harris base (${baseTmb.toFixed(0)}) + Adicional ${pregnancyTrimestre}º tri (+${adicional} kcal)`;
+                break;
+            case 'CUNNINGHAM':
+                if (input.leanMass && input.leanMass > 0) {
+                    tmb = 500 + (22 * input.leanMass);
+                    memory = `Cunningham: 500 + (22 * ${input.leanMass.toFixed(1)}kg de Massa Magra)`;
+                } else {
+                    tmb = weight * 25;
+                    memory = `Cunningham falhou (Sem Massa Magra). Usando Genérico: ${weight} * 25 kcal/kg`;
+                }
+                break;
+
+            case 'KATCH_MCARDLE':
+                if (input.leanMass && input.leanMass > 0) {
+                    tmb = 370 + (21.6 * input.leanMass);
+                    memory = `Katch-McArdle: 370 + (21.6 * ${input.leanMass.toFixed(1)}kg de Massa Magra)`;
+                } else {
+                    tmb = weight * 25;
+                    memory = `Katch-McArdle falhou (Sem Massa Magra). Usando Genérico: ${weight} * 25 kcal/kg`;
+                }
                 break;
 
             default:

@@ -7,10 +7,10 @@ export const AIClinicalSummaryService = {
    * Generates a clinical summary text based on the report snapshot.
    */
   generateSummary: async (snapshot: IndividualReportSnapshot): Promise<string> => {
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
 
     if (!apiKey || apiKey.length === 0) {
-      console.warn("API_KEY missing. Returning fallback summary.");
+      console.warn("GEMINI_API_KEY missing. Returning fallback summary.");
       return getFallbackSummary(snapshot);
     }
 
@@ -42,15 +42,15 @@ function buildPrompt(snapshot: IndividualReportSnapshot): string {
   // Minimize token usage by selecting only essential data
   const data = {
     patient: {
-        age: new Date().getFullYear() - new Date(snapshot.patient.birthDate).getFullYear(),
-        gender: snapshot.patient.gender
+      age: new Date().getFullYear() - new Date(snapshot.patient.birthDate).getFullYear(),
+      gender: snapshot.patient.gender
     },
     metrics: snapshot.metrics,
     diagnoses: snapshot.clinical.activeDiagnoses,
     anamnesis: snapshot.clinical.anamnesisSummary,
-    latestAnthro: snapshot.anthropometry.current 
-        ? { bmi: snapshot.anthropometry.current.anthro.bodyComp.bmi, weight: snapshot.anthropometry.current.anthro.weightKg } 
-        : 'Sem dados recentes',
+    latestAnthro: snapshot.anthropometry.current
+      ? { bmi: snapshot.anthropometry.current.anthro.bodyComp.bmi, weight: snapshot.anthropometry.current.anthro.weightKg }
+      : 'Sem dados recentes',
     anthroHistoryCount: snapshot.anthropometry.history.length,
     plan: snapshot.nutritional.activePlanTitle || 'Nenhum ativo',
     recentExams: snapshot.exams.slice(0, 3).map(e => `${e.name} (${e.status})`),
@@ -78,9 +78,9 @@ function getFallbackSummary(snapshot: IndividualReportSnapshot): string {
   const age = new Date().getFullYear() - new Date(snapshot.patient.birthDate).getFullYear();
   const diags = snapshot.clinical.activeDiagnoses.length > 0 ? snapshot.clinical.activeDiagnoses.join(', ') : 'Nenhum diagnóstico ativo registrado';
   const plan = snapshot.nutritional.activePlanTitle ? `Segue plano "${snapshot.nutritional.activePlanTitle}"` : 'Sem plano nutricional ativo';
-  const anthro = snapshot.anthropometry.current 
-      ? `IMC atual de ${snapshot.anthropometry.current.anthro.bodyComp.bmi}`
-      : 'Sem antropometria recente';
+  const anthro = snapshot.anthropometry.current
+    ? `IMC atual de ${snapshot.anthropometry.current.anthro.bodyComp.bmi}`
+    : 'Sem antropometria recente';
 
   return `
     **Resumo Automático (Offline):**

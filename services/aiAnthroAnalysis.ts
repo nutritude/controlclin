@@ -7,10 +7,10 @@ export const AIAnthroAnalysisService = {
    * Generates a clinical analysis based on the anthropometry snapshot.
    */
   analyze: async (snapshot: AnthroSnapshot): Promise<AnthroAnalysisResult> => {
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
 
     if (!apiKey || apiKey.length === 0) {
-      console.warn("API_KEY missing. Returning fallback anthropometry analysis.");
+      console.warn("GEMINI_API_KEY missing. Returning fallback anthropometry analysis.");
       return getFallbackAnalysis(snapshot);
     }
 
@@ -79,15 +79,15 @@ function getFallbackAnalysis(snapshot: AnthroSnapshot): AnthroAnalysisResult {
   const { bmi, whr, bodyFatPct } = snapshot.anthro.bodyComp;
   const findings = [];
   const risks = [];
-  
+
   // Deterministic Logic
   if (bmi > 25) findings.push(`IMC (${bmi}) indica sobrepeso/obesidade.`);
   else if (bmi < 18.5) findings.push(`IMC (${bmi}) indica baixo peso.`);
   else findings.push(`IMC (${bmi}) dentro da eutrofia.`);
 
   if (whr > 0) {
-      const cutoff = snapshot.patient.gender === 'Masculino' ? 0.90 : 0.85;
-      if (whr > cutoff) risks.push("Relação Cintura-Quadril elevada (Risco Cardiometabólico Aumentado).");
+    const cutoff = snapshot.patient.gender === 'Masculino' ? 0.90 : 0.85;
+    if (whr > cutoff) risks.push("Relação Cintura-Quadril elevada (Risco Cardiometabólico Aumentado).");
   }
 
   if (bodyFatPct === 0) risks.push("Percentual de gordura não calculado (dobras ausentes).");

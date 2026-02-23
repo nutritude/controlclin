@@ -14,9 +14,9 @@ import { Reports } from './pages/Reports';
 import { Professionals } from './pages/Professionals';
 import { ClinicalAlerts } from './pages/ClinicalAlerts'; // Keep named import
 import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
-
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
+import { db as serviceDb } from './services/db';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,22 +25,27 @@ function App() {
 
   // Restore session and load catalog
   useEffect(() => {
-    // 1. Session restore
-    const storedUser = localStorage.getItem('app_user');
-    const storedClinic = localStorage.getItem('app_clinic');
-    if (storedUser && storedClinic) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setClinic(JSON.parse(storedClinic));
-      } catch (err) {
-        console.error('[App] Stored session corrupted. Clearing...', err);
-        localStorage.removeItem('app_user');
-        localStorage.removeItem('app_clinic');
-      }
-    }
-
     // 2. Catalog load
-    const loadCatalog = async () => {
+    const loadData = async () => {
+      // 1. Session restore
+      const storedUser = localStorage.getItem('app_user');
+      const storedClinic = localStorage.getItem('app_clinic');
+
+      // Load from remote BEFORE setting state to ensure we have latest data
+      await serviceDb.loadFromRemote();
+
+      if (storedUser && storedClinic) {
+        try {
+          setUser(JSON.parse(storedUser));
+          setClinic(JSON.parse(storedClinic));
+        } catch (err) {
+          console.error('[App] Stored session corrupted. Clearing...', err);
+          localStorage.removeItem('app_user');
+          localStorage.removeItem('app_clinic');
+        }
+      }
+
+      // 2. Catalog load
       try {
         const masterRes = await fetch('./data/MASTER_ALIMENTOS_UID_DEDUP_PTBR.csv');
         if (masterRes.ok) {
@@ -69,7 +74,7 @@ function App() {
       }
     };
 
-    loadCatalog();
+    loadData();
   }, []);
 
   const handleLogin = (u: User, c: Clinic) => {

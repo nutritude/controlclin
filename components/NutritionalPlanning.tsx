@@ -34,7 +34,7 @@ const DEFAULT_MEALS_TEMPLATE = [
 ];
 
 const PROFILE_CONFIGS = {
-    ADULTO_EUTROFICO: { label: 'Adulto Eutrófico', formulas: ['HENRY_OXFORD', 'HARRIS', 'MIFFLIN', 'DIRECT_KCAL_KG'] },
+    ADULTO_EUTROFICO: { label: 'Adulto Eutrófico / Atleta', formulas: ['HENRY_OXFORD', 'HARRIS', 'MIFFLIN', 'CUNNINGHAM', 'KATCH_MCARDLE', 'DIRECT_KCAL_KG'] },
     ADULTO_SOBREPESO: { label: 'Adulto Sobrepeso', formulas: ['HENRY_OXFORD', 'HARRIS', 'MIFFLIN', 'DIRECT_KCAL_KG'] },
     OBESO: { label: 'Obeso', formulas: ['HARRIS_OBESO', 'MIFFLIN', 'PENN_STATE', 'DIRECT_KCAL_KG'] },
     IDOSO: { label: 'Idoso', formulas: ['LIPSCHITZ', 'HARRIS'] },
@@ -261,8 +261,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         weight: isManualMode ? manualWeight : patientWeight,
         height: isManualMode ? manualHeight : patientHeight,
         age: patientAge,
-        gender: patient.gender
-    }), [isManualMode, manualWeight, patientWeight, manualHeight, patientHeight, patientAge, patient.gender]);
+        gender: patient.gender,
+        leanMass: lastAnthro?.leanMass
+    }), [isManualMode, manualWeight, patientWeight, manualHeight, patientHeight, patientAge, patient.gender, lastAnthro?.leanMass]);
 
     const calculatedResults = useMemo(() => {
         const { weight, height, age, gender } = calculationInputs;
@@ -279,7 +280,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             amputations,
             caloricGoalAdjustment,
             patientProfile,
-            pregnancyTrimestre
+            pregnancyTrimestre,
+            leanMass: calculationInputs.leanMass
         });
 
         return {

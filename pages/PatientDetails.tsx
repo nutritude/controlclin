@@ -193,7 +193,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const [editingAnthroDate, setEditingAnthroDate] = useState<string | null>(null);
 
     const handleNewAnthro = () => {
-        setFormData(prev => ({ ...prev, anthropometry: { procedureDate: new Date().toISOString().split('T')[0] } }));
+        setFormData(prev => ({ ...prev, anthropometry: { procedureDate: new Date().toISOString().split('T')[0] } as any }));
         setEditingAnthroDate(null);
         setIsEditingTab(true);
     };

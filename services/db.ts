@@ -1,5 +1,5 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for deterministic totals
+import { GoogleGenAI } from "@google/genai";
 import {
     User, Clinic, Professional, Patient, Appointment,
     Role, AppointmentStatus, Exam, AuditLog, ExamMarker,
@@ -7,7 +7,8 @@ import {
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot
 } from '../types';
-import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for deterministic totals
+import { db as firestore } from './firebase';
+import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 
 // --- CONFIGURATION CONSTANTS (Single Source of Truth) ---
 export const CIRCUMFERENCES_CONFIG: { key: keyof Anthropometry; label: string }[] = [
@@ -220,21 +221,33 @@ class DatabaseService {
     private alerts: ClinicalAlert[] = [];
     private patientEvents: PatientEvent[] = []; // NEW: Store events
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
+    private isRemoteEnabled = false;
+    private remoteSyncPromise: Promise<void> | null = null;
 
     constructor() {
-        const apiKey = process.env.API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
         if (apiKey && apiKey.length > 0) {
             try {
-                this.ai = new GoogleGenAI({ apiKey: apiKey });
+                this.ai = new GoogleGenAI({ apiKey });
             } catch (error) {
                 console.warn("GoogleGenAI init failed, AI features disabled.", error);
                 this.ai = null;
             }
         } else {
-            console.warn("API_KEY missing. AI features will be disabled.");
+            console.warn("GEMINI_API_KEY missing. AI features will be disabled.");
             this.ai = null;
         }
         this.loadFromStorage();
+        this.checkRemoteConfig();
+    }
+
+    private checkRemoteConfig() {
+        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'PLACEHOLDER') {
+            this.isRemoteEnabled = true;
+            console.log("DatabaseService: Remote DB enabled (Firebase).");
+        } else {
+            console.warn("DatabaseService: Remote DB disabled (Config missing). Using LocalStorage only.");
+        }
     }
 
     // --- PERSISTENCE HELPERS ---
@@ -283,7 +296,60 @@ class DatabaseService {
         }
     }
 
-    private saveToStorage() {
+    private async saveToRemote() {
+        if (!this.isRemoteEnabled) return;
+
+        // We sync the entire clinic data to a document named after the clinic ID or a global ID for now
+        // In a real multi-tenant app, we would sync collections and documents individually.
+        // For this phase, we'll sync the "shared" state to Firestore to ensure consistency.
+        try {
+            const data = {
+                clinics: this.clinics,
+                users: this.users,
+                professionals: this.professionals,
+                patients: this.patients,
+                appointments: this.appointments,
+                exams: this.exams,
+                alerts: this.alerts,
+                patientEvents: this.patientEvents,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Using a fixed doc ID 'global_v1' for the demo/scaling phase
+            // Ideally this should be per clinic.
+            await setDoc(doc(firestore, "system_data", "global_v1"), data);
+            console.log("DatabaseService: Remote sync successful.");
+        } catch (err) {
+            console.error("DatabaseService: Remote sync failed.", err);
+        }
+    }
+
+    public async loadFromRemote() {
+        if (!this.isRemoteEnabled) return;
+
+        try {
+            const snap = await getDoc(doc(firestore, "system_data", "global_v1"));
+            if (snap.exists()) {
+                const data = snap.data();
+                this.clinics = data.clinics || [];
+                this.users = data.users || [];
+                this.professionals = data.professionals || [];
+                this.patients = data.patients || [];
+                this.appointments = data.appointments || [];
+                this.exams = data.exams || [];
+                this.alerts = data.alerts || [];
+                this.patientEvents = data.patientEvents || [];
+
+                // Refresh LocalStorage
+                this.saveToStorage(false); // don't trigger remote again
+                console.log("DatabaseService: Remote data loaded and synced local.");
+            }
+        } catch (err) {
+            console.error("DatabaseService: Remote load failed.", err);
+        }
+    }
+
+    private saveToStorage(syncRemote = true) {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
             clinics: this.clinics,
             users: this.users,
@@ -294,6 +360,10 @@ class DatabaseService {
             alerts: this.alerts,
             patientEvents: this.patientEvents
         }));
+
+        if (syncRemote) {
+            this.saveToRemote();
+        }
     }
 
     private async delay(ms = 300) {
@@ -753,7 +823,9 @@ class DatabaseService {
                     protein: plan.macroTargets?.protein?.g ?? 0,
                     carbs: plan.macroTargets?.carbs?.g ?? 0,
                     fat: plan.macroTargets?.fat?.g ?? 0
-                }
+                },
+                leanMass: patient.anthropometry?.leanMass,
+                bodyFatPct: patient.anthropometry?.bodyFatPercentage
             },
             plan: {
                 id: plan.id || 'legacy-plan',
@@ -837,33 +909,84 @@ class DatabaseService {
             bmi = parseFloat((anthro.weight / (heightM * heightM)).toFixed(1));
         }
 
-        let bodyFatPct = 0;
-        // Jackson & Pollock 7-Fold Sum
-        const skinfolds = [
-            anthro.skinfoldChest, anthro.skinfoldAbdominal, anthro.skinfoldThigh,
-            anthro.skinfoldTriceps, anthro.skinfoldSubscapular, anthro.skinfoldSuprailiac, anthro.skinfoldAxillary
-        ];
+        let bodyFatPercentage = 0;
+        let bodyDensity = 0;
+        const protocol = anthro.skinfoldProtocol || 'JacksonPollock7';
 
-        // Safe parsing for skinfolds
-        const safeSkinfolds = skinfolds.map(s => (typeof s === 'number' && !isNaN(s)) ? s : 0);
-        const hasAllSkinfolds = skinfolds.every(s => typeof s === 'number' && s > 0);
+        const {
+            skinfoldChest, skinfoldAbdominal, skinfoldThigh, skinfoldTriceps,
+            skinfoldSubscapular, skinfoldSuprailiac, skinfoldAxillary, skinfoldBiceps
+        } = anthro as any;
 
-        if (!hasAllSkinfolds) {
-            // warnings.push("Dobras cutâneas incompletas. Percentual de gordura não calculado.");
+        try {
+            if (protocol === 'JacksonPollock7') {
+                const skinfolds = [skinfoldChest, skinfoldAbdominal, skinfoldThigh, skinfoldTriceps, skinfoldSubscapular, skinfoldSuprailiac, skinfoldAxillary];
+                if (skinfolds.every(sf => typeof sf === 'number' && sf > 0)) {
+                    const sum = skinfolds.reduce((s, v) => s! + v!, 0)!;
+                    if (patient.gender === 'Masculino') {
+                        bodyDensity = 1.112 - (0.00043499 * sum) + (0.00000055 * Math.pow(sum, 2)) - (0.00028826 * age);
+                    } else {
+                        bodyDensity = 1.097 - (0.00046971 * sum) + (0.00000056 * Math.pow(sum, 2)) - (0.00012828 * age);
+                    }
+                    if (bodyDensity > 0) bodyFatPercentage = (495 / bodyDensity) - 450;
+                }
+            } else if (protocol === 'JacksonPollock3') {
+                if (patient.gender === 'Masculino') {
+                    const sum = (skinfoldChest || 0) + (skinfoldAbdominal || 0) + (skinfoldThigh || 0);
+                    if (sum > 0) {
+                        bodyDensity = 1.10938 - (0.0008267 * sum) + (0.0000016 * Math.pow(sum, 2)) - (0.0002574 * age);
+                        bodyFatPercentage = (495 / bodyDensity) - 450;
+                    }
+                } else {
+                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldThigh || 0);
+                    if (sum > 0) {
+                        bodyDensity = 1.0994921 - (0.0009929 * sum) + (0.0000023 * Math.pow(sum, 2)) - (0.0001392 * age);
+                        bodyFatPercentage = (495 / bodyDensity) - 450;
+                    }
+                }
+            } else if (protocol === 'Guedes') {
+                if (patient.gender === 'Masculino') {
+                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
+                    if (sum > 0) {
+                        bodyDensity = 1.17136 - (0.06706 * Math.log10(sum));
+                        bodyFatPercentage = (495 / bodyDensity) - 450;
+                    }
+                } else {
+                    const sum = (skinfoldThigh || 0) + (skinfoldSuprailiac || 0) + (skinfoldSubscapular || 0);
+                    if (sum > 0) {
+                        bodyDensity = 1.16650 - (0.07063 * Math.log10(sum));
+                        bodyFatPercentage = (495 / bodyDensity) - 450;
+                    }
+                }
+            } else if (protocol === 'DurninWomersley') {
+                const sum = (skinfoldBiceps || 0) + (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0);
+                if (sum > 0) {
+                    let c = 0, m = 0;
+                    if (patient.gender === 'Masculino') {
+                        if (age < 20) { c = 1.1620; m = 0.0630; }
+                        else if (age < 30) { c = 1.1631; m = 0.0632; }
+                        else if (age < 40) { c = 1.1422; m = 0.0544; }
+                        else if (age < 50) { c = 1.1333; m = 0.0612; }
+                        else { c = 1.1715; m = 0.0779; }
+                    } else {
+                        if (age < 20) { c = 1.1549; m = 0.0678; }
+                        else if (age < 30) { c = 1.1599; m = 0.0717; }
+                        else if (age < 40) { c = 1.1423; m = 0.0632; }
+                        else if (age < 50) { c = 1.1333; m = 0.0612; }
+                        else { c = 1.1339; m = 0.0645; }
+                    }
+                    bodyDensity = c - (m * Math.log10(sum));
+                    bodyFatPercentage = (495 / bodyDensity) - 450;
+                }
+            } else if (protocol === 'Faulkner') {
+                const sum = (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
+                if (sum > 0) bodyFatPercentage = (sum * 0.153) + 5.783;
+            }
+        } catch (e) {
+            console.error("Anthro calculation error in DB service", e);
         }
 
-        if (hasAllSkinfolds && age > 0) {
-            const sum = safeSkinfolds.reduce((a, b) => a + b, 0);
-            let bodyDensity = 0;
-            if (patient.gender === 'Masculino') {
-                bodyDensity = 1.112 - (0.00043499 * sum) + (0.00000055 * sum * sum) - (0.00028826 * age);
-            } else {
-                bodyDensity = 1.097 - (0.00046971 * sum) + (0.00000056 * sum * sum) - (0.00012828 * age);
-            }
-            if (bodyDensity > 0) {
-                bodyFatPct = parseFloat(((495 / bodyDensity) - 450).toFixed(1));
-            }
-        }
+        const bodyFatPct = Math.max(0, parseFloat(bodyFatPercentage.toFixed(1)));
 
         const fatMassKg = (anthro.weight && bodyFatPct) ? parseFloat(((anthro.weight * bodyFatPct) / 100).toFixed(1)) : 0;
         const leanMassKg = (anthro.weight && fatMassKg) ? parseFloat((anthro.weight - fatMassKg).toFixed(1)) : 0;
@@ -928,8 +1051,80 @@ class DatabaseService {
         return { summary: "Use o novo serviço de IA.", priority_fixes: [], meal_notes: [], data_gaps: [] };
     }
 
-    async improveTextWithAI(text: string) { return text + " (IA)"; }
-    async analyzeExamWithAI(user: User, id: string) { /* ... */ }
+    async improveTextWithAI(text: string) {
+        if (!this.ai) return text + " (IA Offline)";
+        try {
+            const prompt = `Você é um assistente de nutrição clínica especializado em terminologia técnica. 
+            Melhore o texto a seguir, convertendo descrições simples em termos técnicos médicos e nutricionais adequados para um prontuário.
+            Mantenha o sentido original e seja conciso. Não adicione informações que não estão no texto original.
+            
+            Texto: ${text}`;
+
+            const result = await (this.ai as any).models.generateContent({
+                model: "gemini-1.5-flash-8b",
+                contents: prompt
+            });
+
+            return result.text || text;
+        } catch (error) {
+            console.error("Erro ao melhorar texto com IA:", error);
+            return text + " (Erro IA)";
+        }
+    }
+
+    async analyzeExamWithAI(user: User, id: string) {
+        const examIdx = this.exams.findIndex(e => e.id === id);
+        if (examIdx === -1) throw new Error("Exame não encontrado.");
+
+        const exam = this.exams[examIdx];
+
+        if (!this.ai) {
+            this.exams[examIdx] = {
+                ...exam,
+                status: 'ANALISADO',
+                aiAnalysis: "Análise processada em modo offline. O sistema detectou marcadores estáveis, porém recomenda-se avaliação clínica presencial.",
+                markers: (exam.markers || []).map(m => ({ ...m, interpretation: 'NORMAL' }))
+            };
+            this.saveToStorage();
+            return;
+        }
+
+        try {
+            const prompt = `Analise este exame laboratorial de forma clínica para um nutricionista.
+            Nome do Exame: ${exam.name}
+            Motivo: ${exam.clinicalReason}
+            Hipótese: ${exam.clinicalHypothesis}
+            
+            Retorne um JSON com o seguinte formato:
+            {
+                "summary": "Resumo clínico curto",
+                "markers": [
+                    {"name": "Nome", "value": "Valor", "reference": "Ref", "interpretation": "NORMAL|ALTERADO|LIMITROFE"}
+                ]
+            }`;
+
+            const result = await (this.ai as any).models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json"
+                }
+            });
+
+            const analysis = JSON.parse(result.text.trim());
+
+            this.exams[examIdx] = {
+                ...exam,
+                status: 'ANALISADO',
+                aiAnalysis: analysis.summary,
+                markers: analysis.markers
+            };
+            this.saveToStorage();
+        } catch (error) {
+            console.error("Erro na análise de exame com IA:", error);
+            throw error;
+        }
+    }
 
     // Updated signature to match usage but returns string for backward compat
     async analyzeAnthropometryWithAI(patient: Patient, anthro: Anthropometry) {

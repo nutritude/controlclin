@@ -261,7 +261,7 @@ export interface NutritionalPlan {
     height: number;
     age: number;
     gender: string;
-    formula: 'MIFFLIN' | 'HARRIS' | 'FAO_WHO' | 'PENN_STATE' | 'LIPSCHITZ' | 'OMS_SCHOFIELD' | 'HENRY_OXFORD' | 'IOM_GESTANTE' | 'DIRECT_KCAL_KG' | 'MANUAL';
+    formula: 'MIFFLIN' | 'HARRIS' | 'FAO_WHO' | 'PENN_STATE' | 'LIPSCHITZ' | 'OMS_SCHOFIELD' | 'HENRY_OXFORD' | 'IOM_GESTANTE' | 'CUNNINGHAM' | 'KATCH_MCARDLE' | 'DIRECT_KCAL_KG' | 'MANUAL';
     activityFactor: number;
     injuryFactor?: number;
     patientProfile?: 'ADULTO_EUTROFICO' | 'ADULTO_SOBREPESO' | 'OBESO' | 'IDOSO' | 'PEDIATRIA' | 'GESTANTE' | 'CRITICO';
@@ -302,6 +302,8 @@ export interface PlanSnapshot {
     activityFactor: number;
     kcalTarget: number;
     macroTargets: { protein: number; carbs: number; fat: number };
+    leanMass?: number;
+    bodyFatPct?: number;
   };
   plan: {
     id: string;
