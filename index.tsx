@@ -1,6 +1,9 @@
 
 import React, { Component, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
+
+console.log("[ControlClin] Initializing system...");
+
 import App from './App';
 import { logService } from './services/logService'; // Import logService
 
@@ -35,7 +38,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           <pre style={{ background: '#f1f1f1', padding: '15px', borderRadius: '5px', overflow: 'auto' }}>
             {this.state.error?.toString()}
           </pre>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             style={{ marginTop: '10px', padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
           >
