@@ -1,6 +1,7 @@
-
+```typescript
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+/* Force Netlify Rebuild - v2.0.2 */
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { User, Clinic, Role } from './types';
 import Login from './pages/Login';
 import Layout from './components/Layout';
@@ -22,6 +23,19 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /*
+  //# Planejamento de Tarefas
+
+- [x] Analisar estado atual e histórico recente <!-- id: 0 -->
+- [x] Definir plano de real auth e alertas <!-- id: 1 -->
+- [x] Realizar deploy no Vercel <!-- id: 6 -->
+- [x] Implementar login real com Firebase Auth em `db.ts` <!-- id: 2 -->
+- [x] Refatorar persistência para isolamento por clínica <!-- id: 3 -->
+- [x] Implementar novos critérios de alertas clínicos em `db.ts` <!-- id: 4 -->
+- [x] Validar alterações finais <!-- id: 5 -->
+- [/] Investigar funcionalidades ausentes (Plano Alimentar/Banco Alimentos) <!-- id: 7 -->
+  */
 
   // Restore session and load catalog
   useEffect(() => {
