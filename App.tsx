@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-/* Force Vercel Rebuild - v2.0.4 - Applying Environment Variables */
+/* Force Vercel Rebuild - v2.0.5 - Adding Fallback Env Var Screen */
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { User, Clinic, Role } from './types';
 import Login from './pages/Login';
@@ -17,8 +17,33 @@ import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
 import { db as serviceDb } from './services/db';
+import { firebaseError } from './services/firebase';
 
 function App() {
+  if (firebaseError) {
+    return (
+      <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-8 font-sans">
+        <div className="bg-white p-8 rounded-xl shadow-2xl max-w-2xl w-full border-l-8 border-red-500">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">⚠️ Configuração Incompleta no Vercel</h1>
+          <p className="text-gray-700 mb-4 text-lg">O sistema não pôde ser iniciado porque as chaves do Firebase (Environment Variables) estão ausentes no servidor.</p>
+          <div className="bg-gray-100 p-4 rounded mb-6 font-mono text-sm text-gray-800 border border-gray-200">
+            <strong>Exemplo de erro estrutural:</strong> VITE_FIREBASE_API_KEY is undefined
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Como resolver:</h2>
+          <ol className="list-decimal list-inside text-gray-700 space-y-2 mb-6">
+            <li>Acesse o painel do seu projeto no menu do <strong>Vercel</strong>.</li>
+            <li>Vá em <strong>Settings</strong> &gt; <strong>Environment Variables</strong>.</li>
+            <li>Adicione todas as chaves (ex: <code className="bg-gray-200 px-1 rounded">VITE_FIREBASE_API_KEY</code>, <code className="bg-gray-200 px-1 rounded">VITE_GEMINI_API_KEY</code>).</li>
+            <li>Vá na aba <strong>Deployments</strong>, clique nos três pontos (<strong>...</strong>) do último deploy e faça um <strong>Redeploy</strong>.</li>
+          </ol>
+          <button onClick={() => window.location.reload()} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors">
+            Tentar Carregar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [user, setUser] = useState<User | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
   const [loading, setLoading] = useState(true);
