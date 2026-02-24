@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-/* Force Netlify Rebuild - v2.0.3 */
+/* Force Vercel Rebuild - v2.0.4 - Applying Environment Variables */
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { User, Clinic, Role } from './types';
 import Login from './pages/Login';
