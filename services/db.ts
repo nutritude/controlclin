@@ -7,7 +7,7 @@ import {
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot
 } from '../types';
-import { db as firestore, auth } from './firebase';
+import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
@@ -256,11 +256,11 @@ class DatabaseService {
     }
 
     private checkRemoteConfig() {
-        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'PLACEHOLDER') {
+        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'PLACEHOLDER') {
             this.isRemoteEnabled = true;
-            console.log("[DB] ✅ Remote DB enabled (Firebase). ProjectID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
+            console.log("[DB] ✅ Remote DB enabled (Firebase). ProjectID:", firebaseConfig.projectId);
         } else {
-            console.warn("[DB] ❌ Remote DB DISABLED — VITE_FIREBASE_API_KEY não configurada. Usando apenas LocalStorage.");
+            console.warn("[DB] ❌ Remote DB DISABLED — Firebase API KEY não configurada. Usando apenas LocalStorage.");
         }
     }
 
