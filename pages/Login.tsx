@@ -24,20 +24,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
 
     try {
-      const result = await db.login(email, password, slug);
+      const result = await db.login(email.trim(), password.trim(), slug.trim());
       if (result) {
         // Simple check to warn if trying to login as Admin with a non-admin account in this demo context
         if (loginMode === 'ADMIN' && result.user.role !== Role.CLINIC_ADMIN && result.user.role !== Role.SUPER_ADMIN) {
-           setError('Este usuário não possui perfil de Gestor. Tente a aba Profissional.');
-           setIsSubmitting(false);
-           return;
+          setError('Este usuário não possui perfil de Gestor. Tente a aba Profissional.');
+          setIsSubmitting(false);
+          return;
         }
         onLogin(result.user, result.clinic);
       } else {
         setError('Credenciais (e-mail ou senha) ou slug da clínica inválidos.');
       }
-    } catch (err) {
-      setError('Ocorreu um erro inesperado.');
+    } catch (err: any) {
+      console.error("[Login] Caught error:", err);
+      // Extrair a mensagem real do erro
+      const errorMsg = err instanceof Error ? err.message : (err?.message || 'Ocorreu um erro inesperado.');
+
+      // Traduzir erros feios do Firebase para mensagens amigáveis
+      if (errorMsg.includes('auth/invalid-login-credentials') || errorMsg.includes('auth/invalid-credential')) {
+        setError('E-mail ou senha incorretos.');
+      } else if (errorMsg.includes('API key not valid')) {
+        setError('Erro do Sistema: O banco de dados principal de demonstração está offline (API Key Inválida). Por favor, use a senha "123" para acessar no Modo Offline/Bypass.');
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -46,32 +57,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        
+
         {/* Header / Mode Selection */}
         <div className="bg-gray-50 border-b border-gray-200">
           <div className="p-6 text-center pb-4">
             <h1 className="text-2xl font-bold text-gray-900">ControlClin SaaS</h1>
             <p className="text-sm text-gray-500 mt-1">Escolha como deseja acessar</p>
           </div>
-          
+
           <div className="flex">
             <button
               onClick={() => { setLoginMode('ADMIN'); setEmail(''); setPassword(''); setError(''); }}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${
-                loginMode === 'ADMIN' 
-                  ? 'border-blue-600 text-blue-600 bg-white' 
+              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${loginMode === 'ADMIN'
+                  ? 'border-blue-600 text-blue-600 bg-white'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               Sou Gestor
             </button>
             <button
               onClick={() => { setLoginMode('PROFESSIONAL'); setEmail(''); setPassword(''); setError(''); }}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${
-                loginMode === 'PROFESSIONAL' 
+              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${loginMode === 'PROFESSIONAL'
                   ? 'border-emerald-600 text-emerald-600 bg-white' // Changed from purple to emerald
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               Sou Profissional
             </button>
@@ -80,24 +89,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <div className="p-8">
           <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-3">
-             <div className="mt-0.5">
-               {loginMode === 'ADMIN' ? (
-                 <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-               ) : (
-                 <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-               )}
-             </div>
-             <div>
-               <h3 className={`text-sm font-bold ${loginMode === 'ADMIN' ? 'text-blue-800' : 'text-emerald-800'}`}> 
-                 {loginMode === 'ADMIN' ? 'Área Administrativa' : 'Área Clínica'}
-               </h3>
-               <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                 {loginMode === 'ADMIN' 
-                   ? 'Acesso completo às configurações da clínica, relatórios financeiros, auditoria e gestão de usuários.'
-                   : 'Foco no atendimento ao paciente, agenda pessoal, prontuário eletrônico e evolução clínica.'
-                 }
-               </p>
-             </div>
+            <div className="mt-0.5">
+              {loginMode === 'ADMIN' ? (
+                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              ) : (
+                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              )}
+            </div>
+            <div>
+              <h3 className={`text-sm font-bold ${loginMode === 'ADMIN' ? 'text-blue-800' : 'text-emerald-800'}`}>
+                {loginMode === 'ADMIN' ? 'Área Administrativa' : 'Área Clínica'}
+              </h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                {loginMode === 'ADMIN'
+                  ? 'Acesso completo às configurações da clínica, relatórios financeiros, auditoria e gestão de usuários.'
+                  : 'Foco no atendimento ao paciente, agenda pessoal, prontuário eletrônico e evolução clínica.'
+                }
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
