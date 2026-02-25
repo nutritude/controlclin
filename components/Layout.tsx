@@ -3,6 +3,7 @@ import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { User, Clinic, Role } from '../types';
 import { Icons } from '../constants';
+import { db } from '../services/db';
 
 interface LayoutProps {
   user: User;
@@ -131,7 +132,15 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
         {/* Top Header */}
         <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-8 py-4 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
-          <h2 className={`text-xl font-semibold truncate ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>Portal da Clínica (v2.0.1)</h2>
+          <div className="flex flex-col">
+            <h2 className={`text-xl font-semibold truncate ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>Portal da Clínica (v3.0.0)</h2>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${db.isRemoteEnabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-red-500'}`}></div>
+              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                {db.isRemoteEnabled ? 'Nuvem Ativa' : 'Apenas Local'}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <span className={`hidden sm:inline-block text-xs font-bold px-3 py-1 rounded-full border ${isManagerMode ? 'bg-indigo-700 text-white border-indigo-500' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
               {isManagerMode ? 'Modo Gerencial' : 'Modo Profissional'}
