@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { User, Clinic, Patient, Exam, Role, AnthropometryRecord, TimelineEventType, PaymentMode, FinancialTransaction, PaymentMethod, FinancialStatus, Appointment, Professional, AppointmentStatus, Anthropometry, AnthroSnapshot, AnthroAnalysisResult } from '../types';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { db } from '../services/db';
@@ -1678,13 +1678,14 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.waistToHipRatio > 0 ? anthropometryResults.waistToHipRatio : '--'}</div>
                                         </div>
 
-                                        {/* SUCCESS CARD ACTION */}
-                                        <button
-                                            onClick={() => window.open(`/success-card/${patient.id}`, '_blank')}
-                                            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                                        {/* SUCCESS CARD ACTION - Use Link for cleaner behavior */}
+                                        <Link
+                                            to={`/success-card/${patient.id}`}
+                                            target="_blank"
+                                            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] no-underline"
                                         >
                                             <span className="text-xl">🏆</span> Compartilhar Conquista (WhatsApp)
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
 

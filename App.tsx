@@ -143,10 +143,12 @@ function App() {
           <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="success-card/:id" element={<SuccessCard user={user} clinic={clinic!} />} />
           {/* New Debug Route - visible only for admins */}
           <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
         </Route>
+
+        {/* Public/Clean Routes outside Layout */}
+        <Route path="/success-card/:id" element={<SuccessCard user={user} clinic={clinic!} />} />
       </Routes>
     </Router>
   );
