@@ -749,16 +749,30 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
     }
 
     const deviations = mapData.map(d => Math.abs(100 - d.B));
-    const maxDev = Math.max(...deviations, 5);
-    const domainRange = [100 - (maxDev + 8), 100 + (maxDev + 8)];
+    const maxDev = Math.max(...deviations, 3);
+    const padding = Math.max(maxDev * 0.5, 3);
+    const domainRange = [100 - maxDev - padding, 100 + maxDev + padding];
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '400px' }}>
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '420px' }}>
             <div className="flex flex-col items-center mb-2">
                 <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Assinatura Antropométrica</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução Proporcional vs. Marco Inicial (%)</p>
+                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução Proporcional vs. 1ª Avaliação (Base 100%)</p>
             </div>
-            <ResponsiveContainer width="100%" height="75%">
+
+            {/* Legenda única e clara */}
+            <div className="flex justify-center gap-6 mb-2">
+                <div className="flex items-center gap-1.5">
+                    <svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke={isManagerMode ? '#6b7280' : '#94a3b8'} strokeWidth="2" strokeDasharray="5 3" /></svg>
+                    <span className={`text-[9px] font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-slate-500'}`}>Marco Zero (1ª Avaliação)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                    <span className="text-[9px] font-bold uppercase text-emerald-600">Variação Real (Atual)</span>
+                </div>
+            </div>
+
+            <ResponsiveContainer width="100%" height="73%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mapData}>
                     <PolarGrid stroke={isManagerMode ? '#374151' : '#e2e8f0'} />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#475569', fontSize: 10, fontWeight: 'bold' }} />
@@ -773,8 +787,8 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'} p-3 rounded-xl shadow-2xl border text-xs`}>
                                         <p className="font-bold mb-1 uppercase tracking-wider border-b pb-1">{d.subject}</p>
                                         <div className="space-y-1 mt-2">
-                                            <div className="flex justify-between gap-4"><span>Início:</span><strong>{d.orig_a} cm</strong></div>
-                                            <div className="flex justify-between gap-4"><span>Atual:</span><strong>{d.orig_b} cm</strong></div>
+                                            <div className="flex justify-between gap-4"><span className={isManagerMode ? 'text-gray-400' : 'text-gray-500'}>1ª Avaliação:</span><strong>{d.orig_a} cm</strong></div>
+                                            <div className="flex justify-between gap-4"><span className={isManagerMode ? 'text-gray-400' : 'text-gray-500'}>Avaliação Atual:</span><strong>{d.orig_b} cm</strong></div>
                                             <div className={`flex justify-between gap-4 font-bold border-t pt-1 mt-1 ${chg < 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                                 <span>Variação:</span>
                                                 <span>{chg > 0 ? '+' : ''}{chg} cm ({pct > 0 ? '+' : ''}{pct}%)</span>
@@ -786,21 +800,12 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
                             return null;
                         }}
                     />}
-                    <Radar name="Marco Inicial (100%)" dataKey="A" stroke={isManagerMode ? '#4b5563' : '#94a3b8'} fill={isManagerMode ? '#4b5563' : '#cbd5e1'} fillOpacity={0.15} strokeWidth={1} strokeDasharray="4 4" />
-                    <Radar name="Evolução Atual" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={isPdf ? 0.25 : 0.45} strokeWidth={3} />
-                    <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }} />
+                    {/* A = 100% sempre — representa a 1ª avaliação (marco zero tracejado) */}
+                    <Radar name="Marco Zero" dataKey="A" stroke={isManagerMode ? '#6b7280' : '#94a3b8'} fill="transparent" fillOpacity={0} strokeWidth={1.5} strokeDasharray="5 3" />
+                    {/* B = % da última em relação à 1ª — área verde de variação real */}
+                    <Radar name="Variação Real" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={isPdf ? 0.25 : 0.45} strokeWidth={3} />
                 </RadarChart>
             </ResponsiveContainer>
-            <div className="mt-2 flex justify-center gap-6 px-4">
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full border border-dashed border-slate-400"></div>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">Marco Zero</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-[8px] font-bold text-emerald-600 uppercase">Variação Real</span>
-                </div>
-            </div>
         </div>
     );
 };
