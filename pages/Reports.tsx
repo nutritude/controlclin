@@ -706,11 +706,22 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
 const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
     if (!history || history.length < 2) return null;
 
-    // history[0] = mais recente, history[length-1] = mais antigo
-    const last = history[0];
+    // CONFIRMED: history[0] = MAIS ANTIGO (1ª avaliação = marco zero)
+    //            history[length-1] = MAIS RECENTE (variação real)
+    const first = history[0];                    // 1ª coleta = base 100%
+    const latest = history[history.length - 1];   // última coleta = variação real
 
-    // Helper: finds the OLDEST record in history that has a value for a given field getter
-    const getEarliest = (getter: (r: any) => number | undefined): number => {
+    // Para cada campo: valor da 1ª avaliação que contenha esse dado
+    const getFirst = (getter: (r: any) => number | undefined): number => {
+        for (let i = 0; i < history.length; i++) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
+    };
+
+    // Para cada campo: valor mais recente disponível
+    const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
             if (v != null && v > 0) return v;
@@ -719,12 +730,12 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
     };
 
     const mapData = [
-        { subject: 'Cintura', orig_a: getEarliest(r => r.circWaist || r.waistCircumference), orig_b: last.circWaist || last.waistCircumference || 0 },
-        { subject: 'Abdômen', orig_a: getEarliest(r => r.circAbdomen), orig_b: last.circAbdomen || 0 },
-        { subject: 'Quadril', orig_a: getEarliest(r => r.circHip || r.hipCircumference), orig_b: last.circHip || last.hipCircumference || 0 },
-        { subject: 'Tórax', orig_a: getEarliest(r => r.circChest), orig_b: last.circChest || 0 },
-        { subject: 'Coxa', orig_a: getEarliest(r => r.circThigh), orig_b: last.circThigh || 0 },
-        { subject: 'Braço', orig_a: getEarliest(r => r.circArmRelaxed || r.circArmContracted), orig_b: last.circArmRelaxed || last.circArmContracted || 0 }
+        { subject: 'Cintura', orig_a: getFirst(r => r.circWaist || r.waistCircumference), orig_b: getLatest(r => r.circWaist || r.waistCircumference) },
+        { subject: 'Abdômen', orig_a: getFirst(r => r.circAbdomen), orig_b: getLatest(r => r.circAbdomen) },
+        { subject: 'Quadril', orig_a: getFirst(r => r.circHip || r.hipCircumference), orig_b: getLatest(r => r.circHip || r.hipCircumference) },
+        { subject: 'Tórax', orig_a: getFirst(r => r.circChest), orig_b: getLatest(r => r.circChest) },
+        { subject: 'Coxa', orig_a: getFirst(r => r.circThigh), orig_b: getLatest(r => r.circThigh) },
+        { subject: 'Braço', orig_a: getFirst(r => r.circArmRelaxed || r.circArmContracted), orig_b: getLatest(r => r.circArmRelaxed || r.circArmContracted) }
     ]
         .filter(d => d.orig_a > 0 && d.orig_b > 0)
         .map(d => ({
@@ -852,9 +863,15 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
 const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
     if (!history || history.length < 2) return null;
 
-    const last = history[0]; // history[0] = mais recente
-
-    const getEarliest = (getter: (r: any) => number | undefined): number => {
+    // history[0] = MAIS ANTIGO (1ª coleta) | history[length-1] = MAIS RECENTE
+    const getFirst = (getter: (r: any) => number | undefined): number => {
+        for (let i = 0; i < history.length; i++) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
+    };
+    const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
             if (v != null && v > 0) return v;
@@ -865,17 +882,17 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
     const riskKeys = ['Cintura', 'Abdômen', 'Quadril'];
 
     const measures = [
-        { key: 'Pescoço', b: last.circNeck, a: getEarliest(r => r.circNeck) },
-        { key: 'Ombro', b: last.circShoulder, a: getEarliest(r => r.circShoulder) },
-        { key: 'Tórax', b: last.circChest, a: getEarliest(r => r.circChest) },
-        { key: 'Cintura', b: last.circWaist || last.waistCircumference, a: getEarliest(r => r.circWaist || r.waistCircumference) },
-        { key: 'Abdômen', b: last.circAbdomen, a: getEarliest(r => r.circAbdomen) },
-        { key: 'Quadril', b: last.circHip || last.hipCircumference, a: getEarliest(r => r.circHip || r.hipCircumference) },
-        { key: 'Braço (R)', b: last.circArmRelaxed, a: getEarliest(r => r.circArmRelaxed) },
-        { key: 'Braço (C)', b: last.circArmContracted, a: getEarliest(r => r.circArmContracted) },
-        { key: 'Antebraço', b: last.circForearm, a: getEarliest(r => r.circForearm) },
-        { key: 'Coxa', b: last.circThigh, a: getEarliest(r => r.circThigh) },
-        { key: 'Panturrilha', b: last.circCalf, a: getEarliest(r => r.circCalf) },
+        { key: 'Pescoço', a: getFirst(r => r.circNeck), b: getLatest(r => r.circNeck) },
+        { key: 'Ombro', a: getFirst(r => r.circShoulder), b: getLatest(r => r.circShoulder) },
+        { key: 'Tórax', a: getFirst(r => r.circChest), b: getLatest(r => r.circChest) },
+        { key: 'Cintura', a: getFirst(r => r.circWaist || r.waistCircumference), b: getLatest(r => r.circWaist || r.waistCircumference) },
+        { key: 'Abdômen', a: getFirst(r => r.circAbdomen), b: getLatest(r => r.circAbdomen) },
+        { key: 'Quadril', a: getFirst(r => r.circHip || r.hipCircumference), b: getLatest(r => r.circHip || r.hipCircumference) },
+        { key: 'Braço (R)', a: getFirst(r => r.circArmRelaxed), b: getLatest(r => r.circArmRelaxed) },
+        { key: 'Braço (C)', a: getFirst(r => r.circArmContracted), b: getLatest(r => r.circArmContracted) },
+        { key: 'Antebraço', a: getFirst(r => r.circForearm), b: getLatest(r => r.circForearm) },
+        { key: 'Coxa', a: getFirst(r => r.circThigh), b: getLatest(r => r.circThigh) },
+        { key: 'Panturrilha', a: getFirst(r => r.circCalf), b: getLatest(r => r.circCalf) },
     ];
 
     const data = measures
@@ -943,8 +960,15 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
 const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
     if (!history || history.length < 2) return null;
 
-    const last = history[0];
-    const getEarliest = (getter: (r: any) => number | undefined): number => {
+    // history[0] = MAIS ANTIGO | history[length-1] = MAIS RECENTE
+    const getFirst = (getter: (r: any) => number | undefined): number => {
+        for (let i = 0; i < history.length; i++) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
+    };
+    const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
             if (v != null && v > 0) return v;
@@ -953,15 +977,15 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[],
     };
 
     const folds = [
-        { key: 'Tríceps', b: last.skinfoldTriceps, a: getEarliest(r => r.skinfoldTriceps) },
-        { key: 'Subescap.', b: last.skinfoldSubscapular, a: getEarliest(r => r.skinfoldSubscapular) },
-        { key: 'Bíceps', b: last.skinfoldBiceps, a: getEarliest(r => r.skinfoldBiceps) },
-        { key: 'Peitoral', b: last.skinfoldChest, a: getEarliest(r => r.skinfoldChest) },
-        { key: 'Axilar', b: last.skinfoldAxillary, a: getEarliest(r => r.skinfoldAxillary) },
-        { key: 'Suprail.', b: last.skinfoldSuprailiac, a: getEarliest(r => r.skinfoldSuprailiac) },
-        { key: 'Abdom.', b: last.skinfoldAbdominal, a: getEarliest(r => r.skinfoldAbdominal) },
-        { key: 'Coxa', b: last.skinfoldThigh, a: getEarliest(r => r.skinfoldThigh) },
-        { key: 'Panturr.', b: last.skinfoldCalf, a: getEarliest(r => r.skinfoldCalf) },
+        { key: 'Tríceps', a: getFirst(r => r.skinfoldTriceps), b: getLatest(r => r.skinfoldTriceps) },
+        { key: 'Subescap.', a: getFirst(r => r.skinfoldSubscapular), b: getLatest(r => r.skinfoldSubscapular) },
+        { key: 'Bíceps', a: getFirst(r => r.skinfoldBiceps), b: getLatest(r => r.skinfoldBiceps) },
+        { key: 'Peitoral', a: getFirst(r => r.skinfoldChest), b: getLatest(r => r.skinfoldChest) },
+        { key: 'Axilar', a: getFirst(r => r.skinfoldAxillary), b: getLatest(r => r.skinfoldAxillary) },
+        { key: 'Suprail.', a: getFirst(r => r.skinfoldSuprailiac), b: getLatest(r => r.skinfoldSuprailiac) },
+        { key: 'Abdom.', a: getFirst(r => r.skinfoldAbdominal), b: getLatest(r => r.skinfoldAbdominal) },
+        { key: 'Coxa', a: getFirst(r => r.skinfoldThigh), b: getLatest(r => r.skinfoldThigh) },
+        { key: 'Panturr.', a: getFirst(r => r.skinfoldCalf), b: getLatest(r => r.skinfoldCalf) },
     ];
 
     const data = folds
@@ -1099,7 +1123,7 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                         <div className="w-full">
                             <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-100'} p-6 rounded-xl border`}>
                                 <GoalThermometer
-                                    currentBF={anthropometry.history[0]?.bodyFatPercentage ?? 0}
+                                    currentBF={anthropometry.history[anthropometry.history.length - 1]?.bodyFatPercentage ?? 0}
                                     targetBF={0}
                                     isManagerMode={isManagerMode}
                                     isPdf={isPdf}
