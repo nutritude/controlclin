@@ -338,8 +338,8 @@ class DatabaseService {
             await setDoc(doc(firestore, "clinics", targetClinicId, "data", "main"), sanitizedData);
             console.log(`[DB] Remote sync successful for clinic: ${targetClinicId}`);
         } catch (err: any) {
-            console.warn("[DB] Remote sync failed (Firebase auth/permissions error). Running in LocalStorage mode only.", err?.message || err);
-            // We intentionally do NOT throw here so the local localStorage save isn't rolled back or broken in the UI.
+            console.error("DatabaseService: Remote sync failed.", err?.message || err);
+            throw new Error(`Firebase Error: ${err.code || 'permission/auth'} - ${err.message || err}`);
         }
     }
 
