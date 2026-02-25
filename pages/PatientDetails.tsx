@@ -269,6 +269,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const pdfReportRef = useRef<HTMLDivElement>(null);
     const [pdfSnapshot, setPdfSnapshot] = useState<AnthroSnapshot | null>(null); // Snapshot state for PDF consistency
 
+    // --- RECEIPT STATES ---
+    const [snapshotForReceipt, setSnapshotForReceipt] = useState<FinancialTransaction | null>(null);
+    const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
+    const receiptRef = useRef<HTMLDivElement>(null);
+
 
     const isAdmin = user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN;
     // Permissions for clinical header
@@ -1037,6 +1042,40 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         }
     };
 
+
+    const handleGenerateReceipt = async (trans: FinancialTransaction) => {
+        if (!trans) return;
+        setIsGeneratingReceipt(true);
+        setSnapshotForReceipt(trans);
+
+        try {
+            // 1. Aguarda React Render (Double RAF)
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+            const html2pdf = (window as any).html2pdf;
+            if (!html2pdf) throw new Error("Biblioteca de PDF não carregada.");
+
+            const element = receiptRef.current;
+            if (!element) throw new Error("Elemento do recibo não encontrado.");
+
+            const fileName = `Recibo_${patient?.name?.split(' ')[0]}_${trans.id.slice(0, 4)}.pdf`;
+
+            const opt = {
+                margin: 10,
+                filename: fileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(element).save();
+        } catch (err: any) {
+            console.error("Receipt Gen Error:", err);
+            alert("Erro ao gerar recibo.");
+        } finally {
+            setIsGeneratingReceipt(false);
+        }
+    };
 
     if (loading || !patient) return <div>Carregando prontuário...</div>;
 
@@ -1832,6 +1871,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método / Condição</th>
                                         <th className={`px-6 py-3 text-right text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Valor Líquido</th>
                                         <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</th>
+                                        <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Recibo</th>
                                     </tr>
                                 </thead>
                                 <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-emerald-200'}`}>
@@ -1863,6 +1903,24 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${STATUS_LABELS[t.status].color}`}>
                                                         {STATUS_LABELS[t.status].label}
                                                     </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                    {t.status === 'PAGO' ? (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleGenerateReceipt(t); }}
+                                                            disabled={isGeneratingReceipt}
+                                                            title="Gerar Recibo"
+                                                            className={`p-1.5 rounded-lg transition-colors inline-flex items-center justify-center ${isManagerMode ? 'hover:bg-indigo-900/50 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                                        >
+                                                            {isGeneratingReceipt && snapshotForReceipt?.id === t.id ? (
+                                                                <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
+                                                            ) : (
+                                                                <Icons.FileText />
+                                                            )}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-gray-300 opacity-30">—</span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))
@@ -2494,7 +2552,77 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 )
             }
 
-        </div >
+            {/* --- COMPONENTE OCULTO PARA IMPRESSÃO DE RECIBO --- */}
+            <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', pointerEvents: 'none' }}>
+                <div ref={receiptRef} className="p-12 bg-white text-gray-900 w-[794px] font-sans">
+                    {snapshotForReceipt && patient && (
+                        <div className="border-[3px] border-emerald-600 p-8 rounded-2xl relative">
+                            {/* Watermark/Decor */}
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Icons.Activity />
+                            </div>
+
+                            {/* Header */}
+                            <div className="flex justify-between items-start mb-10 border-b-2 border-emerald-100 pb-8">
+                                <div className="space-y-1">
+                                    <h1 className="text-3xl font-black text-emerald-700 tracking-tight uppercase">{clinic.name}</h1>
+                                    <p className="text-sm font-bold text-gray-500">{clinic.address || 'Endereço da Clínica'}</p>
+                                    <p className="text-sm font-medium text-gray-500">{clinic.city} - {clinic.state} | {clinic.phone}</p>
+                                    {clinic.cnpj && <p className="text-xs font-mono text-gray-400">CNPJ: {clinic.cnpj}</p>}
+                                </div>
+                                <div className="text-right">
+                                    <div className="inline-block bg-emerald-600 text-white px-6 py-2 rounded-lg font-black text-xl mb-2">
+                                        R$ {snapshotForReceipt.amount.toFixed(2)}
+                                    </div>
+                                    <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Recibo de Pagamento</p>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="space-y-8 py-4">
+                                <p className="text-lg leading-relaxed text-gray-700">
+                                    Recebemos de <strong className="text-gray-900 underline decoration-emerald-300 decoration-2 underline-offset-4">{patient.name}</strong>
+                                    {patient.cpf ? <span>, portador(a) do CPF <strong className="text-gray-900">{patient.cpf}</strong></span> : ''},
+                                    a importância supra de <strong className="text-emerald-700 text-xl font-black">R$ {snapshotForReceipt.amount.toFixed(2)}</strong>.
+                                </p>
+
+                                <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-xl">
+                                    <p className="text-xs font-black text-emerald-800 uppercase tracking-wider mb-2">Referente a:</p>
+                                    <p className="text-xl font-bold text-emerald-900">{snapshotForReceipt.description}</p>
+                                    <div className="mt-4 flex gap-6 text-sm">
+                                        <div><span className="font-bold text-gray-500 uppercase text-[10px] block">Data do Pagamento</span> <b>{new Date(snapshotForReceipt.date).toLocaleDateString()}</b></div>
+                                        <div><span className="font-bold text-gray-500 uppercase text-[10px] block">Forma de Recebimento</span> <b>{PAYMENT_METHODS_LABELS[snapshotForReceipt.method]}</b></div>
+                                    </div>
+                                </div>
+
+                                <p className="text-sm text-gray-500 italic text-right">
+                                    Pelo que firmamos o presente recibo dando plena quitação.
+                                </p>
+                            </div>
+
+                            {/* Footer / Signature */}
+                            <div className="mt-20 flex flex-col items-center">
+                                <div className="w-80 border-b-2 border-gray-900 mb-2"></div>
+                                <p className="text-lg font-black text-gray-900 uppercase">{user.name}</p>
+                                {professionals.find(p => p.userId === user.id)?.registrationNumber && (
+                                    <p className="text-sm font-bold text-emerald-700 uppercase tracking-tighter">
+                                        Registro: {professionals.find(p => p.userId === user.id)?.registrationNumber}
+                                    </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-4">{clinic.city}, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                            </div>
+
+                            {/* Security code / ID */}
+                            <div className="mt-12 text-[8px] text-gray-300 font-mono text-center flex justify-between uppercase tracking-widest">
+                                <span>Ref: {snapshotForReceipt.id}</span>
+                                <span>Gerado via ControlClin v2.0</span>
+                                <span>Validade: Permanente</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 
