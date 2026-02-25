@@ -222,7 +222,7 @@ class DatabaseService {
     private alerts: ClinicalAlert[] = [];
     private patientEvents: PatientEvent[] = []; // NEW: Store events
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
-    private isRemoteEnabled = false;
+    public isRemoteEnabled: boolean = false;
     private remoteSyncPromise: Promise<void> | null = null;
 
     constructor() {
@@ -370,9 +370,18 @@ class DatabaseService {
                 const localModified = (this as any)._localLastModified || 0;
 
                 if (localModified > remoteModified) {
-                    console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
-                    this.saveToRemote(targetClinicId).catch(console.error);
-                    return;
+                    // PROTECTION: Only overwrite cloud if we have actual data in local storage
+                    // that is not just the initial seeded state. 
+                    const isJustSeeded = this.patients.length <= 4 && this.appointments.length === 0;
+
+                    if (!isJustSeeded) {
+                        console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
+                        this.saveToRemote(targetClinicId).catch(console.error);
+                        return;
+                    } else {
+                        console.log("[DB] 🔄 Fresh local storage detected. Prioritizing Cloud data over default seeded data.");
+                        // Continue to load from remote below
+                    }
                 }
 
                 this.clinics = data.clinics || [];
