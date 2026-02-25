@@ -10,14 +10,14 @@ export interface SubstitutionSuggestion {
 }
 
 const CATEGORY_GROUPS: Record<string, string[]> = {
-  'CEREALS': ['cereais', 'pães', 'paes', 'massas', 'arroz', 'farinha', 'biscoito', 'milho', 'aveia', 'granola', 'torrada', 'tapioca'],
-  'TUBERS': ['tubérculos', 'batata', 'mandioca', 'cará', 'inhame', 'mandioquinha'],
+  'CEREALS': ['cereais', 'pães', 'paes', 'massas', 'arroz', 'farinha', 'biscoito', 'milho', 'aveia', 'granola', 'torrada', 'tapioca', 'farináceos', 'panificação'],
+  'TUBERS': ['tubérculos', 'batata', 'mandioca', 'cará', 'inhame', 'mandioquinha', 'raízes'],
   'FRUITS': ['frutas', 'fruta', 'suco de fruta', 'polpa'],
-  'LEGUMES': ['leguminosas', 'feijão', 'feijao', 'grão', 'soja', 'lentilha', 'ervilha', 'grão-de-bico'],
-  'PROTEINS': ['carnes', 'pescados', 'peixes', 'aves', 'frango', 'ovos'],
-  'DAIRY': ['laticínios', 'queijos', 'leite', 'iogurte'],
-  'VEGETABLES': ['vegetais', 'verduras', 'hortaliças', 'legumes', 'folhas'],
-  'FATS': ['óleos', 'gorduras', 'oleaginosas', 'azeite', 'manteiga', 'margarina', 'castanha', 'amendoim']
+  'LEGUMES': ['leguminosas', 'feijão', 'feijao', 'grão', 'soja', 'lentilha', 'ervilha', 'grão-de-bico', 'feijões'],
+  'PROTEINS': ['carnes', 'pescados', 'peixes', 'aves', 'frango', 'ovos', 'carne', 'suínos', 'bovinos', 'miúdos', 'vísceras'],
+  'DAIRY': ['laticínios', 'queijos', 'leite', 'iogurte', 'queijo'],
+  'VEGETABLES': ['vegetais', 'verduras', 'hortaliças', 'legumes', 'folhas', 'hortícolas'],
+  'FATS': ['óleos', 'gorduras', 'oleaginosas', 'azeite', 'manteiga', 'margarina', 'castanha', 'amendoim', 'sementes', 'lípidos']
 };
 
 function getGroup(category: string): string[] {
@@ -25,7 +25,7 @@ function getGroup(category: string): string[] {
   for (const group of Object.values(CATEGORY_GROUPS)) {
     if (group.some(term => cat.includes(term))) return group;
   }
-  // Se não encontrar em nenhum grupo mapeado, tenta inferir pelo primeiro termo
+  // Tentar match parcial se não encontrou exato
   const fallback = cat.split(/[\s,/-]+/)[0];
   return [fallback];
 }

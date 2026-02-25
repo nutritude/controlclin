@@ -454,11 +454,57 @@ function recordToCanonical(record: FoodRecord): FoodItemCanonical {
     // 2. CSV portions sobrescrevem/complementam
     csvPortions.forEach(p => portionMap.set(p.label, { label: p.label, grams: p.grams }));
 
-    const formattedPortions = Array.from(portionMap.values());
+    // --- DICIONÁRIO DE LOCALIZAÇÃO (PT-PT -> PT-BR) ---
+    const TRANSLATIONS: Record<string, string> = {
+        'sumo': 'suco',
+        'gelado': 'sorvete',
+        'fiambre': 'presunto',
+        'pequeno-almoço': 'café da manhã',
+        'sertã': 'frigideira',
+        'caril': 'curry',
+        'ananás': 'abacaxi',
+        'bucha': 'lanche',
+        'clara de ovo de galinha': 'clara de ovo',
+        'gema de ovo de galinha': 'gema de ovo',
+        'refrigerante tipo': 'refrigerante sabor',
+        'bebida alcoólica': 'bebida alcoólica',
+        'esparguete': 'espaguete',
+        'massa folhada': 'massa folhada',
+        'massa quebrada': 'massa podre',
+        'batatas fritas': 'batata frita',
+        'sanduíche': 'sanduíche',
+        'hambúrguer': 'hambúrguer',
+        'pastilha elástica': 'chiclete',
+        'rebuçado': 'bala',
+        'biológico': 'orgânico',
+        'inteiro': 'integral',
+        'meio-gordo': 'semidesnatado',
+        'magro': 'desnatado',
+        'nata': 'creme de leite',
+        'chouriço': 'chouriço/linguiça',
+        'presunto cru': 'presunto cru/parma'
+    };
+
+    function localize(text: string): string {
+        if (!text) return text;
+        let localized = text.toLowerCase();
+        Object.entries(TRANSLATIONS).forEach(([pt, br]) => {
+            const regex = new RegExp(`\\b${pt}\\b`, 'gi');
+            localized = localized.replace(regex, br);
+        });
+        // Capitalize first letter
+        return localized.charAt(0).toUpperCase() + localized.slice(1);
+    }
+
+    const nameBr = localize(record.nome);
+    const formattedPortions = Array.from(portionMap.values()).map(p => ({
+        ...p,
+        label: localize(p.label)
+    }));
 
     return {
         id: record.uid,
-        namePt: record.nome,
+        namePt: nameBr,
         category: record.grupo || 'Geral',
         nutrientsPer100g: {
             kcal: record.kcal,

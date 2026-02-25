@@ -1208,7 +1208,7 @@ class DatabaseService {
             Texto: ${text}`;
 
             const result = await (this.ai as any).models.generateContent({
-                model: "gemini-1.5-flash-8b",
+                model: "gemini-2.0-flash",
                 contents: prompt
             });
 
@@ -1251,7 +1251,7 @@ class DatabaseService {
             }`;
 
             const result = await (this.ai as any).models.generateContent({
-                model: "gemini-1.5-flash",
+                model: "gemini-2.0-flash",
                 contents: prompt,
                 config: {
                     responseMimeType: "application/json"

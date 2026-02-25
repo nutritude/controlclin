@@ -1386,7 +1386,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => handleDuplicateMeal(meal)} className={`text-xs px-2 py-1 text-emerald-500 hover:text-emerald-700`} title="Duplicar Refeição">👯</button>
+                                            <button onClick={() => handleDuplicateMeal(meal)} className={`text-xs px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors font-medium`} title="Duplicar Refeição">Duplicar</button>
                                             <button onClick={() => handleDeleteMeal(meal.id)} className={`text-xs px-2 py-1 text-red-400 hover:text-red-600`} title="Remover Refeição">🗑️</button>
                                             <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-gray-500 text-gray-300 hover:bg-gray-600' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
                                         </div>
