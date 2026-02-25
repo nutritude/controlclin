@@ -708,22 +708,27 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
 
     // ANALYTICAL IMPROVEMENT: Normalize data by percentage to allow comparison between different regions (Waist vs Arm)
     // First assessment (A) is always 100%. Current assessment (B) is the percentage relative to A.
+    // Unified key mapping based on Anthropometry interface in types.ts
     const mapData = [
-        { subject: 'Cintura', a_val: firstData.waistCircumference || firstData.circWaist || 0, b_val: lastData.waistCircumference || lastData.circWaist || 0 },
+        { subject: 'Cintura', a_val: firstData.circWaist || firstData.waistCircumference || 0, b_val: lastData.circWaist || lastData.waistCircumference || 0 },
         { subject: 'Abdômen', a_val: firstData.circAbdomen || 0, b_val: lastData.circAbdomen || 0 },
-        { subject: 'Quadril', a_val: firstData.circHip || 0, b_val: lastData.circHip || 0 },
+        { subject: 'Quadril', a_val: firstData.circHip || firstData.hipCircumference || 0, b_val: lastData.circHip || lastData.hipCircumference || 0 },
         { subject: 'Toráx', a_val: firstData.circChest || 0, b_val: lastData.circChest || 0 },
         { subject: 'Coxa', a_val: firstData.circThigh || 0, b_val: lastData.circThigh || 0 },
         { subject: 'Braço', a_val: firstData.circArmRelaxed || firstData.circArmContracted || 0, b_val: lastData.circArmRelaxed || lastData.circArmContracted || 0 }
-    ].filter(d => d.a_val > 0 && d.b_val > 0)
-        .map(d => ({
-            subject: d.subject,
-            A: 100, // Normalized Base
-            B: Number(((d.b_val / d.a_val) * 100).toFixed(1)), // % relative to base
-            orig_a: d.a_val,
-            orig_b: d.b_val,
-            change: Number((d.b_val - d.a_val).toFixed(1))
-        }));
+    ].filter(d => (d.a_val > 0 || d.b_val > 0)) // Keep if at least one assessment has the value
+        .map(d => {
+            const valA = d.a_val > 0 ? d.a_val : d.b_val; // Use B as fallback for A to avoid 0% issues if measure was added later
+            const valB = d.b_val > 0 ? d.b_val : d.a_val;
+            return {
+                subject: d.subject,
+                A: 100,
+                B: valA > 0 ? Number(((valB / valA) * 100).toFixed(1)) : 100,
+                orig_a: d.a_val,
+                orig_b: d.b_val,
+                change: Number((d.b_val - d.a_val).toFixed(1))
+            };
+        });
 
     if (mapData.length < 3) {
         return (
@@ -823,24 +828,22 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
     }];
 
     return (
-        <div className="w-full" style={{ height: isPdf ? '100px' : '120px' }}>
+        <div className="w-full" style={{ height: isPdf ? '100px' : '140px' }}>
             <p className={`text-center text-xs font-bold uppercase mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Progresso do Objetivo (%GC)</p>
-            <ResponsiveContainer width="100%" height="50%">
-                <ComposedChart layout="vertical" data={data} margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="45%">
+                <BarChart layout="vertical" data={data} margin={{ top: 0, right: 30, left: 20, bottom: 0 }} barGap="-100%">
                     <XAxis type="number" domain={[0, Math.max(currentBF, safeTarget, 30) + 5]} hide />
                     <YAxis dataKey="name" type="category" hide />
 
-                    {/* Background track (to 100% or max) */}
-                    <Bar dataKey="name" fill={isManagerMode ? '#1f2937' : '#f1f5f9'} radius={[10, 10, 10, 10]} barSize={24} />
+                    {/* Background track */}
+                    <Bar dataKey="name" fill={isManagerMode ? '#1f2937' : '#f1f5f9'} radius={[10, 10, 10, 10]} barSize={24} isAnimationActive={false} />
 
-                    {/* Alvo marker - simulated with a very thin bar or ReferenceArea */}
-                    <Bar dataKey="Alvo" fill={isManagerMode ? '#374151' : '#e2e8f0'} radius={[10, 10, 10, 10]} barSize={24} />
-
-                    {/* Current Progress overlay */}
+                    {/* Progress bar (Overlay) */}
                     <Bar dataKey="Atual" fill={currentBF <= safeTarget ? '#10b981' : '#f59e0b'} radius={[10, 10, 10, 10]} barSize={24} />
 
-                    <ReferenceArea x1={safeTarget - 0.2} x2={safeTarget + 0.2} fill="#3b82f6" label={{ position: 'top', value: 'ALVO', fontSize: 8, fill: '#3b82f6', fontWeight: 'bold' }} />
-                </ComposedChart>
+                    {/* Target Landmark */}
+                    <ReferenceArea x1={safeTarget - 0.2} x2={safeTarget + 0.2} fill="#3b82f6" label={{ position: 'top', value: 'ALVO', fontSize: 10, fill: '#3b82f6', fontWeight: '900' }} />
+                </BarChart>
             </ResponsiveContainer>
             <div className={`flex justify-between items-center ${isPdf ? 'text-[10px]' : 'text-xs'} px-8 mt-1 font-bold`}>
                 <span className="text-emerald-600">Alvo: {safeTarget}%</span>
@@ -863,9 +866,9 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
         { key: 'Pescoço', a: firstData.circNeck, b: lastData.circNeck },
         { key: 'Braço', a: firstData.circArmRelaxed || firstData.circArmContracted, b: lastData.circArmRelaxed || lastData.circArmContracted },
         { key: 'Tórax', a: firstData.circChest, b: lastData.circChest },
-        { key: 'Cintura', a: firstData.waistCircumference || firstData.circWaist, b: lastData.waistCircumference || lastData.circWaist },
+        { key: 'Cintura', a: firstData.circWaist || firstData.waistCircumference, b: lastData.circWaist || lastData.waistCircumference },
         { key: 'Abdômen', a: firstData.circAbdomen, b: lastData.circAbdomen },
-        { key: 'Quadril', a: firstData.circHip, b: lastData.circHip },
+        { key: 'Quadril', a: firstData.circHip || firstData.hipCircumference, b: lastData.circHip || lastData.hipCircumference },
         { key: 'Coxa', a: firstData.circThigh, b: lastData.circThigh },
         { key: 'Panturrilha', a: firstData.circCalf, b: lastData.circCalf }
     ];
