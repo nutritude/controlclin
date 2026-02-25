@@ -446,12 +446,12 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             setSyncStatus(null);
             setIsSyncing(true);
             const syncResult = await db.forceSync();
-            setSyncStatus(syncResult.success ? '✅ Sincronizado com Firebase!' : '⚠️ Salvo localmente (Firebase indisponível)');
+            setSyncStatus(syncResult.success ? '✅ Salvo!' : '⚠️ Erro na Nuvem');
             setIsSyncing(false);
-            setTimeout(() => setSyncStatus(null), 4000);
+            setTimeout(() => setSyncStatus(null), 3000);
 
             if (syncResult.success) {
-                alert("Plano Salvo com Sucesso e sincronizado na nuvem! ✅");
+                alert("Salvo!");
             } else {
                 alert(`ATENÇÃO: Os dados foram salvos APENAS no seu computador.\n\nMotivo da falha na nuvem:\n${syncResult.message}`);
             }
