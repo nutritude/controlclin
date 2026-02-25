@@ -1677,6 +1677,14 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className="text-xs font-bold">Relação Cintura/Quadril (RCQ)</div>
                                             <div className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.waistToHipRatio > 0 ? anthropometryResults.waistToHipRatio : '--'}</div>
                                         </div>
+
+                                        {/* SUCCESS CARD ACTION */}
+                                        <button
+                                            onClick={() => window.open(`/success-card/${patient.id}`, '_blank')}
+                                            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                                        >
+                                            <span className="text-xl">🏆</span> Compartilhar Conquista (WhatsApp)
+                                        </button>
                                     </div>
                                 </div>
 

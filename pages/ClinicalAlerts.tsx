@@ -82,6 +82,34 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
         fetchAlerts();
     };
 
+    const handleWhatsAppAction = async (alertItem: ClinicalAlert) => {
+        const patient = await db.getPatientById(alertItem.patientId);
+        if (!patient || !patient.phone) {
+            alert("Paciente não encontrado ou sem telefone cadastrado.");
+            return;
+        }
+
+        let message = "";
+        const firstName = patient.name.split(' ')[0];
+
+        switch (alertItem.type) {
+            case 'RETURN_OVERDUE':
+                message = `Olá ${firstName}! Tudo bem? Notei que sua última consulta foi há algum tempo e ainda não agendamos seu retorno. Como está a evolução do seu plano alimentar? Vamos marcar um horário para ajustar os próximos passos?`;
+                break;
+            case 'EXAM_ATTENTION':
+                message = `Oi ${firstName}, recebi os seus novos exames aqui no sistema. Gostaria de agendar uma breve chamada ou consulta para revisarmos os resultados juntos?`;
+                break;
+            case 'ANTHROMETRY_OVERDUE':
+                message = `Olá ${firstName}! Está na hora de fazermos sua nova avaliação antropométrica para vermos seus resultados. Qual dia fica melhor para você dar um pulo aqui na clínica?`;
+                break;
+            default:
+                message = `Olá ${firstName}, como você está? Gostaria de saber como está sendo a adesão ao tratamento e se posso te ajudar em algo hoje.`;
+        }
+
+        const phone = patient.phone.replace(/\D/g, '');
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
     const getDaysAgo = (dateStr: string) => {
         const diff = new Date().getTime() - new Date(dateStr).getTime();
         const days = Math.floor(diff / (1000 * 3600 * 24));
@@ -209,6 +237,13 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                         Ver Paciente
                                     </Link>
+                                    <button
+                                        onClick={() => handleWhatsAppAction(alert)}
+                                        className="px-3 py-1.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors flex items-center gap-1"
+                                        title="Enviar WhatsApp"
+                                    >
+                                        <span className="text-lg">💬</span> WhatsApp
+                                    </button>
                                     <button
                                         onClick={() => openResolveModal(alert)}
                                         className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${isManagerMode ? 'text-gray-300 hover:text-white hover:bg-gray-600 border-gray-600' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300'}`}

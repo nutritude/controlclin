@@ -848,6 +848,9 @@ class DatabaseService {
             return true;
         });
     }
+    async getPatientById(id: string) {
+        return this.patients.find(p => p.id === id) || null;
+    }
     async createPatient(user: User, data: any) {
         const p = {
             id: `pt-${Date.now()}`,

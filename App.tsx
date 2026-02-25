@@ -13,6 +13,7 @@ import { Settings } from './pages/Settings';
 import { Reports } from './pages/Reports';
 import { Professionals } from './pages/Professionals';
 import { ClinicalAlerts } from './pages/ClinicalAlerts'; // Keep named import
+import { SuccessCard } from './pages/SuccessCard';
 import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
@@ -142,6 +143,7 @@ function App() {
           <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+          <Route path="success-card/:id" element={<SuccessCard user={user} clinic={clinic!} />} />
           {/* New Debug Route - visible only for admins */}
           <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
         </Route>
