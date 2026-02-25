@@ -805,22 +805,29 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             await db.addTransaction(user, patient.id, {
                 date: new Date().toISOString(),
                 description: transDesc || 'Serviço Clínico',
-                amount: transFinalAmount, // Store the FINAL calculated amount for revenue stats
+                amount: transFinalAmount,
                 method: transMethod,
                 status: transStatus,
-                // Metadata for editing later (or display details)
                 originalAmount: transOriginalAmount,
                 discountPercent: transDiscountPercent,
                 interestPercent: transInterestPercent,
                 installmentCount: transPaymentForm === 'PARCELADO' ? transInstallments : 1,
-                installments: installString, // Visual string
-                // Simple check for auth code if insurance
+                installments: installString,
                 authorizationCode: transMethod === 'GUIA_CONVENIO' ? 'SOLICITADO' : undefined
             });
+
+            // Success Feedback
+            alert("Lançamento financeiro registrado com sucesso!");
+
+            // State reset
             setIsTransModalOpen(false);
-            fetchData(patient.id);
+            setTransOriginalAmount(0);
+            setTransDesc('');
+
+            await fetchData(patient.id);
         } catch (err) {
-            alert('Erro: ' + err);
+            console.error("[Financial] Erro ao gravar:", err);
+            alert('Erro ao gravar transação: ' + err);
         }
     }
 

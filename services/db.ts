@@ -3,9 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 import {
     User, Clinic, Professional, Patient, Appointment,
     Role, AppointmentStatus, Exam, AuditLog, ExamMarker,
-    TimelineEvent, ClinicalNote, FinancialTransaction, AIConfig,
+    TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
-    PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot
+    PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -225,10 +225,11 @@ class DatabaseService {
     private patientEvents: PatientEvent[] = []; // NEW: Store events
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
     public isRemoteEnabled: boolean = false;
-    private remoteSyncPromise: Promise<void> | null = null;
+    private activeClinicId: string | null = null;
 
     constructor() {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const meta = (import.meta as any);
+        const apiKey = meta.env?.VITE_GEMINI_API_KEY;
         if (apiKey && apiKey.length > 0 && apiKey !== 'PLACEHOLDER') {
             try {
                 this.ai = new GoogleGenAI({ apiKey });
@@ -318,7 +319,7 @@ class DatabaseService {
     private async saveToRemote(clinicId?: string) {
         if (!this.isRemoteEnabled) return;
 
-        const targetClinicId = clinicId || this.clinics[0]?.id || 'global_v1';
+        const targetClinicId = clinicId || this.activeClinicId || this.clinics[0]?.id || 'global_v1';
 
         try {
             const data = {
@@ -351,7 +352,8 @@ class DatabaseService {
             return;
         }
 
-        const targetClinicId = clinicId || this.clinics[0]?.id || 'global_v1';
+        const targetClinicId = clinicId || this.activeClinicId || this.clinics[0]?.id || 'global_v1';
+        this.activeClinicId = targetClinicId;
 
         try {
             console.log(`[DB] 🔄 Carregando dados da clínica ${targetClinicId} do Firebase...`);
@@ -465,8 +467,48 @@ class DatabaseService {
             createdAt: new Date().toISOString(),
             createdBy: user ? { userId: user.id, name: user.name, role: user.role } : undefined
         };
-        this.patientEvents.push(event);
+
+        // 1. Centralized Log (for global reports)
+        this.patientEvents.unshift(event);
+
+        // 2. Synchronize with Patient Object (for instant UI update in PatientDetails)
+        const pIdx = this.patients.findIndex(p => p.id === patientId);
+        if (pIdx > -1) {
+            const patient = this.patients[pIdx];
+
+            // Map PatientEvent to TimelineEvent if applicable
+            const timelineEvent: TimelineEvent = {
+                id: event.id,
+                date: event.createdAt,
+                type: this.mapPatientToTimelineType(type),
+                title: summary,
+                description: payload.description || '',
+                professionalId: user?.professionalId,
+                authorName: user?.name
+            };
+
+            const timelineEvents = patient.timelineEvents ? [...patient.timelineEvents] : [];
+            timelineEvents.unshift(timelineEvent);
+
+            this.patients[pIdx] = {
+                ...patient,
+                timelineEvents: timelineEvents
+            };
+        }
+
         this.saveToStorage();
+    }
+
+    private mapPatientToTimelineType(type: PatientEvent['type']): TimelineEventType {
+        switch (type) {
+            case 'ANTHRO_RECORDED': return 'AVALIACAO_FISICA';
+            case 'EXAM_UPLOADED': return 'SOLICITACAO_EXAMES';
+            case 'PLAN_CREATED':
+            case 'PLAN_UPDATED': return 'ATUALIZACAO_PLANO';
+            case 'PAYMENT_RECORDED': return 'OUTRO'; // Use generic or custom if needed
+            case 'NOTE_ADDED': return 'CONSULTA_ROTINA';
+            default: return 'OUTRO';
+        }
     }
 
     // Retrieve events for a patient (chronological descending)
@@ -719,9 +761,86 @@ class DatabaseService {
         this.saveToStorage();
     }
     async getProfessionals(clinicId: string) { return this.professionals.filter(p => p.clinicId === clinicId && p.isActive); }
-    async createProfessional(user: User, data: any) { /* ... impl ... */ return this.professionals[0]; }
-    async updateProfessional(user: User, id: string, data: any) { /* ... impl ... */ return this.professionals[0]; }
-    async deleteProfessional(user: User, id: string) { return { reassigned: 0, cancelled: 0 }; }
+    async createProfessional(user: User, data: any) {
+        const userId = `u-${Date.now()}`;
+        const profId = `p-${Date.now()}`;
+
+        const newUser: User = {
+            id: userId,
+            clinicId: user.clinicId,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            professionalId: profId,
+            password: data.password || '123'
+        };
+
+        const newProf: Professional = {
+            id: profId,
+            clinicId: user.clinicId,
+            userId: userId,
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            specialty: data.specialty,
+            registrationNumber: data.registrationNumber,
+            color: data.color || 'bg-blue-200',
+            isActive: true,
+            cpf: data.cpf,
+            whatsapp: data.whatsapp,
+            address: data.address,
+            cep: data.cep,
+            city: data.city,
+            state: data.state
+        };
+
+        this.users.push(newUser);
+        this.professionals.push(newProf);
+        this.saveToStorage();
+        return newProf;
+    }
+
+    async updateProfessional(user: User, id: string, data: any) {
+        const pIdx = this.professionals.findIndex(p => p.id === id);
+        if (pIdx > -1) {
+            this.professionals[pIdx] = { ...this.professionals[pIdx], ...data };
+
+            // Sync User data
+            const uIdx = this.users.findIndex(u => u.id === this.professionals[pIdx].userId);
+            if (uIdx > -1) {
+                this.users[uIdx].name = data.name;
+                this.users[uIdx].email = data.email;
+                this.users[uIdx].role = data.role;
+                if (data.password) this.users[uIdx].password = data.password;
+            }
+
+            this.saveToStorage();
+            return this.professionals[pIdx];
+        }
+        throw new Error("Profissional não encontrado");
+    }
+
+    async deleteProfessional(user: User, id: string) {
+        const pIdx = this.professionals.findIndex(p => p.id === id);
+        if (pIdx > -1) {
+            const prof = this.professionals[pIdx];
+            prof.isActive = false; // Soft delete
+
+            // Deactivate user as well
+            const uIdx = this.users.findIndex(u => u.id === prof.userId);
+            if (uIdx > -1) {
+                // We don't remove the user, just block access or similar logic would go here
+            }
+
+            // Logic to check impacted future appointments
+            const futureAppts = this.appointments.filter(a => a.professionalId === id && new Date(a.startTime) > new Date());
+            const count = futureAppts.length;
+
+            this.saveToStorage();
+            return { reassigned: 0, cancelled: count };
+        }
+        throw new Error("Profissional não encontrado");
+    }
     async getPatients(clinicId: string, professionalId?: string) {
         return this.patients.filter(p => {
             if (p.clinicId !== clinicId) return false;
@@ -745,15 +864,25 @@ class DatabaseService {
     async updatePatient(user: User, id: string, data: any) {
         const idx = this.patients.findIndex(p => p.id === id);
         if (idx > -1) {
-            this.patients[idx] = { ...this.patients[idx], ...data };
+            // Immutable update: create a new object and update the array reference
+            const updatedPatient = {
+                ...this.patients[idx],
+                ...data,
+                // Ensure nested objects are handled properly
+                clinicalSummary: data.clinicalSummary || this.patients[idx].clinicalSummary,
+                anthropometry: data.anthropometry || this.patients[idx].anthropometry
+            };
+
+            this.patients[idx] = updatedPatient;
 
             // Detect changes for logging
             if (data.anthropometry) this.logPatientEvent(id, 'ANTHRO_RECORDED', {}, 'Medidas antropométricas atualizadas', user);
             if (data.clinicalSummary) this.logPatientEvent(id, 'DIAGNOSIS_UPDATED', {}, 'Resumo clínico atualizado', user);
 
-            this.saveToStorage(); return this.patients[idx];
+            this.saveToStorage();
+            return updatedPatient;
         }
-        throw new Error("Patient not found");
+        throw new Error("Paciente não encontrado");
     }
     async deletePatient(user: User, id: string) { this.patients = this.patients.filter(p => p.id !== id); this.saveToStorage(); }
     async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string) {
@@ -796,9 +925,37 @@ class DatabaseService {
     }
     async deleteAppointment(user: User, id: string) { this.appointments = this.appointments.filter(a => a.id !== id); this.saveToStorage(); }
     async addTransaction(user: User, patientId: string, data: any) {
-        /* ... impl ... */
-        // Assuming logic exists here in original, just adding log hook
+        const pIdx = this.patients.findIndex(p => p.id === patientId);
+        if (pIdx === -1) throw new Error("Paciente não encontrado");
+
+        const patient = this.patients[pIdx];
+
+        // Deep clone the financial object to ensure reference change
+        const financial: FinancialInfo = patient.financial ? { ...patient.financial } : { mode: 'PARTICULAR', transactions: [] };
+        const transactions: FinancialTransaction[] = financial.transactions ? [...financial.transactions] : [];
+
+        const newTrans: FinancialTransaction = {
+            id: `tr-${Date.now()}`,
+            ...data
+        };
+
+        transactions.unshift(newTrans);
+
+        // Update patient immutably
+        const updatedPatient: Patient = {
+            ...patient,
+            financial: {
+                ...financial,
+                transactions: transactions
+            }
+        };
+
+        this.patients[pIdx] = updatedPatient;
+
         this.logPatientEvent(patientId, 'PAYMENT_RECORDED', { amount: data.amount }, `Pagamento registrado: R$${data.amount}`, user);
+        this.saveToStorage();
+        console.log(`[DB] Transação adicionada com sucesso para ${patientId}: R$${data.amount}`);
+        return newTrans;
     }
     async addTimelineEvent(user: User, patientId: string, data: any) { /* ... impl ... */ }
     async deleteTimelineEvent(user: User, patientId: string, eventId: string) { /* ... impl ... */ }
@@ -1344,9 +1501,80 @@ class DatabaseService {
         return { insight: "Indicadores estáveis.", action: "Manter monitoramento." };
     }
 
-    async getReportData(id: string, start: string, end: string, pid?: string) { return []; }
-    async getFinancialReportData(id: string, start: string, end: string) { return []; }
-    async getAttendanceReportData(id: string, start: string, end: string, pid?: string) { return { stats: { total: 0, missed: 0, noShowRate: 0, variation: 0 }, financial: { estimatedImpact: 0 }, risk: { patientsAtRisk: [] } }; }
+    async getReportData(id: string, start: string, end: string, pid?: string) {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        return this.appointments.filter(a => {
+            if (a.clinicId !== id) return false;
+            if (pid && a.professionalId !== pid) return false;
+            const apptDate = new Date(a.startTime);
+            return apptDate >= startDate && apptDate <= endDate;
+        }).map(a => {
+            const p = this.patients.find(pt => pt.id === a.patientId);
+            const prof = this.professionals.find(pr => pr.id === a.professionalId);
+
+            let age: string | number = '-';
+            if (p?.birthDate) {
+                const birth = new Date(p.birthDate);
+                age = new Date().getFullYear() - birth.getFullYear();
+            }
+
+            return {
+                ...a,
+                date: a.startTime,
+                patientName: p?.name || 'Desconhecido',
+                professionalName: prof?.name || 'Desconhecido',
+                patientGender: p?.gender || '-',
+                patientAge: age,
+                insurance: p?.financial?.mode === 'CONVENIO' ? p.financial.insuranceName : 'Particular',
+                pathologies: p?.clinicalSummary?.activeDiagnoses?.join(', ') || '-'
+            };
+        });
+    }
+
+    async getFinancialReportData(id: string, start: string, end: string) {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        const results: any[] = [];
+        this.patients.forEach(p => {
+            if (p.clinicId !== id) return;
+            if (p.financial && p.financial.transactions) {
+                p.financial.transactions.forEach(t => {
+                    const tDate = new Date(t.date);
+                    if (tDate >= startDate && tDate <= endDate) {
+                        results.push({
+                            ...t,
+                            patientId: p.id,
+                            patientName: p.name
+                        });
+                    }
+                });
+            }
+        });
+        return results;
+    }
+
+    async getAttendanceReportData(id: string, start: string, end: string, pid?: string) {
+        const appts = await this.getReportData(id, start, end, pid);
+        const total = appts.length;
+        const missed = appts.filter(a => a.status === 'FALTOU' || a.status === 'CANCELADO').length;
+        const noShowRate = total > 0 ? (missed / total) * 100 : 0;
+
+        // Riscos
+        const patientsAtRisk = appts.filter(a => a.status === 'FALTOU').map(a => ({
+            id: a.patientId,
+            name: a.patientName,
+            reason: 'Faltou à consulta agendada'
+        }));
+
+        return {
+            stats: { total, missed, noShowRate, variation: 0 },
+            financial: { estimatedImpact: missed * 150 }, // Valor médio hipotético
+            risk: { patientsAtRisk }
+        };
+    }
 
     // Replaced with the new implementation above
     // async buildIndividualReportDataset(pid: string, profId?: string) { return ... }

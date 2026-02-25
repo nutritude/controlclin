@@ -53,16 +53,24 @@ function App() {
     // 2. Catalog load
     const loadData = async () => {
       // 1. Session restore
-      const storedUser = localStorage.getItem('app_user');
-      const storedClinic = localStorage.getItem('app_clinic');
+      const storedUserRaw = localStorage.getItem('app_user');
+      const storedClinicRaw = localStorage.getItem('app_clinic');
+      let clinicIdToLoad: string | undefined;
+
+      if (storedClinicRaw) {
+        try {
+          const c = JSON.parse(storedClinicRaw);
+          clinicIdToLoad = c.id;
+        } catch (e) { }
+      }
 
       // Load from remote BEFORE setting state to ensure we have latest data
-      await serviceDb.loadFromRemote();
+      await serviceDb.loadFromRemote(clinicIdToLoad);
 
-      if (storedUser && storedClinic) {
+      if (storedUserRaw && storedClinicRaw) {
         try {
-          setUser(JSON.parse(storedUser));
-          setClinic(JSON.parse(storedClinic));
+          setUser(JSON.parse(storedUserRaw));
+          setClinic(JSON.parse(storedClinicRaw));
         } catch (err) {
           console.error('[App] Stored session corrupted. Clearing...', err);
           localStorage.removeItem('app_user');
