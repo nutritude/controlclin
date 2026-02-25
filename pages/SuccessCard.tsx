@@ -30,17 +30,33 @@ export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
     if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Carregando sua conquista...</div>;
     if (!patient) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Paciente não encontrado.</div>;
 
-    const history = patient.anthropometryHistory || [];
+    // Sort history by date to ensure we pick the correct previous record
+    const history = [...(patient.anthropometryHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     const currentWeight = patient.anthropometry?.weight || 0;
-    const previousWeight = history.length > 0 ? history[history.length - 1].weight : currentWeight;
-    const weightDiff = currentWeight - previousWeight;
-
-    const currentBF = patient.anthropometry?.bodyFatPercentage || 0;
-    const previousBF = history.length > 0 ? history[history.length - 1].bodyFatPercentage || 0 : currentBF;
-    const bfDiff = currentBF - previousBF;
-
     const currentLean = patient.anthropometry?.leanMass || 0;
-    const previousLean = history.length > 0 ? history[history.length - 1].leanMass || 0 : currentLean;
+
+    // Determine which record is "previous". 
+    // Since handleSaveTab appends the current record to history, the current one is at the end.
+    // So the real 'previous' is the penultimate one.
+    let previousWeight = currentWeight;
+    let previousLean = currentLean;
+
+    if (history.length > 1) {
+        // If current is the last one in history (based on weight/date match)
+        const lastInHistory = history[history.length - 1];
+        const isLastCurrent = lastInHistory.weight === currentWeight;
+
+        if (isLastCurrent) {
+            previousWeight = history[history.length - 2].weight;
+            previousLean = history[history.length - 2].leanMass || 0;
+        } else {
+            previousWeight = lastInHistory.weight;
+            previousLean = lastInHistory.leanMass || 0;
+        }
+    }
+
+    const weightDiff = currentWeight - previousWeight;
     const leanDiff = currentLean - previousLean;
 
     const isLoss = weightDiff < 0;
@@ -94,8 +110,8 @@ export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
                                 <div className="text-3xl font-black text-white flex items-baseline">
                                     {absWeightDiff} <span className="text-sm ml-1 font-bold">kg</span>
                                 </div>
-                                <span className={`text-xs font-bold mt-1 px-2 py-0.5 rounded-full ${isLoss ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                    {isLoss ? '↓ Eliminados' : '↑ Ganhos'}
+                                <span className={`text-xs font-bold mt-1 px-2 py-0.5 rounded-full ${weightDiff === 0 ? 'bg-blue-500/20 text-blue-400' : isLoss ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                    {weightDiff === 0 ? '• Mantido' : isLoss ? '↓ Eliminados' : '↑ Ganhos'}
                                 </span>
                             </div>
 
@@ -103,18 +119,29 @@ export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center">
                                 <span className="text-xs text-gray-400 uppercase font-bold mb-1">Massa Magra</span>
                                 <div className="text-3xl font-black text-emerald-400 flex items-baseline">
-                                    {leanDiff > 0 ? `+${leanDiff.toFixed(1)}` : leanDiff.toFixed(1)} <span className="text-sm ml-1 font-bold">kg</span>
+                                    {leanDiff === 0 ? '0.0' : leanDiff > 0 ? `+${leanDiff.toFixed(1)}` : leanDiff.toFixed(1)} <span className="text-sm ml-1 font-bold">kg</span>
                                 </div>
-                                <span className="text-[10px] text-gray-500 font-bold uppercase mt-1">Evolução Muscular</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase mt-1">
+                                    {history.length <= 1 ? 'Ponto de Partida' : 'Evolução Muscular'}
+                                </span>
                             </div>
                         </div>
 
                         {/* Metaphor / Visual Impact */}
-                        {isLoss && (
+                        {isLoss && parseFloat(absWeightDiff) > 0 && (
                             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mb-8">
                                 <p className="text-sm text-emerald-100 flex items-center justify-center gap-2">
                                     <span className="text-2xl">🔥</span>
                                     <span>Isso equivale a cerca de <b>{Math.floor(parseFloat(absWeightDiff) * 7700 / 500)} potes</b> de gordura eliminados!</span>
+                                </p>
+                            </div>
+                        )}
+
+                        {!isLoss && weightDiff === 0 && (
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 mb-8">
+                                <p className="text-sm text-blue-100 flex items-center justify-center gap-2">
+                                    <span className="text-2xl">⚖️</span>
+                                    <span>Peso estabilizado! Foco total na manutenção e recomposição corporal.</span>
                                 </p>
                             </div>
                         )}
