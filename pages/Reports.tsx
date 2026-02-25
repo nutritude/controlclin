@@ -703,32 +703,38 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
     );
 };
 
-const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
-    if (!lastData || !firstData) return null;
+const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
+    if (!history || history.length < 2) return null;
 
-    // ANALYTICAL IMPROVEMENT: Normalize data by percentage to allow comparison between different regions (Waist vs Arm)
-    // First assessment (A) is always 100%. Current assessment (B) is the percentage relative to A.
-    // Unified key mapping based on Anthropometry interface in types.ts
+    // history[0] = mais recente, history[length-1] = mais antigo
+    const last = history[0];
+
+    // Helper: finds the OLDEST record in history that has a value for a given field getter
+    const getEarliest = (getter: (r: any) => number | undefined): number => {
+        for (let i = history.length - 1; i >= 0; i--) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
+    };
+
     const mapData = [
-        { subject: 'Cintura', a_val: firstData.circWaist || firstData.waistCircumference || 0, b_val: lastData.circWaist || lastData.waistCircumference || 0 },
-        { subject: 'Abdômen', a_val: firstData.circAbdomen || 0, b_val: lastData.circAbdomen || 0 },
-        { subject: 'Quadril', a_val: firstData.circHip || firstData.hipCircumference || 0, b_val: lastData.circHip || lastData.hipCircumference || 0 },
-        { subject: 'Toráx', a_val: firstData.circChest || 0, b_val: lastData.circChest || 0 },
-        { subject: 'Coxa', a_val: firstData.circThigh || 0, b_val: lastData.circThigh || 0 },
-        { subject: 'Braço', a_val: firstData.circArmRelaxed || firstData.circArmContracted || 0, b_val: lastData.circArmRelaxed || lastData.circArmContracted || 0 }
-    ].filter(d => (d.a_val > 0 || d.b_val > 0)) // Keep if at least one assessment has the value
-        .map(d => {
-            const valA = d.a_val > 0 ? d.a_val : d.b_val; // Use B as fallback for A to avoid 0% issues if measure was added later
-            const valB = d.b_val > 0 ? d.b_val : d.a_val;
-            return {
-                subject: d.subject,
-                A: 100,
-                B: valA > 0 ? Number(((valB / valA) * 100).toFixed(1)) : 100,
-                orig_a: d.a_val,
-                orig_b: d.b_val,
-                change: Number((d.b_val - d.a_val).toFixed(1))
-            };
-        });
+        { subject: 'Cintura', orig_a: getEarliest(r => r.circWaist || r.waistCircumference), orig_b: last.circWaist || last.waistCircumference || 0 },
+        { subject: 'Abdômen', orig_a: getEarliest(r => r.circAbdomen), orig_b: last.circAbdomen || 0 },
+        { subject: 'Quadril', orig_a: getEarliest(r => r.circHip || r.hipCircumference), orig_b: last.circHip || last.hipCircumference || 0 },
+        { subject: 'Tórax', orig_a: getEarliest(r => r.circChest), orig_b: last.circChest || 0 },
+        { subject: 'Coxa', orig_a: getEarliest(r => r.circThigh), orig_b: last.circThigh || 0 },
+        { subject: 'Braço', orig_a: getEarliest(r => r.circArmRelaxed || r.circArmContracted), orig_b: last.circArmRelaxed || last.circArmContracted || 0 }
+    ]
+        .filter(d => d.orig_a > 0 && d.orig_b > 0)
+        .map(d => ({
+            subject: d.subject,
+            A: 100,
+            B: Number(((d.orig_b / d.orig_a) * 100).toFixed(1)),
+            orig_a: d.orig_a,
+            orig_b: d.orig_b,
+            change: Number((d.orig_b - d.orig_a).toFixed(1))
+        }));
 
     if (mapData.length < 3) {
         return (
@@ -742,18 +748,16 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
         );
     }
 
-    // Dynamic scale around 100%
     const deviations = mapData.map(d => Math.abs(100 - d.B));
-    const maxDev = Math.max(...deviations, 10);
-    const domainRange = [100 - (maxDev + 5), 100 + (maxDev + 5)];
+    const maxDev = Math.max(...deviations, 5);
+    const domainRange = [100 - (maxDev + 8), 100 + (maxDev + 8)];
 
     return (
         <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '400px' }}>
             <div className="flex flex-col items-center mb-2">
                 <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Assinatura Antropométrica</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Análise de Evolução Proporcional (%)</p>
+                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução Proporcional vs. Marco Inicial (%)</p>
             </div>
-
             <ResponsiveContainer width="100%" height="75%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mapData}>
                     <PolarGrid stroke={isManagerMode ? '#374151' : '#e2e8f0'} />
@@ -762,16 +766,18 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
                     {!isPdf && <RechartsTooltip
                         content={({ active, payload }) => {
                             if (active && payload && payload.length) {
-                                const data = payload[0].payload;
+                                const d = payload[0].payload;
+                                const chg = d.change;
+                                const pct = Number((d.B - 100).toFixed(1));
                                 return (
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'} p-3 rounded-xl shadow-2xl border text-xs`}>
-                                        <p className="font-bold mb-1 uppercase tracking-wider border-b pb-1 border-gray-100">{data.subject}</p>
+                                        <p className="font-bold mb-1 uppercase tracking-wider border-b pb-1">{d.subject}</p>
                                         <div className="space-y-1 mt-2">
-                                            <div className="flex justify-between gap-4"><span>Início:</span> <strong>{data.orig_a} cm</strong></div>
-                                            <div className="flex justify-between gap-4"><span>Atual:</span> <strong>{data.orig_b} cm</strong></div>
-                                            <div className={`flex justify-between gap-4 font-bold border-t pt-1 mt-1 ${data.change < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                <span>Alteração:</span>
-                                                <span>{data.change > 0 ? '+' : ''}{data.change} cm ({data.B - 100}%)</span>
+                                            <div className="flex justify-between gap-4"><span>Início:</span><strong>{d.orig_a} cm</strong></div>
+                                            <div className="flex justify-between gap-4"><span>Atual:</span><strong>{d.orig_b} cm</strong></div>
+                                            <div className={`flex justify-between gap-4 font-bold border-t pt-1 mt-1 ${chg < 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                <span>Variação:</span>
+                                                <span>{chg > 0 ? '+' : ''}{chg} cm ({pct > 0 ? '+' : ''}{pct}%)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -780,23 +786,8 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
                             return null;
                         }}
                     />}
-                    <Radar
-                        name="Início (Base 100%)"
-                        dataKey="A"
-                        stroke={isManagerMode ? '#4b5563' : '#94a3b8'}
-                        fill={isManagerMode ? '#4b5563' : '#cbd5e1'}
-                        fillOpacity={0.1}
-                        strokeWidth={1}
-                        strokeDasharray="3 3"
-                    />
-                    <Radar
-                        name="Evolução Atual"
-                        dataKey="B"
-                        stroke="#10b981"
-                        fill="#10b981"
-                        fillOpacity={isPdf ? 0.2 : 0.4}
-                        strokeWidth={3}
-                    />
+                    <Radar name="Marco Inicial (100%)" dataKey="A" stroke={isManagerMode ? '#4b5563' : '#94a3b8'} fill={isManagerMode ? '#4b5563' : '#cbd5e1'} fillOpacity={0.15} strokeWidth={1} strokeDasharray="4 4" />
+                    <Radar name="Evolução Atual" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={isPdf ? 0.25 : 0.45} strokeWidth={3} />
                     <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }} />
                 </RadarChart>
             </ResponsiveContainer>
@@ -853,69 +844,64 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
     );
 };
 
-const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
-    if (!lastData || !firstData) return null;
+const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
+    if (!history || history.length < 2) return null;
 
-    // ANALYTICAL CATEGORIZATION: Group by physiological risk vs potential hypertrophy members
-    const groups = {
-        RISK: ['Cintura', 'Abdômen', 'Quadril'],
-        MUSCLE: ['Braço', 'Tórax', 'Coxa', 'Panturrilha']
+    const last = history[0]; // history[0] = mais recente
+
+    const getEarliest = (getter: (r: any) => number | undefined): number => {
+        for (let i = history.length - 1; i >= 0; i--) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
     };
 
+    const riskKeys = ['Cintura', 'Abdômen', 'Quadril'];
+
     const measures = [
-        { key: 'Pescoço', a: firstData.circNeck, b: lastData.circNeck },
-        { key: 'Ombro', a: firstData.circShoulder, b: lastData.circShoulder },
-        { key: 'Tórax', a: firstData.circChest, b: lastData.circChest },
-        { key: 'Cintura', a: firstData.circWaist || firstData.waistCircumference, b: lastData.circWaist || lastData.waistCircumference },
-        { key: 'Abdômen', a: firstData.circAbdomen, b: lastData.circAbdomen },
-        { key: 'Quadril', a: firstData.circHip || firstData.hipCircumference, b: lastData.circHip || lastData.hipCircumference },
-        { key: 'Braço (R)', a: firstData.circArmRelaxed, b: lastData.circArmRelaxed },
-        { key: 'Braço (C)', a: firstData.circArmContracted, b: lastData.circArmContracted },
-        { key: 'Antebraço', a: firstData.circForearm, b: lastData.circForearm },
-        { key: 'Coxa', a: firstData.circThigh, b: lastData.circThigh },
-        { key: 'Panturrilha', a: firstData.circCalf, b: lastData.circCalf }
+        { key: 'Pescoço', b: last.circNeck, a: getEarliest(r => r.circNeck) },
+        { key: 'Ombro', b: last.circShoulder, a: getEarliest(r => r.circShoulder) },
+        { key: 'Tórax', b: last.circChest, a: getEarliest(r => r.circChest) },
+        { key: 'Cintura', b: last.circWaist || last.waistCircumference, a: getEarliest(r => r.circWaist || r.waistCircumference) },
+        { key: 'Abdômen', b: last.circAbdomen, a: getEarliest(r => r.circAbdomen) },
+        { key: 'Quadril', b: last.circHip || last.hipCircumference, a: getEarliest(r => r.circHip || r.hipCircumference) },
+        { key: 'Braço (R)', b: last.circArmRelaxed, a: getEarliest(r => r.circArmRelaxed) },
+        { key: 'Braço (C)', b: last.circArmContracted, a: getEarliest(r => r.circArmContracted) },
+        { key: 'Antebraço', b: last.circForearm, a: getEarliest(r => r.circForearm) },
+        { key: 'Coxa', b: last.circThigh, a: getEarliest(r => r.circThigh) },
+        { key: 'Panturrilha', b: last.circCalf, a: getEarliest(r => r.circCalf) },
     ];
 
     const data = measures
-        .filter(m => m.a != null && m.b != null && m.a > 0 && m.b > 0)
+        .filter(m => m.a > 0 && m.b != null && (m.b as number) > 0)
         .map(m => {
-            const delta = Number((m.b - m.a).toFixed(1));
-            const pct = Number(((m.b / m.a - 1) * 100).toFixed(1));
-            const isRiskGroup = groups.RISK.includes(m.key);
-
-            // Evaluation logic: 
-            // - Reduction in risk areas is GREEN.
-            // - Increase in muscle areas is GREEN.
-            const isPositive = isRiskGroup ? delta < 0 : delta > 0;
-
-            return {
-                name: m.key,
-                delta: delta,
-                pct: pct,
-                isPositive: isPositive,
-                isRisk: isRiskGroup
-            };
+            const delta = Number(((m.b as number) - m.a).toFixed(1));
+            const pct = Number((((m.b as number) / m.a - 1) * 100).toFixed(1));
+            const isRisk = riskKeys.includes(m.key);
+            return { name: m.key, delta, pct, isPositive: isRisk ? delta < 0 : delta > 0, isRisk };
         })
         .filter(m => Math.abs(m.delta) >= 0.1);
 
     if (data.length === 0) return (
         <div className={`h-40 flex items-center justify-center text-sm ${isManagerMode ? 'text-gray-400 border-gray-700' : 'text-slate-400 border-emerald-100'} rounded border border-dashed`}>
-            Aguardando dados de evolução física.
+            Sem variações detectadas entre as avaliações.
         </div>
     );
 
+    const dynamicHeight = Math.max(280, data.length * 38 + 90);
+
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '300px' : '420px' }}>
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '300px' : `${dynamicHeight}px` }}>
             <div className="flex flex-col items-center mb-4">
                 <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Perdas e Ganhos</h4>
                 <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação Líquida de Todos os Perímetros (cm)</p>
             </div>
-            <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 60, left: 10, bottom: 5 }} barSize={Math.min(14, 300 / data.length)}>
+            <ResponsiveContainer width="100%" height="82%">
+                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 55, left: 5, bottom: 5 }} barSize={Math.min(16, Math.floor(220 / data.length))}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
                     <XAxis type="number" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" domain={['auto', 'auto']} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={85} />
-
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={82} />
                     {!isPdf && <RechartsTooltip
                         cursor={{ fill: isManagerMode ? '#1f2937' : '#f8fafc' }}
                         content={({ active, payload }) => {
@@ -924,25 +910,24 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
                                 return (
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-2 rounded-lg shadow-xl border text-[10px]`}>
                                         <p className="font-bold uppercase mb-1">{d.name}</p>
-                                        <p className={d.isPositive ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
-                                            Variação: {d.delta > 0 ? '+' : ''}{d.delta} cm ({d.pct}%)
+                                        <p className={d.isPositive ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
+                                            {d.delta > 0 ? '+' : ''}{d.delta} cm ({d.pct > 0 ? '+' : ''}{d.pct}%)
                                         </p>
-                                        <p className="text-gray-400 italic mt-1">{d.isRisk ? 'Região de Risco Metabólico' : 'Região de Desempenho/Massa'}</p>
+                                        <p className="text-gray-400 italic mt-1">{d.isRisk ? '⚠ Zona de Risco Metabólico' : '💪 Zona de Desempenho Muscular'}</p>
                                     </div>
                                 );
                             }
                             return null;
                         }}
                     />}
-
-                    <Bar dataKey="delta" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="delta" radius={[0, 6, 6, 0]}>
                         {data.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.isPositive ? '#10b981' : '#f43f5e'} />
                         ))}
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-2">
+            <div className="flex justify-center gap-4 mt-1">
                 <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-emerald-500"></div><span className="text-[8px] font-bold text-gray-400">Positivo</span></div>
                 <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-rose-500"></div><span className="text-[8px] font-bold text-gray-400">Negativo</span></div>
             </div>
@@ -950,28 +935,36 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
     );
 };
 
-// --- NEW COMPONENT: SKIN FOLD DELTA CHART (LOCALIZED FAT ANALYSIS) ---
-const SkinfoldDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
-    if (!lastData || !firstData) return null;
+const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
+    if (!history || history.length < 2) return null;
+
+    const last = history[0];
+    const getEarliest = (getter: (r: any) => number | undefined): number => {
+        for (let i = history.length - 1; i >= 0; i--) {
+            const v = getter(history[i]);
+            if (v != null && v > 0) return v;
+        }
+        return 0;
+    };
 
     const folds = [
-        { key: 'Tríceps', a: firstData.skinfoldTriceps, b: lastData.skinfoldTriceps },
-        { key: 'Subescap.', a: firstData.skinfoldSubscapular, b: lastData.skinfoldSubscapular },
-        { key: 'Bíceps', a: firstData.skinfoldBiceps, b: lastData.skinfoldBiceps },
-        { key: 'Peitoral', a: firstData.skinfoldChest, b: lastData.skinfoldChest },
-        { key: 'Axilar', a: firstData.skinfoldAxillary, b: lastData.skinfoldAxillary },
-        { key: 'Suprail.', a: firstData.skinfoldSuprailiac, b: lastData.skinfoldSuprailiac },
-        { key: 'Abdom.', a: firstData.skinfoldAbdominal, b: lastData.skinfoldAbdominal },
-        { key: 'Coxa', a: firstData.skinfoldThigh, b: lastData.skinfoldThigh },
-        { key: 'Panturr.', a: firstData.skinfoldCalf, b: lastData.skinfoldCalf }
+        { key: 'Tríceps', b: last.skinfoldTriceps, a: getEarliest(r => r.skinfoldTriceps) },
+        { key: 'Subescap.', b: last.skinfoldSubscapular, a: getEarliest(r => r.skinfoldSubscapular) },
+        { key: 'Bíceps', b: last.skinfoldBiceps, a: getEarliest(r => r.skinfoldBiceps) },
+        { key: 'Peitoral', b: last.skinfoldChest, a: getEarliest(r => r.skinfoldChest) },
+        { key: 'Axilar', b: last.skinfoldAxillary, a: getEarliest(r => r.skinfoldAxillary) },
+        { key: 'Suprail.', b: last.skinfoldSuprailiac, a: getEarliest(r => r.skinfoldSuprailiac) },
+        { key: 'Abdom.', b: last.skinfoldAbdominal, a: getEarliest(r => r.skinfoldAbdominal) },
+        { key: 'Coxa', b: last.skinfoldThigh, a: getEarliest(r => r.skinfoldThigh) },
+        { key: 'Panturr.', b: last.skinfoldCalf, a: getEarliest(r => r.skinfoldCalf) },
     ];
 
     const data = folds
-        .filter(f => f.a != null && f.b != null && f.a > 0 && f.b > 0)
+        .filter(f => f.a > 0 && f.b != null && (f.b as number) > 0)
         .map(f => ({
             name: f.key,
-            delta: Number((f.b - f.a).toFixed(1)),
-            pct: Number(((f.b / f.a - 1) * 100).toFixed(1))
+            delta: Number(((f.b as number) - f.a).toFixed(1)),
+            pct: Number((((f.b as number) / f.a - 1) * 100).toFixed(1))
         }))
         .filter(f => Math.abs(f.delta) >= 0.1);
 
@@ -1076,8 +1069,7 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                         {anthropometry.history.length > 1 && (
                             <div className="w-full">
                                 <HabitRadarChart
-                                    firstData={anthropometry.history[0]}
-                                    lastData={anthropometry.history[anthropometry.history.length - 1]}
+                                    history={anthropometry.history}
                                     isManagerMode={isManagerMode}
                                     isPdf={isPdf}
                                 />
@@ -1094,20 +1086,21 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                     >
                         <div className="w-full">
                             <MeasurementDeltaChart
-                                firstData={anthropometry.history[0]}
-                                lastData={anthropometry.history[anthropometry.history.length - 1]}
+                                history={anthropometry.history}
                                 isManagerMode={isManagerMode}
                                 isPdf={isPdf}
                             />
                         </div>
-                        <div className={`w-full ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-100'} p-6 rounded-xl border`}>
-                            <GoalThermometer
-                                currentBF={anthropometry.history[anthropometry.history.length - 1].bodyFatPercentage}
-                                targetBF={0} // Replace with patient's target BF if stored, or 0 to auto-mock
-                                isManagerMode={isManagerMode}
-                                isPdf={isPdf}
-                            />
-                            {!isPdf && <p className="text-[10px] text-center mt-4 text-gray-500 select-none">O paciente visualiza de forma orgânica o quão próximo está da consolidação do objetivo final de repaginação corporal.</p>}
+                        <div className="w-full">
+                            <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-100'} p-6 rounded-xl border`}>
+                                <GoalThermometer
+                                    currentBF={anthropometry.history[0]?.bodyFatPercentage ?? 0}
+                                    targetBF={0}
+                                    isManagerMode={isManagerMode}
+                                    isPdf={isPdf}
+                                />
+                                {!isPdf && <p className="text-[10px] text-center mt-4 text-gray-500 select-none">O paciente visualiza de forma orgânica o quão próximo está da consolidação do objetivo final de repaginação corporal.</p>}
+                            </div>
                         </div>
                     </div>
                 )}
