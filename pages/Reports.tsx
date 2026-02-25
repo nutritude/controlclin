@@ -715,7 +715,22 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
         { subject: 'Braço', A: firstData.circArmRelaxed || firstData.circArmContracted || 0, B: lastData.circArmRelaxed || lastData.circArmContracted || 0, fullMark: 60 }
     ].filter(d => d.A > 0 || d.B > 0);
 
-    if (mapData.length < 3) return null;
+    // Dynamic fullMark based on data to prevent 'collapsed' look
+    const allValues = mapData.flatMap(d => [d.A, d.B]);
+    const maxVal = Math.max(...allValues, 10);
+    const safeFullMark = Math.ceil(maxVal * 1.1);
+
+    if (mapData.length < 3) {
+        return (
+            <div className={`w-full rounded-2xl p-6 flex flex-col items-center justify-center border border-dashed ${isManagerMode ? 'bg-gray-900 border-gray-700 text-gray-400' : 'bg-white border-emerald-100 text-slate-400'}`} style={{ height: isPdf ? '320px' : '400px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-xs font-bold uppercase">Assinatura Antropométrica</p>
+                <p className="text-[10px] text-center mt-2">Dados insuficientes para gerar comparativo circular.<br />(Mínimo 3 medidas de perímetros)</p>
+            </div>
+        );
+    }
 
     return (
         <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '400px' }}>
@@ -724,11 +739,11 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
                 <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Comparativo de Contorno Corporal</p>
             </div>
 
-            <ResponsiveContainer width="100%" height="80%">
+            <ResponsiveContainer width="100%" height="75%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mapData}>
                     <PolarGrid stroke={isManagerMode ? '#374151' : '#e2e8f0'} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#475569', fontSize: 11, fontWeight: 'bold' }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#475569', fontSize: 10, fontWeight: 'bold' }} />
+                    <PolarRadiusAxis angle={30} domain={[0, safeFullMark]} tick={false} axisLine={false} />
                     {!isPdf && <RechartsTooltip
                         contentStyle={{
                             borderRadius: '12px',
@@ -740,7 +755,7 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
                         }}
                     />}
                     <Radar
-                        name="Avaliação Inicial"
+                        name="Início"
                         dataKey="A"
                         stroke={isManagerMode ? '#6366f1' : '#94a3b8'}
                         fill={isManagerMode ? '#6366f1' : '#cbd5e1'}
@@ -749,14 +764,14 @@ const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastDa
                         strokeDasharray="4 4"
                     />
                     <Radar
-                        name="Avaliação Atual"
+                        name="Atual"
                         dataKey="B"
                         stroke="#10b981"
                         fill="#10b981"
                         fillOpacity={isPdf ? 0.3 : 0.5}
-                        strokeWidth={4}
+                        strokeWidth={3}
                     />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '20px', fontWeight: 'bold' }} />
+                    <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '10px', fontWeight: 'bold' }} />
                 </RadarChart>
             </ResponsiveContainer>
             <div className="mt-4 flex justify-between px-4">
@@ -789,19 +804,21 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
     return (
         <div className="w-full" style={{ height: isPdf ? '100px' : '120px' }}>
             <p className={`text-center text-xs font-bold uppercase mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Progresso do Objetivo (%GC)</p>
-            <ResponsiveContainer width="100%" height="80%">
-                <ComposedChart layout="vertical" data={data} margin={{ top: 0, right: 30, left: 20, bottom: 5 }}>
-                    <XAxis type="number" domain={[0, Math.max(currentBF, safeTarget) + 5]} hide />
+            <ResponsiveContainer width="100%" height="50%">
+                <ComposedChart layout="vertical" data={data} margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                    <XAxis type="number" domain={[0, Math.max(currentBF, safeTarget, 30) + 5]} hide />
                     <YAxis dataKey="name" type="category" hide />
-                    {!isPdf && <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />}
 
-                    {/* Background track (to goal) */}
-                    <Bar dataKey="Alvo" fill={isManagerMode ? '#374151' : '#e2e8f0'} radius={[4, 4, 4, 4]} barSize={20} />
+                    {/* Background track (to 100% or max) */}
+                    <Bar dataKey="name" fill={isManagerMode ? '#1f2937' : '#f1f5f9'} radius={[10, 10, 10, 10]} barSize={24} />
+
+                    {/* Alvo marker - simulated with a very thin bar or ReferenceArea */}
+                    <Bar dataKey="Alvo" fill={isManagerMode ? '#374151' : '#e2e8f0'} radius={[10, 10, 10, 10]} barSize={24} />
 
                     {/* Current Progress overlay */}
-                    <Bar dataKey="Atual" fill={currentBF <= safeTarget ? '#10b981' : '#f59e0b'} radius={[4, 4, 4, 4]} barSize={20} />
+                    <Bar dataKey="Atual" fill={currentBF <= safeTarget ? '#10b981' : '#f59e0b'} radius={[10, 10, 10, 10]} barSize={24} />
 
-                    <ReferenceArea x1={safeTarget - 0.5} x2={safeTarget + 0.5} fill="#3b82f6" />
+                    <ReferenceArea x1={safeTarget - 0.2} x2={safeTarget + 0.2} fill="#3b82f6" label={{ position: 'top', value: 'ALVO', fontSize: 8, fill: '#3b82f6', fontWeight: 'bold' }} />
                 </ComposedChart>
             </ResponsiveContainer>
             <div className={`flex justify-between items-center ${isPdf ? 'text-[10px]' : 'text-xs'} px-8 mt-1 font-bold`}>
@@ -853,10 +870,10 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
                 <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Variação desde a 1ª avaliação (cm)</p>
             </div>
             <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 40, left: 10, bottom: 5 }} barSize={12}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" domain={['dataMin - 1', 'dataMax + 1']} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={75} />
                     {!isPdf && <RechartsTooltip
                         cursor={{ fill: 'transparent' }}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
