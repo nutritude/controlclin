@@ -864,11 +864,14 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
 
     const measures = [
         { key: 'Pescoço', a: firstData.circNeck, b: lastData.circNeck },
-        { key: 'Braço', a: firstData.circArmRelaxed || firstData.circArmContracted, b: lastData.circArmRelaxed || lastData.circArmContracted },
+        { key: 'Ombro', a: firstData.circShoulder, b: lastData.circShoulder },
         { key: 'Tórax', a: firstData.circChest, b: lastData.circChest },
         { key: 'Cintura', a: firstData.circWaist || firstData.waistCircumference, b: lastData.circWaist || lastData.waistCircumference },
         { key: 'Abdômen', a: firstData.circAbdomen, b: lastData.circAbdomen },
         { key: 'Quadril', a: firstData.circHip || firstData.hipCircumference, b: lastData.circHip || lastData.hipCircumference },
+        { key: 'Braço (R)', a: firstData.circArmRelaxed, b: lastData.circArmRelaxed },
+        { key: 'Braço (C)', a: firstData.circArmContracted, b: lastData.circArmContracted },
+        { key: 'Antebraço', a: firstData.circForearm, b: lastData.circForearm },
         { key: 'Coxa', a: firstData.circThigh, b: lastData.circThigh },
         { key: 'Panturrilha', a: firstData.circCalf, b: lastData.circCalf }
     ];
@@ -902,16 +905,16 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
     );
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '250px' : '280px' }}>
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '300px' : '420px' }}>
             <div className="flex flex-col items-center mb-4">
                 <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Perdas e Ganhos</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação Líquida de Perímetros</p>
+                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação Líquida de Todos os Perímetros (cm)</p>
             </div>
             <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 60, left: 10, bottom: 5 }} barSize={14}>
+                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 60, left: 10, bottom: 5 }} barSize={Math.min(14, 300 / data.length)}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
                     <XAxis type="number" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" domain={['auto', 'auto']} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={85} />
 
                     {!isPdf && <RechartsTooltip
                         cursor={{ fill: isManagerMode ? '#1f2937' : '#f8fafc' }}
@@ -924,7 +927,7 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
                                         <p className={d.isPositive ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
                                             Variação: {d.delta > 0 ? '+' : ''}{d.delta} cm ({d.pct}%)
                                         </p>
-                                        <p className="text-gray-400 italic mt-1">{d.isRisk ? 'Região de Risco Metabólico' : 'Região de Massa Muscular'}</p>
+                                        <p className="text-gray-400 italic mt-1">{d.isRisk ? 'Região de Risco Metabólico' : 'Região de Desempenho/Massa'}</p>
                                     </div>
                                 );
                             }
@@ -940,9 +943,65 @@ const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { 
                 </BarChart>
             </ResponsiveContainer>
             <div className="flex justify-center gap-4 mt-2">
-                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-emerald-500"></div><span className="text-[8px] font-bold text-gray-400">Progresso</span></div>
-                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-rose-500"></div><span className="text-[8px] font-bold text-gray-400">Atenção</span></div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-emerald-500"></div><span className="text-[8px] font-bold text-gray-400">Positivo</span></div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded bg-rose-500"></div><span className="text-[8px] font-bold text-gray-400">Negativo</span></div>
             </div>
+        </div>
+    );
+};
+
+// --- NEW COMPONENT: SKIN FOLD DELTA CHART (LOCALIZED FAT ANALYSIS) ---
+const SkinfoldDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
+    if (!lastData || !firstData) return null;
+
+    const folds = [
+        { key: 'Tríceps', a: firstData.skinfoldTriceps, b: lastData.skinfoldTriceps },
+        { key: 'Subescap.', a: firstData.skinfoldSubscapular, b: lastData.skinfoldSubscapular },
+        { key: 'Bíceps', a: firstData.skinfoldBiceps, b: lastData.skinfoldBiceps },
+        { key: 'Peitoral', a: firstData.skinfoldChest, b: lastData.skinfoldChest },
+        { key: 'Axilar', a: firstData.skinfoldAxillary, b: lastData.skinfoldAxillary },
+        { key: 'Suprail.', a: firstData.skinfoldSuprailiac, b: lastData.skinfoldSuprailiac },
+        { key: 'Abdom.', a: firstData.skinfoldAbdominal, b: lastData.skinfoldAbdominal },
+        { key: 'Coxa', a: firstData.skinfoldThigh, b: lastData.skinfoldThigh },
+        { key: 'Panturr.', a: firstData.skinfoldCalf, b: lastData.skinfoldCalf }
+    ];
+
+    const data = folds
+        .filter(f => f.a != null && f.b != null && f.a > 0 && f.b > 0)
+        .map(f => ({
+            name: f.key,
+            delta: Number((f.b - f.a).toFixed(1)),
+            pct: Number(((f.b / f.a - 1) * 100).toFixed(1))
+        }))
+        .filter(f => Math.abs(f.delta) >= 0.1);
+
+    if (data.length === 0) return null;
+
+    return (
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '250px' : '280px' }}>
+            <div className="flex flex-col items-center mb-4">
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Gordura Localizada</h4>
+                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação de Dobras Cutâneas (mm)</p>
+            </div>
+            <ResponsiveContainer width="100%" height="75%">
+                <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="colorDelta" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
+                    <XAxis dataKey="name" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+                    <YAxis tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+                    {!isPdf && <RechartsTooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }}
+                        formatter={(val: number) => [`${val > 0 ? '+' : ''}${val} mm`, 'Variação']}
+                    />}
+                    <Area type="monotone" dataKey="delta" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDelta)" dot={{ r: 4, fill: '#3b82f6' }} />
+                </AreaChart>
+            </ResponsiveContainer>
+            <p className="text-[8px] text-center text-gray-400 mt-2 italic">* Valores negativos indicam redução de gordura subcutânea na região.</p>
         </div>
     );
 };
