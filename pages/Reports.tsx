@@ -957,10 +957,67 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
     );
 };
 
-const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[], isManagerMode: boolean, isPdf: boolean }) => {
+const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history: any[], isManagerMode: boolean, isPdf: boolean, gender?: string }) => {
     if (!history || history.length < 2) return null;
 
-    // history[0] = MAIS ANTIGO | history[length-1] = MAIS RECENTE
+    // ─── Mapeamento de protocolos → dobras relevantes ───────────────────────
+    type FoldKey = 'triceps' | 'subscapular' | 'biceps' | 'chest' | 'axillary' | 'suprailiac' | 'abdominal' | 'thigh' | 'calf';
+
+    const PROTOCOL_FOLDS: Record<string, FoldKey[]> = {
+        JacksonPollock7: ['chest', 'axillary', 'triceps', 'subscapular', 'abdominal', 'suprailiac', 'thigh'],
+        JacksonPollock3: gender === 'Feminino' || gender === 'F'
+            ? ['triceps', 'suprailiac', 'thigh']
+            : ['chest', 'abdominal', 'thigh'],
+        Guedes: gender === 'Feminino' || gender === 'F'
+            ? ['triceps', 'suprailiac', 'thigh']
+            : ['subscapular', 'abdominal', 'thigh'],
+        DurninWomersley: ['biceps', 'triceps', 'subscapular', 'suprailiac'],
+        Faulkner: ['triceps', 'subscapular', 'suprailiac', 'abdominal'],
+        ISAK: ['biceps', 'triceps', 'subscapular', 'suprailiac', 'abdominal', 'thigh', 'calf'],
+    };
+
+    const FOLD_LABELS: Record<FoldKey, string> = {
+        triceps: 'Tríceps',
+        subscapular: 'Subescap.',
+        biceps: 'Bíceps',
+        chest: 'Peitoral',
+        axillary: 'Axilar Med.',
+        suprailiac: 'Suprailíaca',
+        abdominal: 'Abdominal',
+        thigh: 'Coxa',
+        calf: 'Panturr.',
+    };
+
+    const FOLD_GETTER: Record<FoldKey, (r: any) => number | undefined> = {
+        triceps: r => r.skinfoldTriceps,
+        subscapular: r => r.skinfoldSubscapular,
+        biceps: r => r.skinfoldBiceps,
+        chest: r => r.skinfoldChest,
+        axillary: r => r.skinfoldAxillary,
+        suprailiac: r => r.skinfoldSuprailiac,
+        abdominal: r => r.skinfoldAbdominal,
+        thigh: r => r.skinfoldThigh,
+        calf: r => r.skinfoldCalf,
+    };
+
+    const PROTOCOL_NAMES: Record<string, string> = {
+        JacksonPollock7: 'Jackson & Pollock (7 dobras)',
+        JacksonPollock3: 'Jackson & Pollock (3 dobras)',
+        Guedes: 'Guedes',
+        DurninWomersley: 'Durnin & Womersley',
+        Faulkner: 'Faulkner',
+        ISAK: 'ISAK',
+    };
+
+    // Protocolo da 1ª avaliação (marco zero) e da última (variação real)
+    const firstProtocol = history.find((r: any) => r.skinfoldProtocol)?.skinfoldProtocol as string | undefined;
+    const latestProtocol = [...history].reverse().find((r: any) => r.skinfoldProtocol)?.skinfoldProtocol as string | undefined;
+    const protocolMismatch = firstProtocol && latestProtocol && firstProtocol !== latestProtocol;
+
+    // Usa o protocolo da avaliação mais recente para definir quais dobras exibir
+    const activeProtocol = latestProtocol || firstProtocol;
+
+    // getFirst: valor mais antigo disponível para o campo
     const getFirst = (getter: (r: any) => number | undefined): number => {
         for (let i = 0; i < history.length; i++) {
             const v = getter(history[i]);
@@ -968,6 +1025,7 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[],
         }
         return 0;
     };
+    // getLatest: valor mais recente disponível
     const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
@@ -976,57 +1034,86 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf }: { history: any[],
         return 0;
     };
 
-    const folds = [
-        { key: 'Tríceps', a: getFirst(r => r.skinfoldTriceps), b: getLatest(r => r.skinfoldTriceps) },
-        { key: 'Subescap.', a: getFirst(r => r.skinfoldSubscapular), b: getLatest(r => r.skinfoldSubscapular) },
-        { key: 'Bíceps', a: getFirst(r => r.skinfoldBiceps), b: getLatest(r => r.skinfoldBiceps) },
-        { key: 'Peitoral', a: getFirst(r => r.skinfoldChest), b: getLatest(r => r.skinfoldChest) },
-        { key: 'Axilar', a: getFirst(r => r.skinfoldAxillary), b: getLatest(r => r.skinfoldAxillary) },
-        { key: 'Suprail.', a: getFirst(r => r.skinfoldSuprailiac), b: getLatest(r => r.skinfoldSuprailiac) },
-        { key: 'Abdom.', a: getFirst(r => r.skinfoldAbdominal), b: getLatest(r => r.skinfoldAbdominal) },
-        { key: 'Coxa', a: getFirst(r => r.skinfoldThigh), b: getLatest(r => r.skinfoldThigh) },
-        { key: 'Panturr.', a: getFirst(r => r.skinfoldCalf), b: getLatest(r => r.skinfoldCalf) },
-    ];
+    // Seleciona apenas as dobras conforme o protocolo ativo
+    const activeFolds: FoldKey[] = activeProtocol && PROTOCOL_FOLDS[activeProtocol]
+        ? PROTOCOL_FOLDS[activeProtocol]
+        : (Object.keys(FOLD_GETTER) as FoldKey[]); // fallback: todas
 
-    const data = folds
-        .filter(f => f.a > 0 && f.b != null && (f.b as number) > 0)
+    const data = activeFolds
+        .map(fk => ({
+            name: FOLD_LABELS[fk],
+            a: getFirst(FOLD_GETTER[fk]),
+            b: getLatest(FOLD_GETTER[fk]),
+        }))
+        .filter(f => f.a > 0 && f.b > 0)
         .map(f => ({
-            name: f.key,
-            delta: Number(((f.b as number) - f.a).toFixed(1)),
-            pct: Number((((f.b as number) / f.a - 1) * 100).toFixed(1))
+            name: f.name,
+            delta: Number((f.b - f.a).toFixed(1)),
+            pct: Number(((f.b / f.a - 1) * 100).toFixed(1))
         }))
         .filter(f => Math.abs(f.delta) >= 0.1);
 
     if (data.length === 0) return null;
 
+    const dynamicH = Math.max(280, data.length * 30 + 100);
+
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '250px' : '280px' }}>
-            <div className="flex flex-col items-center mb-4">
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '280px' : `${dynamicH}px` }}>
+            <div className="flex flex-col items-center mb-2">
                 <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Gordura Localizada</h4>
                 <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação de Dobras Cutâneas (mm)</p>
+                {activeProtocol && (
+                    <span className={`text-[8px] font-bold mt-1 px-2 py-0.5 rounded-full ${isManagerMode ? 'bg-indigo-900 text-indigo-300' : 'bg-emerald-50 text-emerald-700'}`}>
+                        Protocolo: {PROTOCOL_NAMES[activeProtocol] || activeProtocol}
+                    </span>
+                )}
             </div>
-            <ResponsiveContainer width="100%" height="75%">
-                <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="colorDelta" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis dataKey="name" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    <YAxis tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+
+            {/* Alerta de inconsistência de protocolo */}
+            {protocolMismatch && (
+                <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-3 text-[9px] text-amber-700 font-bold">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                    Atenção: protocolos diferentes ({PROTOCOL_NAMES[firstProtocol!] || firstProtocol} → {PROTOCOL_NAMES[latestProtocol!] || latestProtocol}). Comparação pode ser imprecisa.
+                </div>
+            )}
+
+            <ResponsiveContainer width="100%" height="68%">
+                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 50, left: 5, bottom: 5 }} barSize={Math.min(14, Math.floor(180 / data.length))}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
+                    <XAxis type="number" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" mm" domain={['auto', 'auto']} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={68} />
                     {!isPdf && <RechartsTooltip
-                        contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }}
-                        formatter={(val: number) => [`${val > 0 ? '+' : ''}${val} mm`, 'Variação']}
+                        cursor={{ fill: isManagerMode ? '#1f2937' : '#f8fafc' }}
+                        content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                                const d = payload[0].payload;
+                                return (
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-2 rounded-lg shadow-xl border text-[10px]`}>
+                                        <p className="font-bold uppercase mb-1">{d.name}</p>
+                                        <p className={d.delta < 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
+                                            {d.delta > 0 ? '+' : ''}{d.delta} mm ({d.pct > 0 ? '+' : ''}{d.pct}%)
+                                        </p>
+                                        <p className="text-gray-400 italic mt-1">{d.delta < 0 ? '↓ Redução de gordura subcutânea' : '↑ Aumento de gordura subcutânea'}</p>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        }}
                     />}
-                    <Area type="monotone" dataKey="delta" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDelta)" dot={{ r: 4, fill: '#3b82f6' }} />
-                </AreaChart>
+                    <Bar dataKey="delta" radius={[0, 6, 6, 0]}>
+                        {data.map((entry, index) => (
+                            <Cell key={`sf-${index}`} fill={entry.delta < 0 ? '#10b981' : '#f43f5e'} />
+                        ))}
+                    </Bar>
+                </BarChart>
             </ResponsiveContainer>
-            <p className="text-[8px] text-center text-gray-400 mt-2 italic">* Valores negativos indicam redução de gordura subcutânea na região.</p>
+            <p className="text-[8px] text-center text-gray-400 mt-1 italic">
+                * Dobras do protocolo {activeProtocol ? (PROTOCOL_NAMES[activeProtocol] || activeProtocol) : 'selecionado'}. Negativo = redução de gordura.
+            </p>
         </div>
     );
 };
+
 
 // --- NEW COMPONENT: INDIVIDUAL PATIENT REPORT VIEW (SUPER PRONTUÁRIO) ---
 const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing, aiSummary, isPdf }: { data: IndividualReportSnapshot, isManagerMode: boolean, onAnalyze: () => void, analyzing: boolean, aiSummary: string | null, isPdf: boolean }) => {
@@ -1118,6 +1205,14 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                                 history={anthropometry.history}
                                 isManagerMode={isManagerMode}
                                 isPdf={isPdf}
+                            />
+                        </div>
+                        <div className="w-full">
+                            <SkinfoldDeltaChart
+                                history={anthropometry.history}
+                                isManagerMode={isManagerMode}
+                                isPdf={isPdf}
+                                gender={patient.gender}
                             />
                         </div>
                         <div className="w-full">
