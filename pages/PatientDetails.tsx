@@ -1634,41 +1634,68 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     </div>
                                 </div>
 
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
-                                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Análise Inteligente e Ações</h3>
-                                    <div className="space-y-3">
-                                        <button onClick={handleAnalyzeAnthro} disabled={isAnalyzingAnthro} className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-bold transition-colors shadow-sm ${isAnalyzingAnthro ? 'bg-gray-500 text-white' : (isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white')}`}>
+                            </div>
+                        </div>
+
+                        {/* 4. Análise Inteligente e Ações (Movido para largura total para melhor harmonia) */}
+                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
+                            <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'} flex items-center gap-2`}>
+                                <Icons.Brain /> Análise Inteligente e Ações Estratégicas
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <button onClick={handleAnalyzeAnthro} disabled={isAnalyzingAnthro} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 ${isAnalyzingAnthro ? 'bg-gray-500 text-white' : (isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white')}`}>
                                             {isAnalyzingAnthro ? 'Analisando...' : <><Icons.Brain /> Analisar com IA</>}
                                         </button>
-                                        <button onClick={handleGeneratePdf} disabled={isGeneratingPdf} className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-bold transition-colors border ${isManagerMode ? 'bg-red-900 text-red-300 border-red-700' : 'bg-red-100 text-red-700 border-red-200'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                        <button onClick={handleGeneratePdf} disabled={isGeneratingPdf} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all border active:scale-95 ${isManagerMode ? 'bg-red-900 text-red-300 border-red-700' : 'bg-red-100 text-red-700 border-red-200'} disabled:opacity-50 disabled:cursor-not-allowed`}>
                                             {isGeneratingPdf ? 'Gerando...' : <>📄 Gerar Relatório PDF</>}
                                         </button>
                                     </div>
+                                    <div className={`p-4 rounded-xl border ${isManagerMode ? 'bg-gray-900/50 border-gray-700 text-gray-400' : 'bg-slate-50 border-emerald-100 text-slate-500'} text-xs italic`}>
+                                        A inteligência artificial processa os dados atuais, compara com o histórico e sugere ajustes na estratégia nutricional baseada em evidências clínicas.
+                                    </div>
+                                </div>
 
-                                    {anthroAnalysisResult && (
-                                        <div className={`mt-4 pt-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-200'}`}>
-                                            <h4 className="text-xs font-bold uppercase mb-2">Resumo da IA {anthroAnalysisResult.isFallback && '(Offline)'}</h4>
-                                            <p className="text-xs italic mb-2">"{anthroAnalysisResult.summary}"</p>
+                                {anthroAnalysisResult ? (
+                                    <div className={`p-5 rounded-xl border ${isManagerMode ? 'bg-gray-900/50 border-gray-700' : 'bg-emerald-50/50 border-emerald-100'}`}>
+                                        <h4 className="text-xs font-black uppercase mb-3 flex items-center gap-2">
+                                            Resumo da IA {anthroAnalysisResult.isFallback && <span className="text-[10px] text-amber-500 opacity-80">(Modo Offline)</span>}
+                                        </h4>
+                                        <p className="text-sm font-medium mb-4 leading-relaxed italic">"{anthroAnalysisResult.summary}"</p>
 
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {anthroAnalysisResult.risks.length > 0 && (
-                                                <div className="mb-2">
-                                                    <span className="text-[10px] font-bold text-red-500 uppercase">Riscos:</span>
-                                                    <ul className="list-disc list-inside text-[10px]">
-                                                        {anthroAnalysisResult.risks.map((r, i) => <li key={i}>{r}</li>)}
+                                                <div className="space-y-2">
+                                                    <span className="text-[10px] font-black text-red-500 uppercase tracking-wider block">Zona de Atenção:</span>
+                                                    <ul className="space-y-1">
+                                                        {anthroAnalysisResult.risks.map((r, i) => (
+                                                            <li key={i} className="flex items-start gap-2 text-[11px] font-medium text-slate-700">
+                                                                <span className="text-red-500 mt-0.5">•</span> {r}
+                                                            </li>
+                                                        ))}
                                                     </ul>
                                                 </div>
                                             )}
                                             {anthroAnalysisResult.recommendedActions.length > 0 && (
-                                                <div>
-                                                    <span className="text-[10px] font-bold text-blue-500 uppercase">Ações:</span>
-                                                    <ul className="list-disc list-inside text-[10px]">
-                                                        {anthroAnalysisResult.recommendedActions.map((r, i) => <li key={i}>{r}</li>)}
+                                                <div className="space-y-2">
+                                                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider block">Ações Recomendadas:</span>
+                                                    <ul className="space-y-1">
+                                                        {anthroAnalysisResult.recommendedActions.map((r, i) => (
+                                                            <li key={i} className="flex items-start gap-2 text-[11px] font-medium text-slate-700">
+                                                                <span className="text-blue-500 mt-0.5">→</span> {r}
+                                                            </li>
+                                                        ))}
                                                     </ul>
                                                 </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center p-8 border border-dashed border-gray-300 rounded-xl text-xs text-gray-400 font-medium bg-gray-50/30">
+                                        Clique em "Analisar com IA" para gerar insights clínicos.
+                                    </div>
+                                )}
                             </div>
                         </div>
 
