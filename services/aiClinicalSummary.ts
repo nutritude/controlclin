@@ -7,49 +7,53 @@ export const AIClinicalSummaryService = {
    * Generates a clinical summary text based on the report snapshot.
    */
   generateSummary: async (snapshot: IndividualReportSnapshot): Promise<string> => {
-    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY);
 
     if (!apiKey || apiKey.length === 0) {
-      console.warn("GEMINI_API_KEY missing. Returning fallback summary.");
+      console.warn("[AI Clinical] VITE_GEMINI_API_KEY não encontrada. Usando resumo offline.");
       return getFallbackSummary(snapshot);
     }
+    console.log('[AI Clinical] API Key detectada. Gerando resumo com Gemini...');
 
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = buildPrompt(snapshot);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           temperature: 0.3, // Low temperature to prevent hallucination
         }
       });
 
-      if (response.text) {
+      if (response && response.text) {
         return response.text;
       }
       throw new Error("Empty response from AI");
 
-    } catch (error) {
-      console.error("AI Clinical Summary Failed:", error);
+    } catch (error: any) {
+      console.error("[AI Clinical] Falha no resumo:", error?.message || error);
       return getFallbackSummary(snapshot);
     }
   }
 };
 
 function buildPrompt(snapshot: IndividualReportSnapshot): string {
-  // Minimize token usage by selecting only essential data
   const data = {
     patient: {
-      age: new Date().getFullYear() - new Date(snapshot.patient.birthDate).getFullYear(),
+      age: snapshot.patient.birthDate ? new Date().getFullYear() - new Date(snapshot.patient.birthDate).getFullYear() : '?',
       gender: snapshot.patient.gender
     },
     metrics: snapshot.metrics,
     diagnoses: snapshot.clinical.activeDiagnoses,
     anamnesis: snapshot.clinical.anamnesisSummary,
     latestAnthro: snapshot.anthropometry.current
-      ? { bmi: snapshot.anthropometry.current.anthro.bodyComp.bmi, weight: snapshot.anthropometry.current.anthro.weightKg }
+      ? {
+        bmi: snapshot.anthropometry.current.anthro.bodyComp.bmi,
+        weight: snapshot.anthropometry.current.anthro.weightKg,
+        bodyFat: snapshot.anthropometry.current.anthro.bodyComp.bodyFatPct
+      }
       : 'Sem dados recentes',
     anthroHistoryCount: snapshot.anthropometry.history.length,
     plan: snapshot.nutritional.activePlanTitle || 'Nenhum ativo',
@@ -58,18 +62,20 @@ function buildPrompt(snapshot: IndividualReportSnapshot): string {
   };
 
   return `
-    Atue como um assistente clínico sênior. Gere um resumo narrativo (texto corrido) do caso deste paciente para o relatório médico.
-    
-    REGRAS RÍGIDAS:
-    1. NÃO invente números, valores de exames ou diagnósticos que não estejam listados abaixo.
-    2. Use tom profissional e objetivo.
-    3. Estruture em 3 parágrafos curtos: 
-       - Visão Geral (Perfil, diagnósticos ativos).
-       - Estado Atual (Última antropometria, plano alimentar, adesão).
-       - Histórico Recente (Eventos relevantes da timeline).
-    4. Se faltarem dados, apenas mencione "Dados de X não disponíveis".
+    Você é um assistente de redação clínica de alto nível. Sua tarefa é converter os dados brutos de um paciente em um resumo narrativo profissional para compor o relatório de evolução.
 
-    DADOS DO PACIENTE (JSON):
+    ESTRUTURA DO RELATÓRIO:
+    1. PERFIL E QUADRO CLÍNICO: Descreva brevemente o paciente e seus diagnósticos ativos principais.
+    2. STATUS NUTRICIONAL E ADESÃO: Analise o estado antropométrico atual vs meta, e comente sobre a adesão ao plano nutricional.
+    3. EVOLUÇÃO E CONDUTA: Sintetize os eventos recentes e exames, sugerindo o foco para o próximo período.
+
+    REGRAS DE OURO:
+    - Use terminologia técnica adequada (ex: eutrofia, sarcopenia, dislipidemia).
+    - Mantenha o tom formal e conciso.
+    - NÃO extrapole dados. Se algo não estiver no JSON, não mencione.
+    - Responda em PORTUGUÊS (PT-BR).
+
+    DADOS BRUTOS (JSON):
     ${JSON.stringify(data)}
   `;
 }

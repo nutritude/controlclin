@@ -630,19 +630,38 @@ const CompositionEvolutionChart = ({ data, isManagerMode, isPdf }: { data: any[]
     if (chartData.length < 2) return <div className={`h-40 flex items-center justify-center text-sm ${isPdf ? 'text-gray-400 border-gray-200' : 'text-gray-500 border-emerald-100 bg-emerald-50'} rounded border border-dashed`}>Dados de composição corporal insuficientes (mín. 2 avaliações).</div>;
 
     return (
-        <div className="w-full" style={{ height: isPdf ? '250px' : '320px' }}>
-            <p className={`text-center text-xs font-bold uppercase mb-2 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Massa Corporal vs Composição Diária</p>
-            <ResponsiveContainer width="100%" height="90%">
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '280px' : '360px' }}>
+            <div className="flex flex-col items-center mb-6">
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Composição</h4>
+                <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução de Tecidos Adiposo vs. Magro</p>
+            </div>
+            <ResponsiveContainer width="100%" height="80%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#e5e7eb'} />
-                    <XAxis dataKey="dateFormatted" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    <YAxis tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    {!isPdf && <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />}
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                    <Area type="monotone" dataKey="leanMass" name="Massa Magra (kg)" stackId="1" stroke="#10b981" fill="#34d399" activeDot={{ r: 6 }} />
-                    <Area type="monotone" dataKey="fatMass" name="Massa Gorda (kg)" stackId="1" stroke="#f43f5e" fill="#fb7185" />
-                    {/* Ghost line for overall weight outline */}
-                    <Line type="monotone" dataKey=" वजन Total " data={chartData.map(d => ({ ...d, " वजन Total ": d.pesoTotal }))} stroke="#64748b" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={!isPdf} />
+                    <defs>
+                        <linearGradient id="colorLean" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
+                    <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+                    {!isPdf && <RechartsTooltip
+                        contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            backgroundColor: isManagerMode ? '#1f2937' : '#fff',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                        }}
+                    />}
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
+                    <Area type="monotone" dataKey="leanMass" name="Massa Magra (kg)" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorLean)" activeDot={{ r: 6 }} />
+                    <Area type="monotone" dataKey="fatMass" name="Massa Gorda (kg)" stackId="1" stroke="#f43f5e" strokeWidth={3} fill="url(#colorFat)" />
+                    <Line type="monotone" dataKey="pesoTotal" name="Peso Total (kg)" stroke="#64748b" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={!isPdf} />
                 </AreaChart>
             </ResponsiveContainer>
         </div>
@@ -687,31 +706,69 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
 const HabitRadarChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
     if (!lastData || !firstData) return null;
 
-    // Radars are great for comparing circumferences morphologically
     const mapData = [
-        { subject: 'Cintura', A: firstData.waistCircumference || firstData.circWaist || 0, B: lastData.waistCircumference || lastData.circWaist || 0 },
-        { subject: 'Quadril', A: firstData.circHip || 0, B: lastData.circHip || 0 },
-        { subject: 'Abdômen', A: firstData.circAbdomen || 0, B: lastData.circAbdomen || 0 },
-        { subject: 'Toráx', A: firstData.circChest || 0, B: lastData.circChest || 0 },
-        { subject: 'Coxa', A: firstData.circThigh || 0, B: lastData.circThigh || 0 },
-        { subject: 'Braço', A: firstData.circArmRelaxed || firstData.circArmContracted || 0, B: lastData.circArmRelaxed || lastData.circArmContracted || 0 }
+        { subject: 'Cintura', A: firstData.waistCircumference || firstData.circWaist || 0, B: lastData.waistCircumference || lastData.circWaist || 0, fullMark: 120 },
+        { subject: 'Quadril', A: firstData.circHip || 0, B: lastData.circHip || 0, fullMark: 120 },
+        { subject: 'Abdômen', A: firstData.circAbdomen || 0, B: lastData.circAbdomen || 0, fullMark: 120 },
+        { subject: 'Toráx', A: firstData.circChest || 0, B: lastData.circChest || 0, fullMark: 120 },
+        { subject: 'Coxa', A: firstData.circThigh || 0, B: lastData.circThigh || 0, fullMark: 100 },
+        { subject: 'Braço', A: firstData.circArmRelaxed || firstData.circArmContracted || 0, B: lastData.circArmRelaxed || lastData.circArmContracted || 0, fullMark: 60 }
     ].filter(d => d.A > 0 || d.B > 0);
 
     if (mapData.length < 3) return null;
 
     return (
-        <div className="w-full" style={{ height: isPdf ? '220px' : '260px' }}>
-            <p className={`text-center text-xs font-bold uppercase mb-2 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Contorno Corporal (1ª vs Atual)</p>
-            <ResponsiveContainer width="100%" height="90%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={mapData}>
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '400px' }}>
+            <div className="flex flex-col items-center mb-4">
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Assinatura Antropométrica</h4>
+                <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Comparativo de Contorno Corporal</p>
+            </div>
+
+            <ResponsiveContainer width="100%" height="80%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mapData}>
                     <PolarGrid stroke={isManagerMode ? '#374151' : '#e2e8f0'} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#64748b', fontSize: 10 }} />
-                    {!isPdf && <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />}
-                    <Radar name="Avaliação Inicial" dataKey="A" stroke="#94a3b8" fill="#cbd5e1" fillOpacity={0.4} />
-                    <Radar name="Atual" dataKey="B" stroke="#059669" fill="#10b981" fillOpacity={isPdf ? 0.3 : 0.6} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#475569', fontSize: 11, fontWeight: 'bold' }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                    {!isPdf && <RechartsTooltip
+                        contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            backgroundColor: isManagerMode ? '#1f2937' : '#fff',
+                            color: isManagerMode ? '#fff' : '#000',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontSize: '13px'
+                        }}
+                    />}
+                    <Radar
+                        name="Avaliação Inicial"
+                        dataKey="A"
+                        stroke={isManagerMode ? '#6366f1' : '#94a3b8'}
+                        fill={isManagerMode ? '#6366f1' : '#cbd5e1'}
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                    />
+                    <Radar
+                        name="Avaliação Atual"
+                        dataKey="B"
+                        stroke="#10b981"
+                        fill="#10b981"
+                        fillOpacity={isPdf ? 0.3 : 0.5}
+                        strokeWidth={4}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '20px', fontWeight: 'bold' }} />
                 </RadarChart>
             </ResponsiveContainer>
+            <div className="mt-4 flex justify-between px-4">
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Início</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">Progresso</span>
+                </div>
+            </div>
         </div>
     );
 };
@@ -758,37 +815,56 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
 const MeasurementDeltaChart = ({ lastData, firstData, isManagerMode, isPdf }: { lastData: any, firstData: any, isManagerMode: boolean, isPdf: boolean }) => {
     if (!lastData || !firstData) return null;
 
+    // Define regions where increase = BAD (risk areas)
+    const riskRegions = ['Cintura', 'Abdômen', 'Quadril'];
+
     const measures = [
         { key: 'Pescoço', a: firstData.circNeck, b: lastData.circNeck },
         { key: 'Braço', a: firstData.circArmRelaxed || firstData.circArmContracted, b: lastData.circArmRelaxed || lastData.circArmContracted },
         { key: 'Cintura', a: firstData.waistCircumference || firstData.circWaist, b: lastData.waistCircumference || lastData.circWaist },
         { key: 'Abdômen', a: firstData.circAbdomen, b: lastData.circAbdomen },
         { key: 'Quadril', a: firstData.circHip, b: lastData.circHip },
-        { key: 'Coxa', a: firstData.circThigh, b: lastData.circThigh }
+        { key: 'Coxa', a: firstData.circThigh, b: lastData.circThigh },
+        { key: 'Panturrilha', a: firstData.circCalf, b: lastData.circCalf }
     ];
 
     const data = measures
-        .filter(m => m.a && m.b)
-        .map(m => ({
-            name: m.key,
-            'Variação (cm)': Number((m.b - m.a).toFixed(1))
-        }));
+        .filter(m => m.a != null && m.b != null && m.a > 0 && m.b > 0)
+        .map(m => {
+            const delta = Number((m.b - m.a).toFixed(1));
+            const isRiskRegion = riskRegions.includes(m.key);
+            // For risk regions: increase=red, decrease=green
+            // For muscle regions: increase=green (hypertrophy), decrease=red (sarcopenia)
+            const isNegativeChange = isRiskRegion ? delta > 0 : delta < 0;
+            return {
+                name: m.key,
+                delta: delta,
+                isNegative: isNegativeChange
+            };
+        })
+        .filter(m => m.delta !== 0); // Remove zero changes
 
-    if (data.length === 0) return null;
+    if (data.length === 0) return <div className={`h-40 flex items-center justify-center text-sm ${isManagerMode ? 'text-gray-400' : 'text-slate-400'} rounded border border-dashed`}>Sem variações significativas entre avaliações.</div>;
 
     return (
-        <div className="w-full" style={{ height: isPdf ? '200px' : '220px' }}>
-            <p className={`text-center text-xs font-bold uppercase mb-2 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Perdas e Ganhos (Desde o Início)</p>
-            <ResponsiveContainer width="100%" height="90%">
-                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '250px' : '280px' }}>
+            <div className="flex flex-col items-center mb-4">
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Perdas e Ganhos</h4>
+                <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Variação desde a 1ª avaliação (cm)</p>
+            </div>
+            <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#64748b' }} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#64748b' }} axisLine={false} tickLine={false} />
-                    {!isPdf && <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />}
-                    <ReferenceArea x1={0} x2={0} stroke="#cbd5e1" strokeWidth={2} />
-                    <Bar dataKey="Variação (cm)" radius={[0, 4, 4, 0]}>
+                    <XAxis type="number" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
+                    {!isPdf && <RechartsTooltip
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                        formatter={(value: number) => [`${value > 0 ? '+' : ''}${value} cm`, 'Variação']}
+                    />}
+                    <Bar dataKey="delta" name="Variação" radius={[0, 4, 4, 0]}>
                         {data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry['Variação (cm)'] > 0 ? '#3b82f6' : '#10b981'} />
+                            <Cell key={`cell-${index}`} fill={entry.isNegative ? '#ef4444' : '#10b981'} />
                         ))}
                     </Bar>
                 </BarChart>

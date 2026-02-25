@@ -181,14 +181,46 @@ const ProfessionalDashboard = ({ user, nextAppointments, navigate, isManagerMode
           </div>
         </div>
 
+        {/* Clinical Monitoring & Alerts */}
+        <div className="bg-white border-red-100 shadow-sm rounded-xl border p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-red-900 flex items-center gap-2">
+              <span className="text-xl">🚨</span> Alertas Clínicos Críticos
+            </h3>
+            <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase rounded-full">Monitoramento Real-Time</span>
+          </div>
+          <div className="space-y-3">
+            {patients.filter((p: any) => p.clinicalSummary?.alerts && p.clinicalSummary.alerts.length > 0).length === 0 ? (
+              <div className="py-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p className="text-sm text-gray-500 font-medium italic">Nenhum alerta crítico pendente no momento.</p>
+              </div>
+            ) : (
+              patients.filter((p: any) => p.clinicalSummary?.alerts && p.clinicalSummary.alerts.length > 0).slice(0, 3).map((p: any) => (
+                <div key={p.id} onClick={() => navigate(`/patient/${p.id}`)} className="group cursor-pointer p-4 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100/50 transition-all duration-200">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-black text-red-900 text-sm group-hover:underline">{p.name}</span>
+                    <span className="text-[9px] font-bold text-red-700 bg-white px-2 py-0.5 rounded-full border border-red-200 shadow-sm">ATIVAR PROTOCOLO</span>
+                  </div>
+                  <p className="text-xs text-red-800 leading-snug">
+                    {p.clinicalSummary.alerts[0].message}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+          <button onClick={() => navigate('/clinical-alerts')} className="w-full mt-4 text-[11px] font-black uppercase text-red-700 hover:text-red-900 tracking-wider">
+            Ver central de monitoramento completo →
+          </button>
+        </div>
+
         {/* Quick Actions */}
         <div className="bg-white border-slate-200 shadow-sm rounded-xl border p-6">
           <h3 className="text-lg font-bold mb-4 text-emerald-900">Ações Rápidas</h3>
           <div className="flex gap-4">
-            <button onClick={() => navigate('/agenda')} className="flex-1 text-center py-4 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors duration-200 active:scale-95">
+            <button onClick={() => navigate('/agenda')} className="flex-1 text-center py-4 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors duration-200 shadow-lg shadow-emerald-600/20 active:scale-95">
               Ver Agenda
             </button>
-            <button onClick={() => navigate('/patients')} className="flex-1 text-center py-4 rounded-lg bg-emerald-100 text-emerald-800 font-bold hover:bg-emerald-200 transition-colors duration-200 active:scale-95">
+            <button onClick={() => navigate('/patients')} className="flex-1 text-center py-4 rounded-lg bg-white border-2 border-emerald-100 text-emerald-800 font-bold hover:bg-emerald-50 transition-colors duration-200 active:scale-95">
               Buscar Paciente
             </button>
           </div>

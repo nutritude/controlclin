@@ -1855,17 +1855,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             <div className="space-y-3 pl-3">
                                                 {m.items.map((it: any, j: number) => (
                                                     <div key={j} className="mb-2 last:mb-0">
-                                                        <div className="text-xs font-medium text-slate-800 flex items-start gap-4">
-                                                            <span className="w-20 shrink-0 font-bold text-slate-600 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</span>
-                                                            <span className="flex-1">{it.customName || it.name}</span>
+                                                        <div className="text-xs font-medium text-slate-800 flex items-start gap-3">
+                                                            <span className="w-24 shrink-0 font-bold text-slate-600 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</span>
+                                                            <span className="flex-1 min-w-0 break-words leading-relaxed">{it.customName || it.name}</span>
                                                         </div>
                                                         {it.substitutes && it.substitutes.length > 0 && (
-                                                            <div className="mt-1.5 ml-24 space-y-1.5">
+                                                            <div className="mt-2 ml-24 space-y-2 border-l border-emerald-100 pl-3">
                                                                 {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                    <div key={sIdx} className="text-gray-500 text-[11px] flex items-start gap-2">
-                                                                        <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[9px] uppercase shrink-0 mt-0.5">OU</span>
+                                                                    <div key={sIdx} className="text-slate-500 text-[11px] flex items-start gap-2">
+                                                                        <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[8px] uppercase shrink-0 mt-0.5">OU</span>
                                                                         <span className="shrink-0 font-medium w-16 text-right">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                        <span className="italic leading-snug">- {sub.customName || sub.name}</span>
+                                                                        <span className="italic leading-snug flex-1 min-w-0 break-words">{sub.customName || sub.name}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -1884,20 +1884,22 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                     <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide mb-6 flex items-center gap-2">
                                         🚀 Estratégias para sua Adesão
                                     </h2>
-                                    <div className="grid grid-cols-2 gap-6 w-full max-w-full">
+                                    <div className="grid grid-cols-1 gap-4 w-full">
                                         {adherenceAnalysis.tips.map((tip, idx) => (
-                                            <div key={idx} className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100/60 flex gap-4 items-start w-full min-w-0">
+                                            <div key={idx} className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100/60 flex gap-4 items-start w-full">
                                                 <div className="bg-emerald-600 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full shrink-0 shadow-sm mt-0.5">
                                                     {idx + 1}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1 truncate">
-                                                        {tip.category}
-                                                    </p>
-                                                    <p className="text-xs font-bold text-slate-800 leading-snug mb-1.5 break-words">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">
+                                                            {tip.category}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-xs font-bold text-slate-800 leading-snug mb-1 list-none">
                                                         {tip.tip}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-600 leading-relaxed break-words">
+                                                    <p className="text-[10px] text-slate-600 leading-relaxed italic border-t border-emerald-100/50 pt-1 mt-1">
                                                         {tip.rationale}
                                                     </p>
                                                 </div>

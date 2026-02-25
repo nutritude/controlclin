@@ -491,6 +491,7 @@ export interface Patient {
   nutritionalPlan?: NutritionalPlan; // Legado (Backwards Compatibility)
   patientEvents?: PatientEvent[];
   lastVisit?: string;
+  professionalId?: string; // NOVO: Profissional responsável pelo paciente
   status: 'ATIVO' | 'INATIVO';
 }
 

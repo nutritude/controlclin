@@ -142,7 +142,8 @@ const DEFAULT_PATIENTS: Patient[] = [
             circCalf: 33,
             waistToHipRatio: 0.97
         },
-        nutritionalPlans: [DEFAULT_PLAN_PT1]
+        nutritionalPlans: [DEFAULT_PLAN_PT1],
+        professionalId: 'p3'
     },
     { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO' },
     {
@@ -207,7 +208,8 @@ const DEFAULT_PATIENTS: Patient[] = [
                 circNeck: 33.5, circWaist: 82.5, circHip: 104, circAbdomen: 87, circArmRelaxed: 30, circForearm: 23, circThigh: 57, circCalf: 38,
                 skinfoldTriceps: 26, skinfoldBiceps: 7, skinfoldSubscapular: 24, skinfoldSuprailiac: 20, skinfoldProtocol: 'DurninWomersley'
             }
-        ]
+        ],
+        professionalId: 'p3'
     }
 ];
 
@@ -720,12 +722,25 @@ class DatabaseService {
     async createProfessional(user: User, data: any) { /* ... impl ... */ return this.professionals[0]; }
     async updateProfessional(user: User, id: string, data: any) { /* ... impl ... */ return this.professionals[0]; }
     async deleteProfessional(user: User, id: string) { return { reassigned: 0, cancelled: 0 }; }
-    async getPatients(clinicId: string, professionalId?: string) { return this.patients.filter(p => p.clinicId === clinicId); }
+    async getPatients(clinicId: string, professionalId?: string) {
+        return this.patients.filter(p => {
+            if (p.clinicId !== clinicId) return false;
+            if (professionalId && p.professionalId && p.professionalId !== professionalId) return false;
+            return true;
+        });
+    }
     async createPatient(user: User, data: any) {
-        const p = { id: `pt-${Date.now()}`, clinicId: user.clinicId, ...data, nutritionalPlans: [] };
+        const p = {
+            id: `pt-${Date.now()}`,
+            clinicId: user.clinicId,
+            ...data,
+            nutritionalPlans: [],
+            professionalId: user.professionalId // Assign the creator as the responsible professional
+        };
         this.patients.push(p);
-        this.logPatientEvent(p.id, 'CUSTOM', { action: 'CREATED' }, 'Paciente criado', user); // LOG EVENT
-        this.saveToStorage(); return p;
+        this.logPatientEvent(p.id, 'CUSTOM', { action: 'CREATED' }, 'Paciente criado', user);
+        this.saveToStorage();
+        return p;
     }
     async updatePatient(user: User, id: string, data: any) {
         const idx = this.patients.findIndex(p => p.id === id);
@@ -741,9 +756,32 @@ class DatabaseService {
         throw new Error("Patient not found");
     }
     async deletePatient(user: User, id: string) { this.patients = this.patients.filter(p => p.id !== id); this.saveToStorage(); }
-    async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string) { return this.appointments.filter(a => a.clinicId === clinicId); }
-    async getUpcomingAppointments(clinicId: string, limit: number, professionalId?: string) { return this.appointments.slice(0, limit); }
-    async getPatientAppointmentsFullHistory(patientId: string, professionalId?: string) { return this.appointments.filter(a => a.patientId === patientId); }
+    async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string) {
+        return this.appointments.filter(a => {
+            if (a.clinicId !== clinicId) return false;
+            if (professionalId && a.professionalId !== professionalId) return false;
+            const time = new Date(a.startTime).getTime();
+            return time >= start.getTime() && time <= end.getTime();
+        });
+    }
+    async getUpcomingAppointments(clinicId: string, limit: number, professionalId?: string) {
+        const now = new Date().getTime();
+        return this.appointments
+            .filter(a => {
+                if (a.clinicId !== clinicId) return false;
+                if (professionalId && a.professionalId !== professionalId) return false;
+                return new Date(a.startTime).getTime() >= now && a.status !== 'CANCELADO';
+            })
+            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+            .slice(0, limit);
+    }
+    async getPatientAppointmentsFullHistory(patientId: string, professionalId?: string) {
+        return this.appointments.filter(a => {
+            if (a.patientId !== patientId) return false;
+            if (professionalId && a.professionalId !== professionalId) return false;
+            return true;
+        });
+    }
     async createAppointment(user: User, data: any) {
         const a = { id: `apt-${Date.now()}`, ...data }; this.appointments.push(a);
         this.logPatientEvent(data.patientId, 'APPOINTMENT_STATUS', { status: data.status }, `Agendamento criado: ${data.type}`, user);

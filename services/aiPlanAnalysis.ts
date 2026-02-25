@@ -7,19 +7,20 @@ export const AIPlanAnalysisService = {
    * Analyzes the nutritional plan using Gemini Flash 2.5 or falls back to a deterministic analysis.
    */
   analyzePlan: async (snapshot: PlanSnapshot): Promise<AIAnalysisResult> => {
-    const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY);
 
     if (!apiKey || apiKey.length === 0) {
-      console.warn("GEMINI_API_KEY missing. Returning fallback analysis.");
+      console.warn("[AI Plan] VITE_GEMINI_API_KEY não encontrada. Usando análise offline.");
       return getFallbackAnalysis(snapshot);
     }
+    console.log('[AI Plan] API Key detectada. Iniciando análise com Gemini...');
 
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = buildPrompt(snapshot);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -27,13 +28,13 @@ export const AIPlanAnalysisService = {
         }
       });
 
-      if (response.text) {
+      if (response && response.text) {
         return JSON.parse(response.text) as AIAnalysisResult;
       }
       throw new Error("Empty response from AI");
 
-    } catch (error) {
-      console.error("AI Analysis Failed:", error);
+    } catch (error: any) {
+      console.error("[AI Plan] Falha na análise:", error?.message || error);
       return getFallbackAnalysis(snapshot);
     }
   }
@@ -44,52 +45,50 @@ export const AIPlanAnalysisService = {
  */
 function buildPrompt(snapshot: PlanSnapshot): string {
   return `
-    Você é um nutricionista sênior especialista no Guia Alimentar para a População Brasileira.
-    Analise o seguinte plano alimentar (snapshot JSON) e gere um relatório clínico.
+    Você é um nutricionista clínico sênior com vasta experiência em dietoterapia e no Guia Alimentar para a População Brasileira.
+    Analise o plano alimentar (snapshot JSON) para fornecer uma revisão clínica rigorosa.
 
-    REGRAS RÍGIDAS DE EXECUÇÃO (CRÍTICO):
-    1. PERCORRA TODAS AS REFEIÇÕES DO PLANO (Café, Lanches, Almoço, Jantar, Ceia, etc.).
-    2. ANALISE TODOS OS ALIMENTOS DE CADA REFEIÇÃO. Não faça amostragem.
-    3. Para cada item, verifique a adequação ao objetivo e ao Guia Alimentar.
-    4. NÃO invente números, calorias ou macros. Use apenas os fornecidos no snapshot.
-    5. Suas substituições devem priorizar alimentos in natura ou minimamente processados.
-    6. Evite sugerir ultraprocessados.
-    7. Responda ESTRITAMENTE com o JSON Schema abaixo.
+    REGRAS RÍGIDAS DE EXECUÇÃO:
+    1. QUALIDADE NUTRICIONAL: Avalie a densidade de nutrientes. Há excesso de ultraprocessados? Faltam fibras ou gorduras boas?
+    2. ADEQUAÇÃO AO OBJETIVO: O balanço energético e a distribuição de macros estão alinhados com "${snapshot.patient.objective}"?
+    3. MANEJO CLÍNICO: Considere os diagnósticos (${snapshot.patient.diagnoses.join(', ') || 'Nenhum'}). Há restrições necessárias (ex: sódio para HAS, índice glicêmico para DM2)?
+    4. SUBSTITUIÇÕES INTELIGENTES: Sugira substituições que mantenham os macros mas melhorem a qualidade (ex: trocar pão branco por integral, ou frios por ovos).
+    5. NÃO invente dados. Responda ESTRITAMENTE no formato JSON abaixo.
 
     DADOS DO PACIENTE:
     - Idade: ${snapshot.patient.age}, Sexo: ${snapshot.patient.gender}
     - Objetivo: ${snapshot.patient.objective}
     - Diagnósticos: ${snapshot.patient.diagnoses.join(', ') || 'Nenhum'}
-    - Meta Kcal: ${snapshot.patient.kcalTarget} (Atual do plano: ${snapshot.totals.kcal})
+    - Meta Kcal: ${snapshot.patient.kcalTarget} | Atual: ${snapshot.totals.kcal}
+    - Macros Alvo (g): P:${snapshot.patient.macroTargets.protein} C:${snapshot.patient.macroTargets.carbs} G:${snapshot.patient.macroTargets.fat}
+    - Macros Atuais (g): P:${snapshot.totals.protein} C:${snapshot.totals.carbs} G:${snapshot.totals.fat}
     
-    ESTRUTURA DO PLANO (ANALISAR 100%):
+    ESTRUTURA DO PLANO:
     ${JSON.stringify(snapshot.plan.meals)}
 
-    JSON OUTPUT SCHEMA:
+    JSON OUTPUT SCHEMA (PORTUGUÊS):
     {
-      "summary": "Resumo executivo da adequação do plano ao objetivo do paciente (max 3 frases).",
+      "summary": "Análise técnica da viabilidade e qualidade do plano (max 4 frases).",
       "guidelines": {
         "adherence": "LOW|MEDIUM|HIGH",
-        "keyFindings": ["Ponto positivo 1", "Ponto de atenção 1"],
-        "risks": ["Risco potencial se houver (ex: baixo teor de fibra)"],
-        "nextActions": ["Ação sugerida 1"]
+        "keyFindings": ["Ponto positivo/negativo técnico", "..."],
+        "risks": ["Risco clínico ou nutricional detectado", "..."],
+        "nextActions": ["Sugestão de ajuste para o profissional", "..."]
       },
       "mealFeedback": [
-        { "mealName": "Nome da Refeição", "notes": ["Obs 1"], "simpleFixes": ["Ajuste simples"] }
+        { "mealName": "Nome da Refeição", "notes": ["Avaliação específica"], "simpleFixes": ["Sugestão de melhora rápida"] }
       ],
       "substitutions": [
         {
-          "foodName": "Nome do Alimento Original",
+          "foodName": "Alimento Alvo",
           "foodCategory": "Categoria",
           "replacements": [
-            { "name": "Substituto 1", "reason": "Motivo (ex: mais fibra)", "guideTag": "in_natura" }
+            { "name": "Opção Superior", "reason": "Justificativa nutricional", "guideTag": "in_natura|minimamente_processado" }
           ]
         }
       ],
-      "disclaimers": ["Avisos legais padrão"]
+      "disclaimers": ["Nota de responsabilidade clínica"]
     }
-    
-    Gere 5 substituições simples para os principais alimentos do plano.
   `;
 }
 
