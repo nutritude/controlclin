@@ -21,11 +21,12 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     const [analyzingId, setAnalyzingId] = useState<string | null>(null);
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
+    const [editingExamId, setEditingExamId] = useState<string | null>(null);
 
     // File Upload State
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Form states for manual entry
+    // Form states for manual entry / edit
     const [manualExamName, setManualExamName] = useState('Painel Bioquímico');
     const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
     const [manualReason, setManualReason] = useState('Acompanhamento Nutricional');
@@ -46,31 +47,69 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     };
 
     const handleSaveManualExam = async () => {
-        if (manualMarkers.length === 0) return;
+        if (manualMarkers.length === 0) {
+            alert("Adicione pelo menos um marcador.");
+            return;
+        }
 
-        const processedMarkers = LaboratService.processMarkers(manualMarkers);
-        const score = LaboratService.calculateExamScore(processedMarkers);
+        const extracted = LaboratService.processMarkers(manualMarkers);
+        const score = LaboratService.calculateExamScore(extracted);
 
-        const newExam: Partial<Exam> = {
+        const examData: Partial<Exam> = {
             name: manualExamName,
             date: manualDate,
             clinicalReason: manualReason,
             status: 'PENDENTE',
-            markers: processedMarkers,
+            markers: extracted,
             healthScore: score,
             patientId: patient.id,
             clinicId: patient.clinicId,
-            requestedByUserId: user.id,
-            createdAt: new Date().toISOString()
+            requestedByUserId: user.id
         };
 
         try {
-            await db.saveExam(user, patient.id, newExam);
-            setIsAddingManual(false);
-            setManualMarkers([]);
+            if (editingExamId) {
+                await db.updateExam(editingExamId, examData);
+                alert("Exame atualizado com sucesso!");
+            } else {
+                await db.saveExam(user, patient.id, examData);
+                alert("Exame salvo com sucesso!");
+            }
             onUpdate();
+            setIsAddingManual(false);
+            setEditingExamId(null);
+            resetForm();
         } catch (err) {
-            alert("Erro ao salvar exame: " + err);
+            alert("Erro ao salvar: " + err);
+        }
+    };
+
+    const resetForm = () => {
+        setManualExamName('Painel Bioquímico');
+        setManualDate(new Date().toISOString().split('T')[0]);
+        setManualReason('Acompanhamento Nutricional');
+        setManualMarkers([]);
+        setCurrMarkerName('');
+        setCurrMarkerVal('');
+    };
+
+    const handleEditExam = (exam: Exam) => {
+        setEditingExamId(exam.id);
+        setManualExamName(exam.name);
+        setManualDate(exam.date);
+        setManualReason(exam.clinicalReason || '');
+        setManualMarkers((exam.markers || []).map(m => ({ name: m.name, value: m.value, unit: m.unit })));
+        setIsAddingManual(true);
+    };
+
+    const handleDeleteExam = async (examId: string) => {
+        if (confirm("Tem certeza que deseja excluir este exame? Esta ação não pode ser desfeita.")) {
+            try {
+                await db.deleteExam(examId);
+                onUpdate();
+            } catch (err) {
+                alert("Erro ao excluir: " + err);
+            }
         }
     };
 
@@ -203,10 +242,12 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 </div>
 
                 {isAddingManual && (
-                    <div className="mb-8 p-6 border rounded-xl bg-gray-50/50 space-y-4 animate-fadeIn">
+                    <div className="mb-8 p-6 border rounded-xl bg-gray-50/50 space-y-4 animate-fadeIn border-indigo-200">
                         <div className="flex justify-between items-center">
-                            <h4 className="font-bold text-slate-800">Novo Lançamento Manual</h4>
-                            <button onClick={() => setIsAddingManual(false)} className="text-gray-400">✕</button>
+                            <h4 className="font-bold text-slate-800">
+                                {editingExamId ? '📝 Editar Exame' : '➕ Novo Lançamento Manual'}
+                            </h4>
+                            <button onClick={() => { setIsAddingManual(false); setEditingExamId(null); resetForm(); }} className="text-gray-400">✕</button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -260,7 +301,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                         </div>
 
                         <div className="flex justify-end gap-2 pt-4">
-                            <button onClick={() => setIsAddingManual(false)} className="px-4 py-2 text-sm font-bold text-gray-500">Cancelar</button>
+                            <button onClick={() => { setIsAddingManual(false); setEditingExamId(null); resetForm(); }} className="px-4 py-2 text-sm font-bold text-gray-500">Cancelar</button>
                             <button onClick={handleSaveManualExam} className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-md">Salvar Exame</button>
                         </div>
                     </div>
@@ -296,16 +337,39 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                 </p>
                                             </div>
                                         )}
-                                        <button
-                                            onClick={() => handleRunAnalysis(exam)}
-                                            disabled={analyzingId === exam.id}
-                                            className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${exam.analysisResult
-                                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                : 'bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-sm'
-                                                }`}
-                                        >
-                                            {analyzingId === exam.id ? 'Analisando...' : exam.analysisResult ? '✨ Recalcular IA' : '✨ Analisar IA'}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleEditExam(exam)}
+                                                className={`p-2 rounded-lg hover:bg-gray-200 transition-colors ${isManagerMode ? 'text-gray-400' : 'text-slate-400'}`}
+                                                title="Editar Exame"
+                                            >
+                                                <span>✏️</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteExam(exam.id)}
+                                                className={`p-2 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors ${isManagerMode ? 'text-gray-400' : 'text-slate-400'}`}
+                                                title="Excluir Exame"
+                                            >
+                                                <span>🗑️</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleRunAnalysis(exam)}
+                                                disabled={analyzingId === exam.id}
+                                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all shadow-sm flex items-center gap-2 ${exam.status === 'ANALISADO' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'} ${analyzingId === exam.id ? 'opacity-50' : ''}`}
+                                            >
+                                                {analyzingId === exam.id ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <Icons.Activity className="w-3 h-3 animate-spin" /> Analisando...
+                                                    </span>
+                                                ) : exam.status === 'ANALISADO' ? '🔄 Reanalisar com IA' : '✨ Inteligência Clínica'}
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedExam(selectedExam?.id === exam.id ? null : exam)}
+                                                className={`p-2 rounded-lg ${selectedExam?.id === exam.id ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100'}`}
+                                            >
+                                                {selectedExam?.id === exam.id ? '▲' : '▼'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 

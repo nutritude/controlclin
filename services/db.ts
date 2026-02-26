@@ -1027,6 +1027,20 @@ class DatabaseService {
         }
     }
 
+    async updateExam(examId: string, updates: Partial<Exam>) {
+        const idx = this.exams.findIndex(e => e.id === examId);
+        if (idx !== -1) {
+            this.exams[idx] = { ...this.exams[idx], ...updates };
+            await this.saveToStorage();
+            return this.exams[idx];
+        }
+    }
+
+    async deleteExam(examId: string) {
+        this.exams = this.exams.filter(e => e.id !== examId);
+        await this.saveToStorage();
+    }
+
     // --- NUTRITIONAL PLANNING PERSISTENCE (UPDATED FOR MULTI-PLAN) ---
 
     // Get all plans for a patient
