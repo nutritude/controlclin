@@ -1,11 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Exam, ExamMarker, Patient, User, ExamAnalysisResult } from '../types';
 import { Icons } from '../constants';
 import { LaboratService } from '../services/laboratService';
 import { AIExamService } from '../services/ai/aiExamService';
 import { BIOMEDICAL_MARKERS } from '../constants/biomedicalMarkers';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    ReferenceLine, Cell, LineChart, Line, Legend, AreaChart, Area
+} from 'recharts';
 
 interface ExamManagerProps {
     patient: Patient;
@@ -17,29 +20,49 @@ interface ExamManagerProps {
 }
 
 export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpdate, isManagerMode, db, user }) => {
+    const [viewMode, setViewMode] = useState<'LIST' | 'EVOLUTION'>('LIST');
     const [isAddingManual, setIsAddingManual] = useState(false);
     const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-    const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+    const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
     const [editingExamId, setEditingExamId] = useState<string | null>(null);
+    const [selectedMarkerForEvo, setSelectedMarkerForEvo] = useState<string>('Glicose em Jejum');
 
     // File Upload State
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Form states for manual entry / edit
+    // Form states
     const [manualExamName, setManualExamName] = useState('Painel Bioquímico');
     const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
     const [manualReason, setManualReason] = useState('Acompanhamento Nutricional');
-    const [manualMarkers, setManualMarkers] = useState<Array<{ name: string; value: number; unit: string }>>([]);
+    const [manualMarkers, setManualMarkers] = useState<Array<{ name: string; value: number | string; unit: string }>>([]);
     const [currMarkerName, setCurrMarkerName] = useState('');
     const [currMarkerVal, setCurrMarkerVal] = useState('');
 
+    // --- EVOLUTION DATA COMPUTATION ---
+    const evolutionData = useMemo(() => {
+        const sortedExams = [...exams].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Obter todos os nomes de marcadores únicos presentes em todos os exames
+        const allMarkerNames = Array.from(new Set(exams.flatMap(e => e.markers?.map(m => m.name) || [])));
+
+        const dataPoints = sortedExams.map(exam => {
+            const point: any = { date: new Date(exam.date).toLocaleDateString('pt-BR') };
+            exam.markers?.forEach(m => {
+                point[m.name] = m.value;
+            });
+            return point;
+        });
+
+        return { dataPoints, markers: allMarkerNames };
+    }, [exams]);
+
     const handleAddMarker = () => {
-        if (!currMarkerName || !currMarkerVal) return;
+        if (!currMarkerName || currMarkerVal === '') return;
         const meta = Object.values(BIOMEDICAL_MARKERS).find(m => m.name === currMarkerName || m.aliases.includes(currMarkerName));
         setManualMarkers([...manualMarkers, {
-            name: currMarkerName,
-            value: parseFloat(currMarkerVal),
+            name: meta?.name || currMarkerName,
+            value: currMarkerVal,
             unit: meta?.unit || 'un'
         }]);
         setCurrMarkerName('');
@@ -52,15 +75,15 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
             return;
         }
 
-        const extracted = LaboratService.processMarkers(manualMarkers);
-        const score = LaboratService.calculateExamScore(extracted);
+        const processedMarkers = LaboratService.processMarkers(manualMarkers);
+        const score = LaboratService.calculateExamScore(processedMarkers);
 
         const examData: Partial<Exam> = {
             name: manualExamName,
             date: manualDate,
             clinicalReason: manualReason,
             status: 'PENDENTE',
-            markers: extracted,
+            markers: processedMarkers,
             healthScore: score,
             patientId: patient.id,
             clinicId: patient.clinicId,
@@ -76,15 +99,15 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 alert("Exame salvo com sucesso!");
             }
             onUpdate();
-            setIsAddingManual(false);
-            setEditingExamId(null);
-            resetForm();
+            handleCancelForm();
         } catch (err) {
             alert("Erro ao salvar: " + err);
         }
     };
 
-    const resetForm = () => {
+    const handleCancelForm = () => {
+        setIsAddingManual(false);
+        setEditingExamId(null);
         setManualExamName('Painel Bioquímico');
         setManualDate(new Date().toISOString().split('T')[0]);
         setManualReason('Acompanhamento Nutricional');
@@ -103,7 +126,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     };
 
     const handleDeleteExam = async (examId: string) => {
-        if (confirm("Tem certeza que deseja excluir este exame? Esta ação não pode ser desfeita.")) {
+        if (confirm("Deseja realmente excluir este exame?")) {
             try {
                 await db.deleteExam(examId);
                 onUpdate();
@@ -132,24 +155,18 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
         setIsExtracting(true);
         try {
-            // Ler arquivo como Base64
             const reader = new FileReader();
             const fileData: { base64: string, mimeType: string } = await new Promise((resolve, reject) => {
-                reader.onload = () => resolve({
-                    base64: reader.result as string,
-                    mimeType: file.type || 'application/pdf'
-                });
+                reader.onload = () => resolve({ base64: reader.result as string, mimeType: file.type || 'application/pdf' });
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
 
-            // Extração Real via IA (Gemini pode ler PDFs/Imagens diretamente via Base64)
             let extracted: ExamMarker[] = [];
             try {
                 extracted = await AIExamService.extractMarkers(fileData);
             } catch (aiErr) {
                 console.warn("IA falhou na extração:", aiErr);
-                // Não interrompemos o fluxo, apenas salvamos sem marcadores para análise manual posterior
             }
 
             const score = extracted.length > 0 ? LaboratService.calculateExamScore(extracted) : 0;
@@ -169,15 +186,9 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
             await db.saveExam(user, patient.id, newExam);
             onUpdate();
-
-            if (extracted.length > 0) {
-                alert(`Sucesso! ${extracted.length} marcadores extraídos e salvos.`);
-            } else {
-                alert("O exame foi salvo, mas a IA não conseguiu extrair os marcadores automaticamente. Você pode preenchê-los manualmente clicando em 'Lançamento Manual'.");
-            }
+            alert(extracted.length > 0 ? `Sucesso! ${extracted.length} marcadores extraídos.` : "Exame salvo (extração automática falhou).");
         } catch (err) {
-            console.error("Erro no processamento do arquivo:", err);
-            alert("Erro no upload/IA: " + err);
+            alert("Erro no upload: " + err);
         } finally {
             setIsExtracting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -187,18 +198,18 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     const renderComparisonChart = (marker: ExamMarker) => {
         const data = [
             { name: 'Mínimo', valor: marker.reference.min, fill: '#94a3b8' },
-            { name: 'Resultado', valor: marker.value, fill: marker.interpretation === 'NORMAL' ? '#10b981' : '#ef4444' },
+            { name: 'Resultado', valor: marker.value, fill: marker.interpretation === 'NORMAL' ? '#10b981' : '#f43f5e' },
             { name: 'Máximo', valor: marker.reference.max, fill: '#94a3b8' }
         ];
 
         return (
-            <div className="h-48 w-full mt-4">
+            <div className="h-40 w-full mt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
+                    <BarChart data={data} layout="vertical" margin={{ left: 10, right: 10 }}>
                         <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={80} style={{ fontSize: '10px', fontWeight: 'bold' }} />
-                        <Tooltip />
-                        <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
+                        <YAxis dataKey="name" type="category" width={70} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                        <Tooltip cursor={{ fill: 'transparent' }} />
+                        <Bar dataKey="valor" barSize={15} radius={[0, 4, 4, 0]}>
                             {data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
@@ -211,279 +222,282 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
     return (
         <div className="space-y-6">
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className={`text-lg font-bold flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
-                        <Icons.Activity className="w-6 h-6" />
-                        Gestão de Exames Laboratoriais
-                    </h3>
+            <div className={`${isManagerMode ? 'bg-gray-800' : 'bg-white'} border border-slate-200 shadow-sm rounded-2xl overflow-hidden`}>
+                {/* Custom Header (RESTORING ORIGINAL STYLE) */}
+                <div className="p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+                    <div>
+                        <h3 className={`text-xl font-black flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
+                            <Icons.Activity className="w-6 h-6 text-emerald-500" />
+                            Prontuário Laboratorial
+                        </h3>
+                        <p className="text-xs text-slate-500 font-medium">Gestão de marcadores e evolução clínica</p>
+                    </div>
+
                     <div className="flex gap-2">
+                        <div className="bg-slate-200/50 p-1 rounded-lg flex mr-4">
+                            <button
+                                onClick={() => setViewMode('LIST')}
+                                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'LIST' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}
+                            >
+                                Lista
+                            </button>
+                            <button
+                                onClick={() => setViewMode('EVOLUTION')}
+                                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'EVOLUTION' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}
+                            >
+                                Evolução
+                            </button>
+                        </div>
                         <button
                             onClick={() => setIsAddingManual(true)}
-                            className={`text-xs px-4 py-2 rounded-lg shadow-sm font-bold flex items-center gap-2 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                            className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2"
                         >
                             <span>+</span> Lançamento Manual
                         </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".pdf,.png,.jpg"
-                            onChange={handleFileUpload}
-                        />
+                        <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.png,.jpg" onChange={handleFileUpload} />
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isExtracting}
-                            className={`text-xs px-4 py-2 rounded-lg shadow-sm font-bold flex items-center gap-2 border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'} ${isExtracting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
-                            <span>📂</span> {isExtracting ? 'Extraindo...' : 'Upload PDF (IA)'}
+                            <span>📂</span> {isExtracting ? 'Processando...' : 'Anexar PDF'}
                         </button>
                     </div>
                 </div>
 
                 {isAddingManual && (
-                    <div className="mb-8 p-6 border rounded-xl bg-gray-50/50 space-y-4 animate-fadeIn border-indigo-200">
-                        <div className="flex justify-between items-center">
-                            <h4 className="font-bold text-slate-800">
-                                {editingExamId ? '📝 Editar Exame' : '➕ Novo Lançamento Manual'}
+                    <div className="p-6 bg-indigo-50/30 border-b animate-fadeIn">
+                        <div className="flex justify-between items-center mb-6">
+                            <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tighter">
+                                {editingExamId ? '📝 Editando Registro' : '✨ Novo Lançamento Clínico'}
                             </h4>
-                            <button onClick={() => { setIsAddingManual(false); setEditingExamId(null); resetForm(); }} className="text-gray-400">✕</button>
+                            <button onClick={handleCancelForm} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Nome do Exame</label>
-                                <input type="text" className="w-full mt-1 border rounded p-2 text-sm" value={manualExamName} onChange={e => setManualExamName(e.target.value)} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400">Nome do Exame</label>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualExamName} onChange={e => setManualExamName(e.target.value)} />
                             </div>
-                            <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Data de Realização</label>
-                                <input type="date" className="w-full mt-1 border rounded p-2 text-sm" value={manualDate} onChange={e => setManualDate(e.target.value)} />
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400">Data</label>
+                                <input type="date" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualDate} onChange={e => setManualDate(e.target.value)} />
                             </div>
-                            <div>
-                                <label className="text-xs font-bold uppercase text-gray-500">Motivo Clínico</label>
-                                <input type="text" className="w-full mt-1 border rounded p-2 text-sm" value={manualReason} onChange={e => setManualReason(e.target.value)} />
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400">Motivo</label>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualReason} onChange={e => setManualReason(e.target.value)} />
                             </div>
                         </div>
 
-                        <div className="border-t pt-4">
-                            <label className="text-xs font-bold uppercase text-gray-500 mb-2 block">Adicionar Marcadores</label>
-                            <div className="flex gap-2">
+                        <div className="bg-white rounded-2xl p-6 border border-indigo-100 shadow-sm">
+                            <h5 className="text-[10px] font-black uppercase text-indigo-500 mb-4 tracking-widest">Adicionar Marcadores Bioquímicos</h5>
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <input
-                                    list="marker-suggestions"
-                                    className="flex-1 border rounded p-2 text-sm"
+                                    list="markers"
+                                    className="flex-1 border-slate-200 border rounded-xl p-3 text-sm outline-none focus:border-indigo-500"
                                     placeholder="Nome do marcador (ex: Glicose)"
                                     value={currMarkerName}
                                     onChange={e => setCurrMarkerName(e.target.value)}
                                 />
-                                <datalist id="marker-suggestions">
-                                    {Object.values(BIOMEDICAL_MARKERS).map(m => (
-                                        <option key={m.name} value={m.name} />
-                                    ))}
+                                <datalist id="markers">
+                                    {Object.values(BIOMEDICAL_MARKERS).map(m => <option key={m.name} value={m.name} />)}
                                 </datalist>
                                 <input
-                                    type="number"
-                                    className="w-32 border rounded p-2 text-sm font-bold"
+                                    type="text"
+                                    className="w-full sm:w-32 border-slate-200 border rounded-xl p-3 text-sm text-center font-black"
                                     placeholder="Valor"
                                     value={currMarkerVal}
                                     onChange={e => setCurrMarkerVal(e.target.value)}
                                 />
-                                <button onClick={handleAddMarker} className="px-4 py-2 bg-slate-800 text-white rounded text-sm font-bold">Add</button>
+                                <button onClick={handleAddMarker} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:shadow-lg transition-all">Add</button>
                             </div>
 
-                            <div className="mt-4 flex flex-wrap gap-2">
+                            <div className="mt-6 flex flex-wrap gap-2">
                                 {manualMarkers.map((m, i) => (
-                                    <span key={i} className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-medium flex items-center gap-2">
-                                        <b>{m.name}:</b> {m.value} {m.unit}
-                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-red-500 font-bold ml-1">×</button>
+                                    <span key={i} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-100 flex items-center gap-3">
+                                        <span>{m.name}: <b>{m.value} {m.unit}</b></span>
+                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-red-400 font-bold hover:text-red-600">✕</button>
                                     </span>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-4">
-                            <button onClick={() => { setIsAddingManual(false); setEditingExamId(null); resetForm(); }} className="px-4 py-2 text-sm font-bold text-gray-500">Cancelar</button>
-                            <button onClick={handleSaveManualExam} className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-md">Salvar Exame</button>
+                        <div className="flex justify-end gap-3 mt-8">
+                            <button onClick={handleCancelForm} className="text-slate-500 text-sm font-bold px-6 py-2">Cancelar</button>
+                            <button onClick={handleSaveManualExam} className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-10 py-3 rounded-xl font-black shadow-md hover:scale-[1.02] transition-all">
+                                {editingExamId ? 'Atualizar Registro' : 'Salvar no Prontuário'}
+                            </button>
                         </div>
                     </div>
                 )}
 
-                {exams.length === 0 ? (
-                    <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-xl">
-                        <span className="text-4xl block mb-2">🔬</span>
-                        <p className="text-gray-400 font-medium">Nenhum registro laboratorial encontrado.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-6">
-                        {exams.map(exam => (
-                            <div key={exam.id} className={`border rounded-xl overflow-hidden shadow-sm transition-all hover:shadow-md ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'}`}>
-                                {/* Exam Card Header */}
-                                <div className={`p-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700/50' : 'bg-slate-50/50'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                                            <Icons.Activity className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h4 className={`font-bold ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{exam.name}</h4>
-                                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{new Date(exam.date).toLocaleDateString('pt-BR')}</p>
-                                        </div>
-                                    </div>
+                <div className="p-6">
+                    {viewMode === 'EVOLUTION' ? (
+                        <div className="space-y-8 animate-fadeIn">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                    Evolução Temporal de Biomarcadores
+                                </h4>
+                                <select
+                                    className="text-xs font-bold border rounded-lg p-2 bg-slate-50"
+                                    value={selectedMarkerForEvo}
+                                    onChange={e => setSelectedMarkerForEvo(e.target.value)}
+                                >
+                                    {evolutionData.markers.map(m => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            </div>
 
-                                    <div className="flex items-center gap-4">
-                                        {exam.healthScore !== undefined && (
-                                            <div className="text-right">
-                                                <p className="text-[8px] font-bold uppercase text-gray-400">Score de Saúde</p>
-                                                <p className={`text-lg font-black ${exam.healthScore > 80 ? 'text-emerald-500' : exam.healthScore > 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                                                    {Math.round(exam.healthScore)}%
-                                                </p>
+                            {evolutionData.dataPoints.length < 2 ? (
+                                <div className="py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                                    <p className="text-slate-400 font-medium">São necessários pelo menos 2 registros para gerar a linha de evolução.</p>
+                                </div>
+                            ) : (
+                                <div className="h-80 w-full bg-white rounded-3xl border border-slate-100 p-4 shadow-sm">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={evolutionData.dataPoints}>
+                                            <defs>
+                                                <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="date" axisLine={false} tickLine={false} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                            <YAxis axisLine={false} tickLine={false} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                            <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', shadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                            <Area type="monotone" dataKey={selectedMarkerForEvo} stroke="#4f46e5" strokeWidth={4} fillOpacity={1} fill="url(#colorVal)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {evolutionData.markers.slice(0, 4).map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setSelectedMarkerForEvo(m)}
+                                        className={`p-4 rounded-2xl border transition-all text-left ${selectedMarkerForEvo === m ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-100 bg-white hover:border-slate-300'}`}
+                                    >
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{m}</p>
+                                        <p className="text-lg font-black text-slate-800">Visualizar</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-6">
+                            {exams.length === 0 ? (
+                                <div className="text-center py-20 grayscale opacity-50">
+                                    <Icons.Activity className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                                    <p className="text-slate-500 font-bold">Nenhum exame registrado para este paciente.</p>
+                                </div>
+                            ) : (
+                                [...exams].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exam => (
+                                    <div key={exam.id} className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                                        <div className="p-5 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-500">
+                                                    <Icons.Activity className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-slate-900 leading-tight">{exam.name}</h4>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">REALIZADO EM {new Date(exam.date).toLocaleDateString('pt-BR')}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => handleEditExam(exam)} className="p-2 hover:bg-white rounded-xl transition-colors text-slate-400" title="Editar">✏️</button>
+                                                <button onClick={() => handleDeleteExam(exam.id)} className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-300" title="Excluir">🗑️</button>
+
+                                                <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
+
+                                                <button
+                                                    onClick={() => handleRunAnalysis(exam)}
+                                                    disabled={analyzingId === exam.id}
+                                                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm ${exam.analysisResult
+                                                        ? 'bg-indigo-100 text-indigo-700'
+                                                        : 'bg-gradient-to-r from-indigo-600 to-blue-500 text-white hover:scale-105 active:scale-95'
+                                                        }`}
+                                                >
+                                                    {analyzingId === exam.id ? 'Analisando...' : exam.analysisResult ? '✨ Recalcular IA' : '✨ Analisar IA'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setSelectedExamId(selectedExamId === exam.id ? null : exam.id)}
+                                                    className={`p-3 rounded-xl transition-all ${selectedExamId === exam.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400 border border-slate-100'}`}
+                                                >
+                                                    {selectedExamId === exam.id ? '▲' : '▼'}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {(selectedExamId === exam.id || exams.length === 1) && (
+                                            <div className="p-6 bg-white animate-fadeIn">
+                                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                                    {/* Marcadores */}
+                                                    <div className="lg:col-span-7">
+                                                        <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 border-b pb-2">Resultados Laboratoriais</h5>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            {exam.markers?.map(m => (
+                                                                <div key={m.id} className={`p-4 rounded-2xl border transition-all ${m.interpretation !== 'NORMAL' ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-transparent hover:bg-white hover:border-emerald-100'}`}>
+                                                                    <div className="flex justify-between items-start mb-1">
+                                                                        <p className="text-xs font-black text-slate-800">{m.name}</p>
+                                                                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${m.interpretation === 'NORMAL' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{m.interpretation}</span>
+                                                                    </div>
+                                                                    <div className="flex items-baseline gap-1">
+                                                                        <span className={`text-xl font-black ${m.interpretation !== 'NORMAL' ? 'text-rose-600' : 'text-emerald-600'}`}>{m.value}</span>
+                                                                        <span className="text-[10px] text-slate-400 font-bold uppercase">{m.unit}</span>
+                                                                    </div>
+                                                                    <p className="text-[9px] text-slate-400 font-medium mt-1">Ref: {m.reference.label}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Gráficos / Análise */}
+                                                    <div className="lg:col-span-5 space-y-8">
+                                                        <div>
+                                                            <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 border-b pb-2">Visualização de Referência</h5>
+                                                            <div className="space-y-4">
+                                                                {exam.markers?.slice(0, 2).map(m => (
+                                                                    <div key={m.id} className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                                                                        <p className="text-xs font-black text-slate-700 mb-1">{m.name}</p>
+                                                                        {renderComparisonChart(m)}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {exam.analysisResult && (
+                                                            <div className="p-6 bg-indigo-600 rounded-3xl text-white shadow-xl shadow-indigo-100 space-y-4">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <span className="text-xl">✨</span>
+                                                                    <h6 className="text-xs font-black uppercase tracking-widest">Insight ControlClin</h6>
+                                                                </div>
+                                                                <p className="text-xs font-medium leading-relaxed opacity-90 leading-normal">"{exam.analysisResult.summary}"</p>
+                                                                <div className="pt-4 border-t border-white/20">
+                                                                    <p className="text-[10px] font-black uppercase opacity-60 mb-2">Principais Fatos</p>
+                                                                    <div className="space-y-2">
+                                                                        {exam.analysisResult.findings.slice(0, 2).map((f, i) => (
+                                                                            <div key={i} className="flex gap-2 items-start">
+                                                                                <span className="text-emerald-300">✔</span>
+                                                                                <p className="text-[10px] font-bold">{f.correlation.slice(0, 60)}...</p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => handleEditExam(exam)}
-                                                className={`p-2 rounded-lg hover:bg-gray-200 transition-colors ${isManagerMode ? 'text-gray-400' : 'text-slate-400'}`}
-                                                title="Editar Exame"
-                                            >
-                                                <span>✏️</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteExam(exam.id)}
-                                                className={`p-2 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors ${isManagerMode ? 'text-gray-400' : 'text-slate-400'}`}
-                                                title="Excluir Exame"
-                                            >
-                                                <span>🗑️</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleRunAnalysis(exam)}
-                                                disabled={analyzingId === exam.id}
-                                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all shadow-sm flex items-center gap-2 ${exam.status === 'ANALISADO' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'} ${analyzingId === exam.id ? 'opacity-50' : ''}`}
-                                            >
-                                                {analyzingId === exam.id ? (
-                                                    <span className="flex items-center gap-2">
-                                                        <Icons.Activity className="w-3 h-3 animate-spin" /> Analisando...
-                                                    </span>
-                                                ) : exam.status === 'ANALISADO' ? '🔄 Reanalisar com IA' : '✨ Inteligência Clínica'}
-                                            </button>
-                                            <button
-                                                onClick={() => setSelectedExam(selectedExam?.id === exam.id ? null : exam)}
-                                                className={`p-2 rounded-lg ${selectedExam?.id === exam.id ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100'}`}
-                                            >
-                                                {selectedExam?.id === exam.id ? '▲' : '▼'}
-                                            </button>
-                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="p-6">
-                                    {/* Markers Accordion/Grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {/* Tabela de Marcadores */}
-                                        <div>
-                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Indicadores Bioquímicos</h5>
-                                            <div className="space-y-3">
-                                                {exam.markers?.map(m => (
-                                                    <div
-                                                        key={m.id}
-                                                        onClick={() => setSelectedExam(exam)}
-                                                        className={`p-3 rounded-lg border flex justify-between items-center cursor-pointer transition-colors ${m.interpretation !== 'NORMAL' ? 'bg-red-50 border-red-100' : 'hover:bg-slate-50'
-                                                            }`}
-                                                    >
-                                                        <div>
-                                                            <p className="text-xs font-bold text-slate-800">{m.name}</p>
-                                                            <p className="text-[10px] text-slate-400">{m.reference.label}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className={`font-black ${m.interpretation !== 'NORMAL' ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                                {m.value} <span className="text-[10px] font-medium">{m.unit}</span>
-                                                            </p>
-                                                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${m.interpretation === 'NORMAL' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                                                                }`}>
-                                                                {m.interpretation}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Gráficos Comparativos (Top 2 Alterados ou primeiros 2) */}
-                                        <div>
-                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Visualização de Referência</h5>
-                                            <div className="space-y-6">
-                                                {exam.markers?.slice(0, 2).map(m => (
-                                                    <div key={m.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <p className="text-[11px] font-bold text-slate-700">{m.name}</p>
-                                                            <span className="text-[10px] text-slate-500">{m.interpretation}</span>
-                                                        </div>
-                                                        {renderComparisonChart(m)}
-                                                    </div>
-                                                ))}
-                                                {exam.markers && exam.markers.length > 2 && (
-                                                    <p className="text-[10px] text-center text-slate-400 italic">Mais {exam.markers.length - 2} indicadores monitorados</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* AI INSIGHTS BLOCK */}
-                                    {exam.analysisResult && (
-                                        <div className="mt-8 pt-8 border-t space-y-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">✨</div>
-                                                <div>
-                                                    <h5 className="font-black text-slate-800 tracking-tight">Relatório de Análise Clínica</h5>
-                                                    <p className="text-xs text-indigo-500 font-bold uppercase">ControlClin Intelligence v2.5</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6">
-                                                <p className="text-sm text-slate-700 leading-relaxed font-medium italic">"{exam.analysisResult.summary}"</p>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {/* Findings & Correlation */}
-                                                <div className="space-y-4">
-                                                    <h6 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Cruzamentos e Correlações</h6>
-                                                    <div className="space-y-3">
-                                                        {exam.analysisResult.findings.map((f, i) => (
-                                                            <div key={i} className={`p-4 rounded-xl border bg-white ${f.impact === 'NEGATIVO' ? 'border-red-100' : 'border-emerald-100'}`}>
-                                                                <p className="text-xs font-black text-slate-900 mb-1">{f.marker}</p>
-                                                                <p className="text-[11px] text-slate-600 leading-normal">{f.correlation}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Suggestions */}
-                                                <div className="space-y-4">
-                                                    <h6 className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Intervenção Sugerida</h6>
-                                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-5">
-                                                        <ul className="space-y-3">
-                                                            {exam.analysisResult.suggestedTreatments.map((t, i) => (
-                                                                <li key={i} className="flex gap-3 text-xs text-emerald-900 font-medium">
-                                                                    <span className="text-emerald-400">▶</span> {t}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-
-                                                    <h6 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mt-4">Próximos Passos</h6>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {exam.analysisResult.nextSteps.map((s, i) => (
-                                                            <span key={i} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100">
-                                                                {s}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -44,18 +44,15 @@ export const AIExamService = {
                 });
             }
 
-            const response = await (genAI as any).models.generateContent({
-                model: "gemini-1.5-flash",
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent({
                 contents: [{ role: 'user', parts }],
-                config: { responseMimeType: "application/json" }
+                generationConfig: { responseMimeType: "application/json" }
             });
 
-            // O SDK pode retornar o texto diretamente ou dentro de um objeto dependendo da versão
-            const responseText = response.text || (response.response && response.response.text && response.response.text());
-
+            const responseText = result.response.text();
             if (!responseText) throw new Error("Resposta vazia da IA");
 
-            // Limpar possíveis blocos de código markdown do JSON
             const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             const raw = JSON.parse(jsonStr);
 
@@ -71,8 +68,6 @@ export const AIExamService = {
      */
     analyzeResults: async (patient: Patient, exams: Exam[]): Promise<ExamAnalysisResult> => {
         const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-
-        // Coletar todos os marcadores de todos os exames passados
         const allMarkers = exams.flatMap(e => e.markers || []);
 
         if (!apiKey) return getFallbackAnalysis(allMarkers);
@@ -109,13 +104,13 @@ export const AIExamService = {
     `;
 
         try {
-            const response = await (genAI as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt,
-                config: { responseMimeType: "application/json" }
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const result = await model.generateContent({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
             });
 
-            const responseText = response.text || (response.response && response.response.text && response.response.text());
+            const responseText = result.response.text();
             if (!responseText) throw new Error("Resposta vazia da IA");
 
             const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();

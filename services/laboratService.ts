@@ -6,7 +6,7 @@ export const LaboratService = {
     /**
      * Processa uma lista de marcadores brutos e aplica a inteligência biomédica
      */
-    processMarkers: (rawMarkers: Array<{ name: string; value: number; unit?: string }>): ExamMarker[] => {
+    processMarkers: (rawMarkers: Array<{ name: string; value: number | string; unit?: string }>): ExamMarker[] => {
         return rawMarkers.map(rm => {
             // Tenta encontrar o marcador na base pelo nome ou apelido
             const nameUpper = rm.name.toUpperCase();
@@ -15,10 +15,17 @@ export const LaboratService = {
                 m.aliases.some(a => a.toUpperCase() === nameUpper)
             );
 
+            // Garantir que o valor é numérico
+            const parsedValue = typeof rm.value === 'number'
+                ? rm.value
+                : parseFloat(String(rm.value).replace(',', '.'));
+
+            const value = isNaN(parsedValue) ? 0 : parsedValue;
+
             const marker: ExamMarker = {
                 id: Math.random().toString(36).substr(2, 9),
                 name: meta?.name || rm.name,
-                value: typeof rm.value === 'number' ? rm.value : parseFloat(String(rm.value).replace(',', '.')),
+                value: value,
                 unit: rm.unit || meta?.unit || 'un',
                 reference: {
                     min: meta?.minDesejavel || 0,
@@ -29,10 +36,10 @@ export const LaboratService = {
             };
 
             if (meta) {
-                if (rm.value < meta.minDesejavel) {
+                if (value < meta.minDesejavel) {
                     marker.interpretation = 'BAIXO';
                     marker.biomedicalData = meta.interpretacao.baixo;
-                } else if (rm.value > meta.maxDesejavel) {
+                } else if (value > meta.maxDesejavel) {
                     marker.interpretation = 'ALTO';
                     marker.biomedicalData = meta.interpretacao.alto;
                 } else {
