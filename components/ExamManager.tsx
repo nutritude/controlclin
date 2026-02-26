@@ -93,31 +93,51 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
         setIsExtracting(true);
         try {
-            const simulatedText = `Laboratório Excellence - Data: 2026-02-20
-      Paciente: ${patient.name}
-      GLICOSE: 105 mg/dL (Ref: 70 a 99)
-      COLESTEROL TOTAL: 210 mg/dL (Ref: < 190)
-      HDL: 45 mg/dL (Ref: > 40)
-      CREATININA: 0.9 mg/dL (Ref: 0.7 a 1.2)`;
+            // Ler arquivo como Base64
+            const reader = new FileReader();
+            const fileData: { base64: string, mimeType: string } = await new Promise((resolve, reject) => {
+                reader.onload = () => resolve({
+                    base64: reader.result as string,
+                    mimeType: file.type || 'application/pdf'
+                });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
 
-            const extracted = await AIExamService.extractMarkers(simulatedText);
-            const score = LaboratService.calculateExamScore(extracted);
+            // Extração Real via IA (Gemini pode ler PDFs/Imagens diretamente via Base64)
+            let extracted: ExamMarker[] = [];
+            try {
+                extracted = await AIExamService.extractMarkers(fileData);
+            } catch (aiErr) {
+                console.warn("IA falhou na extração:", aiErr);
+                // Não interrompemos o fluxo, apenas salvamos sem marcadores para análise manual posterior
+            }
+
+            const score = extracted.length > 0 ? LaboratService.calculateExamScore(extracted) : 0;
 
             const newExam: Partial<Exam> = {
-                name: file.name.replace('.pdf', ''),
+                name: file.name.replace('.pdf', '').replace('.png', '').replace('.jpg', ''),
                 date: new Date().toISOString().split('T')[0],
                 status: 'PENDENTE',
                 markers: extracted,
                 healthScore: score,
                 patientId: patient.id,
                 clinicId: patient.clinicId,
-                requestedByUserId: user.id
+                requestedByUserId: user.id,
+                fileUrl: file.name,
+                clinicalReason: "Upload via arquivo"
             };
 
             await db.saveExam(user, patient.id, newExam);
             onUpdate();
-            alert("Exame processado e salvo via IA!");
+
+            if (extracted.length > 0) {
+                alert(`Sucesso! ${extracted.length} marcadores extraídos e salvos.`);
+            } else {
+                alert("O exame foi salvo, mas a IA não conseguiu extrair os marcadores automaticamente. Você pode preenchê-los manualmente clicando em 'Lançamento Manual'.");
+            }
         } catch (err) {
+            console.error("Erro no processamento do arquivo:", err);
             alert("Erro no upload/IA: " + err);
         } finally {
             setIsExtracting(false);

@@ -5,35 +5,60 @@ import { LaboratService } from '../laboratService';
 
 export const AIExamService = {
     /**
-     * Extrai marcadores de um texto (OCR) utilizando Gemini
+     * Extrai marcadores de um documento (PDF/Imagem) ou texto utilizando Gemini
      */
-    extractMarkers: async (text: string): Promise<ExamMarker[]> => {
+    extractMarkers: async (fileData?: { base64: string, mimeType: string }, text?: string): Promise<ExamMarker[]> => {
         const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-        if (!apiKey) return [];
+        console.log("[AI Exam] Iniciando extração. API Key presente:", !!apiKey);
+
+        if (!apiKey) {
+            console.error("[AI Exam] Erro: VITE_GEMINI_API_KEY não encontrada.");
+            return [];
+        }
 
         const genAI = new GoogleGenAI({ apiKey });
 
         const prompt = `
       Você é um especialista em biomedicina e extração de dados laboratoriais.
-      Analise o texto abaixo extraído de um exame e retorne os dados estruturados no formato JSON.
+      Analise o documento anexo (ou texto) e retorne os dados estruturados no formato JSON.
       Ignore cabeçalhos e rodapés irrelevantes. Foque em: Nome do exame/marcador, Valor numérico, Unidade de medida.
 
       REGRAS:
       1. Extraia apenas o valor numérico (remova vírgulas por pontos se necessário).
       2. Tente identificar a unidade (mg/dL, %, uUI/mL, etc).
-      3. Retorne no formato: [{"name": "Glicose", "value": 95, "unit": "mg/dL"}, ...]
+      3. Se o marcador tiver um valor de referência no documento, ignore-o e foque no resultado do paciente.
+      4. Retorne no formato: [{"name": "Glicose", "value": 95, "unit": "mg/dL"}, ...]
 
-      TEXTO DO EXAME:
-      ${text}
+      ${text ? `TEXTO ADICIONAL:\n${text}` : ''}
     `;
 
         try {
-            const response = await genAI.models.generateContent({
+            const parts: any[] = [{ text: prompt }];
+
+            if (fileData) {
+                parts.push({
+                    inlineData: {
+                        data: fileData.base64.split(',')[1] || fileData.base64,
+                        mimeType: fileData.mimeType
+                    }
+                });
+            }
+
+            const response = await (genAI as any).models.generateContent({
                 model: "gemini-1.5-flash",
-                contents: prompt,
+                contents: [{ role: 'user', parts }],
                 config: { responseMimeType: "application/json" }
             });
-            const raw = JSON.parse(response.text);
+
+            // O SDK pode retornar o texto diretamente ou dentro de um objeto dependendo da versão
+            const responseText = response.text || (response.response && response.response.text && response.response.text());
+
+            if (!responseText) throw new Error("Resposta vazia da IA");
+
+            // Limpar possíveis blocos de código markdown do JSON
+            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const raw = JSON.parse(jsonStr);
+
             return LaboratService.processMarkers(raw);
         } catch (error) {
             console.error("Erro na extração AI:", error);
@@ -84,12 +109,17 @@ export const AIExamService = {
     `;
 
         try {
-            const response = await genAI.models.generateContent({
+            const response = await (genAI as any).models.generateContent({
                 model: "gemini-2.0-flash",
                 contents: prompt,
                 config: { responseMimeType: "application/json" }
             });
-            return JSON.parse(response.text) as ExamAnalysisResult;
+
+            const responseText = response.text || (response.response && response.response.text && response.response.text());
+            if (!responseText) throw new Error("Resposta vazia da IA");
+
+            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(jsonStr) as ExamAnalysisResult;
         } catch (error) {
             console.error("Erro na análise AI:", error);
             return getFallbackAnalysis(allMarkers);

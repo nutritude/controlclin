@@ -18,7 +18,7 @@ export const LaboratService = {
             const marker: ExamMarker = {
                 id: Math.random().toString(36).substr(2, 9),
                 name: meta?.name || rm.name,
-                value: rm.value,
+                value: typeof rm.value === 'number' ? rm.value : parseFloat(String(rm.value).replace(',', '.')),
                 unit: rm.unit || meta?.unit || 'un',
                 reference: {
                     min: meta?.minDesejavel || 0,

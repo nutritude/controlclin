@@ -1002,7 +1002,9 @@ class DatabaseService {
             requestedByUserId: user.id,
             createdAt: new Date().toISOString(),
             markers: examData.markers || [],
-            healthScore: examData.healthScore
+            healthScore: examData.healthScore,
+            fileUrl: examData.fileUrl,
+            clinicalHypothesis: examData.clinicalHypothesis || ''
         };
 
         this.exams.push(newExam);
