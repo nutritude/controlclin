@@ -6,6 +6,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { db } from '../services/db';
 import { AIAnthroAnalysisService } from '../services/aiAnthroAnalysis';
 import { Icons } from '../constants';
+import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning'; // IMPORT NEW COMPONENT
 
 interface PatientDetailsProps {
@@ -1714,9 +1715,21 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
                                 {anthroAnalysisResult ? (
                                     <div className={`p-5 rounded-xl border ${isManagerMode ? 'bg-gray-900/50 border-gray-700' : 'bg-emerald-50/50 border-emerald-100'}`}>
-                                        <h4 className="text-xs font-black uppercase mb-3 flex items-center gap-2">
-                                            Resumo da IA {anthroAnalysisResult.isFallback && <span className="text-[10px] text-amber-500 opacity-80">(Modo Offline)</span>}
-                                        </h4>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h4 className="text-xs font-black uppercase flex items-center gap-2">
+                                                Resumo da IA {anthroAnalysisResult.isFallback && <span className="text-[10px] text-amber-500 opacity-80">(Modo Offline)</span>}
+                                            </h4>
+                                            <button
+                                                onClick={() => {
+                                                    const text = `Oi ${patient!.name.split(' ')[0]}! Analisei sua evolução aqui no sistema e tenho um insight importante: ${anthroAnalysisResult.summary}`;
+                                                    window.open(WhatsAppService.generateLink(patient!.phone, text), '_blank');
+                                                }}
+                                                className="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-1 rounded-md hover:bg-emerald-50 transition-colors flex items-center gap-1"
+                                                title="Enviar este insight para o paciente via WhatsApp"
+                                            >
+                                                <span>💬</span> Enviar p/ WhatsApp
+                                            </button>
+                                        </div>
                                         <p className="text-sm font-medium mb-4 leading-relaxed italic">"{anthroAnalysisResult.summary}"</p>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -148,7 +148,7 @@ function App() {
         </Route>
 
         {/* Public/Clean Routes outside Layout */}
-        <Route path="/success-card/:id" element={<SuccessCard user={user} clinic={clinic!} />} />
+        <Route path="/success-card/:id" element={<SuccessCard user={user || undefined} clinic={clinic || undefined} />} />
       </Routes>
     </Router>
   );

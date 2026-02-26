@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '../services/db';
 import { User, Clinic, Role } from '../types';
 
@@ -10,13 +10,116 @@ interface LoginProps {
 
 type LoginMode = 'ADMIN' | 'PROFESSIONAL';
 
+const TOTAL_FRAMES = 80;
+const FRAME_RATE = 12; // fps — suave sem sobrecarregar
+
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loginMode, setLoginMode] = useState<LoginMode>('ADMIN');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [slug, setSlug] = useState('control'); // Default to control for convenience
+  const [slug, setSlug] = useState('control');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- ANIMATION STATE ---
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const framesRef = useRef<HTMLImageElement[]>([]);
+  const currentFrameRef = useRef(0);
+  const animationRef = useRef<number | null>(null);
+  const [animReady, setAnimReady] = useState(false);
+
+  // Preload all frames
+  useEffect(() => {
+    let mounted = true;
+    const images: HTMLImageElement[] = [];
+    let loaded = 0;
+
+    // Novo padrão de nome de arquivo fornecido pelo usuário
+    const fileNamePrefix = 'Usar_a_imagem_enviada_como_referncia_visual_princi_d6af91336a_';
+
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      const img = new Image();
+      const num = i.toString().padStart(3, '0');
+      img.src = `/imagebk/${fileNamePrefix}${num}.jpg`;
+      img.onload = () => {
+        loaded++;
+        if (loaded === TOTAL_FRAMES && mounted) {
+          framesRef.current = images;
+          setAnimReady(true);
+        }
+      };
+      img.onerror = () => {
+        loaded++;
+        if (loaded === TOTAL_FRAMES && mounted) {
+          framesRef.current = images;
+          setAnimReady(true);
+        }
+      };
+      images.push(img);
+    }
+
+    return () => { mounted = false; };
+  }, []);
+
+  // Canvas drawing loop
+  const drawFrame = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    const frames = framesRef.current;
+    if (!canvas || !ctx || frames.length === 0) return;
+
+    const frame = frames[currentFrameRef.current];
+    if (frame && frame.complete && frame.naturalWidth > 0) {
+      // Logic for "COVER" (Full Screen end-to-end)
+      const imgRatio = frame.naturalWidth / frame.naturalHeight;
+      const canvasRatio = canvas.width / canvas.height;
+
+      let drawWidth, drawHeight, drawX, drawY;
+
+      if (canvasRatio > imgRatio) {
+        // Canvas is wider than image aspect ratio
+        drawWidth = canvas.width;
+        drawHeight = canvas.width / imgRatio;
+        drawX = 0;
+        drawY = (canvas.height - drawHeight) / 2;
+      } else {
+        // Canvas is taller than image aspect ratio
+        drawHeight = canvas.height;
+        drawWidth = canvas.height * imgRatio;
+        drawX = (canvas.width - drawWidth) / 2;
+        drawY = 0;
+      }
+
+      ctx.drawImage(frame, drawX, drawY, drawWidth, drawHeight);
+    }
+
+    currentFrameRef.current = (currentFrameRef.current + 1) % TOTAL_FRAMES;
+  }, []);
+
+  // Start animation loop
+  useEffect(() => {
+    if (!animReady) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Resize canvas to window
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    const interval = setInterval(drawFrame, 1000 / FRAME_RATE);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [animReady, drawFrame]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +129,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     try {
       const result = await db.login(email.trim(), password.trim(), slug.trim());
       if (result) {
-        // Simple check to warn if trying to login as Admin with a non-admin account in this demo context
         if (loginMode === 'ADMIN' && result.user.role !== Role.CLINIC_ADMIN && result.user.role !== Role.SUPER_ADMIN) {
           setError('Este usuário não possui perfil de Gestor. Tente a aba Profissional.');
           setIsSubmitting(false);
@@ -38,10 +140,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
     } catch (err: any) {
       console.error("[Login] Caught error:", err);
-      // Extrair a mensagem real do erro
       const errorMsg = err instanceof Error ? err.message : (err?.message || 'Ocorreu um erro inesperado.');
 
-      // Traduzir erros feios do Firebase para mensagens amigáveis
       if (errorMsg.includes('auth/invalid-login-credentials') || errorMsg.includes('auth/invalid-credential')) {
         setError('E-mail ou senha incorretos.');
       } else if (errorMsg.includes('API key not valid')) {
@@ -54,121 +154,177 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   };
 
+  const accentColor = loginMode === 'ADMIN' ? 'blue' : 'emerald';
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center p-4">
 
-        {/* Header / Mode Selection */}
-        <div className="bg-gray-50 border-b border-gray-200">
-          <div className="p-6 text-center pb-4">
-            <h1 className="text-2xl font-bold text-gray-900">ControlClin SaaS</h1>
-            <p className="text-sm text-gray-500 mt-1">Escolha como deseja acessar</p>
-          </div>
+      {/* === ANIMATED BACKGROUND (Canvas) === */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ zIndex: 0 }}
+      />
 
-          <div className="flex">
+      {/* Overlay — tom ainda mais claro para ver melhor a animação e o fundo */}
+      <div className="absolute inset-0 bg-black/5" style={{ zIndex: 1 }} />
+
+      {/* Gradient accent overlay - suavizado */}
+      <div
+        className={`absolute inset-0 ${loginMode === 'ADMIN' ? 'bg-gradient-to-br from-blue-900/10 via-transparent to-slate-900/20' : 'bg-gradient-to-br from-emerald-900/10 via-transparent to-slate-900/20'}`}
+        style={{ zIndex: 2 }}
+      />
+
+      {/* === LOGIN CARD (Glassmorphism) === */}
+      <div className="relative w-full max-w-lg" style={{ zIndex: 10 }}>
+
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-2xl">
+            Control<span className={`${loginMode === 'ADMIN' ? 'text-blue-400' : 'text-emerald-400'}`}>Clin</span>
+          </h1>
+          <p className="text-white/80 text-sm mt-2 font-medium tracking-wide drop-shadow-md">Plataforma Inteligente de Saúde</p>
+        </div>
+
+        {/* Glass Card - Mais opaco e brilhante */}
+        <div className="bg-white/85 backdrop-blur-3xl border border-white/50 rounded-3xl overflow-hidden shadow-2xl shadow-black/30">
+
+          {/* Mode Tabs */}
+          <div className="flex border-b border-slate-200/50">
             <button
               onClick={() => { setLoginMode('ADMIN'); setEmail(''); setPassword(''); setError(''); }}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${loginMode === 'ADMIN'
-                  ? 'border-blue-600 text-blue-600 bg-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              className={`flex-1 py-4 text-sm font-bold text-center transition-all duration-300 relative ${loginMode === 'ADMIN'
+                ? 'text-blue-600'
+                : 'text-slate-400 hover:text-slate-600'
                 }`}
             >
-              Sou Gestor
+              {loginMode === 'ADMIN' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[3px] bg-blue-500 rounded-full shadow-lg shadow-blue-500/40" />}
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                Gestor
+              </span>
             </button>
             <button
               onClick={() => { setLoginMode('PROFESSIONAL'); setEmail(''); setPassword(''); setError(''); }}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 ${loginMode === 'PROFESSIONAL'
-                  ? 'border-emerald-600 text-emerald-600 bg-white' // Changed from purple to emerald
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              className={`flex-1 py-4 text-sm font-bold text-center transition-all duration-300 relative ${loginMode === 'PROFESSIONAL'
+                ? 'text-emerald-600'
+                : 'text-slate-400 hover:text-slate-600'
                 }`}
             >
-              Sou Profissional
+              {loginMode === 'PROFESSIONAL' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[3px] bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/40" />}
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                Profissional
+              </span>
             </button>
           </div>
-        </div>
 
-        <div className="p-8">
-          <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-3">
-            <div className="mt-0.5">
-              {loginMode === 'ADMIN' ? (
-                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-              ) : (
-                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              )}
-            </div>
-            <div>
-              <h3 className={`text-sm font-bold ${loginMode === 'ADMIN' ? 'text-blue-800' : 'text-emerald-800'}`}>
-                {loginMode === 'ADMIN' ? 'Área Administrativa' : 'Área Clínica'}
+          {/* Form Body */}
+          <div className="p-8 space-y-6">
+
+            {/* Context Info */}
+            <div className={`rounded-xl p-4 border ${loginMode === 'ADMIN'
+              ? 'bg-blue-50/80 border-blue-200'
+              : 'bg-emerald-50/80 border-emerald-200'
+              }`}>
+              <h3 className={`text-xs font-black uppercase tracking-widest mb-1 ${loginMode === 'ADMIN' ? 'text-blue-700' : 'text-emerald-700'
+                }`}>
+                {loginMode === 'ADMIN' ? '🏢 Área Administrativa' : '🩺 Área Clínica'}
               </h3>
-              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+              <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
                 {loginMode === 'ADMIN'
-                  ? 'Acesso completo às configurações da clínica, relatórios financeiros, auditoria e gestão de usuários.'
-                  : 'Foco no atendimento ao paciente, agenda pessoal, prontuário eletrônico e evolução clínica.'
+                  ? 'Acesso completo: configurações da clínica, relatórios financeiros, auditoria e gestão de usuários.'
+                  : 'Foco no atendimento: agenda pessoal, prontuário eletrônico, evolução clínica e planejamento nutricional.'
                 }
               </p>
             </div>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error */}
             {error && (
-              <div className="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {error}
+              <div className="p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200 flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>{error}</span>
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug da Clínica</label>
-              <div className="flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                  https://
-                </span>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Slug */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Slug da Clínica</label>
+                <div className="flex rounded-xl overflow-hidden border border-slate-200 focus-within:border-slate-400 transition-colors shadow-sm">
+                  <span className="inline-flex items-center px-3 bg-slate-100/80 text-slate-400 text-sm border-r border-slate-200">
+                    https://
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    className="flex-1 min-w-0 block w-full px-3 py-2.5 bg-white/80 text-slate-800 placeholder-slate-300 text-sm focus:outline-none"
+                    placeholder="control"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">E-mail de Acesso</label>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="control"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none block w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white/80 text-slate-800 placeholder-slate-300 focus:outline-none focus:border-slate-400 text-sm shadow-sm transition-colors"
+                  placeholder={loginMode === 'ADMIN' ? "admin@clinica.com" : "doutor@clinica.com"}
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-mail de Acesso</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder={loginMode === 'ADMIN' ? "admin@clinica.com" : "doutor@clinica.com"}
-              />
-            </div>
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Senha</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white/80 text-slate-800 placeholder-slate-300 focus:outline-none focus:border-slate-400 text-sm shadow-sm transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="********"
-              />
-            </div>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full flex justify-center py-3 px-4 rounded-xl text-sm font-black uppercase tracking-wider shadow-lg transition-all duration-300 transform active:scale-[0.98]
+                  ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}
+                  ${loginMode === 'ADMIN'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-600/30 hover:shadow-blue-500/50'
+                    : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-600/30 hover:shadow-emerald-500/50'
+                  }
+                `}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Entrando...
+                  </span>
+                ) : (
+                  `Acessar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors
-                ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}
-                ${loginMode === 'ADMIN' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500'} 
-              `}
-            >
-              {isSubmitting ? 'Entrando...' : `Acessar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`}
-            </button>
-          </form>
+        {/* Footer */}
+        <div className="mt-6 text-center">
+          <p className="text-white/20 text-[10px] uppercase font-bold tracking-[0.2em]">
+            Powered by ControlClin — Intelligent Health Architecture
+          </p>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Clinic, Professional, Appointment, AppointmentStatus, Patient, Role, FinancialStatus, PaymentMethod } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
+import { WhatsAppService } from '../services/whatsappService';
 
 interface AgendaProps {
     user: User;
@@ -295,6 +296,19 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
 
         const isCanceled = appt.status === AppointmentStatus.CANCELED;
 
+        const handleWhatsAppReminder = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            const p = patients.find(pat => pat.id === appt.patientId);
+            if (!p || !p.phone) {
+                alert("Paciente sem telefone cadastrado.");
+                return;
+            }
+            const dateStr = new Date(appt.startTime).toLocaleDateString();
+            const timeStr = new Date(appt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const message = WhatsAppService.getAppointmentReminder(appt.patientName, dateStr, timeStr, clinic.name);
+            window.open(WhatsAppService.generateLink(p.phone, message), '_blank');
+        };
+
         return (
             <div
                 onClick={(e) => { if (!isCanceled) { e.stopPropagation(); handleOpenEdit(appt); } }}
@@ -303,6 +317,7 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                 rounded-md shadow-sm transition-all text-gray-800 overflow-hidden
                 ${baseClass} ${borderClass} ${opacityClass}
                 ${isCanceled ? 'pointer-events-none' : 'cursor-pointer hover:shadow-lg hover:scale-[1.02]'}
+                group/card
             `}
                 style={styleObj}
                 title={`${appt.patientName} - ${appt.status} ${appt.financialStatus === 'PAGO' ? '(PAGO)' : ''}`}
@@ -310,7 +325,18 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                 <div className={`px-2 ${viewType === 'full' ? 'py-1 h-full flex flex-col justify-center' : 'py-1'}`}>
                     <div className="flex justify-between items-center w-full">
                         <span className={`font-bold text-xs truncate flex-1 ${isCanceled ? 'line-through text-gray-500' : ''}`}>{appt.patientName}</span>
-                        <span className="text-[10px] ml-1">{icon}</span>
+                        <div className="flex items-center gap-1">
+                            {!isCanceled && (
+                                <button
+                                    onClick={handleWhatsAppReminder}
+                                    className="opacity-0 group-hover/card:opacity-100 transition-opacity bg-white/50 hover:bg-white p-0.5 rounded text-emerald-700 font-bold"
+                                    title="Enviar Lembrete WhatsApp"
+                                >
+                                    💬
+                                </button>
+                            )}
+                            <span className="text-[10px] ml-1">{icon}</span>
+                        </div>
                     </div>
                     {viewType === 'full' && heightPx > 45 && (
                         <div className="flex items-center justify-between text-[10px] mt-0.5 opacity-80">

@@ -4,63 +4,94 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { User, Clinic, Patient, Role } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
+import { WhatsAppService } from '../services/whatsappService';
 
 interface SuccessCardProps {
-    user: User;
-    clinic: Clinic;
+    user?: User | null;
+    clinic?: Clinic | null;
 }
 
-export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
+export const SuccessCard: React.FC<SuccessCardProps> = ({ user: initialUser, clinic: initialClinic }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [patient, setPatient] = useState<Patient | null>(null);
+    const [resolvedProfessional, setResolvedProfessional] = useState<{ name: string } | null>(null);
+    const [resolvedClinic, setResolvedClinic] = useState<{ name: string } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPatient = async () => {
+        const fetchAll = async () => {
             if (!id) return;
-            const p = await db.getPatients(clinic.id);
-            const found = p.find(pt => pt.id === id);
-            setPatient(found || null);
+            setLoading(true);
+
+            // 1. Fetch Patient
+            const p = await db.getPatientById(id);
+            setPatient(p);
+
+            if (p) {
+                // 2. Resolve Clinic
+                if (initialClinic) {
+                    setResolvedClinic(initialClinic);
+                } else if (p.clinicId) {
+                    const c = await db.getClinic(p.clinicId);
+                    if (c) setResolvedClinic(c);
+                }
+
+                // 3. Resolve Professional
+                if (initialUser && initialUser.role !== Role.SECRETARY) {
+                    setResolvedProfessional({ name: initialUser.name });
+                } else if (p.professionalId) {
+                    const profs = await db.getProfessionals(p.clinicId);
+                    const prof = profs.find(pr => pr.id === p.professionalId);
+                    if (prof) setResolvedProfessional({ name: prof.name });
+                }
+            }
             setLoading(false);
         };
-        fetchPatient();
-    }, [id, clinic.id]);
+        fetchAll();
+    }, [id, initialClinic, initialUser]);
 
     if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Carregando sua conquista...</div>;
     if (!patient) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Paciente não encontrado.</div>;
 
-    // Sort history by date to ensure we pick the correct previous record
+    // Sort history by date
     const history = [...(patient.anthropometryHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const currentWeight = patient.anthropometry?.weight || 0;
     const currentLean = patient.anthropometry?.leanMass || 0;
 
-    // Determine which record is "previous". 
-    // Since handleSaveTab appends the current record to history, the current one is at the end.
-    // So the real 'previous' is the penultimate one.
+    // Previous Record (Penultimate)
     let previousWeight = currentWeight;
     let previousLean = currentLean;
 
-    if (history.length > 1) {
-        // If current is the last one in history (based on weight/date match)
-        const lastInHistory = history[history.length - 1];
-        const isLastCurrent = lastInHistory.weight === currentWeight;
+    // Initial Record (First ever)
+    let initialWeight = currentWeight;
+    let initialLean = currentLean;
 
-        if (isLastCurrent) {
-            previousWeight = history[history.length - 2].weight;
-            previousLean = history[history.length - 2].leanMass || 0;
-        } else {
-            previousWeight = lastInHistory.weight;
-            previousLean = lastInHistory.leanMass || 0;
+    if (history.length > 0) {
+        initialWeight = history[0].weight;
+        initialLean = history[0].leanMass || 0;
+
+        if (history.length > 1) {
+            // If current matches the last in history, previous is the one before it
+            const last = history[history.length - 1];
+            if (last.weight === currentWeight) {
+                previousWeight = history[history.length - 2].weight;
+                previousLean = history[history.length - 2].leanMass || 0;
+            } else {
+                previousWeight = last.weight;
+                previousLean = last.leanMass || 0;
+            }
         }
     }
 
     const weightDiff = currentWeight - previousWeight;
     const leanDiff = currentLean - previousLean;
+    const totalWeightDiff = currentWeight - initialWeight;
 
     const isLoss = weightDiff < 0;
     const absWeightDiff = Math.abs(weightDiff).toFixed(1);
+    const absTotalWeightDiff = Math.abs(totalWeightDiff).toFixed(1);
 
     return (
         <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4 font-sans overflow-hidden relative">
@@ -113,6 +144,11 @@ export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
                                 <span className={`text-xs font-bold mt-1 px-2 py-0.5 rounded-full ${weightDiff === 0 ? 'bg-blue-500/20 text-blue-400' : isLoss ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                                     {weightDiff === 0 ? '• Mantido' : isLoss ? '↓ Eliminados' : '↑ Ganhos'}
                                 </span>
+                                {history.length > 1 && totalWeightDiff !== weightDiff && (
+                                    <span className="text-[9px] text-gray-500 mt-2 font-bold uppercase">
+                                        Total: {totalWeightDiff < 0 ? '↓' : '↑'} {absTotalWeightDiff}kg acumulados
+                                    </span>
+                                )}
                             </div>
 
                             {/* Lean Mass Box */}
@@ -146,31 +182,58 @@ export const SuccessCard: React.FC<SuccessCardProps> = ({ user, clinic }) => {
                             </div>
                         )}
 
+                        {/* Frase motivacional */}
                         <div className="space-y-4">
-                            <p className="text-gray-400 text-sm italic">"A constância é o que transforma o objetivo em realidade. Continue firme no propósito!"</p>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                                <p className="text-gray-300 text-sm italic text-center leading-relaxed">"A constância é o que transforma o objetivo em realidade. Continue firme no propósito!"</p>
+                            </div>
 
-                            <div className="pt-6 border-t border-white/10 flex flex-col items-center">
+                            {/* Dica de próximo passo */}
+                            <div className="bg-blue-500/10 border border-blue-400/20 rounded-2xl p-4 flex items-start gap-3">
+                                <span className="text-xl mt-0.5">💡</span>
+                                <div>
+                                    <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Próximo Passo</p>
+                                    <p className="text-blue-100 text-sm">Agende sua próxima avaliação para continuarmos medindo sua evolução e ajustando o plano.</p>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-white/10 flex flex-col items-center">
                                 <p className="text-xs text-gray-500 font-bold uppercase mb-1">Seu acompanhamento por</p>
-                                <p className="text-white font-bold">{user.name}</p>
-                                <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">{clinic.name}</p>
+                                <p className="text-white font-bold text-lg">{resolvedProfessional?.name || 'Seu Nutricionista'}</p>
+                                <p className="text-emerald-400 text-[11px] font-bold uppercase tracking-widest mt-1">{resolvedClinic?.name || 'ControlClin Health'}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Footer Actions (Only visible in clinical view or for patient to share) */}
-                <div className="mt-8 flex flex-col gap-3">
-                    <button
-                        onClick={() => {
-                            const url = window.location.href;
-                            const text = `Oi ${patient.name.split(' ')[0]}! Veja só o que conquistamos na sua última avaliação! 🏆 Clique para ver seus resultados: ${url}`;
-                            window.open(`https://wa.me/${patient.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
-                        }}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02]"
-                    >
-                        <span>WhatsApp</span> Enviar para Paciente
-                    </button>
-                    <p className="text-gray-500 text-[10px] text-center uppercase font-bold tracking-tighter">Powered by ControlClin Intelligent Health Architecture</p>
+                {/* Footer Actions */}
+                <div className="mt-6 flex flex-col gap-3">
+                    {initialUser ? (
+                        // --- VIEW DO PROFISSIONAL: Enviar para o paciente ---
+                        <button
+                            onClick={() => {
+                                const text = WhatsAppService.getSuccessCardShareMessage(patient.name, patient.id, resolvedClinic?.name);
+                                window.open(WhatsAppService.generateLink(patient.phone, text), '_blank');
+                            }}
+                            className="w-full bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <span className="text-xl">💬</span>
+                            <span>Enviar Conquista ao Paciente</span>
+                        </button>
+                    ) : (
+                        // --- VIEW DO PACIENTE: Compartilhar com amigos ---
+                        <button
+                            onClick={() => {
+                                const text = WhatsAppService.getPatientSelfShareMessage(patient.name, patient.id);
+                                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                            }}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-900/50 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <span className="text-xl">🚀</span>
+                            <span>Compartilhar minha Conquista</span>
+                        </button>
+                    )}
+                    <p className="text-gray-600 text-[10px] text-center uppercase font-bold tracking-tight">Powered by ControlClin Intelligent Health Architecture</p>
                 </div>
             </div>
         </div>

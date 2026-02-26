@@ -94,21 +94,65 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
 
         switch (alertItem.type) {
             case 'RETURN_OVERDUE':
-                message = `Olá ${firstName}! Tudo bem? Notei que sua última consulta foi há algum tempo e ainda não agendamos seu retorno. Como está a evolução do seu plano alimentar? Vamos marcar um horário para ajustar os próximos passos?`;
+                message =
+                    `Oi ${firstName}! Tudo bem? 😊\n\n` +
+                    `Percebi que faz um tempo desde a sua última consulta e queria saber como você está se sentindo com o plano alimentar.\n\n` +
+                    `Acompanhar de perto faz toda a diferença nos resultados — e estou aqui para isso! 💚\n\n` +
+                    `Vamos marcar um retorno? Me passa algumas datas que ficam boas para você e a gente encontra o melhor horário.`;
                 break;
             case 'EXAM_ATTENTION':
-                message = `Oi ${firstName}, recebi os seus novos exames aqui no sistema. Gostaria de agendar uma breve chamada ou consulta para revisarmos os resultados juntos?`;
+                message =
+                    `Oi ${firstName}! 🔬\n\n` +
+                    `Os resultados dos seus exames ficaram disponíveis e tenho algumas informações importantes para compartilhar com você.\n\n` +
+                    `Gostaria de agendar uma consulta rápida (pode ser online!) para revisarmos os resultados juntos e ajustarmos seu plano conforme necessário.\n\n` +
+                    `Qual horário ficaria melhor para você esta semana?`;
                 break;
             case 'ANTHROMETRY_OVERDUE':
-                message = `Olá ${firstName}! Está na hora de fazermos sua nova avaliação antropométrica para vermos seus resultados. Qual dia fica melhor para você dar um pulo aqui na clínica?`;
+                message =
+                    `Oi ${firstName}! 📏\n\n` +
+                    `Está na hora de fazermos sua nova avaliação antropométrica! Ela é fundamental para vermos os avanços do seu tratamento e fazer os ajustes certos no seu plano.\n\n` +
+                    `Sem medir, fica difícil comemorar as conquistas! 🏆\n\n` +
+                    `Quando você teria disponibilidade para dar um pulo aqui na clínica?`;
+                break;
+            case 'RECURRING_ABSENCE':
+                message =
+                    `Oi ${firstName}, tudo bem? 💙\n\n` +
+                    `Notei algumas ausências nas últimas consultas e quero entender se está tudo bem com você ou se posso adaptar algo para facilitar sua rotina de acompanhamento.\n\n` +
+                    `Às vezes um ajuste no horário ou na frequência já resolve! Me conta o que está acontecendo — estou aqui para ajudar. 😊`;
+                break;
+            case 'GOAL_EXPIRED':
+                message =
+                    `Oi ${firstName}! 🎯\n\n` +
+                    `Vi que a meta que traçamos na sua última consulta está chegando ao prazo. Que tal fazermos uma avaliação rápida dos progressos?\n\n` +
+                    `Independente do resultado, é hora de renovar os objetivos e dar o próximo passo da sua jornada!\n\n` +
+                    `Quando você tem disponibilidade para conversarmos?`;
+                break;
+            case 'MISSED_CRITICAL':
+                message =
+                    `Oi ${firstName}, ficamos com saudade! 💙\n\n` +
+                    `Notei que você não pôde comparecer à sua consulta. Espero que esteja tudo bem!\n\n` +
+                    `Seria importante reagendarmos o quanto antes, pois essa consulta é uma etapa importante do seu tratamento.\n\n` +
+                    `Me fala qual o melhor horário para você e encaixamos na agenda! 😊`;
                 break;
             default:
-                message = `Olá ${firstName}, como você está? Gostaria de saber como está sendo a adesão ao tratamento e se posso te ajudar em algo hoje.`;
+                message =
+                    `Oi ${firstName}, tudo bem? 😊\n\n` +
+                    `Passando para saber como você está e como tem sido a adesão ao plano alimentar.\n\n` +
+                    `Qualquer dúvida ou dificuldade, pode me chamar aqui — estou sempre disponível para te apoiar! 💪`;
         }
 
         const phone = patient.phone.replace(/\D/g, '');
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+
+        // Log the recovery attempt in patient history
+        await db.addTimelineEvent(user, patient.id, {
+            date: new Date().toISOString(),
+            type: 'OUTRO',
+            title: 'Contato de Recuperação (WhatsApp)',
+            description: `Mensagem enviada via Alertas Clínicos: "${alertItem.description}"`
+        });
     };
+
 
     const getDaysAgo = (dateStr: string) => {
         const diff = new Date().getTime() - new Date(dateStr).getTime();
