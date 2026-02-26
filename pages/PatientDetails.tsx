@@ -7,7 +7,8 @@ import { db } from '../services/db';
 import { AIAnthroAnalysisService } from '../services/aiAnthroAnalysis';
 import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
-import NutritionalPlanning from '../components/NutritionalPlanning'; // IMPORT NEW COMPONENT
+import NutritionalPlanning from '../components/NutritionalPlanning';
+import { ExamManager } from '../components/ExamManager';
 
 interface PatientDetailsProps {
     user: User;
@@ -252,7 +253,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const [apptPaymentMethod, setApptPaymentMethod] = useState<PaymentMethod>('PIX');
 
     // --- EXAM CONTEXT MODAL STATE ---
-    const [isExamUploadModalOpen, setIsExamUploadModalOpen] = useState(false);
     const [examUploadForm, setExamUploadForm] = useState({
         reason: '',
         hypothesis: '',
@@ -454,42 +454,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         setActiveDiagnoses(newD);
     };
 
-    // UPDATED UPLOAD HANDLER WITH METADATA
-    const handleUploadExam = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!patient) return;
-        if (!examUploadForm.reason.trim()) {
-            alert("O motivo clínico é obrigatório.");
-            return;
-        }
-
-        try {
-            await db.uploadExam(user, patient.id, {
-                fileName: 'Hemograma_Mock.pdf',
-                reason: examUploadForm.reason,
-                hypothesis: examUploadForm.hypothesis,
-                appointmentId: examUploadForm.appointmentId
-            });
-
-            setIsExamUploadModalOpen(false);
-            setExamUploadForm({ reason: '', hypothesis: '', appointmentId: '' }); // Reset
-            fetchData(patient.id);
-        } catch (err) {
-            alert("Erro ao enviar exame: " + err);
-        }
-    };
-
-    const handleRunAI = async (examId: string) => {
-        setAnalyzingId(examId);
-        try {
-            await db.analyzeExamWithAI(user, examId);
-            if (patient) fetchData(patient.id);
-        } catch (e) {
-            alert('Falha na análise de IA');
-        } finally {
-            setAnalyzingId(null);
-        }
-    };
 
     const handleDelete = async () => {
         if (!patient) return;
@@ -1960,134 +1924,16 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     </div>
                 )}
 
-                {/* TAB: EXAMES & IA */}
-                {activeTab === 'EXAMS' && (
-                    <div className="space-y-6">
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className={`text-lg font-bold flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
-                                    <Icons.Brain />
-                                    Análise Inteligente de Exames
-                                </h3>
-                                <button
-                                    onClick={() => setIsExamUploadModalOpen(true)}
-                                    className={`text-sm px-4 py-2 rounded-lg shadow-sm font-bold flex items-center gap-2 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                                >
-                                    <span>+</span> Upload PDF
-                                </button>
-                            </div>
-
-                            {exams.length === 0 ? (
-                                <p className={`text-sm text-center py-12 rounded-lg border-2 border-dashed ${isManagerMode ? 'text-gray-400 bg-gray-700 border-gray-600' : 'text-emerald-700 bg-emerald-50 border-emerald-300'}`}>
-                                    Nenhum exame enviado para análise.
-                                </p>
-                            ) : (
-                                <div className="space-y-8">
-                                    {exams.map(exam => (
-                                        <div key={exam.id} className={`${isManagerMode ? 'border-gray-700 bg-gray-800' : 'border-emerald-200 bg-white'} border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow`}>
-                                            {/* Exam Header */}
-                                            <div className={`${isManagerMode ? 'bg-gray-700 border-gray-700' : 'bg-emerald-50 border-emerald-200'} px-6 py-4 border-b flex justify-between items-center`}>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-3xl">📄</span>
-                                                    <div>
-                                                        <p className={`font-bold text-lg ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{exam.name}</p>
-                                                        <p className={`text-xs font-medium uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>{new Date(exam.date).toLocaleDateString()}</p>
-                                                    </div>
-                                                </div>
-                                                {exam.status === 'PENDENTE' ? (
-                                                    <button
-                                                        onClick={() => handleRunAI(exam.id)}
-                                                        disabled={!!analyzingId}
-                                                        className={`text-xs px-4 py-2 rounded-lg shadow-sm font-bold flex items-center gap-2 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50' : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50'}`}
-                                                    >
-                                                        {analyzingId === exam.id ? 'Processando...' : '✨ Analisar com IA'}
-                                                    </button>
-                                                ) : (
-                                                    <span className={`text-xs px-3 py-1 rounded-full font-bold border ${isManagerMode ? 'bg-emerald-900 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>Analisado</span>
-                                                )}
-                                            </div>
-
-                                            {/* Clinical Context Section (New) */}
-                                            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-100'} px-6 py-5 border-b`}>
-                                                <div className="flex flex-col md:flex-row gap-6 text-sm">
-                                                    <div className={`flex-1 p-4 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'}`}>
-                                                        <p className={`text-xs uppercase font-bold mb-1 tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Motivo Clínico</p>
-                                                        <p className={`font-bold text-base ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{exam.clinicalReason || 'Não informado'}</p>
-                                                    </div>
-                                                    <div className="flex-1 pt-2">
-                                                        <p className={`text-xs uppercase font-bold mb-1 tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Hipótese Diagnóstica</p>
-                                                        <p className={`${isManagerMode ? 'text-gray-200' : 'text-emerald-800'} font-medium`}>{exam.clinicalHypothesis || '-'}</p>
-                                                    </div>
-                                                </div>
-                                                {exam.appointmentId && (
-                                                    <p className={`text-xs mt-3 flex items-center gap-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>
-                                                        <span className={`w-2 h-2 rounded-full ${isManagerMode ? 'bg-indigo-500' : 'bg-emerald-500'}`}></span>
-                                                        Vinculado à consulta: <span className="font-mono">{exam.appointmentId}</span>
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* AI Results */}
-                                            {exam.status === 'ANALISADO' && (
-                                                <div className="p-6 space-y-8">
-
-                                                    {/* Markers Table */}
-                                                    {exam.markers && (
-                                                        <div>
-                                                            <h4 className={`text-sm font-bold mb-3 uppercase tracking-wide ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Marcadores Identificados</h4>
-                                                            <div className={`${isManagerMode ? 'rounded-lg border border-gray-700' : 'rounded-lg border border-emerald-200'} overflow-x-auto`}>
-                                                                <table className="min-w-full text-sm">
-                                                                    <thead className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-100'}`}>
-                                                                        <tr>
-                                                                            <th className={`px-4 py-2 text-left font-bold ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Marcador</th>
-                                                                            <th className={`px-4 py-2 text-left font-bold ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Resultado</th>
-                                                                            <th className={`px-4 py-2 text-left font-bold ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Referência</th>
-                                                                            <th className={`px-4 py-2 text-left font-bold ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Interpretação</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody className={`divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-emerald-100'}`}>
-                                                                        {exam.markers.map((m, idx) => (
-                                                                            <tr key={idx} className={m.interpretation === 'ALTERADO' ? 'bg-red-900/20' : m.interpretation === 'LIMITROFE' ? 'bg-yellow-900/20' : ''}>
-                                                                                <td className={`px-4 py-3 font-medium ${isManagerMode ? 'text-gray-100' : 'text-emerald-900'}`}>{m.name}</td>
-                                                                                <td className={`px-4 py-3 font-bold ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>{m.value}</td>
-                                                                                <td className={`px-4 py-3 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>{m.reference}</td>
-                                                                                <td className="px-4 py-3">
-                                                                                    <span className={`text-xs px-2 py-1 rounded font-bold border
-                                                                        ${m.interpretation === 'NORMAL' ? (isManagerMode ? 'text-emerald-300 bg-emerald-900 border-emerald-700' : 'text-emerald-700 bg-emerald-100 border-emerald-200') :
-                                                                                            m.interpretation === 'ALTERADO' ? (isManagerMode ? 'text-red-300 bg-red-900 border-red-700' : 'text-red-700 bg-red-100 border-red-200') : (isManagerMode ? 'text-yellow-300 bg-yellow-900 border-yellow-700' : 'text-yellow-700 bg-yellow-100 border-yellow-200')}
-                                                                    `}>
-                                                                                        {m.interpretation}
-                                                                                    </span>
-                                                                                </td>
-                                                                            </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* AI Text Analysis */}
-                                                    <div className="bg-white border-gray-300 p-5 rounded-xl border">
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <Icons.Brain />
-                                                            <h4 className="font-bold uppercase text-sm tracking-wide text-gray-800">Análise Clínica Assistida</h4>
-                                                        </div>
-                                                        <div className="prose prose-sm max-w-none whitespace-pre-line leading-relaxed font-medium text-black">
-                                                            {exam.aiAnalysis}
-                                                        </div>
-                                                        <div className="mt-4 pt-4 border-t text-xs italic font-medium border-gray-200 text-gray-600">
-                                                            ⚠️ Importante: Esta análise é gerada por Inteligência Artificial para suporte à decisão clínica e não substitui o diagnóstico médico.
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                {/* TAB: EXAMES & IA (MIGRATED TO EXAMMANAGER) */}
+                {activeTab === 'EXAMS' && patient && (
+                    <ExamManager
+                        patient={patient}
+                        exams={exams}
+                        onUpdate={() => fetchData(patient.id)}
+                        isManagerMode={isManagerMode}
+                        db={db}
+                        user={user}
+                    />
                 )}
             </div>
 
@@ -2339,87 +2185,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 )
             }
 
-            {/* --- EXAM UPLOAD CONTEXT MODAL (NEW) --- */}
-            {
-                isExamUploadModalOpen && (
-                    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                        <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-emerald-900'} rounded-xl shadow-xl w-full max-w-lg p-6 relative`}>
-                            <h2 className={`text-xl font-bold mb-4 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Nova Solicitação de Exame</h2>
-
-                            <form onSubmit={handleUploadExam} className="space-y-4">
-
-                                {/* Reason (Required) */}
-                                <div>
-                                    <label className={`block text-sm font-bold mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
-                                        Motivo Clínico da Solicitação *
-                                    </label>
-                                    <textarea
-                                        required
-                                        rows={3}
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent font-medium ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        placeholder="Descreva a razão principal para o exame (ex: suspeita de anemia, check-up anual...)"
-                                        value={examUploadForm.reason}
-                                        onChange={e => setExamUploadForm({ ...examUploadForm, reason: e.target.value })}
-                                    />
-                                </div>
-
-                                {/* Hypothesis (Optional) */}
-                                <div>
-                                    <label className={`block text-sm font-medium mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
-                                        Hipótese Diagnóstica (Opcional)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                        placeholder="Ex: CID R53 - Mal-estar e fadiga"
-                                        value={examUploadForm.hypothesis}
-                                        onChange={e => setExamUploadForm({ ...examUploadForm, hypothesis: e.target.value })}
-                                    />
-                                </div>
-
-                                {/* Appointment Link (Optional) */}
-                                <div>
-                                    <label className={`block text-sm font-medium mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
-                                        Vincular à Consulta (Opcional)
-                                    </label>
-                                    <select
-                                        className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                        value={examUploadForm.appointmentId}
-                                        onChange={e => setExamUploadForm({ ...examUploadForm, appointmentId: e.target.value })}
-                                    >
-                                        <option value="">-- Não vincular --</option>
-                                        {clinicalAppointments.map(appt => (
-                                            <option key={appt.id} value={appt.id}>
-                                                {new Date(appt.startTime).toLocaleDateString()} - {appt.type} ({appt.status})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={`${isManagerMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-emerald-50 border-emerald-100 text-emerald-800'} p-4 rounded-lg border text-xs mt-4 font-medium`}>
-                                    <p>ℹ️ O arquivo PDF será simulado ("Hemograma_Mock.pdf") para fins de demonstração.</p>
-                                </div>
-
-                                <div className={`flex justify-end gap-2 pt-4 mt-2 border-t ${isManagerMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsExamUploadModalOpen(false)}
-                                        className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className={`px-6 py-2 text-white rounded font-bold shadow-md ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                                    >
-                                        Confirmar e Enviar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )
-            }
 
             {/* --- OTHER MODALS --- */}
             {

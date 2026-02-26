@@ -516,10 +516,33 @@ export interface Appointment {
 // --- Exames e IA ---
 
 export interface ExamMarker {
+  id: string;
   name: string;
-  value: string;
-  reference: string;
-  interpretation: 'NORMAL' | 'LIMITROFE' | 'ALTERADO';
+  value: number;
+  unit: string;
+  reference: {
+    min: number;
+    max: number;
+    label: string; // ex: "90 - 110 mg/dL"
+  };
+  interpretation: 'NORMAL' | 'BAIXO' | 'ALTO' | 'CRITICO';
+  biomedicalData?: {
+    risco: string;
+    sugestao: string;
+  };
+}
+
+export interface ExamAnalysisResult {
+  summary: string;
+  findings: Array<{
+    marker: string;
+    correlation: string; // Explicação de como ele se relaciona com outros exames ou sintomas
+    impact: 'NEGATIVO' | 'NEUTRO' | 'POSITIVO';
+  }>;
+  possibleCauses: string[];
+  suggestedTreatments: string[];
+  nextSteps: string[];
+  isFallback?: boolean;
 }
 
 export interface Exam {
@@ -531,16 +554,18 @@ export interface Exam {
   status: 'PENDENTE' | 'ANALISADO';
   fileUrl?: string;
 
-  // Clinical Context Fields (New)
-  clinicalReason: string; // Mandatory
-  appointmentId?: string; // Optional Link
-  clinicalHypothesis?: string; // Optional
-  requestedByUserId: string; // Auto-filled
+  // Clinical Context Fields
+  clinicalReason: string;
+  appointmentId?: string;
+  clinicalHypothesis?: string;
+  requestedByUserId: string;
   createdAt: string;
 
-  // IA Data
-  markers?: ExamMarker[]; // Tabela estruturada
-  aiAnalysis?: string; // Texto explicativo completo
+  // IA & Biomarker Data
+  markers?: ExamMarker[];
+  aiAnalysis?: string; // Legacy string
+  analysisResult?: ExamAnalysisResult; // New Structured Analysis
+  healthScore?: number; // 0-100
 }
 
 export interface AuditLog {

@@ -2,7 +2,7 @@ import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for d
 import { GoogleGenAI } from "@google/genai";
 import {
     User, Clinic, Professional, Patient, Appointment,
-    Role, AppointmentStatus, Exam, AuditLog, ExamMarker,
+    Role, AppointmentStatus, Exam, AuditLog, ExamMarker, ExamAnalysisResult,
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo
@@ -989,6 +989,42 @@ class DatabaseService {
         return {} as Exam;
     }
 
+    async saveExam(user: User, patientId: string, examData: Partial<Exam>) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const newExam: Exam = {
+            id,
+            clinicId: examData.clinicId || '',
+            patientId,
+            date: examData.date || new Date().toISOString(),
+            name: examData.name || 'Exame',
+            status: examData.status || 'PENDENTE',
+            clinicalReason: examData.clinicalReason || '',
+            requestedByUserId: user.id,
+            createdAt: new Date().toISOString(),
+            markers: examData.markers || [],
+            healthScore: examData.healthScore
+        };
+
+        this.exams.push(newExam);
+        await this.saveToStorage();
+
+        this.logPatientEvent(patientId, 'EXAM_UPLOADED', { id, name: newExam.name }, `Exame cadastrado: ${newExam.name}`, user);
+        return newExam;
+    }
+
+    async updateExamAnalysis(examId: string, result: ExamAnalysisResult) {
+        const idx = this.exams.findIndex(e => e.id === examId);
+        if (idx !== -1) {
+            this.exams[idx] = {
+                ...this.exams[idx],
+                status: 'ANALISADO',
+                analysisResult: result,
+                aiAnalysis: result.summary // Backward compatibility
+            };
+            await this.saveToStorage();
+        }
+    }
+
     // --- NUTRITIONAL PLANNING PERSISTENCE (UPDATED FOR MULTI-PLAN) ---
 
     // Get all plans for a patient
@@ -1148,8 +1184,8 @@ class DatabaseService {
                 micros: micros
             },
             dataQuality: {
-                missingMicrosCount: 0, // Placeholder, can improve if catalog has nulls
-                itemsWithUnknownDensity: 0 // Placeholder
+                missingMicrosCount: 0,
+                itemsWithUnknownDensity: 0
             }
         };
 
@@ -1158,8 +1194,6 @@ class DatabaseService {
 
     /**
      * ROBUST ANTHROPOMETRY SNAPSHOT BUILDER
-     * Prioritizes 'overridePatient' (UI state) -> 'db record'.
-     * Handles unit conversions (m vs cm) and missing fields gracefully.
      */
     async getAnthroSnapshot(patientId: string, overridePatient?: Partial<Patient>): Promise<{ snapshot: AnthroSnapshot | null, source: 'record' | 'patient' | 'none', warnings: string[] }> {
         const dbPatient = this.patients.find(p => p.id === patientId);
