@@ -7,7 +7,7 @@ export interface MarkerReference {
     maxDesejavel: number;
     minCritico?: number;
     maxCritico?: number;
-    tipo: 'BIOQUIMICO' | 'HORMONAL' | 'HEMATOLOGICO' | 'GASOMETRIA' | 'TOXICOLOGICO' | 'COAGULACAO';
+    tipo: 'BIOQUIMICO' | 'HORMONAL' | 'HEMATOLOGICO' | 'GASOMETRIA' | 'TOXICOLOGICO' | 'COAGULACAO' | 'MARCADOR_TUMORAL';
     interpretacao: {
         baixo: {
             risco: string;
@@ -29,10 +29,12 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         unit: "mg/dL",
         minDesejavel: 70,
         maxDesejavel: 99,
+        minCritico: 45,
+        maxCritico: 450,
         tipo: 'BIOQUIMICO',
         interpretacao: {
-            baixo: { risco: "Hipoglicemia: Risco de tonturas, desmaios e fadiga.", sugestao: "Avaliar consumo de carboidratos complexos." },
-            alto: { risco: "Hiperglicemia/Diabetes: Risco cardiovascular e renal.", sugestao: "Restrição de açúcares, aumento de fibras e proteínas." },
+            baixo: { risco: "Hipoglicemia grave.", sugestao: "Abaixo de 45: Coma neuroglicopênico." },
+            alto: { risco: "Diabetes ou Hiperglicemia crítica.", sugestao: "Acima de 450: Risco de Cetoacidose ou Coma Diabético." },
             normal: "Níveis saudáveis de açúcar no sangue."
         }
     },
@@ -159,7 +161,7 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
     },
     LDH: {
         name: "LDH",
-        aliases: ["Lactato Desidrogenase"],
+        aliases: ["Lactato Desidrogenase", "DHL"],
         unit: "U/L",
         minDesejavel: 120,
         maxDesejavel: 250,
@@ -167,7 +169,7 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Sem relevância clara.", sugestao: "Monitorar." },
-            alto: { risco: "Dano celular sistêmico, hemólise ou tumor.", sugestao: "Investigar focos de lesão celular. Acima de 1000 é Alerta Crítico." },
+            alto: { risco: "Dano celular sistêmico ou hemólise.", sugestao: "Acima de 1000: Notificação imediata (depende da clínica)." },
             normal: "Integridade tecidual normal."
         }
     },
@@ -181,7 +183,7 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Sem relevância clínica.", sugestao: "N/A" },
-            alto: { risco: "Pancreatite Aguda.", sugestao: "Investigar dor abdominal súbita. Acima de 700 é Crítico." },
+            alto: { risco: "Pancreatite Aguda.", sugestao: "Investigar dor abdominal súbita. Acima de 700 é Alerta Crítico." },
             normal: "Função pancreática normal."
         }
     },
@@ -195,8 +197,79 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Bom.", sugestao: "Manter." },
-            alto: { risco: "Hipóxia tecidual, choque ou sepse.", sugestao: "Acima de 5.0 indica gravidade extrema (Tipo A)." },
+            alto: { risco: "Hipóxia tecidual tipo A.", sugestao: "Acima de 5.0: Insuficiência de oxigenação tecidual." },
             normal: "Metabolismo aeróbico normal."
+        }
+    },
+    FOSFORO: {
+        name: "Fósforo",
+        aliases: ["P", "Phosphate"],
+        unit: "mg/dL",
+        minDesejavel: 2.5,
+        maxDesejavel: 4.5,
+        minCritico: 1.0,
+        maxCritico: 9.0,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Fraqueza muscular, confusão, falência respiratória.", sugestao: "Abaixo de 1.0: Sintomas graves de SNC." },
+            alto: { risco: "Insuficiência renal ou lise tumoral aguda.", sugestao: "Acima de 9.0: Risco de calcificação ectópica." },
+            normal: "Equilíbrio mineral adequado."
+        }
+    },
+    OSMOLALIDADE_PLASMATICA: {
+        name: "Osmolalidade Plasmática",
+        aliases: ["Osmolalidade"],
+        unit: "mOsm/Kg H2O",
+        minDesejavel: 285,
+        maxDesejavel: 295,
+        minCritico: 240,
+        maxCritico: 330,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hiposmolalidade: Edema celular.", sugestao: "Abaixo de 240: Sintomas neuropsiquiátricos." },
+            alto: { risco: "Hiperosmolalidade: Perda de água intracelular.", sugestao: "Acima de 330: Coma e desidratação neuronal." },
+            normal: "Equilíbrio osmótico estável."
+        }
+    },
+    GAP_OSMOLAR: {
+        name: "Gap Osmolar",
+        aliases: ["Osmolar Gap"],
+        unit: "mOsm/Kg H2O",
+        minDesejavel: 0,
+        maxDesejavel: 10,
+        maxCritico: 10,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "Sem ação." },
+            alto: { risco: "Presença de substâncias não medidas.", sugestao: "Investigar intoxicação: Etanol, Metanol, Etilenoglicol." },
+            normal: "Ausência de gaps osmóticos anômalos."
+        }
+    },
+    AMONIA: {
+        name: "Amônia",
+        aliases: ["NH3"],
+        unit: "mg/dL",
+        minDesejavel: 15,
+        maxDesejavel: 45,
+        maxCritico: 100,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Incomum.", sugestao: "Reavaliar." },
+            alto: { risco: "Risco de Encefalopatia Hepática.", sugestao: "Acima de 100: Neurotoxicidade aguda." },
+            normal: "Metabolismo da ureia normal."
+        }
+    },
+    TROPONINA: {
+        name: "Troponina",
+        aliases: ["Tropo", "cTnT"],
+        unit: "ng/mL",
+        minDesejavel: 0,
+        maxDesejavel: 0.04,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Lesão Miocárdica (Infarto).", sugestao: "Emergência cardiológica se aumentada." },
+            normal: "Coração sem sinais de lesão aguda."
         }
     },
 
@@ -225,8 +298,126 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Baixa ingestão proteica.", sugestao: "Ajustar aporte de aminoácidos." },
-            alto: { risco: "Excesso de proteínas ou desidratação.", sugestao: "Acima de 214 indica insuficiência renal aguda grave." },
+            alto: { risco: "Insuficiência renal aguda.", sugestao: "Acima de 214: Urência dialítica provável." },
             normal: "Balanço nitrogenado normal."
+        }
+    },
+    BILIRRUBINA_TOTAL: {
+        name: "Bilirrubina Total",
+        aliases: ["BT", "Bili"],
+        unit: "mg/dL",
+        minDesejavel: 0.3,
+        maxDesejavel: 1.2,
+        maxCritico: 15,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Sem significado.", sugestao: "N/A" },
+            alto: { risco: "Doença hepatobiliar ou hemólise.", sugestao: "Acima de 15: Elevado risco de contágio/severidade." },
+            normal: "Drenagem biliar normal."
+        }
+    },
+    SODIO: {
+        name: "Sódio",
+        aliases: ["Na"],
+        unit: "mEq/L",
+        minDesejavel: 135,
+        maxDesejavel: 145,
+        minCritico: 120,
+        maxCritico: 160,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hiponatremia: Confusão, espasmos, coma.", sugestao: "Abaixo de 120: Risco neurológico grave." },
+            alto: { risco: "Hipernatremia: Desidratação neuronal.", sugestao: "Acima de 160: Risco de trombose e hipotensão." },
+            normal: "Equilíbrio eletrolítico estável."
+        }
+    },
+    POTASSIO: {
+        name: "Potássio",
+        aliases: ["K"],
+        unit: "mEq/L",
+        minDesejavel: 3.5,
+        maxDesejavel: 5.1,
+        minCritico: 2.5,
+        maxCritico: 6.5,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hipocalemia: Arritmias e paralisia.", sugestao: "Abaixo de 2.5: Risco de parada respiratória." },
+            alto: { risco: "Hipercalemia: Risco iminente de parada cardíaca.", sugestao: "Acima de 6.5: Emergência absoluta." },
+            normal: "Níveis saudáveis para sinalização cardíaca."
+        }
+    },
+    CALCIO_TOTAL: {
+        name: "Cálcio Total",
+        aliases: ["Ca"],
+        unit: "mg/dL",
+        minDesejavel: 8.5,
+        maxDesejavel: 10.2,
+        minCritico: 7.0,
+        maxCritico: 12.0,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hipocalcemia: Tetania, convulsões.", sugestao: "Abaixo de 7.0: Hipotensão refratária." },
+            alto: { risco: "Hipercalcemia: Alteração mental, letargia.", sugestao: "Acima de 12.0: Fraqueza muscular severa." },
+            normal: "Metabolismo de cálcio equilibrado."
+        }
+    },
+    CALCIO_IONICO: {
+        name: "Cálcio Iônico",
+        aliases: ["Ca++"],
+        unit: "mg/dL",
+        minDesejavel: 4.5,
+        maxDesejavel: 5.3,
+        minCritico: 3.2,
+        maxCritico: 6.2,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hipocalcemia grave.", sugestao: "Abaixo de 3.2: Tetania e depressão cardíaca." },
+            alto: { risco: "Hipercalcemia grave.", sugestao: "Acima de 6.2: Náuseas e letargia extrema." },
+            normal: "Nível fisiologicamente ativo correto."
+        }
+    },
+    CLORETOS: {
+        name: "Cloretos",
+        aliases: ["Cl"],
+        unit: "mEq/L",
+        minDesejavel: 96,
+        maxDesejavel: 106,
+        minCritico: 75,
+        maxCritico: 125,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Risco de alcalose metabólica.", sugestao: "Repor se abaixo de 75." },
+            alto: { risco: "Acidose hiperclorêmica.", sugestao: "Acima de 125: Acidose metabólica primária." },
+            normal: "Equilíbrio aniônico normal."
+        }
+    },
+    MAGNESIO: {
+        name: "Magnésio",
+        aliases: ["Mg"],
+        unit: "mg/dL",
+        minDesejavel: 1.7,
+        maxDesejavel: 2.5,
+        minCritico: 1.0,
+        maxCritico: 4.9,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Hipomagnesemia: Parestesias, arritmias.", sugestao: "Abaixo de 1.0: Tetania atetóide." },
+            alto: { risco: "Hipermagnesemia: Fraqueza e redução de reflexos.", sugestao: "Acima de 4.9: Hipoventilação e sedação." },
+            normal: "Minerais intracelulares em equilíbrio."
+        }
+    },
+    ACIDO_URICO: {
+        name: "Ácido Úrico",
+        aliases: ["Uric Acid"],
+        unit: "mg/dL",
+        minDesejavel: 2.4,
+        maxDesejavel: 6.0,
+        maxCritico: 13,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Incomum.", sugestao: "Investigar herança ou medicamentos." },
+            alto: { risco: "Gota ou Nefropatia aguda.", sugestao: "Acima de 13: Risco de bloqueio tubular renal." },
+            normal: "Eliminação adequada de purinas."
         }
     },
 
@@ -237,12 +428,12 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         unit: "g/dL",
         minDesejavel: 12.0,
         maxDesejavel: 16.0,
-        minCritico: 6.6,
+        minCritico: 7.0,
         maxCritico: 19.9,
         tipo: 'HEMATOLOGICO',
         interpretacao: {
-            baixo: { risco: "Anemia. Abaixo de 6.6: Risco de baixo suprimento O2 ao miocárdio.", sugestao: "Transfusão ou suplementação urgente." },
-            alto: { risco: "Policitemia. Acima de 19.9: Hiperviscosidade sanguínea.", sugestao: "Investigar causas pulmonares ou fumo." },
+            baixo: { risco: "Anemia progressiva.", sugestao: "Abaixo de 13 (H) ou 12 (M): Anemia. Abaixo de 7.0: Protocolo de Transfusão." },
+            alto: { risco: "Policitemia / Hiperviscosidade.", sugestao: "Acima de 19.9: Risco de eventos trombóticos." },
             normal: "Oxigenação tecidual correta."
         }
     },
@@ -417,6 +608,126 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             alto: { risco: "Hipotireoidismo.", sugestao: "Investigar Hashimoto e Selênio/Iodo." },
             normal: "Metabolismo tireoidiano estável."
         }
+    },
+
+    // --- MARCADORES TUMORAIS ---
+    AFP: {
+        name: "AFP (Alfa-fetoproteína)",
+        aliases: ["Alfa-fetoproteína"],
+        unit: "ng/mL",
+        minDesejavel: 0,
+        maxDesejavel: 8,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Ca Hepatocelular, Embrionário ou Coricarcinoma.", sugestao: "Monitoramento oncológico rigoroso." },
+            normal: "Níveis normais para adultos."
+        }
+    },
+    CEA: {
+        name: "CEA",
+        aliases: ["Antígeno carcinoembrionário"],
+        unit: "ng/mL",
+        minDesejavel: 0,
+        maxDesejavel: 2.5,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Monitoramento ca colorretal, gastrointestinal.", sugestao: "Fumantes podem ter até 5 ng/mL." },
+            normal: "Nível seguro."
+        }
+    },
+    CA_125: {
+        name: "CA 125",
+        aliases: ["CA 125"],
+        unit: "U/mL",
+        minDesejavel: 0,
+        maxDesejavel: 35,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Neoplasias do ovário e do endométrio.", sugestao: "Avaliar exames de imagem pélvicos." },
+            normal: "Ausência de elevação tumoral específica."
+        }
+    },
+    CA_15_3: {
+        name: "CA 15.3",
+        aliases: ["CA 15.3"],
+        unit: "U/mL",
+        minDesejavel: 0,
+        maxDesejavel: 32.4,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Monitoramento de neoplasias da mama.", sugestao: "Acompanhamento clínico." },
+            normal: "Nível estável."
+        }
+    },
+    CA_19_9: {
+        name: "CA 19.9",
+        aliases: ["CA 19.9"],
+        unit: "U/mL",
+        minDesejavel: 0,
+        maxDesejavel: 37,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Neoplasias do pâncreas e colorretais.", sugestao: "Correlacionar com clínica gástrica." },
+            normal: "Normal."
+        }
+    },
+    PSA_TOTAL: {
+        name: "PSA Total",
+        aliases: ["Antígeno Prostático"],
+        unit: "ng/mL",
+        minDesejavel: 0,
+        maxDesejavel: 2.5,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Risco aumentado de câncer de próstata.", sugestao: "Correlacionar com idade e volume prostático." },
+            normal: "Nível seguro para rastreio."
+        }
+    },
+    HE4: {
+        name: "HE4",
+        aliases: ["HE4"],
+        unit: "pmol/L",
+        minDesejavel: 0,
+        maxDesejavel: 150,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Neoplasias do ovário.", sugestao: "Produz quantidades maiores que a proteína CA-125 em alguns casos." },
+            normal: "Normal."
+        }
+    },
+    TIREOGLOBULINA: {
+        name: "Tireoglobulina",
+        aliases: ["TG"],
+        unit: "ng/mL",
+        minDesejavel: 3.5,
+        maxDesejavel: 77,
+        tipo: 'MARCADOR_TUMORAL',
+        interpretacao: {
+            baixo: { risco: "Pós-tireoidectomia radical esperado indetectável.", sugestao: "Acompanhamento pós-cirúrgico." },
+            alto: { risco: "Presença de tecidos tireoidianos residuais ou tumor.", sugestao: "Rastreio de recidiva oncológica." },
+            normal: "Níveis normais (com tireoide intacta)."
+        }
+    },
+    RFG: {
+        name: "Creatinina - Estimativa do RFG",
+        aliases: ["RFG", "eGFR", "Filtração Glomerular"],
+        unit: "mL/min/1.73 m2",
+        minDesejavel: 60,
+        maxDesejavel: 120,
+        minCritico: 15,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Função renal diminuída.", sugestao: "Abaixo de 60: Doença Renal Crônica. Abaixo de 15: Falência Renal." },
+            alto: { risco: "Normal.", sugestao: "N/A" },
+            normal: "Taxa de filtração glomerular saudável."
+        }
     }
 };
 
@@ -425,5 +736,7 @@ export const QUALITATIVE_FINDINGS = [
     { achado: "Glicosúria e cetonúria", nota: "Cetoacidose diabética" },
     { achado: "Cilindros hemáticos ou Hemácias Dismórficas (>50%)", nota: "Lesão glomerular / Síndrome nefrítica" },
     { achado: "Hemoglobinúria intensa desproporcional", nota: "Mioglobinúria / Síndrome de esmagamento" },
-    { achado: "Drepanócitos / Parasitas de Malária", nota: "Drepanocitose ou Malária ativa" }
+    { achado: "Drepanócitos / Parasitas de Malária", nota: "Drepanocitose ou Malária ativa" },
+    { achado: "Cristais de Urato de Sódio / Oxalato de Cálcio", nota: "Risco de Nefrolitíase / Ataque de Gota" },
+    { achado: "Sepse Neonatal (Altas concentrações)", nota: "Emergência Pediátrica Imediata" }
 ];

@@ -31,6 +31,8 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     // File Upload State
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    const [formStep, setFormStep] = useState(1);
+
     // Form states
     const [manualExamName, setManualExamName] = useState('Painel Bioquímico');
     const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
@@ -64,6 +66,29 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         return { dataPoints, markers: allMarkerNames };
     }, [exams]);
 
+    const QUICK_PANELS = {
+        'LIBIDICO': ['Colesterol Total', 'HDL (Bom Colesterol)', 'LDL (Mau Colesterol)', 'Triglicerídeos'],
+        'HEPATICO': ['AST (TGO)', 'ALT (TGP)', 'Gama-GT (GGT)', 'Bilirrubina Total'],
+        'RENAL': ['Creatinina', 'Ureia', 'Ácido Úrico', 'Fósforo', 'Potássio'],
+        'GLICEMIA': ['Glicose em Jejum', 'Hemoglobina Glicada (HbA1c)', 'Insulina em Jejum'],
+        'ELETRÓLITOS': ['Sódio', 'Potássio', 'Cálcio Total', 'Magnésio', 'Cloretos']
+    };
+
+    const applyQuickPanel = (panelKey: keyof typeof QUICK_PANELS) => {
+        const markersToAdd = QUICK_PANELS[panelKey].map(name => {
+            const meta = Object.values(BIOMEDICAL_MARKERS).find(m => m.name === name);
+            return {
+                name: name,
+                value: '',
+                unit: meta?.unit || 'un'
+            };
+        });
+
+        // Evitar duplicados
+        const filteredNew = markersToAdd.filter(m => !manualMarkers.some(existing => existing.name === m.name));
+        setManualMarkers([...manualMarkers, ...filteredNew]);
+    };
+
     const handleAddMarker = () => {
         if (!currMarkerName || currMarkerVal === '') return;
         const meta = Object.values(BIOMEDICAL_MARKERS).find(m =>
@@ -91,7 +116,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
             return;
         }
 
-        const processedMarkers = LaboratService.processMarkers(manualMarkers);
+        const processedMarkers = LaboratService.processMarkers(manualMarkers.filter(m => m.value !== ''));
         const score = LaboratService.calculateExamScore(processedMarkers);
 
         const examData: Partial<Exam> = {
@@ -110,10 +135,10 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         try {
             if (editingExamId) {
                 await db.updateExam(editingExamId, examData);
-                alert("Exame atualizado com sucesso!");
+                alert("Registro clínico atualizado com sucesso!");
             } else {
                 await db.saveExam(user, patient.id, examData);
-                alert("Exame salvo com sucesso!");
+                alert("Registro clínico efetivado!");
             }
             onUpdate();
             handleCancelForm();
@@ -125,6 +150,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     const handleCancelForm = () => {
         setIsAddingManual(false);
         setEditingExamId(null);
+        setFormStep(1);
         setManualExamName('Painel Bioquímico');
         setManualDate(new Date().toISOString().split('T')[0]);
         setManualReason('Acompanhamento Nutricional');
@@ -142,10 +168,11 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         setManualMarkers((exam.markers || []).map(m => ({ name: m.name, value: m.value, unit: m.unit })));
         setManualQualitative(exam.qualitativeFindings || []);
         setIsAddingManual(true);
+        setFormStep(1);
     };
 
     const handleDeleteExam = async (examId: string) => {
-        if (confirm("Deseja realmente excluir este exame?")) {
+        if (confirm("Deseja realmente excluir este registro?")) {
             try {
                 await db.deleteExam(examId);
                 onUpdate();
@@ -257,6 +284,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 __html: `
                 @keyframes pulse-red { 0%, 100% { border-color: #f43f5e; box-shadow: 0 0 0 0px rgba(244, 63, 94, 0.4); } 50% { border-color: #be123c; box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); } }
                 .border-critical { animation: pulse-red 2s infinite; border-width: 2px; }
+                .form-step-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
             `}} />
 
             <div className={`${isManagerMode ? 'bg-gray-800' : 'bg-white'} border border-slate-200 shadow-sm rounded-2xl overflow-hidden`}>
@@ -267,7 +295,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                             <Icons.Activity className="w-6 h-6 text-emerald-500" />
                             Prontuário Laborarial Inteligente
                         </h3>
-                        <p className="text-xs text-slate-500 font-medium italic">Base de conhecimento clínico expandida v2.0</p>
+                        <p className="text-xs text-slate-500 font-medium italic">Base de conhecimento clínico v2.5 - Bioquímica & Onco</p>
                     </div>
 
                     <div className="flex gap-2">
@@ -276,7 +304,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                             <button onClick={() => setViewMode('EVOLUTION')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'EVOLUTION' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Evolução</button>
                         </div>
                         <button onClick={() => setIsAddingManual(true)} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2">
-                            <span>+</span> Lançamento Manual
+                            <span>+</span> Nutri-Lançamento
                         </button>
                         <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.png,.jpg" onChange={handleFileUpload} />
                         <button onClick={() => fileInputRef.current?.click()} disabled={isExtracting} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2">
@@ -285,110 +313,180 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                     </div>
                 </div>
 
-                {/* Form Section */}
+                {/* Form Section (Multi-step) */}
                 {isAddingManual && (
-                    <div className="p-6 bg-slate-50 border-b animate-fadeIn">
-                        <div className="flex justify-between items-center mb-6">
-                            <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tighter">
-                                {editingExamId ? '📝 Editando Registro Clínico' : '✨ Novo Lançamento de Alta Complexidade'}
-                            </h4>
-                            <button onClick={handleCancelForm} className="text-slate-400 hover:text-slate-600">✕</button>
+                    <div className="p-0 bg-slate-50 border-b animate-fadeIn">
+                        {/* Step Indicator */}
+                        <div className="flex border-b bg-white">
+                            {[
+                                { step: 1, label: 'Geral', icon: '📝' },
+                                { step: 2, label: 'Painéis Quantitativos', icon: '📊' },
+                                { step: 3, label: 'Achados Críticos', icon: '⚠️' }
+                            ].map(s => (
+                                <button
+                                    key={s.step}
+                                    onClick={() => setFormStep(s.step)}
+                                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${formStep === s.step ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-400'}`}
+                                >
+                                    <span>{s.icon}</span> {s.label}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-slate-400">Nome do Exame</label>
-                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualExamName} onChange={e => setManualExamName(e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-slate-400">Data</label>
-                                <input type="date" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualDate} onChange={e => setManualDate(e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-slate-400">Motivo Clínico</label>
-                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none" value={manualReason} onChange={e => setManualReason(e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Marcadores Quantitativos */}
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h5 className="text-[10px] font-black uppercase text-indigo-500 mb-4 tracking-widest">Painéis Quantitativos (Markers)</h5>
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <input
-                                        list="markers"
-                                        className="flex-1 border-slate-200 border rounded-xl p-3 text-sm outline-none focus:border-indigo-500"
-                                        placeholder="Pesquisar Marcador..."
-                                        value={currMarkerName}
-                                        onChange={e => setCurrMarkerName(e.target.value)}
-                                    />
-                                    <datalist id="markers">
-                                        {Object.values(BIOMEDICAL_MARKERS).map(m => <option key={m.name} value={m.name} />)}
-                                    </datalist>
-                                    <input
-                                        type="text"
-                                        className="w-full sm:w-32 border-slate-200 border rounded-xl p-3 text-sm text-center font-black placeholder:text-slate-300"
-                                        placeholder={currMarkerName ? getReferencePlaceholder(currMarkerName) : 'Valor'}
-                                        value={currMarkerVal}
-                                        onChange={e => setCurrMarkerVal(e.target.value)}
-                                    />
-                                    <button onClick={handleAddMarker} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:shadow-lg transition-all">Add</button>
-                                </div>
-
-                                <div className="mt-6 space-y-2 max-h-60 overflow-y-auto pr-2">
-                                    {manualMarkers.map((m, i) => (
-                                        <div key={i} className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm">
-                                            <div className="flex-1">
-                                                <p className="text-[10px] font-black uppercase text-slate-400 mb-0.5">{m.name}</p>
-                                                <p className="text-[9px] text-slate-300 font-bold italic">Ref: {getReferencePlaceholder(m.name)}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={m.value}
-                                                    onChange={(e) => {
-                                                        const newMarkers = [...manualMarkers];
-                                                        newMarkers[i].value = e.target.value;
-                                                        setManualMarkers(newMarkers);
-                                                    }}
-                                                    className="w-24 text-center border-b border-indigo-100 focus:border-indigo-500 outline-none text-sm font-black text-indigo-600 bg-white rounded py-1"
-                                                />
-                                                <span className="text-[10px] text-slate-400 font-black w-10">{m.unit}</span>
-                                            </div>
-                                            <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-rose-300 hover:text-rose-500 font-bold p-1">✕</button>
+                        <div className="p-8">
+                            {formStep === 1 && (
+                                <div className="space-y-6 animate-fadeIn">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Título do Prontuário</label>
+                                            <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none font-bold" value={manualExamName} onChange={e => setManualExamName(e.target.value)} />
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Achados Qualitativos */}
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h5 className="text-[10px] font-black uppercase text-rose-500 mb-4 tracking-widest flex items-center gap-2">
-                                    <span>⚠️</span> Achados Críticos (Qualitativos)
-                                </h5>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {QUALITATIVE_FINDINGS.map((f, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => toggleQualitative(f.achado)}
-                                            className={`text-left p-3 rounded-xl border transition-all ${manualQualitative.includes(f.achado) ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-200' : 'bg-slate-50 border-transparent hover:border-slate-200'}`}
-                                        >
-                                            <div className="flex justify-between items-center">
-                                                <span className={`text-[11px] font-black ${manualQualitative.includes(f.achado) ? 'text-rose-700' : 'text-slate-700'}`}>{f.achado}</span>
-                                                {manualQualitative.includes(f.achado) && <span className="text-rose-500">✔</span>}
-                                            </div>
-                                            <p className="text-[9px] text-slate-400 font-medium italic mt-1">{f.nota}</p>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Data de Coleta/Registro</label>
+                                            <input type="date" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none font-bold" value={manualDate} onChange={e => setManualDate(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Hipótese ou Motivo</label>
+                                            <input type="text" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 ring-indigo-200 outline-none font-bold" value={manualReason} onChange={e => setManualReason(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
+                                        <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+                                            <b>Dica:</b> Utilize nomes descritivos como "Rotina Pós-Operatória" ou "Check-up Trimestral" para facilitar a visualização histórica do paciente.
+                                        </p>
+                                    </div>
+                                    <div className="flex justify-end pt-4">
+                                        <button onClick={() => setFormStep(2)} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-black shadow-lg shadow-indigo-100 flex items-center gap-2">
+                                            Próxima Etapa: Marcadores <span>➔</span>
                                         </button>
-                                    ))}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            )}
 
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={handleCancelForm} className="text-slate-500 text-sm font-bold px-6 py-2">Cancelar</button>
-                            <button onClick={handleSaveManualExam} className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-10 py-3 rounded-xl font-black shadow-lg hover:scale-[1.02] transition-all">
-                                {editingExamId ? 'Atualizar Prontuário' : 'Efetivar Lançamento'}
-                            </button>
+                            {formStep === 2 && (
+                                <div className="space-y-8 animate-fadeIn">
+                                    {/* Quick Panels */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Atalhos Sugestivos (Painéis Rápidos)</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {Object.keys(QUICK_PANELS).map(key => (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => applyQuickPanel(key as any)}
+                                                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+                                                >
+                                                    + {key}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Manual Marker Input */}
+                                    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                                        <div className="flex flex-col md:flex-row gap-3">
+                                            <input
+                                                list="markers"
+                                                className="flex-1 border-slate-200 border rounded-xl p-3 text-sm outline-none focus:border-indigo-500 font-bold"
+                                                placeholder="Pesquisar Marcador (ex: Glicose)..."
+                                                value={currMarkerName}
+                                                onChange={e => setCurrMarkerName(e.target.value)}
+                                            />
+                                            <datalist id="markers">
+                                                {Object.values(BIOMEDICAL_MARKERS).map(m => <option key={m.name} value={m.name} />)}
+                                            </datalist>
+                                            <input
+                                                type="text"
+                                                className="w-full md:w-40 border-slate-200 border rounded-xl p-3 text-sm text-center font-black placeholder:text-slate-300"
+                                                placeholder={currMarkerName ? getReferencePlaceholder(currMarkerName) : 'Valor'}
+                                                value={currMarkerVal}
+                                                onChange={e => setCurrMarkerVal(e.target.value)}
+                                                onKeyPress={e => e.key === 'Enter' && handleAddMarker()}
+                                            />
+                                            <button onClick={handleAddMarker} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:shadow-lg transition-all">Add</button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
+                                            {manualMarkers.map((m, i) => (
+                                                <div key={i} className="flex flex-col bg-slate-50/80 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:border-indigo-100">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-[10px] font-black uppercase text-slate-400 leading-tight truncate w-32">{m.name}</span>
+                                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500">✕</button>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={m.value}
+                                                            onChange={(e) => {
+                                                                const newMarkers = [...manualMarkers];
+                                                                newMarkers[i].value = e.target.value;
+                                                                setManualMarkers(newMarkers);
+                                                            }}
+                                                            className="flex-1 text-lg font-black text-indigo-600 bg-transparent border-b-2 border-transparent focus:border-indigo-400 outline-none py-1"
+                                                            placeholder="0.00"
+                                                        />
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase">{m.unit}</span>
+                                                    </div>
+                                                    <p className="text-[8px] text-slate-300 font-bold mt-2 uppercase tracking-tighter">Ref: {getReferencePlaceholder(m.name)}</p>
+                                                </div>
+                                            ))}
+                                            {manualMarkers.length === 0 && (
+                                                <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl opacity-40">
+                                                    <p className="text-xs font-bold text-slate-500 uppercase">Aguardando inserção de marcadores...</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between pt-4">
+                                        <button onClick={() => setFormStep(1)} className="text-slate-500 text-sm font-bold uppercase tracking-widest">« Voltar</button>
+                                        <button onClick={() => setFormStep(3)} className="bg-indigo-600 text-white px-10 py-3 rounded-xl text-sm font-black shadow-lg flex items-center gap-2">
+                                            Próxima Etapa: Alertas Críticos <span>➔</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formStep === 3 && (
+                                <div className="space-y-8 animate-fadeIn">
+                                    <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100 mb-6">
+                                        <h5 className="text-[11px] font-black uppercase text-rose-600 mb-2 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                                            Protocolo de Segurança Clínica
+                                        </h5>
+                                        <p className="text-[10px] text-rose-700 font-medium leading-relaxed">
+                                            Selecione quaisquer observações qualitativas de urgência detectadas no laudo. Estes achados geram alertas visuais imediatos e priorizam a análise de risco.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {QUALITATIVE_FINDINGS.map((f, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => toggleQualitative(f.achado)}
+                                                className={`text-left p-5 rounded-3xl border-2 transition-all ${manualQualitative.includes(f.achado) ? 'bg-white border-rose-500 shadow-xl shadow-rose-100' : 'bg-white border-slate-100 hover:border-slate-300 shadow-sm'}`}
+                                            >
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className={`text-xs font-black ${manualQualitative.includes(f.achado) ? 'text-rose-600' : 'text-slate-800'}`}>{f.achado}</span>
+                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${manualQualitative.includes(f.achado) ? 'bg-rose-500 border-rose-500' : 'border-slate-200'}`}>
+                                                        {manualQualitative.includes(f.achado) && <span className="text-white text-[10px]">✔</span>}
+                                                    </div>
+                                                </div>
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase italic tracking-tighter">{f.nota}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex justify-between pt-8 border-t">
+                                        <button onClick={() => setFormStep(2)} className="text-slate-500 text-sm font-bold uppercase tracking-widest">« Voltar</button>
+                                        <div className="flex gap-4">
+                                            <button onClick={handleCancelForm} className="text-slate-400 text-sm font-bold px-6 py-2">Descartar</button>
+                                            <button onClick={handleSaveManualExam} className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-12 py-4 rounded-2xl font-black shadow-2xl shadow-emerald-200 hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-widest">
+                                                {editingExamId ? 'Confirmar Edição' : 'Efetivar no Prontuário'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -397,14 +495,53 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 <div className="p-6">
                     {viewMode === 'EVOLUTION' ? (
                         <div className="space-y-8 animate-fadeIn">
+                            {/* Comparativo Rápido */}
+                            {exams.length >= 2 && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                    {(() => {
+                                        const sorted = [...exams].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                                        const latest = sorted[0];
+                                        const previous = sorted[1];
+
+                                        // Pegar os 3 marcadores mais comuns/relevantes presentes em ambos
+                                        const commonMarkers = latest.markers?.filter(m => previous.markers?.some(pm => pm.name === m.name)).slice(0, 3) || [];
+
+                                        return commonMarkers.map(m => {
+                                            const pm = previous.markers?.find(x => x.name === m.name);
+                                            const diff = Number(m.value) - Number(pm?.value || 0);
+                                            const percent = pm ? (diff / Number(pm.value)) * 100 : 0;
+
+                                            return (
+                                                <div key={m.name} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{m.name}</p>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="text-xl font-black text-slate-800">{m.value}</span>
+                                                            <span className="text-[10px] text-slate-400 font-bold">{m.unit}</span>
+                                                        </div>
+                                                        <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg ${diff > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                            {diff > 0 ? '↑' : '↓'} {Math.abs(percent).toFixed(1)}%
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-400 mt-2 font-medium">Anterior: {pm?.value} {pm?.unit}</p>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center">
                                 <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
                                     Mapa de Tendências Clínicas
                                 </h4>
-                                <select className="text-xs font-bold border rounded-lg p-2 bg-slate-50" value={selectedMarkerForEvo} onChange={e => setSelectedMarkerForEvo(e.target.value)}>
-                                    {evolutionData.markers.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
+                                <div className="flex items-center gap-4">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase">Selecione o Marcador:</label>
+                                    <select className="text-xs font-bold border rounded-xl p-2.5 bg-white shadow-sm outline-none focus:ring-2 ring-indigo-100 min-w-[200px]" value={selectedMarkerForEvo} onChange={e => setSelectedMarkerForEvo(e.target.value)}>
+                                        {evolutionData.markers.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                </div>
                             </div>
 
                             {evolutionData.dataPoints.length < 2 ? (
