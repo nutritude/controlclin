@@ -19,8 +19,18 @@ interface ExamManagerProps {
     user: User;
 }
 
+const EXAM_OPTIONS = [
+    "Hemograma Completo", "Glicose em Jejum", "Hemoglobina Glicada (HbA1c)", "Insulina",
+    "Perfil Lipídico (Colesterol Total, LDL, HDL, Triglicérides)", "Ureia e Creatinina",
+    "TGO e TGP (Transaminases)", "Gama-GT", "Ácido Úrico", "Proteína C-Reativa (PCR)",
+    "Hormônio Tireoestimulante (TSH)", "T4 Livre", "Vitamina D (25-hidroxivitamina D)",
+    "Vitamina B12", "Ferritina", "Ferro Sérico", "Cálcio", "Magnésio",
+    "Zinco", "Albúmina", "Cortisol Sanguíneo", "Testosterona Total e Livre",
+    "Eshteriol", "Progesterona", "Urina Tipo 1 (EAS)", "Exame Parasitológico de Fezes"
+];
+
 export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpdate, isManagerMode, db, user }) => {
-    const [viewMode, setViewMode] = useState<'LIST' | 'EVOLUTION'>('LIST');
+    const [viewMode, setViewMode] = useState<'LIST' | 'EVOLUTION' | 'REQUESTS'>('LIST');
     const [isAddingManual, setIsAddingManual] = useState(false);
     const [analyzingId, setAnalyzingId] = useState<string | null>(null);
     const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -32,6 +42,37 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const [formStep, setFormStep] = useState(1);
+
+    // Request states
+    const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+    const [requestExams, setRequestExams] = useState<string[]>([]);
+    const [requestIndication, setRequestIndication] = useState('');
+    const [requestComplementary, setRequestComplementary] = useState('');
+    const [requestFasting, setRequestFasting] = useState(false);
+    const [requestFastingHours, setRequestFastingHours] = useState(8);
+    const [requestMedications, setRequestMedications] = useState('');
+    const [examRequests, setExamRequests] = useState<any[]>([]);
+    const [searchExamQuery, setSearchExamQuery] = useState('');
+    const [printingRequest, setPrintingRequest] = useState<any>(null);
+    const pdfRef = React.useRef<HTMLDivElement>(null);
+    const [clinic, setClinic] = useState<any>(null);
+
+    const loadRequests = React.useCallback(async () => {
+        if (db && patient.id) {
+            const reqs = await db.getExamRequests(patient.id);
+            setExamRequests(reqs);
+
+            if (user.clinicId) {
+                const clinics = await db.getClinics();
+                const myClinic = clinics.find((c: any) => c.id === user.clinicId);
+                setClinic(myClinic);
+            }
+        }
+    }, [db, patient.id, user.clinicId]);
+
+    React.useEffect(() => {
+        loadRequests();
+    }, [loadRequests]);
 
     // Form states
     const [manualExamName, setManualExamName] = useState('Painel Bioquímico');
@@ -241,6 +282,74 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         }
     };
 
+    const handleSaveRequest = async () => {
+        if (requestExams.length === 0) {
+            alert("Selecione pelo menos um exame.");
+            return;
+        }
+
+        try {
+            await db.saveExamRequest(user, patient.id, {
+                exams: requestExams,
+                clinicalIndication: requestIndication,
+                complementaryInfo: requestComplementary,
+                fastingRequired: requestFasting,
+                fastingHours: requestFastingHours,
+                medications: requestMedications,
+                date: new Date().toISOString().split('T')[0]
+            });
+            setIsCreatingRequest(false);
+            setRequestExams([]);
+            setRequestIndication('');
+            setRequestComplementary('');
+            setRequestFasting(false);
+            setRequestMedications('');
+            loadRequests();
+            onUpdate(); // Atualizar timeline
+        } catch (err) {
+            console.error("Error saving request:", err);
+        }
+    };
+
+    const handlePrintRequest = async (request: any) => {
+        setPrintingRequest(request);
+
+        setTimeout(async () => {
+            if (!pdfRef.current) {
+                console.error("PDF ref not found");
+                return;
+            }
+
+            try {
+                // @ts-ignore
+                const html2pdf = window.html2pdf;
+
+                const opt = {
+                    margin: 0,
+                    filename: `Solicitacao_Exames_${patient.name.replace(/ /g, '_')}_${request.date}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                await html2pdf().from(pdfRef.current).set(opt).save();
+                setPrintingRequest(null);
+            } catch (err) {
+                console.error("Error generating PDF:", err);
+                alert("Erro ao gerar PDF. Tentando impressão do navegador...");
+                window.print();
+                setPrintingRequest(null);
+            }
+        }, 800);
+    };
+
+    const handleDeleteRequest = async (id: string) => {
+        if (confirm("Tem certeza que deseja excluir esta solicitação?")) {
+            await db.deleteExamRequest(id);
+            loadRequests();
+        }
+    };
+
     const renderInterpretationBadge = (interpretation: string) => {
         switch (interpretation) {
             case 'CRITICO':
@@ -302,6 +411,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                         <div className="bg-slate-200/50 p-1 rounded-lg flex mr-4">
                             <button onClick={() => setViewMode('LIST')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'LIST' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Lista</button>
                             <button onClick={() => setViewMode('EVOLUTION')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'EVOLUTION' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Evolução</button>
+                            <button onClick={() => setViewMode('REQUESTS')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'REQUESTS' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Solicitações</button>
                         </div>
                         <button onClick={() => setIsAddingManual(true)} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2">
                             <span>+</span> Nutri-Lançamento
@@ -495,7 +605,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 <div className="p-6">
                     {viewMode === 'EVOLUTION' ? (
                         <div className="space-y-8 animate-fadeIn">
-                            {/* Comparativo Rápido */}
+                            {/* ... (rest of evolution content) ... */}
                             {exams.length >= 2 && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                     {(() => {
@@ -503,7 +613,6 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                         const latest = sorted[0];
                                         const previous = sorted[1];
 
-                                        // Pegar os 3 marcadores mais comuns/relevantes presentes em ambos
                                         const commonMarkers = latest.markers?.filter(m => previous.markers?.some(pm => pm.name === m.name)).slice(0, 3) || [];
 
                                         return commonMarkers.map(m => {
@@ -568,6 +677,187 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                 </div>
                             )}
                         </div>
+                    ) : viewMode === 'REQUESTS' ? (
+                        <div className="space-y-6 animate-fadeIn">
+                            <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                                <div>
+                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                        Solicitações de Exames
+                                    </h4>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Gestão de pedidos laboratoriais</p>
+                                </div>
+                                {!isCreatingRequest && (
+                                    <button
+                                        onClick={() => setIsCreatingRequest(true)}
+                                        className="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                                    >
+                                        Nova Solicitação
+                                    </button>
+                                )}
+                            </div>
+
+                            {isCreatingRequest ? (
+                                <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-8 space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Seleção de Exames */}
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Adicionar Exames</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Buscar exame (ex: Colesterol, TSH...)"
+                                                    className="w-full text-xs font-bold p-4 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 ring-indigo-100 outline-none pr-10"
+                                                    value={searchExamQuery}
+                                                    onChange={e => setSearchExamQuery(e.target.value)}
+                                                />
+                                                <div className="absolute right-4 top-4 text-slate-400">🔍</div>
+                                            </div>
+
+                                            {searchExamQuery.length >= 2 && (
+                                                <div className="bg-white border border-slate-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto p-2 space-y-1">
+                                                    {Object.values(BIOMEDICAL_MARKERS)
+                                                        .filter(m =>
+                                                            m.name.toLowerCase().includes(searchExamQuery.toLowerCase()) ||
+                                                            m.aliases.some(a => a.toLowerCase().includes(searchExamQuery.toLowerCase()))
+                                                        )
+                                                        .slice(0, 10)
+                                                        .map(m => (
+                                                            <button
+                                                                key={m.name}
+                                                                onClick={() => {
+                                                                    if (!requestExams.includes(m.name)) {
+                                                                        setRequestExams([...requestExams, m.name]);
+                                                                    }
+                                                                    setSearchExamQuery('');
+                                                                }}
+                                                                className="w-full text-left p-3 hover:bg-indigo-50 rounded-xl transition-colors flex justify-between items-center group"
+                                                            >
+                                                                <span className="text-[11px] font-bold text-slate-700">{m.name}</span>
+                                                                <span className="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 font-black">+ ADD</span>
+                                                            </button>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )}
+
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {requestExams.map(name => (
+                                                    <div key={name} className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-[10px] font-black border border-indigo-100">
+                                                        {name}
+                                                        <button onClick={() => setRequestExams(requestExams.filter(n => n !== name))} className="text-indigo-400 hover:text-indigo-600">×</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Dados Clínicos */}
+                                        <div className="space-y-6">
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Indicação Clínica / Motivo</label>
+                                                <textarea
+                                                    placeholder="Descreva brevemente o motivo da solicitação..."
+                                                    className="w-full text-xs font-bold p-4 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 ring-indigo-100 outline-none h-24"
+                                                    value={requestIndication}
+                                                    onChange={e => setRequestIndication(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={requestFasting}
+                                                            onChange={e => setRequestFasting(e.target.checked)}
+                                                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                        />
+                                                        <span className="text-[10px] font-black text-slate-600 uppercase">Exige Jejum?</span>
+                                                    </label>
+                                                    {requestFasting && (
+                                                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">
+                                                            <input
+                                                                type="number"
+                                                                value={requestFastingHours}
+                                                                onChange={e => setRequestFastingHours(parseInt(e.target.value))}
+                                                                className="w-12 text-xs font-black text-center outline-none"
+                                                            />
+                                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Horas</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Medicações em Uso</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ex: Metformina, Puran T4..."
+                                                        className="w-full text-xs font-bold p-3 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 ring-indigo-100 outline-none"
+                                                        value={requestMedications}
+                                                        onChange={e => setRequestMedications(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
+                                        <button onClick={() => setIsCreatingRequest(false)} className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 tracking-widest transition-colors">Cancelar</button>
+                                        <button onClick={handleSaveRequest} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-102 transition-transform active:scale-95">Gerar Solicitação ✨</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {examRequests.length === 0 ? (
+                                        <div className="p-12 text-center bg-white rounded-3xl border border-slate-100">
+                                            <div className="text-4xl mb-4">📑</div>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nenhuma solicitação gerada ainda</p>
+                                        </div>
+                                    ) : (
+                                        examRequests.map(req => (
+                                            <div key={req.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition-colors">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 text-xl font-bold">
+                                                        {req.exams.length}
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="text-[11px] font-black text-slate-800 uppercase tracking-wide">
+                                                            {req.exams.slice(0, 3).join(', ')}{req.exams.length > 3 ? '...' : ''}
+                                                        </h5>
+                                                        <div className="flex gap-4 mt-1">
+                                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1 italic">
+                                                                📅 {new Date(req.date).toLocaleDateString('pt-BR')}
+                                                            </span>
+                                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1 italic">
+                                                                👤 {req.authorName}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handlePrintRequest(req)}
+                                                        className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <span>🖨️</span> PDF
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (confirm('Deseja excluir esta solicitação?')) {
+                                                                await db.deleteExamRequest(req.id);
+                                                                loadRequests();
+                                                            }
+                                                        }}
+                                                        className="p-2.5 text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-black uppercase tracking-widest"
+                                                    >
+                                                        Excluir
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-6">
                             {exams.length === 0 ? (
@@ -589,9 +879,9 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => handleEditExam(exam)} className="p-2 hover:bg-white rounded-xl transition-colors text-slate-400" title="Editar">✏️</button>
-                                                <button onClick={() => handleDeleteExam(exam.id)} className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-300" title="Excluir">🗑️</button>
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => handleEditExam(exam)} className="px-3 py-1.5 hover:bg-white rounded-xl transition-colors text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-100" title="Editar">Editar</button>
+                                                <button onClick={() => handleDeleteExam(exam.id)} className="px-3 py-1.5 hover:bg-red-50 rounded-xl transition-colors text-red-500 text-[10px] font-black uppercase tracking-widest border border-red-100" title="Excluir">Excluir</button>
                                                 <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
                                                 <button onClick={() => handleRunAnalysis(exam)} disabled={analyzingId === exam.id} className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm ${exam.analysisResult ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-600 text-white hover:scale-105 active:scale-95'}`}>
                                                     {analyzingId === exam.id ? 'Refinando...' : exam.analysisResult ? '✨ Recalcular' : '✨ Analisar IA'}
@@ -696,6 +986,105 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* VISTA DE IMPRESSÃO (Oculta mas capturada pelo html2pdf) */}
+            {printingRequest && (
+                <div className="fixed top-0 left-0 w-full opacity-0 pointer-events-none -z-50">
+                    <div ref={pdfRef}>
+                        <ExamRequestPrintView
+                            patient={patient}
+                            request={printingRequest}
+                            user={user}
+                            clinic={clinic}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const ExamRequestPrintView = ({ patient, request, user, clinic }: { patient: Patient, request: any, user: User, clinic: any }) => {
+    return (
+        <div className="bg-white text-black p-[20mm] font-serif w-[210mm] min-h-[297mm]">
+            <div className="flex justify-between items-center border-b-2 border-slate-900 pb-8 mb-12">
+                <div className="flex-1">
+                    <h1 className="text-2xl font-black uppercase tracking-widest text-slate-900 leading-none mb-2">Solicitação de Exames</h1>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{clinic?.name || 'ControlClin Premium'}</p>
+                </div>
+                <div className="text-right flex-1">
+                    <p className="text-sm font-black text-slate-800 uppercase tracking-tighter mb-1">{user.name}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">{clinic?.registrationNumber || ''}</p>
+                </div>
+            </div>
+
+            <div className="mb-12 bg-slate-50 p-6 rounded-xl border border-slate-100 flex justify-between items-center">
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Paciente</label>
+                    <p className="text-xl font-black text-slate-800 tracking-tight">{patient.name}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">D.N: {patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                </div>
+                <div className="text-right">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Data da Solicitação</label>
+                    <p className="text-lg font-bold text-slate-700">{new Date(request.date).toLocaleDateString('pt-BR')}</p>
+                </div>
+            </div>
+
+            <div className="mb-12">
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest border-l-4 border-slate-900 pl-4 mb-8">Exames Solicitados</h2>
+                <div className="grid grid-cols-1 gap-y-4">
+                    {request.exams.map((exam: string, idx: number) => (
+                        <div key={idx} className="flex items-center gap-4 text-sm font-medium text-slate-800 border-b border-slate-100 pb-2">
+                            <span className="w-6 h-6 flex items-center justify-center bg-slate-900 text-white rounded text-[10px] font-bold shrink-0">{idx + 1}</span>
+                            <span className="flex-1">{exam}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-12 mb-20">
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Indicação Clínica</h3>
+                        <p className="text-xs font-medium text-slate-600 leading-relaxed italic">"{request.clinicalIndication || 'Acompanhamento nutricional de rotina.'}"</p>
+                    </div>
+                    {request.medications && (
+                        <div>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Medicações em Uso</h3>
+                            <p className="text-xs font-medium text-slate-600 leading-relaxed">{request.medications}</p>
+                        </div>
+                    )}
+                </div>
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span>📋</span> Instruções de Coleta
+                    </h3>
+                    <ul className="space-y-3 text-[11px] font-medium text-slate-600">
+                        <li className="flex gap-2">
+                            <span className="text-slate-900">•</span>
+                            <span>{request.fastingRequired ? `Jejum obrigatório de ${request.fastingHours} horas.` : 'Jejum não obrigatório para estes exames.'}</span>
+                        </li>
+                        <li className="flex gap-2">
+                            <span className="text-slate-900">•</span>
+                            <span>Manter dieta habitual nos 3 dias anteriores à coleta.</span>
+                        </li>
+                        <li className="flex gap-2">
+                            <span className="text-slate-900">•</span>
+                            <span>Evitar esforço físico intenso nas 24h que antecedem o exame.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="mt-auto border-t-2 border-slate-100 pt-12 text-center">
+                <div className="w-64 h-[1px] bg-slate-200 mx-auto mb-4"></div>
+                <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{user.name}</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">{user.role}</p>
+            </div>
+
+            <div className="mt-8 text-center text-[8px] text-slate-300 font-bold uppercase tracking-widest">
+                Gerado via ControlClin Cloud • Documento Digital • {new Date().toLocaleTimeString()}
             </div>
         </div>
     );

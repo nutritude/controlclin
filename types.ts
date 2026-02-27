@@ -421,7 +421,7 @@ export interface PatientEvent {
   id: string;
   clinicId?: string;
   patientId: string;
-  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "CUSTOM" | "BACKFILL_INIT";
+  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "CUSTOM" | "BACKFILL_INIT";
   createdAt: string; // ISO
   createdBy?: { userId: string, name: string, role: string };
   payload: any; // Flexible payload
@@ -662,6 +662,24 @@ export interface PortionRecord {
 export interface NutrientDef {
   campo: string;   // Nome do campo (ex: "energia_kcal_100g")
   unidade: string; // Unidade (ex: "kcal/100g")
+}
+
+// --- SOLICITAÇÃO DE EXAMES ---
+export interface ExamRequest {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  professionalId: string;
+  authorName: string; // Professional name
+  authorRegistration: string; // CRM, CRN, etc
+  date: string;
+  exams: string[]; // List of markers/exams requested
+  clinicalIndication: string;
+  complementaryInfo?: string;
+  fastingRequired?: boolean;
+  fastingHours?: number;
+  medications?: string;
+  createdAt: string;
 }
 
 /**

@@ -5,7 +5,8 @@ import {
     Role, AppointmentStatus, Exam, AuditLog, ExamMarker, ExamAnalysisResult,
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
-    PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo
+    PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
+    ExamRequest
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -223,6 +224,7 @@ class DatabaseService {
     private exams: Exam[] = [];
     private alerts: ClinicalAlert[] = [];
     private patientEvents: PatientEvent[] = []; // NEW: Store events
+    private examRequests: ExamRequest[] = []; // NOVO: Solicitações de exames
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
@@ -281,6 +283,7 @@ class DatabaseService {
                 this.exams = data.exams || [];
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
+                this.examRequests = data.examRequests || [];
 
                 // Keep track of when we last touched local storage
                 if (data.lastModified) {
@@ -331,6 +334,7 @@ class DatabaseService {
                 exams: this.exams,
                 alerts: this.alerts,
                 patientEvents: this.patientEvents,
+                examRequests: this.examRequests,
                 updatedAt: new Date().toISOString(),
                 lastModified: (this as any)._localLastModified || Date.now()
             };
@@ -396,6 +400,7 @@ class DatabaseService {
                 this.exams = data.exams || [];
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
+                this.examRequests = data.examRequests || [];
 
                 (this as any)._localLastModified = remoteModified;
                 this.saveToStorage(false);
@@ -417,9 +422,10 @@ class DatabaseService {
             professionals: this.professionals,
             patients: this.patients,
             appointments: this.appointments,
+            patientEvents: this.patientEvents,
             exams: this.exams,
             alerts: this.alerts,
-            patientEvents: this.patientEvents,
+            examRequests: this.examRequests,
             lastModified: (this as any)._localLastModified
         }));
 
@@ -1038,6 +1044,42 @@ class DatabaseService {
 
     async deleteExam(examId: string) {
         this.exams = this.exams.filter(e => e.id !== examId);
+        await this.saveToStorage();
+    }
+
+    // --- SOLICITAÇÃO DE EXAMES ---
+    async getExamRequests(patientId: string) {
+        return this.examRequests.filter(r => r.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+
+    async saveExamRequest(user: User, patientId: string, requestData: Partial<ExamRequest>) {
+        const professional = this.professionals.find(p => p.id === user.professionalId);
+        const id = `req-${Date.now()}`;
+        const newRequest: ExamRequest = {
+            id,
+            clinicId: user.clinicId,
+            patientId,
+            professionalId: user.professionalId || '',
+            authorName: professional?.name || user.name,
+            authorRegistration: professional?.registrationNumber || '',
+            date: requestData.date || new Date().toISOString().split('T')[0],
+            exams: requestData.exams || [],
+            clinicalIndication: requestData.clinicalIndication || '',
+            complementaryInfo: requestData.complementaryInfo || '',
+            fastingRequired: requestData.fastingRequired,
+            fastingHours: requestData.fastingHours,
+            medications: requestData.medications,
+            createdAt: new Date().toISOString()
+        };
+
+        this.examRequests.push(newRequest);
+        await this.saveToStorage();
+        this.logPatientEvent(patientId, 'SOLICITACAO_EXAMES', { id, exams: newRequest.exams }, `Solicitação de exames gerada com ${newRequest.exams.length} itens`, user);
+        return newRequest;
+    }
+
+    async deleteExamRequest(requestId: string) {
+        this.examRequests = this.examRequests.filter(r => r.id !== requestId);
         await this.saveToStorage();
     }
 
@@ -1764,6 +1806,10 @@ class DatabaseService {
             return true;
         }
         return false;
+    }
+
+    async getClinics(): Promise<Clinic[]> {
+        return this.clinics;
     }
 
     private calculateAge(birthDate: string) {
