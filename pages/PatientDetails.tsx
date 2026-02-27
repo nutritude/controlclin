@@ -1209,15 +1209,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             </div>
                         </div>
 
-                        {/* MÓDULO MIPAN-20 - PERFIL PSICOCOMPORTAMENTAL */}
-                        <div className="lg:col-span-2">
-                            <MipanModule
-                                patient={patient}
-                                user={user}
-                                db={db}
-                                isManagerMode={isManagerMode}
-                            />
-                        </div>
                     </div>
                 )}
             </div>
@@ -1409,6 +1400,16 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     )}
                                 </ul>
                             </div>
+                        </div>
+
+                        {/* MÓDULO MIPAN-20 - PERFIL PSICOCOMPORTAMENTAL */}
+                        <div className="lg:col-span-2 pt-6 mt-6 border-t border-dashed border-emerald-100">
+                            <MipanModule
+                                patient={patient}
+                                user={user}
+                                db={db}
+                                isManagerMode={isManagerMode}
+                            />
                         </div>
                     </div>
                 )}

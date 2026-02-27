@@ -3,7 +3,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
     ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
-import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapshot } from '../types';
+import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapshot, MipanAssessment } from '../types';
 import { db } from '../services/db';
 import { AIClinicalSummaryService } from '../services/aiClinicalSummary';
 import { Icons } from '../constants';
@@ -1306,7 +1306,74 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 </div>
             </div>
 
-            {/* 6. Timeline History */}
+            {/* 6. Perfil Psicocomportamental MIPAN-20 */}
+            {data.mipanAssessments && data.mipanAssessments.length > 0 && (
+                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
+                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-6 ${isManagerMode ? 'text-gray-300' : 'text-indigo-800'}`}>Perfil Psicocomportamental MIPAN-20</h3>
+
+                    {(() => {
+                        const lastMipan = data.mipanAssessments![0];
+                        const radarData = [
+                            { subject: 'Desregulação', A: lastMipan.scores.axisA },
+                            { subject: 'Emocional', A: lastMipan.scores.axisB },
+                            { subject: 'Estresse', A: lastMipan.scores.axisC },
+                            { subject: 'Baixa Adesão', A: 100 - lastMipan.scores.axisD },
+                        ];
+
+                        return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                <div className="h-64 bg-slate-50 rounded-2xl flex items-center justify-center p-4">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                            <PolarGrid stroke="#e2e8f0" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }} />
+                                            <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                                            <Radar
+                                                name="MIPAN"
+                                                dataKey="A"
+                                                stroke="#6366f1"
+                                                fill="#6366f1"
+                                                fillOpacity={0.4}
+                                                strokeWidth={2}
+                                            />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase text-indigo-400">Índice ICRN</p>
+                                            <p className="text-3xl font-black text-indigo-900">{lastMipan.icrn}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs font-bold text-indigo-800 uppercase tracking-widest">{lastMipan.classification}</p>
+                                            <p className="text-[9px] text-indigo-400 mt-1 uppercase font-bold tracking-tighter">Risco Comportamental</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Insights Primários</p>
+                                        {lastMipan.insights.priorities.map((p, i) => (
+                                            <div key={i} className="flex gap-2 items-start text-[11px] font-medium text-slate-700 bg-white border border-slate-100 p-2 rounded-xl">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0"></span>
+                                                {p}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="p-3 bg-slate-900 rounded-2xl text-white">
+                                        <p className="text-[9px] font-black uppercase text-indigo-400 mb-1">Estratégia</p>
+                                        <p className="text-[10px] italic leading-tight opacity-90">{lastMipan.insights.recommendation}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+            )
+            }
+
+            {/* 7. Timeline History */}
             <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
                 <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Histórico de Eventos</h3>
                 <div className="space-y-4 border-l-2 border-gray-200 ml-2 pl-4">
@@ -1320,7 +1387,7 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                     ))}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

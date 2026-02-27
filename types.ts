@@ -458,6 +458,7 @@ export interface IndividualReportSnapshot {
     totalPending: number;
     mode: PaymentMode;
   };
+  mipanAssessments?: MipanAssessment[];
   timeline: PatientEvent[]; // Sorted DESC
   metadata: {
     generatedAt: string;

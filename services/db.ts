@@ -670,6 +670,9 @@ class DatabaseService {
         // 7. Exams
         const exams = this.exams.filter(e => e.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+        // 8. MIPAN
+        const mipanAssessments = await this.getMipanAssessments(patientId);
+
         // Construct the comprehensive snapshot
         const snapshot: IndividualReportSnapshot = {
             patient: patient,
@@ -705,6 +708,7 @@ class DatabaseService {
                 totalPending,
                 mode: patient.financial?.mode || 'PARTICULAR'
             },
+            mipanAssessments,
             timeline: timeline.slice(0, 50), // Cap timeline for report performance
             metadata: {
                 generatedAt: new Date().toISOString(),
