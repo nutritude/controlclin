@@ -6,7 +6,7 @@ import {
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
-    ExamRequest
+    ExamRequest, MipanAssessment
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -225,6 +225,7 @@ class DatabaseService {
     private alerts: ClinicalAlert[] = [];
     private patientEvents: PatientEvent[] = []; // NEW: Store events
     private examRequests: ExamRequest[] = []; // NOVO: Solicitações de exames
+    private mipanAssessments: MipanAssessment[] = []; // NOVO: Perfil Psicocomportamental
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
@@ -284,6 +285,7 @@ class DatabaseService {
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
                 this.examRequests = data.examRequests || [];
+                this.mipanAssessments = data.mipanAssessments || [];
 
                 // Keep track of when we last touched local storage
                 if (data.lastModified) {
@@ -335,6 +337,7 @@ class DatabaseService {
                 alerts: this.alerts,
                 patientEvents: this.patientEvents,
                 examRequests: this.examRequests,
+                mipanAssessments: this.mipanAssessments,
                 updatedAt: new Date().toISOString(),
                 lastModified: (this as any)._localLastModified || Date.now()
             };
@@ -401,6 +404,7 @@ class DatabaseService {
                 this.alerts = data.alerts || [];
                 this.patientEvents = data.patientEvents || [];
                 this.examRequests = data.examRequests || [];
+                this.mipanAssessments = data.mipanAssessments || [];
 
                 (this as any)._localLastModified = remoteModified;
                 this.saveToStorage(false);
@@ -426,6 +430,7 @@ class DatabaseService {
             exams: this.exams,
             alerts: this.alerts,
             examRequests: this.examRequests,
+            mipanAssessments: this.mipanAssessments,
             lastModified: (this as any)._localLastModified
         }));
 
@@ -1810,6 +1815,54 @@ class DatabaseService {
 
     async getClinics(): Promise<Clinic[]> {
         return this.clinics;
+    }
+
+    // --- MIPAN-20 (PSICOCOMPORTAMENTAL) ---
+    async saveMipanAssessment(user: User, assessment: Partial<MipanAssessment>): Promise<MipanAssessment> {
+        const id = assessment.id || `mip-${Date.now()}`;
+        const newAssessment: MipanAssessment = {
+            id,
+            patientId: assessment.patientId!,
+            date: assessment.date || new Date().toISOString(),
+            answers: assessment.answers || {},
+            scores: assessment.scores!,
+            icrn: assessment.icrn!,
+            classification: assessment.classification!,
+            insights: assessment.insights!,
+            isDraft: assessment.isDraft || false,
+            authorId: user.id
+        };
+
+        const existingIdx = this.mipanAssessments.findIndex(a => a.id === id);
+        if (existingIdx > -1) {
+            this.mipanAssessments[existingIdx] = newAssessment;
+        } else {
+            this.mipanAssessments.push(newAssessment);
+        }
+
+        this.saveToStorage();
+
+        if (!newAssessment.isDraft) {
+            this.logPatientEvent(
+                newAssessment.patientId,
+                'MIPAN_COMPLETED',
+                { id, icrn: newAssessment.icrn, classification: newAssessment.classification },
+                `Perfil MIPAN-20 concluído: ${newAssessment.classification} (ICRN: ${newAssessment.icrn})`,
+                user
+            );
+        }
+
+        return newAssessment;
+    }
+
+    async getMipanAssessments(patientId: string): Promise<MipanAssessment[]> {
+        return this.mipanAssessments.filter(a => a.patientId === patientId)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+
+    async deleteMipanAssessment(id: string) {
+        this.mipanAssessments = this.mipanAssessments.filter(a => a.id !== id);
+        this.saveToStorage();
     }
 
     private calculateAge(birthDate: string) {

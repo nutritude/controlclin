@@ -421,7 +421,7 @@ export interface PatientEvent {
   id: string;
   clinicId?: string;
   patientId: string;
-  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "CUSTOM" | "BACKFILL_INIT";
+  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "MIPAN_COMPLETED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "CUSTOM" | "BACKFILL_INIT";
   createdAt: string; // ISO
   createdBy?: { userId: string, name: string, role: string };
   payload: any; // Flexible payload
@@ -490,6 +490,7 @@ export interface Patient {
   nutritionalPlans?: NutritionalPlan[]; // NOVO: Histórico de Planos
   nutritionalPlan?: NutritionalPlan; // Legado (Backwards Compatibility)
   patientEvents?: PatientEvent[];
+  mipanAssessments?: MipanAssessment[];
   lastVisit?: string;
   professionalId?: string; // NOVO: Profissional responsável pelo paciente
   status: 'ATIVO' | 'INATIVO';
@@ -680,6 +681,28 @@ export interface ExamRequest {
   fastingHours?: number;
   medications?: string;
   createdAt: string;
+}
+
+export interface MipanAssessment {
+  id: string;
+  patientId: string;
+  date: string; // ISO
+  answers: Record<number, number>; // Questão 1 a 20 -> Resposta 0 a 4
+  scores: {
+    axisA: number; // 0-100
+    axisB: number; // 0-100
+    axisC: number; // 0-100
+    axisD: number; // 0-100 (Capacidade de Adesão)
+  };
+  icrn: number; // 0-100 (Índice Comportamental de Risco Nutricional)
+  classification: "BAIXO" | "LEVE" | "MODERADO" | "ALTO";
+  insights: {
+    priorities: string[];
+    recommendation: string;
+    alert: string;
+  };
+  isDraft: boolean;
+  authorId?: string;
 }
 
 /**

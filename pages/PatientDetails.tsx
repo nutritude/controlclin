@@ -9,6 +9,7 @@ import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning';
 import { ExamManager } from '../components/ExamManager';
+import { MipanModule } from '../components/MipanModule';
 
 interface PatientDetailsProps {
     user: User;
@@ -1206,6 +1207,16 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     )}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* MÓDULO MIPAN-20 - PERFIL PSICOCOMPORTAMENTAL */}
+                        <div className="lg:col-span-2">
+                            <MipanModule
+                                patient={patient}
+                                user={user}
+                                db={db}
+                                isManagerMode={isManagerMode}
+                            />
                         </div>
                     </div>
                 )}
