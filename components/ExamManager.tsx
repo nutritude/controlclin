@@ -39,6 +39,14 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     const [currMarkerName, setCurrMarkerName] = useState('');
     const [currMarkerVal, setCurrMarkerVal] = useState('');
 
+    const getReferencePlaceholder = (name: string) => {
+        const meta = Object.values(BIOMEDICAL_MARKERS).find(m =>
+            m.name.toLowerCase() === name.toLowerCase() ||
+            m.aliases.some(a => a.toLowerCase() === name.toLowerCase())
+        );
+        return meta ? `${meta.minDesejavel}-${meta.maxDesejavel} ${meta.unit}` : 'Valor';
+    };
+
     // --- EVOLUTION DATA COMPUTATION ---
     const evolutionData = useMemo(() => {
         const sortedExams = [...exams].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -304,20 +312,42 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                 </datalist>
                                 <input
                                     type="text"
-                                    className="w-full sm:w-32 border-slate-200 border rounded-xl p-3 text-sm text-center font-black"
-                                    placeholder="Valor"
+                                    className="w-full sm:w-32 border-slate-200 border rounded-xl p-3 text-sm text-center font-black placeholder:text-slate-300"
+                                    placeholder={currMarkerName ? getReferencePlaceholder(currMarkerName) : 'Valor'}
                                     value={currMarkerVal}
                                     onChange={e => setCurrMarkerVal(e.target.value)}
                                 />
                                 <button onClick={handleAddMarker} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:shadow-lg transition-all">Add</button>
                             </div>
 
-                            <div className="mt-6 flex flex-wrap gap-2">
+                            <div className="mt-6 space-y-2">
                                 {manualMarkers.map((m, i) => (
-                                    <span key={i} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-100 flex items-center gap-3">
-                                        <span>{m.name}: <b>{m.value} {m.unit}</b></span>
-                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-red-400 font-bold hover:text-red-600">✕</button>
-                                    </span>
+                                    <div key={i} className="flex items-center gap-4 bg-white p-3 rounded-xl border border-slate-100 shadow-sm animate-fadeIn">
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black uppercase text-slate-400 mb-0.5">{m.name}</p>
+                                            <p className="text-[9px] text-slate-300 font-bold italic">Sugestão Ref: {getReferencePlaceholder(m.name)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={m.value}
+                                                onChange={(e) => {
+                                                    const newMarkers = [...manualMarkers];
+                                                    newMarkers[i].value = e.target.value;
+                                                    setManualMarkers(newMarkers);
+                                                }}
+                                                placeholder={getReferencePlaceholder(m.name).split(' ')[0]}
+                                                className="w-24 text-center border-b border-indigo-100 focus:border-indigo-500 outline-none text-sm font-black text-indigo-600 bg-indigo-50/20 rounded py-1 placeholder:text-slate-300"
+                                            />
+                                            <span className="text-[10px] text-slate-400 font-black w-10">{m.unit}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))}
+                                            className="text-rose-300 hover:text-rose-500 font-bold p-1 transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>
