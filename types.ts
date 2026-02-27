@@ -421,11 +421,68 @@ export interface PatientEvent {
   id: string;
   clinicId?: string;
   patientId: string;
-  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "MIPAN_COMPLETED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "CUSTOM" | "BACKFILL_INIT";
+  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "MIPAN_COMPLETED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "PRESCRIPTION_CREATED" | "CUSTOM" | "BACKFILL_INIT";
   createdAt: string; // ISO
   createdBy?: { userId: string, name: string, role: string };
   payload: any; // Flexible payload
   summary?: string;
+}
+
+// --- PRESCRIÇÃO CLÍNICA ---
+export type PrescriptionItemType = 'MEDICAMENTO' | 'SUPLEMENTO' | 'VITAMINA' | 'MINERAL' | 'FITOTERAPICO' | 'FORMULA_MAGISTRAL';
+
+export type PrescriptionForm = 'CAPSULA' | 'COMPRIMIDO' | 'SACHE' | 'GOTAS' | 'PO' | 'LIQUIDO' | 'SPRAY' | 'OUTRO';
+
+export type PrescriptionFrequency =
+  | '1_VEZ_AO_DIA'
+  | '2_VEZES_AO_DIA'
+  | '3_VEZES_AO_DIA'
+  | '4_VEZES_AO_DIA'
+  | 'CADA_X_HORAS'
+  | 'X_VEZES_POR_SEMANA'
+  | 'SOS';
+
+export type PrescriptionTimingType =
+  | 'ANTES_DA_REFEICAO'
+  | 'APOS_DA_REFEICAO'
+  | 'AO_ACORDAR'
+  | 'AO_DEITAR'
+  | 'EM_JEJUM'
+  | 'HORARIO_FIXO';
+
+export interface PrescriptionTiming {
+  type: PrescriptionTimingType;
+  meal?: string;
+  minutes?: number;
+  time?: string;
+}
+
+export interface PrescriptionItem {
+  id: string;
+  type: PrescriptionItemType;
+  name: string;
+  form: PrescriptionForm;
+  dose: string;
+  frequency: PrescriptionFrequency;
+  frequencyValue?: number;
+  timings: PrescriptionTiming[];
+  durationDays?: number;
+  instructions?: string;
+}
+
+export interface Prescription {
+  id: string;
+  patientId: string;
+  clinicId: string;
+  professionalId: string;
+  authorName: string;
+  date: string;
+  status: 'RASCUNHO' | 'FINALIZADA';
+  items: PrescriptionItem[];
+  observations?: string;
+  createdAt: string;
+  updatedAt: string;
+  snapshotText?: string;
 }
 
 // --- INDIVIDUAL REPORT SNAPSHOT (NEW) ---
@@ -492,6 +549,7 @@ export interface Patient {
   nutritionalPlan?: NutritionalPlan; // Legado (Backwards Compatibility)
   patientEvents?: PatientEvent[];
   mipanAssessments?: MipanAssessment[];
+  prescriptions?: Prescription[];
   lastVisit?: string;
   professionalId?: string; // NOVO: Profissional responsável pelo paciente
   status: 'ATIVO' | 'INATIVO';

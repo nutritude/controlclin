@@ -6,7 +6,7 @@ import {
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
-    ExamRequest, MipanAssessment
+    ExamRequest, MipanAssessment, Prescription, PrescriptionItem
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -226,6 +226,7 @@ class DatabaseService {
     private patientEvents: PatientEvent[] = []; // NEW: Store events
     private examRequests: ExamRequest[] = []; // NOVO: Solicitações de exames
     private mipanAssessments: MipanAssessment[] = []; // NOVO: Perfil Psicocomportamental
+    private prescriptions: Prescription[] = []; // NOVO: Prescrição Clínica
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
@@ -286,6 +287,7 @@ class DatabaseService {
                 this.patientEvents = data.patientEvents || [];
                 this.examRequests = data.examRequests || [];
                 this.mipanAssessments = data.mipanAssessments || [];
+                this.prescriptions = data.prescriptions || [];
 
                 // Keep track of when we last touched local storage
                 if (data.lastModified) {
@@ -338,6 +340,7 @@ class DatabaseService {
                 patientEvents: this.patientEvents,
                 examRequests: this.examRequests,
                 mipanAssessments: this.mipanAssessments,
+                prescriptions: this.prescriptions,
                 updatedAt: new Date().toISOString(),
                 lastModified: (this as any)._localLastModified || Date.now()
             };
@@ -405,6 +408,7 @@ class DatabaseService {
                 this.patientEvents = data.patientEvents || [];
                 this.examRequests = data.examRequests || [];
                 this.mipanAssessments = data.mipanAssessments || [];
+                this.prescriptions = data.prescriptions || [];
 
                 (this as any)._localLastModified = remoteModified;
                 this.saveToStorage(false);
@@ -431,6 +435,7 @@ class DatabaseService {
             alerts: this.alerts,
             examRequests: this.examRequests,
             mipanAssessments: this.mipanAssessments,
+            prescriptions: this.prescriptions,
             lastModified: (this as any)._localLastModified
         }));
 
@@ -777,15 +782,17 @@ class DatabaseService {
     }
     async getProfessionals(clinicId: string) { return this.professionals.filter(p => p.clinicId === clinicId && p.isActive); }
     async createProfessional(user: User, data: any) {
-        const userId = `u-${Date.now()}`;
-        const profId = `p-${Date.now()}`;
+        const ts = Date.now();
+        const rnd = Math.random().toString(36).substr(2, 6);
+        const userId = `u-${ts}-${rnd}`;
+        const profId = `p-${ts}-${rnd}`;
 
         const newUser: User = {
             id: userId,
             clinicId: user.clinicId,
             name: data.name,
             email: data.email,
-            role: data.role,
+            role: data.role || Role.PROFESSIONAL,
             professionalId: profId,
             password: data.password || '123'
         };
@@ -796,7 +803,7 @@ class DatabaseService {
             userId: userId,
             name: data.name,
             email: data.email,
-            phone: data.phone,
+            phone: data.phone || '',
             specialty: data.specialty,
             registrationNumber: data.registrationNumber,
             color: data.color || 'bg-blue-200',
@@ -812,24 +819,46 @@ class DatabaseService {
         this.users.push(newUser);
         this.professionals.push(newProf);
         this.saveToStorage();
+        console.log(`[DB] ✅ Profissional criado: ${newProf.name} (ID: ${profId})`);
         return newProf;
     }
 
     async updateProfessional(user: User, id: string, data: any) {
         const pIdx = this.professionals.findIndex(p => p.id === id);
         if (pIdx > -1) {
-            this.professionals[pIdx] = { ...this.professionals[pIdx], ...data };
+            // CRITICAL FIX: Only update Professional-safe fields.
+            // Do NOT spread raw form data (which includes password, role, etc.)
+            const existing = this.professionals[pIdx];
+            this.professionals[pIdx] = {
+                ...existing,
+                name: data.name ?? existing.name,
+                email: data.email ?? existing.email,
+                phone: data.phone ?? existing.phone,
+                specialty: data.specialty ?? existing.specialty,
+                registrationNumber: data.registrationNumber ?? existing.registrationNumber,
+                color: data.color ?? existing.color,
+                isActive: typeof data.isActive === 'boolean' ? data.isActive : existing.isActive,
+                cpf: data.cpf ?? existing.cpf,
+                whatsapp: data.whatsapp ?? existing.whatsapp,
+                address: data.address ?? existing.address,
+                cep: data.cep ?? existing.cep,
+                city: data.city ?? existing.city,
+                state: data.state ?? existing.state,
+            };
 
-            // Sync User data
-            const uIdx = this.users.findIndex(u => u.id === this.professionals[pIdx].userId);
+            // Sync User data (separate entity — only user-specific fields)
+            const uIdx = this.users.findIndex(u => u.id === existing.userId);
             if (uIdx > -1) {
-                this.users[uIdx].name = data.name;
-                this.users[uIdx].email = data.email;
-                this.users[uIdx].role = data.role;
-                if (data.password) this.users[uIdx].password = data.password;
+                this.users[uIdx].name = data.name ?? this.users[uIdx].name;
+                this.users[uIdx].email = data.email ?? this.users[uIdx].email;
+                if (data.role) this.users[uIdx].role = data.role;
+                if (data.password && data.password.trim() !== '') {
+                    this.users[uIdx].password = data.password;
+                }
             }
 
             this.saveToStorage();
+            console.log(`[DB] ✅ Profissional atualizado: ${this.professionals[pIdx].name}`);
             return this.professionals[pIdx];
         }
         throw new Error("Profissional não encontrado");
@@ -839,19 +868,30 @@ class DatabaseService {
         const pIdx = this.professionals.findIndex(p => p.id === id);
         if (pIdx > -1) {
             const prof = this.professionals[pIdx];
-            prof.isActive = false; // Soft delete
 
-            // Deactivate user as well
-            const uIdx = this.users.findIndex(u => u.id === prof.userId);
-            if (uIdx > -1) {
-                // We don't remove the user, just block access or similar logic would go here
-            }
-
-            // Logic to check impacted future appointments
+            // Logic to check impacted future appointments BEFORE deletion
             const futureAppts = this.appointments.filter(a => a.professionalId === id && new Date(a.startTime) > new Date());
             const count = futureAppts.length;
 
+            // Cancel impacted future appointments
+            futureAppts.forEach(appt => {
+                const aIdx = this.appointments.findIndex(a => a.id === appt.id);
+                if (aIdx > -1) {
+                    this.appointments[aIdx].status = AppointmentStatus.CANCELED;
+                }
+            });
+
+            // HARD DELETE: Remove professional from array
+            this.professionals.splice(pIdx, 1);
+
+            // Also remove the associated user to revoke login access
+            const uIdx = this.users.findIndex(u => u.id === prof.userId);
+            if (uIdx > -1) {
+                this.users.splice(uIdx, 1);
+            }
+
             this.saveToStorage();
+            console.log(`[DB] 🗑️ Profissional excluído: ${prof.name} (ID: ${id}). ${count} agendamentos cancelados.`);
             return { reassigned: 0, cancelled: count };
         }
         throw new Error("Profissional não encontrado");
@@ -1867,6 +1907,31 @@ class DatabaseService {
     async deleteMipanAssessment(id: string) {
         this.mipanAssessments = this.mipanAssessments.filter(a => a.id !== id);
         this.saveToStorage();
+    }
+
+    // --- PRESCRIÇÃO CLÍNICA ---
+    async getPrescriptions(patientId: string): Promise<Prescription[]> {
+        return this.prescriptions
+            .filter(rx => rx.patientId === patientId)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+
+    async savePrescription(user: User, rx: Prescription): Promise<Prescription> {
+        const idx = this.prescriptions.findIndex(p => p.id === rx.id);
+        if (idx > -1) {
+            this.prescriptions[idx] = { ...rx, updatedAt: new Date().toISOString() };
+        } else {
+            this.prescriptions.push({ ...rx, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        }
+        this.saveToStorage();
+        console.log(`[DB] ✅ Prescrição salva: ${rx.id} (${rx.status})`);
+        return rx;
+    }
+
+    async deletePrescription(id: string) {
+        this.prescriptions = this.prescriptions.filter(rx => rx.id !== id);
+        this.saveToStorage();
+        console.log(`[DB] 🗑️ Prescrição excluída: ${id}`);
     }
 
     private calculateAge(birthDate: string) {

@@ -10,6 +10,7 @@ import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning';
 import { ExamManager } from '../components/ExamManager';
 import { MipanModule } from '../components/MipanModule';
+import { PrescriptionModule } from '../components/PrescriptionModule';
 
 interface PatientDetailsProps {
     user: User;
@@ -17,7 +18,7 @@ interface PatientDetailsProps {
     isManagerMode: boolean; // New prop
 }
 
-type Tab = 'HISTORY' | 'PRONTUARIO' | 'ANTHRO' | 'NUTRITION' | 'FINANCIAL' | 'EXAMS'; // ADDED NUTRITION TAB
+type Tab = 'HISTORY' | 'PRONTUARIO' | 'ANTHRO' | 'NUTRITION' | 'PRESCRIPTION' | 'FINANCIAL' | 'EXAMS';
 
 // --- HELPERS ---
 
@@ -1221,9 +1222,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         { id: 'PRONTUARIO', label: 'Prontuário (IA)' },
                         { id: 'ANTHRO', label: 'Antropometria' },
                         { id: 'NUTRITION', label: 'Planejamento Nutricional' },
+                        { id: 'PRESCRIPTION', label: '💊 Prescrição', professionalOnly: true },
                         { id: 'FINANCIAL', label: 'Financeiro' },
                         { id: 'EXAMS', label: 'Exames' },
-                    ].map(tab => (
+                    ].filter(tab => !(tab as any).professionalOnly || !isManagerMode).map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as Tab); setIsEditingTab(false); }}
@@ -1945,6 +1947,17 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         isManagerMode={isManagerMode}
                         db={db}
                         user={user}
+                    />
+                )}
+
+                {/* TAB: PRESCRIÇÃO CLÍNICA */}
+                {activeTab === 'PRESCRIPTION' && patient && (
+                    <PrescriptionModule
+                        patient={patient}
+                        user={user}
+                        clinic={clinic}
+                        isManagerMode={isManagerMode}
+                        onUpdate={() => fetchData(patient.id)}
                     />
                 )}
             </div>
