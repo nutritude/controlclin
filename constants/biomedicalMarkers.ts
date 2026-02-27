@@ -5,7 +5,9 @@ export interface MarkerReference {
     unit: string;
     minDesejavel: number;
     maxDesejavel: number;
-    tipo: 'BIOQUIMICO' | 'HORMONAL' | 'HEMATOLOGICO';
+    minCritico?: number;
+    maxCritico?: number;
+    tipo: 'BIOQUIMICO' | 'HORMONAL' | 'HEMATOLOGICO' | 'GASOMETRIA' | 'TOXICOLOGICO' | 'COAGULACAO';
     interpretacao: {
         baixo: {
             risco: string;
@@ -115,7 +117,7 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         }
     },
 
-    // --- FUNÇÃO HEPÁTICA ---
+    // --- FUNÇÃO HEPÁTICA E BIOQUÍMICA CRÍTICA ---
     AST_TGO: {
         name: "AST (TGO)",
         aliases: ["TGO", "AST"],
@@ -155,6 +157,48 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             normal: "Níveis normais."
         }
     },
+    LDH: {
+        name: "LDH",
+        aliases: ["Lactato Desidrogenase"],
+        unit: "U/L",
+        minDesejavel: 120,
+        maxDesejavel: 250,
+        maxCritico: 1000,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Sem relevância clara.", sugestao: "Monitorar." },
+            alto: { risco: "Dano celular sistêmico, hemólise ou tumor.", sugestao: "Investigar focos de lesão celular. Acima de 1000 é Alerta Crítico." },
+            normal: "Integridade tecidual normal."
+        }
+    },
+    LIPASE: {
+        name: "Lipase",
+        aliases: ["LIP"],
+        unit: "U/L",
+        minDesejavel: 0,
+        maxDesejavel: 60,
+        maxCritico: 700,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Sem relevância clínica.", sugestao: "N/A" },
+            alto: { risco: "Pancreatite Aguda.", sugestao: "Investigar dor abdominal súbita. Acima de 700 é Crítico." },
+            normal: "Função pancreática normal."
+        }
+    },
+    LACTATO: {
+        name: "Lactato",
+        aliases: ["Ácido Lático"],
+        unit: "mmol/L",
+        minDesejavel: 0.5,
+        maxDesejavel: 2.2,
+        maxCritico: 5.0,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Bom.", sugestao: "Manter." },
+            alto: { risco: "Hipóxia tecidual, choque ou sepse.", sugestao: "Acima de 5.0 indica gravidade extrema (Tipo A)." },
+            normal: "Metabolismo aeróbico normal."
+        }
+    },
 
     // --- FUNÇÃO RENAL ---
     CREATININA: {
@@ -163,10 +207,11 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         unit: "mg/dL",
         minDesejavel: 0.6,
         maxDesejavel: 1.2,
+        maxCritico: 7.4,
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Baixa massa muscular.", sugestao: "Avaliar força e ingestão proteica." },
-            alto: { risco: "Sobrecarga ou insuficiência renal.", sugestao: "Aumentar hidratação e nefrologista." },
+            alto: { risco: "Sobrecarga ou insuficiência renal.", sugestao: "Acima de 7.4 indica falência orgânica ou sepse." },
             normal: "Filtragem renal adequada."
         }
     },
@@ -176,54 +221,151 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
         unit: "mg/dL",
         minDesejavel: 15,
         maxDesejavel: 45,
+        maxCritico: 214,
         tipo: 'BIOQUIMICO',
         interpretacao: {
             baixo: { risco: "Baixa ingestão proteica.", sugestao: "Ajustar aporte de aminoácidos." },
-            alto: { risco: "Excesso de proteínas ou desidratação.", sugestao: "Equilibrar hidratação e proteínas." },
+            alto: { risco: "Excesso de proteínas ou desidratação.", sugestao: "Acima de 214 indica insuficiência renal aguda grave." },
             normal: "Balanço nitrogenado normal."
         }
     },
-    ACIDO_URICO: {
-        name: "Ácido Úrico",
-        aliases: ["Uric Acid"],
-        unit: "mg/dL",
-        minDesejavel: 2.5,
-        maxDesejavel: 6.0,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Pode indicar deficiência de purinas.", sugestao: "Avaliar dieta." },
-            alto: { risco: "Gota ou hipertensão metabólica.", sugestao: "Reduzir frutose e carnes vermelhas." },
-            normal: "Níveis em controle."
-        }
-    },
 
-    // --- HEMATOLÓGICO E MINERAIS ---
+    // --- HEMATOLOGIA E COAGULAÇÃO ---
     HEMOGLOBINA: {
         name: "Hemoglobina",
         aliases: ["HGB"],
         unit: "g/dL",
         minDesejavel: 12.0,
         maxDesejavel: 16.0,
+        minCritico: 6.6,
+        maxCritico: 19.9,
         tipo: 'HEMATOLOGICO',
         interpretacao: {
-            baixo: { risco: "Anemia: Baixa oxigenação celular.", sugestao: "Suplementar ferro, B12 ou folato." },
-            alto: { risco: "Sangue espesso ou desidratação.", sugestao: "Investigar causas pulmonares ou fumo." },
+            baixo: { risco: "Anemia. Abaixo de 6.6: Risco de baixo suprimento O2 ao miocárdio.", sugestao: "Transfusão ou suplementação urgente." },
+            alto: { risco: "Policitemia. Acima de 19.9: Hiperviscosidade sanguínea.", sugestao: "Investigar causas pulmonares ou fumo." },
             normal: "Oxigenação tecidual correta."
         }
     },
-    FERRITINA: {
-        name: "Ferritina",
-        aliases: ["Ferro Estoque"],
-        unit: "ng/mL",
-        minDesejavel: 30,
-        maxDesejavel: 300,
+    LEUCOCITOS: {
+        name: "Leucócitos",
+        aliases: ["WBC", "Globulos Brancos"],
+        unit: "/mm3",
+        minDesejavel: 4000,
+        maxDesejavel: 11000,
+        minCritico: 2000,
+        maxCritico: 50000,
         tipo: 'HEMATOLOGICO',
         interpretacao: {
-            baixo: { risco: "Deficiência de ferro / Anemia.", sugestao: "Aumentar carnes vermelhas, feijão e Vit C." },
-            alto: { risco: "Inflamação crônica ou hemocromatose.", sugestao: "Investigar PCR e focos inflamatórios." },
-            normal: "Estoques de ferro saudáveis."
+            baixo: { risco: "Leucopenia. Abaixo de 2000: Risco alto de infecção.", sugestao: "Proteção imunológica imediata." },
+            alto: { risco: "Leucocitose. Acima de 50000: Reação leucemóide ou leucemia.", sugestao: "Emergência hematológica." },
+            normal: "Defesa imunológica estável."
         }
     },
+    PLAQUETAS: {
+        name: "Plaquetas",
+        aliases: ["PLT"],
+        unit: "/mm3",
+        minDesejavel: 150000,
+        maxDesejavel: 450000,
+        minCritico: 20000,
+        maxCritico: 1000000,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Plaquetopenia. Abaixo de 20000: Risco de hemorragia espontânea.", sugestao: "Repouso absoluto e hematologista." },
+            alto: { risco: "Trombocitose. Acima de 1M: Risco severo de trombose.", sugestao: "Investigar causas reacionais ou mieloproliferativas." },
+            normal: "Coagulação equilibrada."
+        }
+    },
+    RNI: {
+        name: "RNI (Coagulação)",
+        aliases: ["INR", "Protrombina"],
+        unit: "ratio",
+        minDesejavel: 0.8,
+        maxDesejavel: 1.2,
+        maxCritico: 4.0,
+        tipo: 'COAGULACAO',
+        interpretacao: {
+            baixo: { risco: "Risco de trombose.", sugestao: "Avaliar uso de anticoagulantes." },
+            alto: { risco: "Risco Hemorrágico. Acima de 4.0: Extremo perigo.", sugestao: "Ajustar Varfarina/Cumarínicos." },
+            normal: "Tempo de protrombina normal."
+        }
+    },
+    DIMERO_D: {
+        name: "Dímero-D",
+        aliases: ["D-Dimer"],
+        unit: "ng/mL",
+        minDesejavel: 0,
+        maxDesejavel: 500,
+        tipo: 'COAGULACAO',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Indicativo de trombose ou CID.", sugestao: "Investigar TVP ou Embolia Pulmonar." },
+            normal: "Ausência de fibrina degradada significativa."
+        }
+    },
+
+    // --- GASOMETRIA ---
+    PH_ARTERIAL: {
+        name: "pH Arterial",
+        aliases: ["pH"],
+        unit: "pH",
+        minDesejavel: 7.35,
+        maxDesejavel: 7.45,
+        minCritico: 7.2,
+        maxCritico: 7.6,
+        tipo: 'GASOMETRIA',
+        interpretacao: {
+            baixo: { risco: "Acidose. Abaixo de 7.2: Risco de morte.", sugestao: "Emergência hospitalar imediata." },
+            alto: { risco: "Alcalose. Acima de 7.6: Risco de morte.", sugestao: "Emergência hospitalar imediata." },
+            normal: "Equilíbrio ácido-base perfeito."
+        }
+    },
+    PCO2: {
+        name: "PCO2",
+        aliases: ["Pressão CO2"],
+        unit: "mmHg",
+        minDesejavel: 35,
+        maxDesejavel: 45,
+        minCritico: 19,
+        maxCritico: 67,
+        tipo: 'GASOMETRIA',
+        interpretacao: {
+            baixo: { risco: "Hiperventilação.", sugestao: "Avaliar centro respiratório." },
+            alto: { risco: "Hipoventilação / Acidose Respiratória.", sugestao: "Avaliar troca gasosa pulmonar." },
+            normal: "Eliminação de CO2 adequada."
+        }
+    },
+
+    // --- TOXICOLOGIA ---
+    DIGOXINA: {
+        name: "Digoxina",
+        aliases: ["Lanoxin"],
+        unit: "ng/mL",
+        minDesejavel: 0.8,
+        maxDesejavel: 2.0,
+        tipo: 'TOXICOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Abaixo da faixa terapêutica.", sugestao: "Ajustar dose." },
+            alto: { risco: "Toxicidade Digitálica. Acima de 2.0: Náuseas, arritmias.", sugestao: "Suspender e reavaliar." },
+            normal: "Nível terapêutico."
+        }
+    },
+    LITIO: {
+        name: "Lítio",
+        aliases: ["Li"],
+        unit: "mEq/L",
+        minDesejavel: 0.6,
+        maxDesejavel: 1.2,
+        maxCritico: 1.5,
+        tipo: 'TOXICOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Subterapêutico.", sugestao: "Avaliar adesão ao tratamento." },
+            alto: { risco: "Toxicidade: Tremores, confusão. Acima de 1.5 é Alerta.", sugestao: "Hidratação e suspensão temporária." },
+            normal: "Nível terapêutico seguro."
+        }
+    },
+
+    // --- VITAMINAS E MINERAIS ---
     VITAMINA_B12: {
         name: "Vitamina B12",
         aliases: ["Cobalamina"],
@@ -250,32 +392,17 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             normal: "Imunidade e ossos protegidos."
         }
     },
-
-    // --- INFLAMAÇÃO E TIROIDE ---
-    PCR_ULTRASSENSIVEL: {
-        name: "PCR Ultrassensível",
-        aliases: ["PCR-us", "C-Reactive Protein"],
-        unit: "mg/L",
-        minDesejavel: 0,
-        maxDesejavel: 1.0,
+    ALBUMINA: {
+        name: "Albúmina",
+        aliases: ["ALB"],
+        unit: "g/dL",
+        minDesejavel: 3.5,
+        maxDesejavel: 5.2,
         tipo: 'BIOQUIMICO',
         interpretacao: {
-            baixo: { risco: "Nível ideal: sem inflamação.", sugestao: "Manter estilo de vida." },
-            alto: { risco: "Inflamação subclínica e risco cardíaco.", sugestao: "Protocolo anti-inflamatório (Cúrcuma, Omega 3)." },
-            normal: "Nível aceitável."
-        }
-    },
-    HOMOCISTEINA: {
-        name: "Homocisteína",
-        aliases: ["HCY"],
-        unit: "umol/L",
-        minDesejavel: 5.0,
-        maxDesejavel: 10.0,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Baixa transulfuração.", sugestao: "Avaliar aporte proteico." },
-            alto: { risco: "Alto risco cardiovascular e neuro.", sugestao: "Metilfolato e B12; reduzir estresse." },
-            normal: "Metilação em bom estado."
+            baixo: { risco: "Desnutrição proteica ou problema hepático.", sugestao: "Aumentar proteínas de alto valor biológico." },
+            alto: { risco: "Desidratação.", sugestao: "Aumentar ingestão hídrica." },
+            normal: "Estado nutricional proteico adequado."
         }
     },
     TSH: {
@@ -290,57 +417,13 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             alto: { risco: "Hipotireoidismo.", sugestao: "Investigar Hashimoto e Selênio/Iodo." },
             normal: "Metabolismo tireoidiano estável."
         }
-    },
-    ACIDO_FOLICO: {
-        name: "Ácido Fólico (Vit B9)",
-        aliases: ["Folato", "Vitamina B9"],
-        unit: "ng/mL",
-        minDesejavel: 5,
-        maxDesejavel: 20,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Anemia e risco de má-formação fetal.", sugestao: "Metilfolato e folhas verdes escuras." },
-            alto: { risco: "Excesso de suplementação.", sugestao: "Rever doses de complexo B." },
-            normal: "Níveis adequados."
-        }
-    },
-    MAGNESIO: {
-        name: "Magnésio Sérico",
-        aliases: ["Mg", "Magnesium"],
-        unit: "mg/dL",
-        minDesejavel: 1.8,
-        maxDesejavel: 2.6,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Cãibras, irritabilidade e arritmia.", sugestao: "Suplementar Magnésio Quelato/Malato." },
-            alto: { risco: "Raro, geralmente por insuficiência renal.", sugestao: "Avaliar função renal." },
-            normal: "Cofator enzimático em equilíbrio."
-        }
-    },
-    CALCIO: {
-        name: "Cálcio Total",
-        aliases: ["Ca"],
-        unit: "mg/dL",
-        minDesejavel: 8.5,
-        maxDesejavel: 10.2,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Hipocalcemia: Risco ósseo e muscular.", sugestao: "Avaliar Vit D e ingestão de cálcio." },
-            alto: { risco: "Hipercalcemia: Risco de pedras nos rins.", sugestao: "Avaliar tireoide e Vit D." },
-            normal: "Metabolismo do cálcio normal."
-        }
-    },
-    ALBUMINA: {
-        name: "Albúmina",
-        aliases: ["ALB"],
-        unit: "g/dL",
-        minDesejavel: 3.5,
-        maxDesejavel: 5.2,
-        tipo: 'BIOQUIMICO',
-        interpretacao: {
-            baixo: { risco: "Desnutrição proteica ou problema hepático.", sugestao: "Aumentar proteínas de alto valor biológico." },
-            alto: { risco: "Desidratação.", sugestao: "Aumentar ingestão hídrica." },
-            normal: "Estado nutricional proteico adequado."
-        }
     }
 };
+
+export const QUALITATIVE_FINDINGS = [
+    { achado: "Leucocitose importante ou blastos", nota: "Possível novo diagnóstico de leucemia" },
+    { achado: "Glicosúria e cetonúria", nota: "Cetoacidose diabética" },
+    { achado: "Cilindros hemáticos ou Hemácias Dismórficas (>50%)", nota: "Lesão glomerular / Síndrome nefrítica" },
+    { achado: "Hemoglobinúria intensa desproporcional", nota: "Mioglobinúria / Síndrome de esmagamento" },
+    { achado: "Drepanócitos / Parasitas de Malária", nota: "Drepanocitose ou Malária ativa" }
+];

@@ -563,6 +563,7 @@ export interface Exam {
 
   // IA & Biomarker Data
   markers?: ExamMarker[];
+  qualitativeFindings?: string[]; // Novos achados qualitativos (Drepanócitos, etc)
   aiAnalysis?: string; // Legacy string
   analysisResult?: ExamAnalysisResult; // New Structured Analysis
   healthScore?: number; // 0-100
