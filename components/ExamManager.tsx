@@ -424,7 +424,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                             <XAxis dataKey="date" axisLine={false} tickLine={false} style={{ fontSize: '10px', fontWeight: 'bold' }} />
                                             <YAxis axisLine={false} tickLine={false} style={{ fontSize: '10px', fontWeight: 'bold' }} />
-                                            <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', shadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                            <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                                             <Area type="monotone" dataKey={selectedMarkerForEvo} stroke="#4f46e5" strokeWidth={4} fillOpacity={1} fill="url(#colorVal)" />
                                         </AreaChart>
                                     </ResponsiveContainer>
