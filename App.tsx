@@ -150,12 +150,6 @@ function App() {
     (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN)
   );
 
-  useEffect(() => {
-    if (user) {
-      console.log(`[Security] State: Mode=${loginMode}, Role=${user.role}, IsManager=${isManagerMode}`);
-    }
-  }, [user, loginMode, isManagerMode]);
-
   return (
     <Router>
       <Routes>
