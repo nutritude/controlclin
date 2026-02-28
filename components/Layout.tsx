@@ -84,7 +84,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
             <span>Relatórios</span>
           </NavLink>
 
-          {(user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
+          {isManagerMode && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
             <>
               <div className="pt-4 pb-2">
                 <p className={`px-4 text-xs font-semibold uppercase tracking-wider ${isManagerMode ? 'text-gray-500' : 'text-emerald-400'}`}>Gestão</p>

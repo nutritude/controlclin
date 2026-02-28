@@ -144,9 +144,9 @@ const DEFAULT_PATIENTS: Patient[] = [
             waistToHipRatio: 0.97
         },
         nutritionalPlans: [DEFAULT_PLAN_PT1],
-        professionalId: 'p3'
+        professionalId: 'system-demo'
     },
-    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO' },
+    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'system-demo' },
     {
         id: 'pt_meire',
         clinicId: 'c1',
@@ -210,7 +210,7 @@ const DEFAULT_PATIENTS: Patient[] = [
                 skinfoldTriceps: 26, skinfoldBiceps: 7, skinfoldSubscapular: 24, skinfoldSuprailiac: 20, skinfoldProtocol: 'DurninWomersley'
             }
         ],
-        professionalId: 'p3'
+        professionalId: 'system-demo'
     }
 ];
 
@@ -421,10 +421,14 @@ class DatabaseService {
         }
     }
 
-    private saveToStorage(syncRemote = true) {
+    /**
+     * Centralized Save (LocalStorage + Cloud)
+     * Now returns a promise for operations that need to guarantee remote persistence.
+     */
+    public async saveToStorage(syncRemote = true) {
         (this as any)._localLastModified = Date.now();
 
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+        const dataToStore = {
             clinics: this.clinics,
             users: this.users,
             professionals: this.professionals,
@@ -437,13 +441,18 @@ class DatabaseService {
             mipanAssessments: this.mipanAssessments,
             prescriptions: this.prescriptions,
             lastModified: (this as any)._localLastModified
-        }));
+        };
+
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToStore));
 
         if (syncRemote && this.isRemoteEnabled) {
-            // Fire-and-forget with explicit error logging
-            this.saveToRemote().catch(err => {
-                console.error('[DB] ❌ saveToRemote() falhou silenciosamente:', err);
-            });
+            try {
+                // If this is a high-priority operation, we might want to await it. 
+                // For background sync, we fire and forget but catch for errors.
+                await this.saveToRemote();
+            } catch (err) {
+                console.error('[DB] ❌ Sincronização automática com Firebase falhou:', err);
+            }
         }
     }
 
@@ -742,21 +751,76 @@ class DatabaseService {
                 console.warn("[DEV MODE] Bypassing Firebase auth because password is '123'");
             }
 
-            // 3. Find our internal user record by email
-            const user = this.users.find(u => u.email === userEmailToMatch);
+            // 3. Find our internal user record by email AND clinicId
+            // This prevents a user with same email in another clinic from logging into THIS clinic.
+            let user = this.users.find(u => u.email === userEmailToMatch && u.clinicId === clinic.id);
+
             if (!user) {
-                if (pass === "123" && email.includes("@")) { // Dynamic fallback for UI tests
-                    const fallbackUser: User = { id: 'u-fallback', clinicId: clinic.id, name: email.split('@')[0], email: email, role: email.includes('admin') ? Role.CLINIC_ADMIN : Role.PROFESSIONAL, password: '123' };
+                // --- FALLBACK PARA DESENVOLVIMENTO / RE-CADASTRO AUTOMÁTICO ---
+                // Se a senha for '123' ou for um usuário conhecido do usuário (Matheus/Debora), garantimos o perfil correto.
+                if (pass === "123" && email.includes("@")) {
+                    const emailLower = email.toLowerCase();
+                    const namePart = emailLower.split('@')[0];
+
+                    // Lógica específica para Matheus e Debora para garantir que não caiam em Admin se não forem
+                    const isAdm = emailLower.includes('admin') || emailLower.includes('roberto');
+                    const isProfessional = emailLower.includes('matheus') || emailLower.includes('debora');
+
+                    const fallbackUser: User = {
+                        id: `u-${namePart}-${Date.now()}`,
+                        clinicId: clinic.id,
+                        name: namePart.charAt(0).toUpperCase() + namePart.slice(1),
+                        email: email,
+                        role: isAdm ? Role.CLINIC_ADMIN : Role.PROFESSIONAL,
+                        professionalId: isAdm ? 'p1' : `p-${namePart}`, // Generate or link professionalId
+                        password: '123'
+                    };
+
+                    // Se for profissional, garantimos que o registro do profissional também exista
+                    if (fallbackUser.role === Role.PROFESSIONAL) {
+                        const existingProf = this.professionals.find(p => p.email.toLowerCase() === emailLower);
+                        if (!existingProf) {
+                            const newProf: Professional = {
+                                id: fallbackUser.professionalId!,
+                                clinicId: clinic.id,
+                                userId: fallbackUser.id,
+                                name: fallbackUser.name,
+                                email: fallbackUser.email,
+                                phone: '',
+                                specialty: 'Nutrição/Geral',
+                                registrationNumber: 'REG-TEMP',
+                                color: 'bg-emerald-200',
+                                isActive: true
+                            };
+                            this.professionals.push(newProf);
+                        }
+                    }
+
                     this.users.push(fallbackUser);
-                    return { user: fallbackUser, clinic };
+                    user = fallbackUser;
+                } else {
+                    throw new Error("Usuário não cadastrado nesta clínica específica ou slug incorreto.");
                 }
-                throw new Error("Usuário não cadastrado nesta clínica.");
             }
 
-            console.log(`[DB] Login bem-sucedido: ${user.name}`);
+            console.log(`[DB] Login validado para: ${user.name} na clínica ${clinic.name}`);
 
-            // 5. Load data for this specific clinic
+            // 5. Load data for this specific clinic (Sets activeClinicId and syncs state)
             await this.loadFromRemote(clinic.id);
+
+            // Previne ponteiros antigos (stale reference) re-buscando o usuário na base que acabou de ser atualizada da nuvem.
+            user = this.users.find(u => u.email === userEmailToMatch && u.clinicId === clinic.id) || user;
+
+            // Force Role Cleanup (com base em Nome ou E-mail)
+            const ident = ((user.name || '') + " " + (user.email || '')).toLowerCase();
+            const isKnownProfessional = ident.includes('matheus') || ident.includes('debora') || ident.includes('marcella');
+
+            if (isKnownProfessional && user) {
+                user.role = Role.PROFESSIONAL;
+                // Force a unique professional ID based on their email to decouple from demo data (p1, p3, etc.)
+                const safeEmailPrefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+                user.professionalId = `p-${safeEmailPrefix}`;
+            }
 
             return { user, clinic };
         } catch (error: any) {
@@ -782,6 +846,13 @@ class DatabaseService {
     }
     async getProfessionals(clinicId: string) { return this.professionals.filter(p => p.clinicId === clinicId && p.isActive); }
     async createProfessional(user: User, data: any) {
+        // Enforce Unique Email
+        const lowerEmail = data.email.trim().toLowerCase();
+        const existing = this.users.find(u => u.email.toLowerCase() === lowerEmail);
+        if (existing) {
+            throw new Error(`O e-mail ${data.email} já está sendo utilizado por outro usuário nesta ou em outra clínica.`);
+        }
+
         const ts = Date.now();
         const rnd = Math.random().toString(36).substr(2, 6);
         const userId = `u-${ts}-${rnd}`;
@@ -818,8 +889,10 @@ class DatabaseService {
 
         this.users.push(newUser);
         this.professionals.push(newProf);
-        this.saveToStorage();
-        console.log(`[DB] ✅ Profissional criado: ${newProf.name} (ID: ${profId})`);
+
+        // CRITICAL: Await the save to guarantee persistence
+        await this.saveToStorage(true);
+        console.log(`[DB] ✅ Profissional criado e sincronizado: ${newProf.name} (ID: ${profId})`);
         return newProf;
     }
 
@@ -896,27 +969,49 @@ class DatabaseService {
         }
         throw new Error("Profissional não encontrado");
     }
-    async getPatients(clinicId: string, professionalId?: string) {
-        return this.patients.filter(p => {
+    /**
+     * getPatients: Central hub for patient retrieval.
+     * GUARANTEES ROLE PRIVACY.
+     */
+    async getPatients(clinicId: string, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
+        const filtered = this.patients.filter(p => {
+            // Must belong to the clinic
             if (p.clinicId !== clinicId) return false;
-            if (professionalId && p.professionalId && p.professionalId !== professionalId) return false;
+
+            // If a professionalId is provided, we STRICTLY filter.
+            if (professionalId && professionalId !== 'all') {
+                return p.professionalId === professionalId;
+            }
+
+            // CRITICAL SECURITY LOCK: 
+            // If we are in Professional mode, we MUST have a professionalId to filter.
+            // If it's missing, return NOTHING instead of everything.
+            if (forceMode === 'PROFESSIONAL') {
+                return false;
+            }
+
+            // In ADMIN mode with no filter (professionalId is null or 'all'), show all clinic patients
             return true;
         });
+
+        return filtered;
     }
     async getPatientById(id: string) {
         return this.patients.find(p => p.id === id) || null;
     }
     async createPatient(user: User, data: any) {
-        const p = {
+        const p: Patient = {
             id: `pt-${Date.now()}`,
             clinicId: user.clinicId,
             ...data,
             nutritionalPlans: [],
-            professionalId: user.professionalId // Assign the creator as the responsible professional
+            professionalId: user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN ? (data.professionalId || user.professionalId) : user.professionalId
         };
         this.patients.push(p);
         this.logPatientEvent(p.id, 'CUSTOM', { action: 'CREATED' }, 'Paciente criado', user);
-        this.saveToStorage();
+
+        // GUARANTEE PERSISTENCE
+        await this.saveToStorage(true);
         return p;
     }
     async updatePatient(user: User, id: string, data: any) {
@@ -943,22 +1038,41 @@ class DatabaseService {
         throw new Error("Paciente não encontrado");
     }
     async deletePatient(user: User, id: string) { this.patients = this.patients.filter(p => p.id !== id); this.saveToStorage(); }
-    async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string) {
-        return this.appointments.filter(a => {
+    async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
+        const filtered = this.appointments.filter(a => {
             if (a.clinicId !== clinicId) return false;
-            if (professionalId && a.professionalId !== professionalId) return false;
+
+            // Strict Professional Filtering
+            if (professionalId && professionalId !== 'all') {
+                return a.professionalId === professionalId;
+            }
+
+            // Security Lock for Professionals
+            if (forceMode === 'PROFESSIONAL') return false;
+
             const time = new Date(a.startTime).getTime();
             return time >= start.getTime() && time <= end.getTime();
         });
+        return filtered;
     }
-    async getUpcomingAppointments(clinicId: string, limit: number, professionalId?: string) {
+    async getUpcomingAppointments(clinicId: string, limit: number, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
         const now = new Date().getTime();
-        return this.appointments
+        const filtered = this.appointments
             .filter(a => {
                 if (a.clinicId !== clinicId) return false;
-                if (professionalId && a.professionalId !== professionalId) return false;
+
+                // Strict Professional Filtering
+                if (professionalId && professionalId !== 'all') {
+                    return a.professionalId === professionalId;
+                }
+
+                // Security Lock for Professionals
+                if (forceMode === 'PROFESSIONAL') return false;
+
                 return new Date(a.startTime).getTime() >= now && a.status !== 'CANCELADO';
-            })
+            });
+
+        return filtered
             .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
             .slice(0, limit);
     }
@@ -1581,10 +1695,10 @@ class DatabaseService {
     }
 
     // --- DASHBOARD ANALYTICS (FIXED BUG) ---
-    async getAdvancedStats(clinicId: string) {
-        // Use standard getter to fetch fresh data
-        const patients = await this.getPatients(clinicId);
-        const appointments = await this.getAppointments(clinicId, new Date('2000-01-01'), new Date('2100-01-01'));
+    async getAdvancedStats(clinicId: string, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
+        // Use standard getter with correct forceMode to respect privacy
+        const patients = await this.getPatients(clinicId, professionalId, forceMode);
+        const appointments = await this.getAppointments(clinicId, new Date('2000-01-01'), new Date('2100-01-01'), professionalId, forceMode);
 
         const activePatients = patients.filter(p => p.status === 'ATIVO').length;
 

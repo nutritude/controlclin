@@ -11,7 +11,8 @@ interface PatientsProps {
 }
 
 const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
-  const isProfessionalUser = user.role === Role.PROFESSIONAL;
+  // In manager mode, see ALL patients; in professional mode, filter by professionalId
+  const isProfessionalUser = !isManagerMode;
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +37,19 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
 
   const fetchPatients = async () => {
     setLoading(true);
-    // Filter patients by professional ID if in professional mode
-    const data = await db.getPatients(clinic.id, isProfessionalUser ? user.professionalId : undefined);
+    const profIdFilter = isProfessionalUser ? user.professionalId : undefined;
+
+    console.log(`[Patients] Fetching data. Mode: ${isManagerMode ? 'MANAGER' : 'PROFESSIONAL'}, Filter PID: ${profIdFilter}`);
+
+    // Trava de segurança: se for profissional mas o ID estiver nulo, não podemos trazer "todos"
+    if (isProfessionalUser && !profIdFilter) {
+      console.warn('[Patients] Professional mode active but professionalId is missing in user object. Returning empty.');
+      setPatients([]);
+      setLoading(false);
+      return;
+    }
+
+    const data = await db.getPatients(clinic.id, profIdFilter, isManagerMode ? 'ADMIN' : 'PROFESSIONAL');
     setPatients(data);
     setLoading(false);
   };

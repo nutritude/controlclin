@@ -47,6 +47,7 @@ function App() {
 
   const [user, setUser] = useState<User | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
+  const [loginMode, setLoginMode] = useState<'ADMIN' | 'PROFESSIONAL' | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Restore session and load catalog
@@ -70,12 +71,22 @@ function App() {
 
       if (storedUserRaw && storedClinicRaw) {
         try {
-          setUser(JSON.parse(storedUserRaw));
-          setClinic(JSON.parse(storedClinicRaw));
+          const parsedUser = JSON.parse(storedUserRaw);
+          const parsedClinic = JSON.parse(storedClinicRaw);
+          const storedLoginMode = localStorage.getItem('app_login_mode') as 'ADMIN' | 'PROFESSIONAL' | null;
+
+          setUser(parsedUser);
+          setClinic(parsedClinic);
+
+          // Se não houver modo salvo ou se for um usuário comum, sempre PROFESSIONAL
+          const isAdmin = parsedUser.role === Role.CLINIC_ADMIN || parsedUser.role === Role.SUPER_ADMIN;
+          const targetMode = (isAdmin && storedLoginMode) ? storedLoginMode : 'PROFESSIONAL';
+
+          console.log(`[System] Session Restore: ${parsedUser.name} (${parsedUser.role}) -> Mode: ${targetMode}`);
+          setLoginMode(targetMode);
         } catch (err) {
           console.error('[App] Stored session corrupted. Clearing...', err);
-          localStorage.removeItem('app_user');
-          localStorage.removeItem('app_clinic');
+          handleLogout();
         }
       }
 
@@ -111,23 +122,39 @@ function App() {
     loadData();
   }, []);
 
-  const handleLogin = (u: User, c: Clinic) => {
+  const handleLogin = (u: User, c: Clinic, mode: 'ADMIN' | 'PROFESSIONAL') => {
     setUser(u);
     setClinic(c);
+    setLoginMode(mode);
     localStorage.setItem('app_user', JSON.stringify(u));
     localStorage.setItem('app_clinic', JSON.stringify(c));
+    localStorage.setItem('app_login_mode', mode);
   };
 
   const handleLogout = () => {
     setUser(null);
     setClinic(null);
+    setLoginMode(null);
     localStorage.removeItem('app_user');
     localStorage.removeItem('app_clinic');
+    localStorage.removeItem('app_login_mode');
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
-  const isManagerMode = user ? (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) : false;
+  // Security Guard: isManagerMode is true ONLY if the login mode is ADMIN AND the user actually HAS admin privileges.
+  // This is the single source of truth for the entire UI state (colors, sidebars, filters).
+  const isManagerMode = Boolean(
+    loginMode === 'ADMIN' &&
+    user &&
+    (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN)
+  );
+
+  useEffect(() => {
+    if (user) {
+      console.log(`[Security] State: Mode=${loginMode}, Role=${user.role}, IsManager=${isManagerMode}`);
+    }
+  }, [user, loginMode, isManagerMode]);
 
   return (
     <Router>

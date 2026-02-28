@@ -15,7 +15,8 @@ type ViewMode = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'TEAM';
 
 const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
     const isAdmin = user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN;
-    const isProfessionalUser = user.role === Role.PROFESSIONAL;
+    // In manager mode, see ALL data; in professional mode, filter by professionalId
+    const isProfessionalUser = !isManagerMode;
 
     // --- STATE ---
     const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -68,8 +69,14 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
             const profs = await db.getProfessionals(clinic.id);
             setProfessionals(profs);
             // Patients filter depends on mode
-            const pats = await db.getPatients(clinic.id, isProfessionalUser ? user.professionalId : undefined);
-            setPatients(pats);
+            const profIdForPatients = isProfessionalUser ? user.professionalId : undefined;
+            if (isProfessionalUser && !profIdForPatients) {
+                console.warn('[Agenda] Prof session missing professionalId. Restricting patient list.');
+                setPatients([]);
+            } else {
+                const pats = await db.getPatients(clinic.id, profIdForPatients, isManagerMode ? 'ADMIN' : 'PROFESSIONAL');
+                setPatients(pats);
+            }
 
             // Define filtro inicial apenas uma vez
             if (selectedProfIds.length === 0) {
@@ -163,7 +170,7 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
 
     const fetchData = async () => {
         const { start, end } = getDateRange();
-        const appts = await db.getAppointments(clinic.id, start, end, isProfessionalUser ? user.professionalId : undefined);
+        const appts = await db.getAppointments(clinic.id, start, end, isProfessionalUser ? user.professionalId : undefined, isManagerMode ? 'ADMIN' : 'PROFESSIONAL');
         setAppointments(appts);
     };
 

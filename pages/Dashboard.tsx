@@ -456,19 +456,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
     const fetchData = async () => {
       setLoading(true);
 
-      const professionalId = user.role === Role.PROFESSIONAL ? user.professionalId : undefined;
+      const professionalId = !isManagerMode ? user.professionalId : undefined;
+
+      const mode = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
 
       // Fetch data common to both or needed for specific roles
-      const appts = await db.getUpcomingAppointments(clinic.id, 5, professionalId);
+      const appts = await db.getUpcomingAppointments(clinic.id, 5, professionalId, mode);
       setNextAppointments(appts);
 
       if (isManagerMode) {
-        const s = await db.getAdvancedStats(clinic.id);
+        const s = await db.getAdvancedStats(clinic.id, professionalId, 'ADMIN');
         setStats(s);
         const insights = await db.generateDashboardInsights(clinic.id, s);
         setAiInsights(insights);
       } else {
-        const patientData = await db.getPatients(clinic.id, professionalId);
+        const patientData = await db.getPatients(clinic.id, professionalId, 'PROFESSIONAL');
         setPatients(patientData);
       }
 

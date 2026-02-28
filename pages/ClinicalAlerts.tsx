@@ -47,8 +47,8 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
 
     const fetchAlerts = async () => {
         setLoading(true);
-        // Filter alerts by professional ID if in professional mode
-        const professionalIdFilter = user.role === Role.PROFESSIONAL ? user.professionalId : undefined;
+        // In manager mode, see ALL alerts; in professional mode, filter by professionalId
+        const professionalIdFilter = isManagerMode ? undefined : user.professionalId;
         const data = await db.getClinicalAlerts(clinic.id, professionalIdFilter);
         setAlerts(data);
         setLoading(false);

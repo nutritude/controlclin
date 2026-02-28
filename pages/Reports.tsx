@@ -148,13 +148,14 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     const [generatingPdf, setGeneratingPdf] = useState(false);
 
     // Permissions
-    const isProfessional = user.role === Role.PROFESSIONAL;
+    // In manager mode, see ALL data; in professional mode, filter by professionalId
+    const isProfessional = !isManagerMode;
 
     useEffect(() => {
         // Fetch patients for the individual report dropdown
         const fetchPatientsForDropdown = async () => {
             const professionalId = isProfessional ? user.professionalId : undefined;
-            const patientList = await db.getPatients(clinic.id, professionalId);
+            const patientList = await db.getPatients(clinic.id, professionalId, isManagerMode ? 'ADMIN' : 'PROFESSIONAL');
             setPatients(patientList);
             if (patientList.length > 0) {
                 setSelectedPatientId(patientList[0].id);

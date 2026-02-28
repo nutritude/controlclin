@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '../services/db';
 import { User, Clinic, Role } from '../types';
+import { Icons } from '../constants';
 
 interface LoginProps {
-  onLogin: (user: User, clinic: Clinic) => void;
+  onLogin: (user: User, clinic: Clinic, loginMode: 'ADMIN' | 'PROFESSIONAL') => void;
 }
 
 type LoginMode = 'ADMIN' | 'PROFESSIONAL';
@@ -14,7 +15,7 @@ const TOTAL_FRAMES = 80;
 const FRAME_RATE = 12; // fps — suave sem sobrecarregar
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [loginMode, setLoginMode] = useState<LoginMode>('ADMIN');
+  const [loginMode, setLoginMode] = useState<LoginMode>('PROFESSIONAL');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [slug, setSlug] = useState('control');
@@ -134,7 +135,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           setIsSubmitting(false);
           return;
         }
-        onLogin(result.user, result.clinic);
+        onLogin(result.user, result.clinic, loginMode);
       } else {
         setError('Credenciais (e-mail ou senha) ou slug da clínica inválidos.');
       }
@@ -192,7 +193,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           {/* Mode Tabs */}
           <div className="flex border-b border-slate-200/50">
             <button
-              onClick={() => { setLoginMode('ADMIN'); setEmail(''); setPassword(''); setError(''); }}
+              type="button"
+              onClick={() => { setLoginMode('ADMIN'); setError(''); }}
               className={`flex-1 py-4 text-sm font-bold text-center transition-all duration-300 relative ${loginMode === 'ADMIN'
                 ? 'text-blue-600'
                 : 'text-slate-400 hover:text-slate-600'
@@ -205,7 +207,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </span>
             </button>
             <button
-              onClick={() => { setLoginMode('PROFESSIONAL'); setEmail(''); setPassword(''); setError(''); }}
+              type="button"
+              onClick={() => { setLoginMode('PROFESSIONAL'); setError(''); }}
               className={`flex-1 py-4 text-sm font-bold text-center transition-all duration-300 relative ${loginMode === 'PROFESSIONAL'
                 ? 'text-emerald-600'
                 : 'text-slate-400 hover:text-slate-600'
@@ -292,30 +295,50 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 />
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full flex justify-center py-3 px-4 rounded-xl text-sm font-black uppercase tracking-wider shadow-lg transition-all duration-300 transform active:scale-[0.98]
-                  ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-xl'}
-                  ${loginMode === 'ADMIN'
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-600/30 hover:shadow-blue-500/50'
-                    : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-600/30 hover:shadow-emerald-500/50'
-                  }
-                `}
+                className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting
+                  ? 'bg-slate-400 cursor-not-allowed'
+                  : loginMode === 'ADMIN'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 shadow-blue-500/30'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 shadow-emerald-500/30'
+                  }`}
               >
                 {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Entrando...
-                  </span>
+                    <span>Autenticando...</span>
+                  </>
                 ) : (
-                  `Acessar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`
+                  <>
+                    <Icons.Activity />
+                    <span>Entrar como {loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}</span>
+                  </>
                 )}
               </button>
+
+              {/* Footer / Bypass */}
+              <div className="pt-4 flex flex-col items-center gap-4">
+                <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] opacity-60">
+                  ControlClin Security Protocol v3.4
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.reload();
+                  }}
+                  className="text-[10px] text-red-400 hover:text-red-500 font-bold uppercase tracking-widest border-b border-red-400/20 pb-0.5"
+                >
+                  Limpar Cache e Sessão Forçado
+                </button>
+              </div>
             </form>
           </div>
         </div>

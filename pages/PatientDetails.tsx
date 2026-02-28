@@ -279,9 +279,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
 
     const isAdmin = user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN;
-    // Permissions for clinical header
-    const canEditClinical = user.role === Role.PROFESSIONAL || isAdmin;
-    const isProfessionalUser = user.role === Role.PROFESSIONAL;
+    // Permissions for clinical header - all non-secretary users can edit
+    const canEditClinical = user.role !== Role.SECRETARY;
+    // isProfessionalUser controls data filtering: in manager mode, see ALL patients; in professional mode, filter by professionalId
+    const isProfessionalUser = !isManagerMode;
 
     // Data for chart, including the current unsaved measurement for real-time visualization
     const chartData = useMemo(() => {
@@ -1222,10 +1223,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         { id: 'PRONTUARIO', label: 'Prontuário (IA)' },
                         { id: 'ANTHRO', label: 'Antropometria' },
                         { id: 'NUTRITION', label: 'Planejamento Nutricional' },
-                        { id: 'PRESCRIPTION', label: '💊 Prescrição', professionalOnly: true },
+                        { id: 'PRESCRIPTION', label: 'Prescrição' },
                         { id: 'FINANCIAL', label: 'Financeiro' },
                         { id: 'EXAMS', label: 'Exames' },
-                    ].filter(tab => !(tab as any).professionalOnly || !isManagerMode).map(tab => (
+                    ].map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as Tab); setIsEditingTab(false); }}
