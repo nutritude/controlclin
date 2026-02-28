@@ -811,16 +811,8 @@ class DatabaseService {
             // Previne ponteiros antigos (stale reference) re-buscando o usuário na base que acabou de ser atualizada da nuvem.
             user = this.users.find(u => u.email === userEmailToMatch && u.clinicId === clinic.id) || user;
 
-            // Force Role Cleanup (com base em Nome ou E-mail)
-            const ident = ((user.name || '') + " " + (user.email || '')).toLowerCase();
-            const isKnownProfessional = ident.includes('matheus') || ident.includes('debora') || ident.includes('marcella');
-
-            if (isKnownProfessional && user) {
-                user.role = Role.PROFESSIONAL;
-                // Force a unique professional ID based on their email to decouple from demo data (p1, p3, etc.)
-                const safeEmailPrefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-                user.professionalId = `p-${safeEmailPrefix}`;
-            }
+            // Não vamos mais sobrescrever o papel deles.
+            // Se o Firebase diz que a Debora é ADMIN, ela será ADMIN e terá acesso aos dois mundos.
 
             return { user, clinic };
         } catch (error: any) {
