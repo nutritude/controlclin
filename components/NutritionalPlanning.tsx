@@ -1818,15 +1818,25 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     {snapshotForPdf && (
                         <div className="flex flex-col h-full">
                             {/* CABEÇALHO PROFISSIONAL */}
-                            {/* CABEÇALHO LINEAR */}
+                            {/* CABEÇALHO LINEAR REORGANIZADO */}
                             <div className="flex flex-col items-center text-center border-b-2 border-emerald-600 pb-6 mb-8">
                                 {snapshotForPdf.clinic.logoUrl && (
-                                    <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-20 mb-4 object-contain" />
+                                    <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-16 mb-4 object-contain" />
                                 )}
 
                                 <div className="mb-4">
-                                    <p className="text-base font-black text-slate-800 uppercase leading-none">{snapshotForPdf.responsibleProfessional?.name || user.name}</p>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-wider">
+                                    <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">
+                                        {snapshotForPdf.clinic.address}{snapshotForPdf.clinic.city ? `, ${snapshotForPdf.clinic.city}` : ''}
+                                        {snapshotForPdf.clinic.phone ? ` • Tel: ${snapshotForPdf.clinic.phone}` : ''}
+                                    </p>
+                                </div>
+
+                                <h1 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase leading-none mb-4">Plano Alimentar</h1>
+
+                                <div className="mb-4">
+                                    <p className="text-xs font-black text-slate-800 uppercase leading-none">{snapshotForPdf.responsibleProfessional?.name || user.name}</p>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
                                         {snapshotForPdf.responsibleProfessional?.specialty || 'Nutricionista'} • {snapshotForPdf.responsibleProfessional?.registrationNumber || ''}
                                     </p>
                                 </div>
@@ -1889,11 +1899,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                         {it.substitutes && it.substitutes.length > 0 && (
                                                             <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
                                                                 {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-0.5">
+                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-1">
                                                                         <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed">
+                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed flex-1">
                                                                             <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                            <span className="italic truncate overflow-visible">{sub.customName || sub.name}</span>
+                                                                            <span className="italic overflow-visible break-words">{sub.customName || sub.name}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
