@@ -1819,17 +1819,22 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         <div className="flex flex-col h-full">
                             {/* CABEÇALHO PROFISSIONAL */}
                             <div className="flex justify-between items-start border-b-4 border-emerald-600 pb-6 mb-8">
-                                <div className="flex-1">
+                                <div className="flex-1 pr-4">
                                     {snapshotForPdf.clinic.logoUrl ? (
-                                        <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-16 mb-4 object-contain" />
+                                        <div className="flex items-center gap-4 mb-3">
+                                            <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-14 object-contain" />
+                                            <div>
+                                                <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">Unidade {snapshotForPdf.clinic.city || 'Brasil'}</p>
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <div className="h-4" /> // Spacer
+                                        <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none mb-3">{snapshotForPdf.clinic.name}</h2>
                                     )}
-                                    <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
-                                    <p className="text-[10px] text-slate-600 mt-1 max-w-sm">
-                                        {snapshotForPdf.clinic.address}{snapshotForPdf.clinic.city ? `, ${snapshotForPdf.clinic.city}` : ''}
-                                        {snapshotForPdf.clinic.phone ? ` • Tel: ${snapshotForPdf.clinic.phone}` : ''}
-                                    </p>
+                                    <div className="text-[9px] text-slate-500 leading-tight">
+                                        <p>{snapshotForPdf.clinic.address}{snapshotForPdf.clinic.city ? `, ${snapshotForPdf.clinic.city}` : ''}</p>
+                                        <p>{snapshotForPdf.clinic.phone ? `Tel: ${snapshotForPdf.clinic.phone}` : ''}</p>
+                                    </div>
                                 </div>
                                 <div className="text-right">
                                     <h1 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase leading-none">Plano Alimentar</h1>
@@ -1896,11 +1901,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                         {it.substitutes && it.substitutes.length > 0 && (
                                                             <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
                                                                 {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 whitespace-nowrap overflow-hidden">
+                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-0.5">
                                                                         <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                        <div className="flex items-baseline gap-1.5 min-w-0">
-                                                                            <span className="shrink-0 font-bold text-slate-600">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                            <span className="italic leading-none truncate">{sub.customName || sub.name}</span>
+                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-normal">
+                                                                            <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
+                                                                            <span className="italic truncate">{sub.customName || sub.name}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -1971,9 +1976,10 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
                             {/* RODAPÉ */}
                             <div className="mt-auto pt-8 flex justify-between items-end border-t border-slate-100">
-                                <div className="text-[8px] text-slate-400">
-                                    <p className="font-bold text-emerald-700 uppercase mb-1">ControlClin SaaS</p>
-                                    <p>© {new Date().getFullYear()} - Documento validado cientificamente</p>
+                                <div className="text-[8px] text-slate-400 max-w-xs">
+                                    <p className="font-bold text-emerald-700 uppercase mb-0.5">{snapshotForPdf.clinic.name}</p>
+                                    <p>{snapshotForPdf.clinic.address} • {snapshotForPdf.clinic.phone}</p>
+                                    <p className="mt-1">© {new Date().getFullYear()} - Documento validado cientificamente por ControlClin SaaS</p>
                                 </div>
                                 <div className="text-[8px] text-slate-400 italic">
                                     Gerado por {user.name} em {new Date().toLocaleString('pt-BR')}
