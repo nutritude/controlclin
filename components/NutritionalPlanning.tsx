@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult } from '../types';
+import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult, Clinic, Professional } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { FoodService, FoodItemCanonical } from '../services/food/foodCatalog';
@@ -21,6 +21,7 @@ import EditFoodModal from './EditFoodModal';
 interface NutritionalPlanningProps {
     patient: Patient;
     user: User;
+    clinic: Clinic;
     isManagerMode: boolean;
 }
 
@@ -84,7 +85,7 @@ const InputRow: React.FC<InputRowProps> = ({ label, value, unit, disabled, onCha
     </div>
 );
 
-const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user, isManagerMode }) => {
+const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user, clinic, isManagerMode }) => {
     // --- STATE ---
     const [plansList, setPlansList] = useState<NutritionalPlan[]>([]);
     const [activePlan, setActivePlan] = useState<NutritionalPlan | null>(null);
@@ -168,6 +169,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [showMicrosModal, setShowMicrosModal] = useState(false);
     const [showShoppingListModal, setShowShoppingListModal] = useState(false);
     const [showSubstitutesDrawer, setShowSubstitutesDrawer] = useState<{ mealId: string, itemIdx: number, foodId: string } | null>(null);
+    const [responsibleProfessional, setResponsibleProfessional] = useState<Professional | null>(null);
     const [substituteCandidates, setSubstituteCandidates] = useState<SubstitutionSuggestion[]>([]);
     const [subTab, setSubTab] = useState<'SUGGESTIONS' | 'SEARCH'>('SUGGESTIONS');
     const [subQuery, setSubQuery] = useState('');
@@ -198,7 +200,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     // --- INITIALIZATION ---
     useEffect(() => {
         fetchPlans();
-    }, [patient.id]);
+        if (patient.professionalId) {
+            db.getProfessionals(clinic.id).then(list => {
+                const prof = list.find(p => p.id === patient.professionalId);
+                setResponsibleProfessional(prof || null);
+            });
+        }
+    }, [patient.id, patient.professionalId, clinic.id]);
 
     const fetchPlans = async () => {
         try {
@@ -792,6 +800,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         fat: state.macroResults.fat.g,
                     }
                 },
+                responsibleProfessional: responsibleProfessional,
+                clinic: clinic,
                 plan: {
                     id: currentPlanId || 'draft',
                     title: state.planTitle || 'Plano Alimentar',
@@ -1807,39 +1817,63 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 <div ref={pdfRef} className="bg-white text-black font-sans px-[8mm] py-[12mm] w-[210mm] min-h-[297mm] shadow-2xl mx-auto">
                     {snapshotForPdf && (
                         <div className="flex flex-col h-full">
-                            {/* CABEÇALHO */}
-                            <div className="flex flex-col border-b-2 border-emerald-600 pb-4 mb-6">
-                                <div className="flex justify-between items-start w-full">
-                                    <div>
-                                        <h1 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase leading-none">Plano Alimentar</h1>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{snapshotForPdf.plan.title}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[9px] text-slate-500 font-medium">Gerado em {new Date().toLocaleDateString('pt-BR')}</p>
-                                    </div>
+                            {/* CABEÇALHO PROFISSIONAL */}
+                            <div className="flex justify-between items-start border-b-4 border-emerald-600 pb-6 mb-8">
+                                <div className="flex-1">
+                                    {snapshotForPdf.clinic.logoUrl ? (
+                                        <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-16 mb-4 object-contain" />
+                                    ) : (
+                                        <div className="h-4" /> // Spacer
+                                    )}
+                                    <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
+                                    <p className="text-[10px] text-slate-600 mt-1 max-w-sm">
+                                        {snapshotForPdf.clinic.address}{snapshotForPdf.clinic.city ? `, ${snapshotForPdf.clinic.city}` : ''}
+                                        {snapshotForPdf.clinic.phone ? ` • Tel: ${snapshotForPdf.clinic.phone}` : ''}
+                                    </p>
                                 </div>
-                                <div className="mt-4">
-                                    <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{patient.name}</p>
+                                <div className="text-right">
+                                    <h1 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase leading-none">Plano Alimentar</h1>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 mb-4">{snapshotForPdf.plan.title}</p>
+
+                                    <div className="pt-2 border-t border-slate-100">
+                                        <p className="text-xs font-black text-slate-800 uppercase leading-none">{snapshotForPdf.responsibleProfessional?.name || user.name}</p>
+                                        <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
+                                            {snapshotForPdf.responsibleProfessional?.specialty || 'Nutricionista'} • {snapshotForPdf.responsibleProfessional?.registrationNumber || ''}
+                                        </p>
+                                    </div>
+                                    <p className="text-[8px] text-slate-400 mt-2 italic">Gerado em {new Date().toLocaleDateString('pt-BR')}</p>
+                                </div>
+                            </div>
+
+                            {/* IDENTIFICAÇÃO DO PACIENTE */}
+                            <div className="mb-8">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Paciente:</span>
+                                    <p className="text-lg font-black text-slate-800 uppercase tracking-tight">{snapshotForPdf.patient.name}</p>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Objetivo:</span>
+                                    <p className="text-sm font-bold text-slate-600 italic tracking-tight">{snapshotForPdf.patient.objective}</p>
                                 </div>
                             </div>
 
                             {/* RESUMO DE METAS */}
                             <div className="grid grid-cols-4 gap-4 mb-8 bg-slate-50/80 p-5 rounded-xl border border-slate-200">
                                 <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Meta Calórica</p>
-                                    <p className="text-2xl font-black text-emerald-700 leading-none">{snapshotForPdf.patient.kcalTarget} <span className="text-xs">kcal</span></p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Metas Nutricionais</p>
+                                    <p className="text-2xl font-black text-emerald-700 leading-none">{snapshotForPdf.patient.kcalTarget} <span className="text-xs font-bold">kcal</span></p>
                                 </div>
                                 <div className="text-center border-r border-slate-200">
                                     <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Proteínas</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.protein}g</p>
+                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.protein.toFixed(1)}g</p>
                                 </div>
                                 <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Carboidratos</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.carbs}g</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Carbos</p>
+                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.carbs.toFixed(1)}g</p>
                                 </div>
                                 <div className="text-center">
                                     <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Gorduras</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.fat}g</p>
+                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.fat.toFixed(1)}g</p>
                                 </div>
                             </div>
 
@@ -1860,12 +1894,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                             <span className="flex-1 min-w-0 break-words leading-relaxed">{it.customName || it.name}</span>
                                                         </div>
                                                         {it.substitutes && it.substitutes.length > 0 && (
-                                                            <div className="mt-2 ml-24 space-y-2 border-l border-emerald-100 pl-3">
+                                                            <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
                                                                 {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                    <div key={sIdx} className="text-slate-500 text-[11px] flex items-start gap-2">
-                                                                        <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[8px] uppercase shrink-0 mt-0.5">OU</span>
-                                                                        <span className="shrink-0 font-medium w-16 text-right">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                        <span className="italic leading-snug flex-1 min-w-0 break-words">{sub.customName || sub.name}</span>
+                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 whitespace-nowrap overflow-hidden">
+                                                                        <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
+                                                                        <div className="flex items-baseline gap-1.5 min-w-0">
+                                                                            <span className="shrink-0 font-bold text-slate-600">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
+                                                                            <span className="italic leading-none truncate">{sub.customName || sub.name}</span>
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </div>

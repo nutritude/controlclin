@@ -1788,6 +1788,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         <NutritionalPlanning
                             patient={patient}
                             user={user}
+                            clinic={clinic}
                             isManagerMode={isManagerMode}
                         />
                     </ErrorBoundary>
