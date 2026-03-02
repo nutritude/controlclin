@@ -635,6 +635,12 @@ class DatabaseService {
         const patient = this.patients.find(p => p.id === patientId);
         if (!patient) return null;
 
+        // Security Lock: Professionals can only see their own patients
+        if (professionalIdFilter && patient.professionalId !== professionalIdFilter) {
+            console.warn(`[DB] Security Block: Professional ${professionalIdFilter} tried to access patient ${patientId}`);
+            return null;
+        }
+
         // 1. Fetch Timeline (with Backfill)
         const timeline = await this.listPatientEvents(patientId);
 
@@ -1841,7 +1847,17 @@ class DatabaseService {
 
     async getClinicalAlerts(id: string, pid?: string) {
         let list = this.alerts.filter(a => a.clinicId === id && a.status === 'ACTIVE');
-        // If professionalId filter is needed, it would be passed as pid here or handled similarly to getPatients
+
+        if (pid && pid !== 'all') {
+            // Filter list to include only patients that belong to this professional
+            const professionalPatientIds = new Set(
+                this.patients
+                    .filter(p => p.professionalId === pid)
+                    .map(p => p.id)
+            );
+            return list.filter(a => professionalPatientIds.has(a.patientId));
+        }
+
         return list;
     }
 

@@ -341,7 +341,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     };
 
     const fetchData = async (patientId: string) => {
-        const p = await db.getPatients(clinic.id, isProfessionalUser ? user.professionalId : undefined); // Filter patients here
+        const mode = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
+        const p = await db.getPatients(clinic.id, isProfessionalUser ? user.professionalId : undefined, mode); // Filter patients here
         const found = p.find(pt => pt.id === patientId) || null;
         setPatient(found);
         if (found) {
