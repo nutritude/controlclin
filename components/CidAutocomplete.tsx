@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import AsyncCreatableSelect from 'react-select/async-creatable';
+import { COMMON_CIDS } from '../constants/commonCIDs';
 
 interface CidOption {
   value: string;
@@ -31,27 +31,23 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
   const loadOptions = async (inputValue: string): Promise<CidOption[]> => {
     if (!inputValue || inputValue.length < 2) return [];
 
-    try {
-      // Endpoint publico comum de busca CID10. 
-      const response = await axios.get(`https://cid10-api.herokuapp.com/cid10/buscar/${inputValue}`, {
-        timeout: 3000
-      });
-      if (response.data && response.data.length > 0) {
-        return response.data.map((item: { codigo: string, nome: string }) => ({
-          value: `${item.codigo} - ${item.nome}`,
-          label: `${item.codigo} - ${item.nome}`,
-        }));
-      }
-      return [];
-    } catch (error) {
-      console.error("Erro ao buscar CID10 na API principal", error);
-      // Tentar API secundária ou retornar array vazio q o AsyncCreatable cuidará de permitir a digitação livre
-      return [];
-    }
+    const lowerInput = inputValue.toLowerCase();
+
+    // Busca instantânea no banco local mapeado
+    const filtered = COMMON_CIDS.filter(
+      item => item.codigo.toLowerCase().includes(lowerInput) ||
+        item.nome.toLowerCase().includes(lowerInput)
+    );
+
+    // Converte para o formato esperado pelo React Select
+    return filtered.map(item => ({
+      value: `${item.codigo} - ${item.nome}`,
+      label: `${item.codigo} - ${item.nome}`,
+    }));
   };
 
   const handleChange = (newValue: any) => {
-    const options = newValue || []; // Pode ser null se apagar tudo
+    const options = newValue || []; // Handle clearance 
     setSelectedOptions(options);
     onChange(options.map((opt: CidOption) => opt.value));
   };
@@ -85,13 +81,13 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
     }),
     multiValue: (base: any) => ({
       ...base,
-      backgroundColor: isManagerMode ? '#7f1d1d' : '#fee2e2', // red-900 / red-100 to match old visual
+      backgroundColor: isManagerMode ? '#7f1d1d' : '#fee2e2',
       borderRadius: '4px',
       border: `1px solid ${isManagerMode ? '#b91c1c' : '#fecaca'}`,
     }),
     multiValueLabel: (base: any) => ({
       ...base,
-      color: isManagerMode ? '#fca5a5' : '#991b1b', // red-300 / red-800
+      color: isManagerMode ? '#fca5a5' : '#991b1b',
       fontWeight: 'bold',
       fontSize: '0.875rem'
     }),
@@ -123,12 +119,12 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
         noOptionsMessage={({ inputValue }) =>
           inputValue.length < 2
             ? "Digite ao menos 2 letras do CID ou Nome."
-            : "Nenhum resultado na API. Tecle Enter para adicionar como texto."
+            : `Nenhum resultado para "${inputValue}". Tecle Enter para adicionar o termo.`
         }
-        formatCreateLabel={(inputValue) => `Adicionar a patologia "${inputValue}"`}
+        formatCreateLabel={(inputValue) => `Adicionar a patologia/CID "${inputValue}"`}
       />
       <div className={`mt-1 text-[10px] italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-700 opacity-70'}`}>
-        * Sugestão: Busque por código (E11) ou nome. Para texto livre, digite e tecle Enter.
+        * Você pode buscar CIDs comuns ou digitar qualquer texto e teclar Enter para registrar livremente.
       </div>
     </div>
   );

@@ -1,0 +1,72 @@
+export const COMMON_CIDS = [
+    // Doenças Endócrinas, Nutricionais e Metabólicas (E00-E90)
+    { codigo: 'E10', nome: 'Diabetes mellitus insulinodependente' },
+    { codigo: 'E10.9', nome: 'Diabetes mellitus insulinodependente - sem complicações' },
+    { codigo: 'E11', nome: 'Diabetes mellitus não-insulinodependente' },
+    { codigo: 'E11.9', nome: 'Diabetes mellitus não-insulinodependente - sem complicações' },
+    { codigo: 'E14', nome: 'Diabetes mellitus não especificado' },
+    { codigo: 'E66', nome: 'Obesidade' },
+    { codigo: 'E66.0', nome: 'Obesidade devida a excesso de calorias' },
+    { codigo: 'E66.8', nome: 'Outra obesidade' },
+    { codigo: 'E66.9', nome: 'Obesidade não especificada' },
+    { codigo: 'E78', nome: 'Distúrbios do metabolismo de lipoproteínas e outras lipidemias' },
+    { codigo: 'E78.0', nome: 'Hipercolesterolemia pura' },
+    { codigo: 'E78.1', nome: 'Hipergliceridemia pura' },
+    { codigo: 'E78.2', nome: 'Hiperlipidemia mista' },
+    { codigo: 'E78.4', nome: 'Outras hiperlipidemias' },
+    { codigo: 'E78.5', nome: 'Hiperlipidemia não especificada' },
+    { codigo: 'E03.9', nome: 'Hipotireoidismo não especificado' },
+    { codigo: 'E05.9', nome: 'Tireotoxicose não especificada (Hipertireoidismo)' },
+    { codigo: 'E46', nome: 'Desnutrição protéico-calórica não especificada' },
+    { codigo: 'E55.9', nome: 'Deficiência de vitamina D não especificada' },
+    { codigo: 'E61.1', nome: 'Deficiência de ferro' },
+    { codigo: 'E88.8', nome: 'Outros distúrbios especificados do metabolismo (Síndrome Metabólica)' },
+
+    // Aparelho Circulatório (I00-I99)
+    { codigo: 'I10', nome: 'Hipertensão essencial (primária)' },
+    { codigo: 'I15', nome: 'Hipertensão secundária' },
+    { codigo: 'I20', nome: 'Angina pectoris' },
+    { codigo: 'I25', nome: 'Doença isquêmica crônica do coração' },
+    { codigo: 'I50', nome: 'Insuficiência cardíaca' },
+    { codigo: 'I73.9', nome: 'Doença vascular periférica não especificada' },
+
+    // Aparelho Digestivo (K00-K93)
+    { codigo: 'K21', nome: 'Doença de refluxo gastroesofágico (DRGE)' },
+    { codigo: 'K21.9', nome: 'Doença de refluxo gastroesofágico sem esofagite' },
+    { codigo: 'K25', nome: 'Úlcera gástrica' },
+    { codigo: 'K29.7', nome: 'Gastrite não especificada' },
+    { codigo: 'K30', nome: 'Dispepsia' },
+    { codigo: 'K50', nome: 'Doença de Crohn [enterite regional]' },
+    { codigo: 'K51', nome: 'Colite ulcerativa' },
+    { codigo: 'K58', nome: 'Síndrome do cólon irritável' },
+    { codigo: 'K59.0', nome: 'Constipação' },
+    { codigo: 'K70.3', nome: 'Cirrose hepática alcoólica' },
+    { codigo: 'K76.0', nome: 'Degeneração gordurosa do fígado não classificada em outra parte (Esteatose hepática)' },
+    { codigo: 'K90.0', nome: 'Doença celíaca' },
+    { codigo: 'K90.4', nome: 'Má-absorção devido a intolerância, não classificada em outra parte (Intolerância à lactose)' },
+
+    // Transtornos Mentais e Comportamentais (F00-F99)
+    { codigo: 'F50.0', nome: 'Anorexia nervosa' },
+    { codigo: 'F50.2', nome: 'Bulimia nervosa' },
+    { codigo: 'F50.4', nome: 'Hiperfagia associada a outros distúrbios psicológicos' },
+    { codigo: 'F32', nome: 'Episódios depressivos' },
+    { codigo: 'F41.1', nome: 'Ansiedade generalizada' },
+
+    // Gravidez, Parto e Puerpério (O00-O99)
+    { codigo: 'O24.4', nome: 'Diabetes mellitus que surge durante a gravidez (Diabetes gestacional)' },
+    { codigo: 'O13', nome: 'Hipertensão gestacional (induzida pela gravidez) sem proteinúria significativa' },
+    { codigo: 'O21.0', nome: 'Hiperemese gravídica leve' },
+
+    // Outros Comuns
+    { codigo: 'M81.9', nome: 'Osteoporose não especificada' },
+    { codigo: 'M10.9', nome: 'Gota, não especificada' },
+    { codigo: 'N18', nome: 'Doença renal crônica' },
+    { codigo: 'N20.0', nome: 'Calculose do rim (Cálculo renal)' },
+    { codigo: 'D50', nome: 'Anemia por deficiência de ferro' },
+    { codigo: 'D50.9', nome: 'Anemia ferropriva não especificada' },
+    { codigo: 'D52', nome: 'Anemia por deficiência de folato' },
+    { codigo: 'D51', nome: 'Anemia por deficiência de vitamina B12' },
+    { codigo: 'R63.0', nome: 'Anorexia' },
+    { codigo: 'R73.0', nome: 'Anormalidade do teste de tolerância à glicose (Pré-diabetes)' },
+    { codigo: 'N95.1', nome: 'Estados das menopausas e do climatério femininos' },
+];
