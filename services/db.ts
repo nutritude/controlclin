@@ -978,7 +978,9 @@ class DatabaseService {
 
             // If a professionalId is provided, we STRICTLY filter.
             if (professionalId && professionalId !== 'all') {
-                return p.professionalId === professionalId;
+                const isAssigned = p.professionalId === professionalId;
+                const hasAppointment = this.appointments.some(a => a.patientId === p.id && a.professionalId === professionalId);
+                return isAssigned || hasAppointment;
             }
 
             // CRITICAL SECURITY LOCK: 
