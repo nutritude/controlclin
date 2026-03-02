@@ -10,6 +10,7 @@ import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning';
 import { ExamManager } from '../components/ExamManager';
 import { MipanModule } from '../components/MipanModule';
+import { CidAutocomplete } from '../components/CidAutocomplete';
 import { PrescriptionModule } from '../components/PrescriptionModule';
 
 interface PatientDetailsProps {
@@ -1280,13 +1281,14 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 {isEditingTab ? (
                                     <>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Patologias (separar por vírgula)</label>
-                                            <input
-                                                type="text"
-                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                                defaultValue={(formData.clinicalHistory?.pathologies || []).join(', ')}
-                                                onChange={(e) => updateNestedData('clinicalHistory', 'pathologies', e.target.value.split(',').map(s => s.trim()))}
-                                            />
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Patologias (CID ou Nome)</label>
+                                            <div className="mt-1">
+                                                <CidAutocomplete
+                                                    selectedPathologies={formData.clinicalHistory?.pathologies || []}
+                                                    onChange={(pathologies) => updateNestedData('clinicalHistory', 'pathologies', pathologies)}
+                                                    isManagerMode={isManagerMode}
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Alergias</label>
