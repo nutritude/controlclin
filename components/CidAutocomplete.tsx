@@ -7,11 +7,18 @@ interface CidOption {
   label: string;
 }
 
+interface CidItem {
+  codigo: string;
+  nome: string;
+}
+
 interface CidAutocompleteProps {
   selectedPathologies: string[];
   onChange: (pathologies: string[]) => void;
   isManagerMode?: boolean;
 }
+
+let fullCidCache: CidItem[] | null = null;
 
 export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
   selectedPathologies = [],
@@ -33,25 +40,46 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
 
     const lowerInput = inputValue.toLowerCase();
 
-    // Busca instantânea no banco local mapeado
-    const filtered = COMMON_CIDS.filter(
+    try {
+      if (!fullCidCache) {
+        const response = await fetch('/cid10.json');
+        if (response.ok) {
+          fullCidCache = await response.json();
+        }
+      }
+
+      if (fullCidCache) {
+        const filtered = fullCidCache.filter(
+          item => item.codigo.toLowerCase().includes(lowerInput) ||
+            item.nome.toLowerCase().includes(lowerInput)
+        ).slice(0, 100); // Limit results for performance
+
+        return filtered.map(item => ({
+          value: `${item.codigo} - ${item.nome}`,
+          label: `${item.codigo} - ${item.nome}`,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load full CID dataset", err);
+    }
+
+    // Fallback search in COMMON_CIDS if full set is not available
+    const filteredCommon = COMMON_CIDS.filter(
       item => item.codigo.toLowerCase().includes(lowerInput) ||
         item.nome.toLowerCase().includes(lowerInput)
     );
 
-    // Converte para o formato esperado pelo React Select
-    return filtered.map(item => ({
+    return filteredCommon.map(item => ({
       value: `${item.codigo} - ${item.nome}`,
       label: `${item.codigo} - ${item.nome}`,
     }));
   };
 
   const handleChange = (newValue: any) => {
-    const options = newValue || []; // Handle clearance 
+    const options = newValue || [];
     setSelectedOptions(options);
     onChange(options.map((opt: CidOption) => opt.value));
   };
-
 
   const customStyles = {
     control: (base: any, state: any) => ({
@@ -68,6 +96,10 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
       ...base,
       backgroundColor: isManagerMode ? '#1f2937' : '#ffffff',
       zIndex: 9999
+    }),
+    menuList: (base: any) => ({
+      ...base,
+      maxHeight: '250px'
     }),
     option: (base: any, state: any) => ({
       ...base,
@@ -115,13 +147,13 @@ export const CidAutocomplete: React.FC<CidAutocompleteProps> = ({
         value={selectedOptions}
         onChange={handleChange}
         styles={customStyles}
-        placeholder="Digite CID ou nome da patologia..."
+        placeholder="Busque por CID ou Nome da Patologia (Ex: Cabeça, SOP, E11, Intestino)..."
         noOptionsMessage={({ inputValue }) =>
           inputValue.length < 2
             ? "Digite ao menos 2 letras do CID ou Nome."
-            : `Nenhum resultado para "${inputValue}". Tecle Enter para adicionar o termo.`
+            : `Nenhum resultado oficial para "${inputValue}". Tecle Enter para registrar como termo livre.`
         }
-        formatCreateLabel={(inputValue) => `Adicionar a patologia/CID "${inputValue}"`}
+        formatCreateLabel={(inputValue) => `Registrar patologia personalizada "${inputValue}"`}
       />
       <div className={`mt-1 text-[10px] italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-700 opacity-70'}`}>
         * Você pode buscar CIDs comuns ou digitar qualquer texto e teclar Enter para registrar livremente.
