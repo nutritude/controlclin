@@ -1818,47 +1818,28 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     {snapshotForPdf && (
                         <div className="flex flex-col h-full">
                             {/* CABEÇALHO PROFISSIONAL */}
-                            <div className="flex justify-between items-start border-b-4 border-emerald-600 pb-6 mb-8">
-                                <div className="flex-1 pr-4">
-                                    {snapshotForPdf.clinic.logoUrl ? (
-                                        <div className="flex items-center gap-4 mb-3">
-                                            <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-14 object-contain" />
-                                            <div>
-                                                <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">Unidade {snapshotForPdf.clinic.city || 'Brasil'}</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <h2 className="text-xl font-black text-emerald-900 uppercase tracking-tighter leading-none mb-3">{snapshotForPdf.clinic.name}</h2>
-                                    )}
-                                    <div className="text-[9px] text-slate-500 leading-tight">
-                                        <p>{snapshotForPdf.clinic.address}{snapshotForPdf.clinic.city ? `, ${snapshotForPdf.clinic.city}` : ''}</p>
-                                        <p>{snapshotForPdf.clinic.phone ? `Tel: ${snapshotForPdf.clinic.phone}` : ''}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <h1 className="text-2xl font-black text-emerald-800 tracking-tighter uppercase leading-none">Plano Alimentar</h1>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 mb-4">{snapshotForPdf.plan.title}</p>
+                            {/* CABEÇALHO LINEAR */}
+                            <div className="flex flex-col items-center text-center border-b-2 border-emerald-600 pb-6 mb-8">
+                                {snapshotForPdf.clinic.logoUrl && (
+                                    <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-20 mb-4 object-contain" />
+                                )}
 
-                                    <div className="pt-2 border-t border-slate-100">
-                                        <p className="text-xs font-black text-slate-800 uppercase leading-none">{snapshotForPdf.responsibleProfessional?.name || user.name}</p>
-                                        <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
-                                            {snapshotForPdf.responsibleProfessional?.specialty || 'Nutricionista'} • {snapshotForPdf.responsibleProfessional?.registrationNumber || ''}
-                                        </p>
-                                    </div>
-                                    <p className="text-[8px] text-slate-400 mt-2 italic">Gerado em {new Date().toLocaleDateString('pt-BR')}</p>
+                                <div className="mb-4">
+                                    <p className="text-base font-black text-slate-800 uppercase leading-none">{snapshotForPdf.responsibleProfessional?.name || user.name}</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-wider">
+                                        {snapshotForPdf.responsibleProfessional?.specialty || 'Nutricionista'} • {snapshotForPdf.responsibleProfessional?.registrationNumber || ''}
+                                    </p>
                                 </div>
-                            </div>
 
-                            {/* IDENTIFICAÇÃO DO PACIENTE */}
-                            <div className="mb-8">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Paciente:</span>
-                                    <p className="text-lg font-black text-slate-800 uppercase tracking-tight">{snapshotForPdf.patient.name}</p>
-                                </div>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                    <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Objetivo:</span>
-                                    <p className="text-sm font-bold text-slate-600 italic tracking-tight">{snapshotForPdf.patient.objective}</p>
+                                <div className="w-full pt-4 border-t border-slate-100 flex flex-col gap-2">
+                                    <div className="flex justify-center items-baseline gap-2">
+                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Paciente:</span>
+                                        <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{snapshotForPdf.patient.name}</p>
+                                    </div>
+                                    <div className="flex justify-center items-baseline gap-2">
+                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Objetivo:</span>
+                                        <p className="text-sm font-bold text-slate-600 italic leading-none">{snapshotForPdf.patient.objective}</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1882,6 +1863,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 </div>
                             </div>
 
+                            {/* TÍTULO DA SEÇÃO */}
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="flex-1 h-[2px] bg-slate-100"></div>
+                                <h2 className="text-sm font-black text-emerald-800 uppercase tracking-[0.2em]">Plano Alimentar</h2>
+                                <div className="flex-1 h-[2px] bg-slate-100"></div>
+                            </div>
+
                             {/* REFEIÇÕES */}
                             <div className="space-y-6 flex-1">
                                 {snapshotForPdf.plan.meals.map((m: any, i: number) => (
@@ -1903,9 +1891,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                                 {it.substitutes.map((sub: any, sIdx: number) => (
                                                                     <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-0.5">
                                                                         <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-normal">
+                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed">
                                                                             <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                            <span className="italic truncate">{sub.customName || sub.name}</span>
+                                                                            <span className="italic truncate overflow-visible">{sub.customName || sub.name}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -1951,7 +1939,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             )}
 
                             {/* LISTA DE COMPRAS */}
-                            <div className="mt-10 pt-8 border-t-2 border-slate-100 break-before-page">
+                            <div className="mt-10 pt-8 border-t-2 border-slate-100 break-inside-avoid">
                                 <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide mb-8 pb-3 border-b-2 border-slate-100 flex items-center gap-2">
                                     🛒 Lista de Compras Semanal
                                 </h2>
