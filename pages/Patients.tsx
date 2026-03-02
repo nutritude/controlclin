@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Clinic, Patient, Role } from '../types';
+import { User, Clinic, Patient, Role, Professional } from '../types';
 import { db } from '../services/db';
 
 interface PatientsProps {
@@ -15,6 +15,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
   const isProfessionalUser = !isManagerMode;
 
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal & Form State
@@ -27,13 +28,17 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
     gender: 'Feminino',
     cpf: '',
     address: '',
-    status: 'ATIVO'
+    status: 'ATIVO',
+    professionalId: user.professionalId || ''
   });
 
   useEffect(() => {
     fetchPatients();
+    if (isManagerMode) {
+      db.getProfessionals(clinic.id).then(setProfessionals);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clinic.id, isProfessionalUser, user.professionalId]); // Add professionalUser and professionalId as dependencies
+  }, [clinic.id, isProfessionalUser, user.professionalId, isManagerMode]); // Add professionalUser and professionalId as dependencies
 
   const fetchPatients = async () => {
     setLoading(true);
@@ -63,7 +68,8 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
       gender: 'Feminino',
       cpf: '',
       address: '',
-      status: 'ATIVO'
+      status: 'ATIVO',
+      professionalId: user.professionalId || (professionals.length > 0 ? professionals[0].id : '')
     });
     setIsModalOpen(true);
   };
@@ -214,12 +220,30 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                     <option value="INATIVO">Inativo</option>
                   </select>
                 </div>
-
                 <div className="md:col-span-2">
                   <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço Completo</label>
                   <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Rua, Número, Bairro, Cidade - UF"
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`} />
                 </div>
+
+                {isManagerMode && (
+                  <div className="md:col-span-2">
+                    <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Profissional Responsável *</label>
+                    <select
+                      required
+                      name="professionalId"
+                      value={formData.professionalId}
+                      onChange={handleChange}
+                      className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`}
+                    >
+                      <option value="">Selecione um profissional</option>
+                      {professionals.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-400">Como Gestor, você deve atribuir este paciente a um profissional para que ele apareça na agenda dele.</p>
+                  </div>
+                )}
               </div>
 
               <div className={`flex justify-end gap-3 mt-6 pt-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-slate-100'}`}>
@@ -232,7 +256,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 };
 

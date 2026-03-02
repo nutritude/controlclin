@@ -494,7 +494,16 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
             // --- DB OPERATIONS ---
             if (modalMode === 'create') {
                 if (formPatientMode === 'new') {
-                    const newP = await db.createPatient(user, { clinicId: clinic.id, name: formNewPatientName, email: '', phone: '', birthDate: '', gender: '', status: 'ATIVO' });
+                    const newP = await db.createPatient(user, {
+                        clinicId: clinic.id,
+                        name: formNewPatientName,
+                        email: '',
+                        phone: '',
+                        birthDate: '',
+                        gender: '',
+                        status: 'ATIVO',
+                        professionalId: formProfessionalId // CRITICAL: Link patient to the professional
+                    });
                     finalPatientId = newP.id;
                     finalPatientName = newP.name;
                 } else {
