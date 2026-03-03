@@ -1798,13 +1798,47 @@ class DatabaseService {
     }
 
     async getOperationalReportDataset(id: string, start: string, end: string, pid?: string) {
+        const startCurrent = new Date(start + 'T00:00:00');
+        const endCurrent = new Date(end + 'T23:59:59');
+        const durationMs = endCurrent.getTime() - startCurrent.getTime();
+
+        const startPrev = new Date(startCurrent.getTime() - durationMs - 1);
+        const endPrev = new Date(startCurrent.getTime() - 1);
+        const startPrevStr = startPrev.toISOString().split('T')[0];
+        const endPrevStr = endPrev.toISOString().split('T')[0];
+
         const appointments = await this.getReportData(id, start, end, pid);
+        const appointmentsPrev = await this.getReportData(id, startPrevStr, endPrevStr, pid);
+
         const patientsInBase = await this.getPatients(id, pid, (pid && pid !== 'all') ? 'PROFESSIONAL' : 'ADMIN');
+
+        // Grouping by professional
+        const profMetrics: Record<string, { current: number, prev: number }> = {};
+        appointments.forEach(a => {
+            const name = a.professionalName || 'Outro';
+            if (!profMetrics[name]) profMetrics[name] = { current: 0, prev: 0 };
+            profMetrics[name].current++;
+        });
+        appointmentsPrev.forEach(a => {
+            const name = a.professionalName || 'Outro';
+            if (!profMetrics[name]) profMetrics[name] = { current: 0, prev: 0 };
+            profMetrics[name].prev++;
+        });
+
+        const uniquePatientsCurrent = new Set(appointments.map(a => a.patientId)).size;
+        const uniquePatientsPrev = new Set(appointmentsPrev.map(a => a.patientId)).size;
+
         return {
             appointments,
             stats: {
                 activePatients: patientsInBase.length,
-                totalActivities: appointments.length
+                totalActivities: appointments.length,
+                uniquePatientsInPeriod: uniquePatientsCurrent,
+                professionalPerformance: Object.entries(profMetrics).map(([name, data]) => ({ name, ...data }))
+            },
+            comparative: {
+                totalActivities: appointmentsPrev.length,
+                uniquePatients: uniquePatientsPrev
             },
             patientsInBase
         };

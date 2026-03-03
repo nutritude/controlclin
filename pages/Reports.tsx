@@ -130,7 +130,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
     // Data State
     const [reportData, setReportData] = useState<any[]>([]);
-    const [operationalStats, setOperationalStats] = useState<{ activePatients: number, patientsInBase: Patient[] } | null>(null);
+    const [operationalStats, setOperationalStats] = useState<any | null>(null);
     const [financialData, setFinancialData] = useState<any[]>([]);
     const [financialDataset, setFinancialDataset] = useState<any | null>(null);
     const [attendanceData, setAttendanceData] = useState<any | null>(null);
@@ -185,7 +185,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             case 'OPERATIONAL':
                 const opDataset = await db.getOperationalReportDataset(clinic.id, startDate, endDate, professionalIdFilter);
                 setReportData(opDataset.appointments);
-                setOperationalStats({ activePatients: opDataset.stats.activePatients, patientsInBase: opDataset.patientsInBase });
+                setOperationalStats({ ...opDataset.stats, patientsInBase: opDataset.patientsInBase, comparative: opDataset.comparative });
                 break;
             case 'FINANCIAL':
                 if (isProfessional) { setLoading(false); return; }
@@ -444,6 +444,26 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         );
     };
 
+    const ProfessionalPerformanceChart = ({ data }: { data: any[] }) => {
+        if (!data || data.length === 0) return null;
+
+        return (
+            <div className="h-64 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold' }} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10 }} axisLine={false} />
+                        <RechartsTooltip formatter={(v: any) => [`${v} atendimentos`]} />
+                        <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                        <Bar dataKey="prev" name="Anterior" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="current" name="Atual" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
     // --- RENDER ---
     return (
         <div className="space-y-6">
@@ -514,119 +534,138 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         {/* --- OPERATIONAL REPORT --- */}
                         {reportType === 'OPERATIONAL' && reportData && (
                             <div className="space-y-6">
-                                {/* Operational Analytics Header */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {/* Operational Analytics Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Volume Assistencial</h4>
-                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{reportData.length}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Atendimentos no período</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Volume Assistencial</p>
+                                            <VariationIndicator value={((operationalStats.totalActivities / (operationalStats.comparative?.totalActivities || 1)) - 1) * 100} label="vs ant." />
+                                        </div>
+                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{operationalStats.totalActivities}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total de Agendamentos no Período</p>
                                     </div>
 
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Base de Pacientes</h4>
-                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{operationalStats?.activePatients || 0}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Ativos na Clínica</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Pacientes Atendidos</p>
+                                            <VariationIndicator value={((operationalStats.uniquePatientsInPeriod / (operationalStats.comparative?.uniquePatients || 1)) - 1) * 100} />
+                                        </div>
+                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-indigo-900'}`}>{operationalStats.uniquePatientsInPeriod}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Únicos Passando no Período</p>
                                     </div>
 
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Mix de Especialidades</h4>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Base Total Ativa</p>
+                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{operationalStats?.activePatients || 0}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Cadastrados na Clínica</p>
+                                    </div>
+
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-indigo-50 border-indigo-100 shadow-sm'} p-6 rounded-xl border`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xl">🔬</span>
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Audit IA</h4>
+                                        </div>
+                                        <button onClick={handleOperationalAI} disabled={analyzing} className={`w-full py-2 px-4 rounded-lg font-bold text-[10px] uppercase tracking-tighter transform active:scale-95 transition-all ${analyzing ? 'bg-gray-400' : 'bg-indigo-600 text-white shadow-lg'}`}>
+                                            {analyzing ? 'Analisando...' : 'Gerar Análise Estratégica'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Especialidades / Tipos</h4>
                                         <OperationalTypeChart data={reportData} isPdf={generatingPdf} />
                                     </div>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Performance por Profissional</h4>
+                                        <ProfessionalPerformanceChart data={operationalStats.professionalPerformance} />
+                                    </div>
+                                </div>
 
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Assessoria Estratégica AI</h4>
-                                        <button onClick={handleOperationalAI} disabled={analyzing} className={`w-full py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all ${analyzing ? (isManagerMode ? 'bg-gray-700' : 'bg-gray-100') : (isManagerMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20')}`}>
-                                            {analyzing ? 'Processando dados...' : <>🔬 Gerar Análise Operacional</>}
-                                        </button>
+                                {aiAnalysis && (
+                                    <div className="bg-slate-900 p-6 rounded-2xl border-l-[6px] border-indigo-500 shadow-2xl animate-in fade-in slide-in-from-bottom duration-500">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="p-2 bg-indigo-500/20 rounded-lg"><Icons.Brain className="text-indigo-400 w-5 h-5" /></span>
+                                            <h3 className="text-white font-black uppercase tracking-widest text-xs">Parecer do Auditor de Operações (AI)</h3>
+                                        </div>
+                                        <p className="text-sm leading-relaxed text-indigo-100 font-medium mb-6 italic">"{aiAnalysis.clinicalAnalysis}"</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {aiAnalysis.strategicSuggestions.map((s: string, i: number) => (
+                                                <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10 flex gap-3 items-start group hover:bg-white/10 transition-colors">
+                                                    <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 text-[10px] font-black text-white">{i + 1}</div>
+                                                    <p className="text-xs text-white/90 leading-snug">{s}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
-                                        {aiAnalysis && (
-                                            <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-inner overflow-hidden relative">
-                                                <div className="absolute top-0 right-0 p-2 opacity-10"><span className="text-4xl">🤖</span></div>
-                                                <p className="text-[11px] leading-relaxed text-indigo-300 font-medium mb-3 italic">"{aiAnalysis.clinicalAnalysis}"</p>
-                                                <div className="space-y-2">
-                                                    {(aiAnalysis as any).strategicSuggestions.map((s: string, i: number) => (
-                                                        <div key={i} className="flex gap-2 items-start text-[10px] text-white/80">
-                                                            <div className="w-4 h-4 rounded bg-indigo-500 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">{i + 1}</div>
-                                                            {s}
-                                                        </div>
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className={`text-xs font-black uppercase tracking-widest ${isManagerMode ? 'text-white' : 'text-slate-700'}`}>Listagem Detalhada de Agendamentos</h3>
+                                        {!isProfessional && (
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Colunas Visíveis:</span>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {availableColumns.map(col => (
+                                                        <button key={col.id} onClick={() => toggleColumn(col.id)} className={`px-2 py-0.5 text-[9px] rounded-full border transition-all ${selectedColumns.includes(col.id) ? (isManagerMode ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-emerald-600 text-white border-emerald-700 shadow-sm') : (isManagerMode ? 'bg-gray-700 text-gray-500 border-gray-600' : 'bg-white text-gray-400 border-gray-200 hover:border-emerald-300')}`}>
+                                                            {col.label}
+                                                        </button>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                </div>
-
-                                {/* Column Selector */}
-                                {!isProfessional && (
-                                    <div>
-                                        <label className={`block text-xs font-bold uppercase mb-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Colunas Visíveis</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {availableColumns.map(col => (
-                                                <button key={col.id} onClick={() => toggleColumn(col.id)} className={`px-2 py-1 text-xs rounded border ${selectedColumns.includes(col.id) ? (isManagerMode ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-emerald-600 text-white border-emerald-700') : (isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-white text-gray-600 border-gray-300')}`}>
-                                                    {col.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="overflow-x-auto">
-                                    <table className={`min-w-full divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                                        <thead className={`${isManagerMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                            <tr>
-                                                {selectedColumns.map(colId => (
-                                                    <th key={colId} className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                                        {availableColumns.find(c => c.id === colId)?.label}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
-                                            {reportData.map(row => (
-                                                <tr key={row.id}>
+                                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                        <table className={`min-w-full divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
+                                            <thead className={`${isManagerMode ? 'bg-gray-700 shadow-inner' : 'bg-slate-50'}`}>
+                                                <tr>
                                                     {selectedColumns.map(colId => (
-                                                        <td key={colId} className={`px-4 py-3 whitespace-nowrap text-sm ${isManagerMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                                            {colId === 'date' ? new Date(row[colId]).toLocaleString() : row[colId]}
-                                                        </td>
+                                                        <th key={colId} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-gray-300' : 'text-slate-500'}`}>
+                                                            {availableColumns.find(c => c.id === colId)?.label}
+                                                        </th>
                                                     ))}
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-100'}`}>
+                                                {reportData.map(row => (
+                                                    <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        {selectedColumns.map(colId => (
+                                                            <td key={colId} className={`px-4 py-3 whitespace-nowrap text-[11px] font-medium ${isManagerMode ? 'text-gray-200' : 'text-slate-600'}`}>
+                                                                {colId === 'date' ? new Date(row[colId]).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : row[colId]}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
-                                {operationalStats?.patientsInBase && (
-                                    <div className="mt-12 bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <span className="text-xl">👥</span>
-                                            <div>
-                                                <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Censo de Pacientes (Base Ativa)</h4>
-                                                <p className="text-[10px] text-slate-400 font-bold">Pacientes vinculados à sua gestão ou profissional atual</p>
-                                            </div>
+                                <div className="mt-12 bg-slate-50/50 p-8 rounded-3xl border border-dashed border-slate-300">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                                            <Icons.Users className="text-emerald-600 w-6 h-6" />
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {operationalStats.patientsInBase.map(p => (
-                                                <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between group hover:border-emerald-200 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isManagerMode ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                            {p.name.charAt(0)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{p.name}</p>
-                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">{p.email || 'Sem e-mail'}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">Status Ativo</div>
-                                                </div>
-                                            ))}
-                                            {operationalStats.patientsInBase.length === 0 && (
-                                                <div className="col-span-full py-10 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
-                                                    Nenhum paciente ativo encontrado na base.
-                                                </div>
-                                            )}
+                                        <div>
+                                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-700">Censo de Pacientes (Base Geral)</h4>
+                                            <p className="text-xs text-slate-400 font-medium">Todos os pacientes vinculados à clínica em sua base de dados</p>
                                         </div>
                                     </div>
-                                )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {operationalStats.patientsInBase.map((p: any) => (
+                                            <div key={p.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 group hover:border-emerald-300 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm text-white bg-gradient-to-br from-emerald-400 to-emerald-600`}>
+                                                    {p.name.charAt(0)}
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-xs font-black text-slate-800 truncate mb-0.5">{p.name}</p>
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase truncate">{p.email || 'Registro sem e-mail'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
 
