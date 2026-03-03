@@ -1265,7 +1265,7 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Paciente Desde</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.patientSince}</p></div>
                 <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Total de Consultas</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.totalAppointments}</p></div>
-                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Frequência</p><p className={`text-lg font-bold mt-1 ${metrics.attendanceRate < 80 ? (isManagerMode ? 'text-red-400' : 'text-red-600') : (isManagerMode ? 'text-green-400' : 'text-green-600')}`}>{metrics.attendanceRate}%</p></div>
+                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Frequência</p><p className={`text-lg font-bold mt-1 ${metrics.attendanceRate < 80 ? (isManagerMode ? 'text-red-400' : 'text-red-600') : (isManagerMode ? 'text-green-400' : 'text-green-600')}`}>{Number(metrics.attendanceRate).toFixed(1)}%</p></div>
                 <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Próxima Consulta</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p></div>
             </div>
 
@@ -1356,25 +1356,25 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                             <div className="p-2 bg-gray-50 rounded">
                                 <strong>Circunferências (cm):</strong>
                                 <ul className="mt-1 space-y-1">
-                                    <li>Cintura: {anthropometry.current.anthro.circumferencesCm.waist || '-'}</li>
-                                    <li>Abdômen: {anthropometry.current.anthro.circumferencesCm.abdomen || '-'}</li>
-                                    <li>Quadril: {anthropometry.current.anthro.circumferencesCm.hip || '-'}</li>
+                                    <li>Cintura: {anthropometry.current.anthro.circumferencesCm.waist ? Number(anthropometry.current.anthro.circumferencesCm.waist).toFixed(1) : '-'}</li>
+                                    <li>Abdômen: {anthropometry.current.anthro.circumferencesCm.abdomen ? Number(anthropometry.current.anthro.circumferencesCm.abdomen).toFixed(1) : '-'}</li>
+                                    <li>Quadril: {anthropometry.current.anthro.circumferencesCm.hip ? Number(anthropometry.current.anthro.circumferencesCm.hip).toFixed(1) : '-'}</li>
                                 </ul>
                             </div>
                             <div className="p-2 bg-gray-50 rounded">
                                 <strong>Dobras (mm):</strong>
                                 <ul className="mt-1 space-y-1">
-                                    <li>Tríceps: {anthropometry.current.anthro.skinfoldsMm.triceps || '-'}</li>
-                                    <li>Abdominal: {anthropometry.current.anthro.skinfoldsMm.abdominal || '-'}</li>
-                                    <li>Supra-ilíaca: {anthropometry.current.anthro.skinfoldsMm.suprailiac || '-'}</li>
+                                    <li>Tríceps: {anthropometry.current.anthro.skinfoldsMm.triceps ? Number(anthropometry.current.anthro.skinfoldsMm.triceps).toFixed(1) : '-'}</li>
+                                    <li>Abdominal: {anthropometry.current.anthro.skinfoldsMm.abdominal ? Number(anthropometry.current.anthro.skinfoldsMm.abdominal).toFixed(1) : '-'}</li>
+                                    <li>Supra-ilíaca: {anthropometry.current.anthro.skinfoldsMm.suprailiac ? Number(anthropometry.current.anthro.skinfoldsMm.suprailiac).toFixed(1) : '-'}</li>
                                 </ul>
                             </div>
                             <div className="p-2 bg-gray-50 rounded">
                                 <strong>Composição:</strong>
                                 <ul className="mt-1 space-y-1">
-                                    <li>% Gordura: {anthropometry.current.anthro.bodyComp.bodyFatPct || '-'}%</li>
-                                    <li>Massa Magra: {anthropometry.current.anthro.bodyComp.leanMassKg || '-'}kg</li>
-                                    <li>RCQ: {anthropometry.current.anthro.bodyComp.whr || '-'}</li>
+                                    <li>% Gordura: {anthropometry.current.anthro.bodyComp.bodyFatPct ? Number(anthropometry.current.anthro.bodyComp.bodyFatPct).toFixed(1) : '-'}%</li>
+                                    <li>Massa Magra: {anthropometry.current.anthro.bodyComp.leanMassKg ? Number(anthropometry.current.anthro.bodyComp.leanMassKg).toFixed(1) : '-'}kg</li>
+                                    <li>RCQ: {anthropometry.current.anthro.bodyComp.whr ? Number(anthropometry.current.anthro.bodyComp.whr).toFixed(1) : '-'}</li>
                                 </ul>
                             </div>
                         </div>
@@ -1412,10 +1412,10 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                             </div>
                             {nutritional.targets && (
                                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                                    <div className="p-2 bg-gray-100 rounded"><div>Kcal</div><strong>{nutritional.targets.kcal}</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Prot</div><strong>{nutritional.targets.protein}g</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Carb</div><strong>{nutritional.targets.carbs}g</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Gord</div><strong>{nutritional.targets.fat}g</strong></div>
+                                    <div className="p-2 bg-gray-100 rounded"><div>Kcal</div><strong>{Number(nutritional.targets.kcal).toFixed(0)}</strong></div>
+                                    <div className="p-2 bg-gray-100 rounded"><div>Prot</div><strong>{Number(nutritional.targets.protein).toFixed(1)}g</strong></div>
+                                    <div className="p-2 bg-gray-100 rounded"><div>Carb</div><strong>{Number(nutritional.targets.carbs).toFixed(1)}g</strong></div>
+                                    <div className="p-2 bg-gray-100 rounded"><div>Gord</div><strong>{Number(nutritional.targets.fat).toFixed(1)}g</strong></div>
                                 </div>
                             )}
                         </div>
@@ -1493,19 +1493,21 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             }
 
             {/* 7. Timeline History */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
-                <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Histórico de Eventos</h3>
-                <div className="space-y-4 border-l-2 border-gray-200 ml-2 pl-4">
-                    {timeline.length === 0 ? <p className="text-sm text-gray-500 italic">Sem histórico registrado.</p> : timeline.map(event => (
-                        <div key={event.id} className="relative">
-                            <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-white"></div>
-                            <p className={`text-xs font-bold ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>{new Date(event.createdAt).toLocaleDateString()} {new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            <p className={`text-sm font-medium ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{event.summary}</p>
-                            <p className={`text-[10px] ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>{event.type.replace('_', ' ')} • {event.createdBy ? event.createdBy.name : 'Sistema'}</p>
-                        </div>
-                    ))}
+            {!isPdf && (
+                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
+                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Histórico de Eventos</h3>
+                    <div className="space-y-4 border-l-2 border-gray-200 ml-2 pl-4">
+                        {timeline.length === 0 ? <p className="text-sm text-gray-500 italic">Sem histórico registrado.</p> : timeline.map(event => (
+                            <div key={event.id} className="relative">
+                                <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-white"></div>
+                                <p className={`text-xs font-bold ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>{new Date(event.createdAt).toLocaleDateString()} {new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p className={`text-sm font-medium ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{event.summary}</p>
+                                <p className={`text-[10px] ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>{event.type.replace('_', ' ')} • {event.createdBy ? event.createdBy.name : 'Sistema'}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </div >
     );
 };
