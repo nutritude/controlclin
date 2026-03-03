@@ -972,24 +972,24 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="bg-slate-900 rounded-xl p-6 shadow-xl border border-slate-800 relative overflow-hidden">
+                                    <div className="space-y-6 text-emerald-900">
+                                        <div className="bg-emerald-50 rounded-2xl p-6 shadow-xl border border-emerald-100 relative overflow-hidden">
                                             <div className="absolute top-0 right-0 p-4 opacity-10"><span className="text-5xl">📊</span></div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-4">Parecer Estratégico AI</h4>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 mb-4 px-2 border-l-2 border-emerald-500">Parecer Estratégico AI</h4>
 
-                                            <button onClick={handleAttendanceAI} disabled={analyzing} className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'}`}>
-                                                {analyzing ? 'Sincronizando...' : <>⚡ Gerar Insights</>}
+                                            <button onClick={handleAttendanceAI} disabled={analyzing} className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-200 text-slate-400' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-200/50 hover:bg-emerald-700'}`}>
+                                                {analyzing ? 'Analitica...' : <>⚡ Gerar Insights</>}
                                             </button>
 
                                             {attendanceAiAnalysis && (
-                                                <div className="mt-6 animate-in slide-in-from-bottom-2 duration-500">
-                                                    <div className="bg-white/5 border border-white/10 p-4 rounded-xl mb-4">
-                                                        <p className="text-[10px] font-black text-indigo-300 uppercase mb-2">Insight de Fluxo</p>
-                                                        <p className="text-xs text-white/90 leading-relaxed italic">"{attendanceAiAnalysis.insight}"</p>
+                                                <div className="mt-6 animate-in slide-in-from-bottom-2 duration-500 space-y-3">
+                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
+                                                        <p className="text-[10px] font-black text-emerald-600 uppercase mb-2">Insight de Fluxo</p>
+                                                        <p className="text-xs text-slate-700 leading-relaxed font-medium italic">"{attendanceAiAnalysis.insight}"</p>
                                                     </div>
-                                                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
-                                                        <p className="text-[10px] font-black text-emerald-400 uppercase mb-2">Ação Recomendada</p>
-                                                        <p className="text-xs text-emerald-50 leading-relaxed font-medium">{attendanceAiAnalysis.action}</p>
+                                                    <div className="bg-emerald-600 p-4 rounded-xl shadow-md border border-emerald-500">
+                                                        <p className="text-[10px] font-black text-emerald-100 uppercase mb-2">Ação Recomendada</p>
+                                                        <p className="text-xs text-emerald-50 leading-relaxed font-black">{attendanceAiAnalysis.action}</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -1528,45 +1528,45 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 Report Gen: {new Date(metadata.generatedAt).toLocaleString()} | Ver: {metadata.dataVersion} | Source: {metadata.source}
             </div>
 
-            {/* 1. Header & ID */}
-            <div className="flex items-center gap-6 p-8 rounded-3xl bg-slate-50 border border-slate-200 shadow-inner">
-                <div className="h-20 w-20 rounded-2xl flex items-center justify-center text-4xl font-black bg-white text-indigo-600 border-2 border-indigo-100 shadow-xl rotate-3">
+            {/* 1. Header & ID - SIZED DOWN */}
+            <div className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                <div className="h-14 w-14 rounded-xl flex items-center justify-center text-2xl font-black bg-slate-50 text-emerald-600 border border-slate-100 shadow-inner">
                     {patient.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">{patient.name}</h3>
-                    <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
-                    <div className="flex gap-6 mt-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5"><Icons.Mail className="w-3.5 h-3.5 text-indigo-400" /> {patient.email}</span>
-                        <span className="flex items-center gap-1.5"><Icons.Phone className="w-3.5 h-3.5 text-emerald-400" /> {patient.phone}</span>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{patient.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
+                    <div className="flex gap-4 mt-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100"><Icons.Mail className="w-3 h-3 text-indigo-400" /> {patient.email}</span>
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-md border border-emerald-100"><Icons.Phone className="w-3 h-3 text-emerald-500" /> {patient.phone}</span>
                     </div>
                 </div>
             </div>
 
-            {/* 2. KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Desde</p>
-                    <p className="text-xl font-black mt-1 text-slate-900">{metrics.patientSince}</p>
+            {/* 2. KPI Cards - SIZED DOWN AND OPTIMIZED */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white border-slate-200 p-4 rounded-xl border text-center shadow-sm">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Desde</p>
+                    <p className="text-base font-black text-slate-900">{metrics.patientSince}</p>
                 </div>
-                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Consultas</p>
-                    <p className="text-xl font-black mt-1 text-slate-900">{metrics.totalAppointments}</p>
+                <div className="bg-white border-slate-200 p-4 rounded-xl border text-center shadow-sm">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Consultas</p>
+                    <p className="text-base font-black text-slate-900">{metrics.totalAppointments}</p>
                 </div>
-                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 underline decoration-indigo-500 decoration-2 underline-offset-4 mb-2">Presença (Rate)</p>
-                    <p className={`text-xl font-black text-slate-900 ${metrics.attendanceRate < 80 ? 'text-rose-500' : 'text-emerald-500'}`}>{Number(metrics.attendanceRate).toFixed(1)}%</p>
+                <div className="bg-white border-slate-200 p-4 rounded-xl border text-center shadow-sm">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 underline decoration-emerald-500 decoration-2 underline-offset-4">Presença</p>
+                    <p className={`text-base font-black ${metrics.attendanceRate < 80 ? 'text-rose-500' : 'text-emerald-500'}`}>{Number(metrics.attendanceRate).toFixed(1)}%</p>
                 </div>
                 {isManagerMode && (
-                    <div className="bg-emerald-50 border-emerald-100 p-6 rounded-2xl border text-center shadow-inner">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">Receita Total</p>
-                        <p className="text-xl font-black text-emerald-900">R$ {financial.totalPaid.toFixed(0)}</p>
+                    <div className="bg-emerald-50 border-emerald-100 p-4 rounded-xl border text-center shadow-inner">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-1">Receita</p>
+                        <p className="text-base font-black text-emerald-900">R$ {financial.totalPaid.toFixed(0)}</p>
                     </div>
                 )}
                 {!isManagerMode && (
-                    <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Próxima</p>
-                        <p className="text-xl font-black text-indigo-600">{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p>
+                    <div className="bg-white border-slate-200 p-4 rounded-xl border text-center shadow-sm">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Próxima</p>
+                        <p className="text-base font-black text-indigo-600">{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p>
                     </div>
                 )}
             </div>
