@@ -328,44 +328,109 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     };
 
     const RevenueHistoryChart = ({ dataset, isPdf }: { dataset: any, isPdf: boolean }) => {
-        const { transactions } = dataset;
-        const grouped: Record<string, number> = {};
-        transactions.forEach((t: any) => { if (t.status === 'PAGO') { const d = new Date(t.date).toISOString().split('T')[0]; grouped[d] = (grouped[d] || 0) + t.amount; } });
+        const { transactions, metrics } = dataset;
+        const grouped: Record<string, { paid: number, gross: number }> = {};
 
-        const chartData = Object.entries(grouped).map(([date, amount]) => ({
+        transactions.forEach((t: any) => {
+            const dateObj = new Date(t.date);
+            // Use UTC parts to avoid timezone shifting
+            const d = `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}-${String(dateObj.getUTCDate()).padStart(2, '0')}`;
+
+            if (!grouped[d]) grouped[d] = { paid: 0, gross: 0 };
+            const amt = Number(t.amount) || 0;
+            const origAmt = Number(t.originalAmount || t.amount) || 0;
+
+            if (t.status === 'PAGO') {
+                grouped[d].paid += amt;
+            }
+            grouped[d].gross += origAmt;
+        });
+
+        const chartData = Object.entries(grouped).map(([date, vals]) => ({
             date,
-            displayDate: new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
-            amount
+            displayDate: new Date(date + 'T12:00:00').toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
+            paid: vals.paid,
+            gross: vals.gross
         })).sort((a, b) => a.date.localeCompare(b.date));
 
-        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados de faturamento efetivado no período.</div>;
+        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados de faturamento no período.</div>;
 
-        const avg = chartData.reduce((acc, d) => acc + d.amount, 0) / chartData.length;
-        const peak = chartData.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
+        const avg = chartData.reduce((acc, d) => acc + d.paid, 0) / chartData.length;
+        const peak = chartData.reduce((prev, current) => (prev.paid > current.paid) ? prev : current);
 
         const textColor = '#64748b';
-        const axisColor = '#e2e8f0';
+        const axisColor = '#f1f5f9';
+
+        const efficiency = metrics.gross > 0 ? (metrics.confirmedAmount / metrics.gross) * 100 : 0;
 
         return (
-            <div className="h-64 mt-4">
-                <div className="flex justify-between items-center px-4 mb-2">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-slate-500'}`}>Pico do Período: {peak.displayDate} (R$ {peak.amount.toFixed(1)})</span>
+            <div className="flex flex-col">
+                <div className="h-64 mt-4">
+                    <div className="flex justify-between items-center px-4 mb-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                                <span className="text-[10px] font-black uppercase text-slate-500">Bruto (Previsto)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span className="text-[10px] font-black uppercase text-slate-500">Líquido (Efetivado)</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Melhor Dia: {peak.displayDate} (R$ {peak.paid.toFixed(0)})</span>
+                        </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height="80%">
+                        <AreaChart data={chartData}>
+                            <defs>
+                                <linearGradient id="colorGross" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
+                            <XAxis dataKey="displayDate" tick={{ fontSize: 9, fill: textColor, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 9, fill: textColor, fontWeight: 'bold' }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$ ${v}`} />
+                            {!isPdf && <RechartsTooltip
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                                cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
+                            />}
+                            <Area type="monotone" dataKey="gross" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" fillOpacity={1} fill="url(#colorGross)" />
+                            <Area type="monotone" dataKey="paid" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorPaid)" isAnimationActive={!isPdf} />
+                            <ReferenceLine y={avg} stroke="#f43f5e" strokeDasharray="5 5" label={{ position: 'right', value: 'Média', fill: '#f43f5e', fontSize: 8, fontWeight: 'bold' }} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Insight Contextualizado */}
+                <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-3xl flex gap-5 items-start shadow-inner">
+                    <div className="p-3 bg-white rounded-2xl shadow-xl border border-slate-100">
+                        <Icons.TrendingUp className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Análise de Fluxo & Conversão</h5>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${efficiency > 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                Eficiência: {efficiency.toFixed(1)}%
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-700 font-bold leading-relaxed">
+                            O faturamento efetivado no período atingiu <strong className="text-emerald-600">R$ {metrics.confirmedAmount.toFixed(0)}</strong>.
+                            {metrics.pendingAmount > 0 ? (
+                                ` Nota-se uma pendência de R$ ${metrics.pendingAmount.toFixed(0)} (${((metrics.pendingAmount / metrics.gross) * 100).toFixed(1)}% do total), sugerindo potencial de conversão imediata.`
+                            ) : (
+                                " Excelência operacional detectada: 100% dos recebíveis projetados foram liquidados."
+                            )}
+                            {metrics.discountIndex > 5 && ` A taxa de descontos aplicada foi de ${metrics.discountIndex.toFixed(1)}%, impactando a margem operacional.`}
+                        </p>
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height="90%">
-                    <AreaChart data={chartData}>
-                        <defs><linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
-                        <XAxis dataKey="displayDate" tick={{ fontSize: 9, fill: textColor }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: textColor }} axisLine={false} tickLine={false} />
-                        {!isPdf && <RechartsTooltip />}
-                        <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={!isPdf} />
-                        <ReferenceLine y={avg} stroke="#f43f5e" strokeDasharray="5 5" label={{ position: 'right', value: 'Média', fill: '#f43f5e', fontSize: 8, fontWeight: 'bold' }} />
-                        <ReferenceDot x={peak.displayDate} y={peak.amount} r={5} fill="#10b981" stroke="#fff" strokeWidth={2} />
-                    </AreaChart>
-                </ResponsiveContainer>
             </div>
         );
     };
@@ -890,7 +955,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {attendanceData.churnRisk.map((p) => (
+                                                    {attendanceData?.churnRisk?.map((p: any) => (
                                                         <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                                             <td className="py-4 px-2 font-black text-slate-800 text-sm">{p.name}</td>
                                                             <td className="py-4 px-2 text-center">
@@ -899,7 +964,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                                             <td className="py-4 px-2 text-center text-[10px] font-bold text-slate-500 italic">{p.lastVisit}</td>
                                                         </tr>
                                                     ))}
-                                                    {attendanceData.churnRisk.length === 0 && (
+                                                    {(!attendanceData?.churnRisk || attendanceData.churnRisk.length === 0) && (
                                                         <tr><td colSpan={3} className="py-10 text-center text-gray-400 italic">Nenhum alerta de evasão para o período selecionado.</td></tr>
                                                     )}
                                                 </tbody>

@@ -143,6 +143,14 @@ const DEFAULT_PATIENTS: Patient[] = [
             circCalf: 33,
             waistToHipRatio: 0.97
         },
+        financial: {
+            mode: 'PARTICULAR',
+            transactions: [
+                { id: 't-ac-1', date: '2026-02-15T10:00:00Z', amount: 350, originalAmount: 350, method: 'PIX', status: 'PAGO', description: 'Avaliação Inicial Premium' },
+                { id: 't-ac-2', date: '2026-03-02T14:00:00Z', amount: 200, originalAmount: 250, method: 'CARTAO_CREDITO', status: 'PAGO', description: 'Sessão de Bioimpedância (D) ' },
+                { id: 't-ac-3', date: '2026-03-10T09:00:00Z', amount: 350, originalAmount: 350, method: 'PIX', status: 'PENDENTE', description: 'Acompanhamento Mensal' }
+            ]
+        },
         nutritionalPlans: [DEFAULT_PLAN_PT1],
         professionalId: 'system-demo'
     },
@@ -210,6 +218,14 @@ const DEFAULT_PATIENTS: Patient[] = [
                 skinfoldTriceps: 26, skinfoldBiceps: 7, skinfoldSubscapular: 24, skinfoldSuprailiac: 20, skinfoldProtocol: 'DurninWomersley'
             }
         ],
+        financial: {
+            mode: 'CONVENIO',
+            transactions: [
+                { id: 't-me-1', date: '2026-02-10T11:00:00Z', amount: 180, originalAmount: 180, method: 'GUIA_CONVENIO', status: 'PAGO', description: 'Consulta Autorizada Unimed' },
+                { id: 't-me-2', date: '2026-02-28T16:00:00Z', amount: 180, originalAmount: 180, method: 'GUIA_CONVENIO', status: 'PAGO', description: 'Retorno Autorizado Unimed' },
+                { id: 't-me-3', date: '2026-03-05T10:00:00Z', amount: 50, originalAmount: 50, method: 'DINHEIRO', status: 'PAGO', description: 'Co-participação Exame' }
+            ]
+        },
         professionalId: 'system-demo'
     }
 ];
@@ -1996,10 +2012,18 @@ class DatabaseService {
             })
             .sort((a, b) => b.count - a.count);
 
+        const churnRisk = patientsAtRisk.map(p => ({
+            id: p.id,
+            name: p.name,
+            missedCount: p.count,
+            lastVisit: 'Recentemente' // Simplified for mock
+        }));
+
         return {
             stats: { total, missed, noShowRate, variation, previousRate: noShowRatePrev },
             financial: { estimatedImpact, avgTicket },
-            risk: { patientsAtRisk }
+            risk: { patientsAtRisk },
+            churnRisk: churnRisk
         };
     }
 
