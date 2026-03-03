@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
-    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, ReferenceLine, ReferenceDot, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     Pie, PieChart
 } from 'recharts';
 import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapshot, MipanAssessment } from '../types';
@@ -332,15 +332,26 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         const grouped: Record<string, number> = {};
         transactions.forEach((t: any) => { if (t.status === 'PAGO') { const d = new Date(t.date).toISOString().split('T')[0]; grouped[d] = (grouped[d] || 0) + t.amount; } });
 
-        const chartData = Object.entries(grouped).map(([date, amount]) => ({ date, displayDate: new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }), amount })).sort((a, b) => a.date.localeCompare(b.date));
+        const chartData = Object.entries(grouped).map(([date, amount]) => ({
+            date,
+            displayDate: new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
+            amount
+        })).sort((a, b) => a.date.localeCompare(b.date));
 
         if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados de faturamento efetivado no período.</div>;
 
         const avg = chartData.reduce((acc, d) => acc + d.amount, 0) / chartData.length;
+        const peak = chartData.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
 
         return (
-            <div className="h-56 mt-4">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 mt-4">
+                <div className="flex justify-between items-center px-4 mb-2">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pico do Período: {peak.displayDate} (R$ {peak.amount.toFixed(1)})</span>
+                    </div>
+                </div>
+                <ResponsiveContainer width="100%" height="90%">
                     <AreaChart data={chartData}>
                         <defs><linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -349,7 +360,32 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         {!isPdf && <RechartsTooltip />}
                         <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={!isPdf} />
                         <ReferenceLine y={avg} stroke="#f43f5e" strokeDasharray="5 5" label={{ position: 'right', value: 'Média', fill: '#f43f5e', fontSize: 8, fontWeight: 'bold' }} />
+                        <ReferenceDot x={peak.displayDate} y={peak.amount} r={5} fill="#10b981" stroke="#fff" strokeWidth={2} />
                     </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
+    const ComparativePerformanceChart = ({ current, prev }: { current: any, prev: any }) => {
+        const data = [
+            { name: 'R. Bruta', Atual: current.gross, Anterior: prev.gross },
+            { name: 'R. Líquida', Atual: current.netReal, Anterior: prev.netReal },
+            { name: 'Pendente', Atual: current.pendingAmount, Anterior: prev.pendingAmount },
+        ];
+
+        return (
+            <div className="h-56 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ left: 10, right: 30 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} axisLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} />
+                        {!generatingPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v.toFixed(1)}`} />}
+                        <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+                        <Bar dataKey="Anterior" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={20} />
+                        <Bar dataKey="Atual" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={20} />
+                    </BarChart>
                 </ResponsiveContainer>
             </div>
         );
@@ -601,24 +637,33 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Receita Bruto</p>
-                                            <VariationIndicator value={((financialDataset.metrics.gross / financialDataset.comparative.gross) - 1) * 100} label="vs ant." />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Receita Bruta</p>
+                                            <VariationIndicator value={((financialDataset.metrics.gross / (financialDataset.comparative.gross || 1)) - 1) * 100} label="vs ant." />
                                         </div>
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.gross.toFixed(1)}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total faturado (Tabela)</p>
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-rose-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Descontos / Isenções</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Descontos / Isenções</p>
+                                            <VariationIndicator value={financialDataset.metrics.discountIndex - financialDataset.comparative.discountIndex} label="ppt" />
+                                        </div>
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{financialDataset.metrics.discountIndex.toFixed(1)}%</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Índice Médio de Desconto</p>
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Receita Real Líquida</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Receita Real Líquida</p>
+                                            <VariationIndicator value={((financialDataset.metrics.netReal / (financialDataset.comparative.netReal || 1)) - 1) * 100} />
+                                        </div>
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.netReal.toFixed(1)}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Após taxas de métodos e descontos</p>
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-orange-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Inadimplência (Pendentes)</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Inadimplência (Pendentes)</p>
+                                            <VariationIndicator value={((financialDataset.metrics.pendingAmount / (financialDataset.comparative.pendingAmount || 1)) - 1) * 100} />
+                                        </div>
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.pendingAmount.toFixed(1)}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Aguardando Recebimento</p>
                                     </div>
@@ -649,41 +694,47 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className={`lg:col-span-2 ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
                                         <div className="flex justify-between items-center mb-4">
-                                            <h4 className={`text-xs font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Faturamento</h4>
-                                            <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">Linha vermelha = Média do período</span>
+                                            <h4 className={`text-xs font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Faturamento e Picos</h4>
+                                            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Ponto Verde = Melhor dia do período</span>
                                         </div>
                                         <RevenueHistoryChart dataset={financialDataset} isPdf={generatingPdf} />
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Pagamento (Gross vs Net)</h4>
-                                        <MethodDistributionChart dataset={financialDataset} isPdf={generatingPdf} />
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Desempenho Comparativo</h4>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Período Atual vs Anterior</p>
+                                        <ComparativePerformanceChart current={financialDataset.metrics} prev={financialDataset.comparative} />
                                     </div>
                                 </div>
 
-                                {/* Aging of Receivables */}
-                                <div className={`${isManagerMode ? 'bg-gray-900 border-gray-800' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <span className="text-xl">⏳</span>
-                                        <div>
-                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Aging de Recebíveis (Inadimplência)</h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Distribuição de valores pendentes por tempo de atraso</p>
-                                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Pagamento (Gross vs Net)</h4>
+                                        <MethodDistributionChart dataset={financialDataset} isPdf={generatingPdf} />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                                            <p className="text-[10px] font-black text-amber-500 uppercase">Ate 15 dias</p>
-                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['0-15'].toFixed(1)}</p>
+                                    <div className={`${isManagerMode ? 'bg-gray-900 border-gray-800' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                        <div className="flex items-center gap-2 mb-6">
+                                            <span className="text-xl">⏳</span>
+                                            <div>
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Aging de Recebíveis (Inadimplência)</h4>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase">Valores pendentes por tempo de atraso</p>
+                                            </div>
                                         </div>
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                                            <p className="text-[10px] font-black text-orange-600 uppercase">16 a 30 dias</p>
-                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['16-30'].toFixed(1)}</p>
-                                        </div>
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                                            <p className="text-[10px] font-black text-rose-600 uppercase">Acima de 30 dias</p>
-                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['30+'].toFixed(1)}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                                                <p className="text-[9px] font-black text-amber-500 uppercase">0-15d</p>
+                                                <p className="text-sm font-black text-slate-900">R$ {financialDataset.aging['0-15'].toFixed(1)}</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                                                <p className="text-[9px] font-black text-orange-600 uppercase">16-30d</p>
+                                                <p className="text-sm font-black text-slate-900">R$ {financialDataset.aging['16-30'].toFixed(1)}</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                                                <p className="text-[9px] font-black text-rose-600 uppercase">30d+</p>
+                                                <p className="text-sm font-black text-slate-900">R$ {financialDataset.aging['30+'].toFixed(1)}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
