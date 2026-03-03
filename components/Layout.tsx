@@ -164,14 +164,12 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded animate-bounce">FIX ATIVO v2.1.5</div>
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className={`text-xs md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-white' : 'text-slate-800'} uppercase`}>
                   {isManagerMode ? 'Portal da Clínica (Gestão)' : 'Portal da Clínica'}
                 </h2>
-                <span className="text-[7px] md:text-[8px] bg-red-50 text-red-600 px-1 rounded border border-red-200 font-black animate-pulse shadow-sm">v3.1.5 NEW</span>
               </div>
               <div className="flex items-center gap-1.5 md:gap-2">
                 <div className={`w-1.5 h-1.5 rounded-full ${db.isRemoteEnabled ? 'bg-emerald-500 animate-pulse ring-2 ring-emerald-500/20' : 'bg-red-500'}`}></div>
