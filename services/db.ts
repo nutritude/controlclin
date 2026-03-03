@@ -119,6 +119,7 @@ const DEFAULT_PATIENTS: Patient[] = [
         clinicId: 'c1',
         name: 'Sr. Antônio Carlos',
         email: 'antonio@email.com',
+        password: '123',
         phone: '111',
         birthDate: '1953-05-20',
         gender: 'Masculino',
@@ -159,7 +160,7 @@ const DEFAULT_PATIENTS: Patient[] = [
         ],
         professionalId: 'system-demo'
     },
-    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'system-demo' },
+    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', password: '123', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'system-demo' },
     {
         id: 'pt_meire',
         clinicId: 'c1',
@@ -322,22 +323,30 @@ class DatabaseService {
                     (this as any)._localLastModified = Date.now();
                 }
 
+                this.ensureDemoIntegrity();
             } catch (err) {
                 console.error("DatabaseService: Shared database corrupted. Resetting to defaults.", err);
                 this.seedInitialData();
             }
-
-            // Ensure consistent patient data if missing, but NO forced history override
-            const stdMeire = DEFAULT_PATIENTS.find(p => p.id === 'pt_meire')!;
-            const meire = this.patients.find(p => p.id === 'pt_meire');
-            if (!meire) {
-                console.log("DatabaseService: Adding patient Meire Mendes...");
-                this.patients.push(stdMeire);
-                this.saveToStorage(false);
-            }
         } else {
             this.seedInitialData();
         }
+    }
+
+    private ensureDemoIntegrity() {
+        DEFAULT_PATIENTS.forEach(stdP => {
+            const pIdx = this.patients.findIndex(p => p.id === stdP.id);
+            if (pIdx === -1) {
+                this.patients.push(stdP);
+            } else {
+                // Force sync auth fields for demo patients to avoid old storage locking them out
+                if (!this.patients[pIdx].email || !this.patients[pIdx].password) {
+                    this.patients[pIdx].email = stdP.email;
+                    this.patients[pIdx].password = stdP.password;
+                }
+            }
+        });
+        this.saveToStorage(false);
     }
 
     private seedInitialData() {
@@ -437,7 +446,7 @@ class DatabaseService {
                 this.prescriptions = data.prescriptions || [];
 
                 (this as any)._localLastModified = remoteModified;
-                this.saveToStorage(false);
+                this.ensureDemoIntegrity();
                 console.log(`[DB] ✅ Firebase carregado: ${this.patients.length} pacientes.`);
             } else {
                 console.warn(`[DB] ⚠️ Nenhum dado encontrado para a clínica ${targetClinicId} no Firebase.`);
@@ -894,10 +903,13 @@ class DatabaseService {
             );
 
             if (patient) {
+                console.log(`[DB] Patient login successful: ${patient.name}`);
                 await this.loadFromRemote(clinic.id);
                 const freshPatient = this.patients.find(p => p.id === patient.id) || patient;
                 return { patient: freshPatient, clinic };
             }
+
+            console.warn(`[DB] Patient login failed: No match for ${email} in clinic ${slug}`);
             return null;
         } catch (error: any) {
             console.error("[DB] Erro no login do paciente:", error);
