@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 /* Force Vercel Rebuild - v2.1.0 - Responsive Fix Applied */
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { User, Clinic, Role } from './types';
+import { User, Clinic, Role, Patient } from './types';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -15,6 +15,8 @@ import { Professionals } from './pages/Professionals';
 import { ClinicalAlerts } from './pages/ClinicalAlerts'; // Keep named import
 import { SuccessCard } from './pages/SuccessCard';
 import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
+import { PatientLogin } from './pages/patient/PatientLogin';
+import { PatientDashboard } from './pages/patient/PatientDashboard';
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
 import { db as serviceDb } from './services/db';
@@ -48,6 +50,8 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
   const [loginMode, setLoginMode] = useState<'ADMIN' | 'PROFESSIONAL' | null>(null);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [patientClinic, setPatientClinic] = useState<Clinic | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Restore session and load catalog
@@ -88,6 +92,17 @@ function App() {
           console.error('[App] Stored session corrupted. Clearing...', err);
           handleLogout();
         }
+      }
+
+      // 1.5 Patient Session Restore
+      const storedPatientRaw = localStorage.getItem('app_patient');
+      const storedPatientClinicRaw = localStorage.getItem('app_patient_clinic');
+      if (storedPatientRaw && storedPatientClinicRaw) {
+        try {
+          setPatient(JSON.parse(storedPatientRaw));
+          setPatientClinic(JSON.parse(storedPatientClinicRaw));
+          console.log('[System] Patient Session Restored');
+        } catch (e) { }
       }
 
       // 2. Catalog load
@@ -138,6 +153,22 @@ function App() {
     localStorage.removeItem('app_user');
     localStorage.removeItem('app_clinic');
     localStorage.removeItem('app_login_mode');
+    localStorage.removeItem('app_patient'); // Also clear patient if professional logs out
+    localStorage.removeItem('app_patient_clinic');
+  };
+
+  const handlePatientLogin = (p: Patient, c: Clinic) => {
+    setPatient(p);
+    setPatientClinic(c);
+    localStorage.setItem('app_patient', JSON.stringify(p));
+    localStorage.setItem('app_patient_clinic', JSON.stringify(c));
+  };
+
+  const handlePatientLogout = () => {
+    setPatient(null);
+    setPatientClinic(null);
+    localStorage.removeItem('app_patient');
+    localStorage.removeItem('app_patient_clinic');
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
@@ -153,9 +184,10 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Admin/Professional Routes */}
         <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
 
-        <Route path="/" element={user && clinic ? <Layout user={user} clinic={clinic!} onLogout={handleLogout} isManagerMode={isManagerMode} /> : <Navigate to="/login" />} >
+        <Route path="/" element={user && clinic ? <Layout user={user} clinic={clinic!} onLogout={handleLogout} isManagerMode={isManagerMode} /> : <Navigate to={patient ? "/patient" : "/login"} />} >
           <Route index element={<Dashboard user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="agenda" element={<Agenda user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="patients" element={<Patients user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
@@ -164,9 +196,12 @@ function App() {
           <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          {/* New Debug Route - visible only for admins */}
           <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
         </Route>
+
+        {/* Patient Portal Routes */}
+        <Route path="/patient/login" element={!patient ? <PatientLogin onLogin={handlePatientLogin} /> : <Navigate to="/patient" />} />
+        <Route path="/patient" element={patient && patientClinic ? <PatientDashboard patient={patient} clinic={patientClinic} onLogout={handlePatientLogout} /> : <Navigate to="/patient/login" />} />
 
         {/* Public/Clean Routes outside Layout */}
         <Route path="/success-card/:id" element={<SuccessCard user={user || undefined} clinic={clinic || undefined} />} />

@@ -165,6 +165,7 @@ const DEFAULT_PATIENTS: Patient[] = [
         clinicId: 'c1',
         name: 'Meire Mendes Dos Reis Da Costa',
         email: 'meire@email.com',
+        password: '123',
         phone: '999',
         birthDate: '1970-01-01', // Data genérica, ajustar se necessário
         gender: 'Feminino',
@@ -815,33 +816,27 @@ class DatabaseService {
     async login(email: string, pass: string, slug: string): Promise<{ user: User, clinic: Clinic } | null> {
         try {
             // 1. Find clinic by slug
-            const clinic = this.clinics.find(c => c.slug === slug);
+            const clinic = this.clinics.find(c => c.slug.toLowerCase() === slug.toLowerCase());
             if (!clinic) throw new Error("Clínica não encontrada.");
 
             // 2. Real Auth with Firebase (with DEV bypass)
-            let userEmailToMatch = email;
+            let userEmailToMatch = email.trim().toLowerCase();
             if (pass !== "123") {
                 const userCredential = await signInWithEmailAndPassword(auth, email, pass);
                 const fbUser = userCredential.user;
-                if (fbUser.email) userEmailToMatch = fbUser.email;
+                if (fbUser.email) userEmailToMatch = fbUser.email.toLowerCase();
             } else {
                 console.warn("[DEV MODE] Bypassing Firebase auth because password is '123'");
             }
 
             // 3. Find our internal user record by email AND clinicId
-            // This prevents a user with same email in another clinic from logging into THIS clinic.
-            let user = this.users.find(u => u.email === userEmailToMatch && u.clinicId === clinic.id);
+            let user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id);
 
             if (!user) {
-                // --- FALLBACK PARA DESENVOLVIMENTO / RE-CADASTRO AUTOMÁTICO ---
-                // Se a senha for '123' ou for um usuário conhecido do usuário (Matheus/Debora), garantimos o perfil correto.
                 if (pass === "123" && email.includes("@")) {
                     const emailLower = email.toLowerCase();
                     const namePart = emailLower.split('@')[0];
-
-                    // Lógica específica para Matheus e Debora para garantir que não caiam em Admin se não forem
                     const isAdm = emailLower.includes('admin') || emailLower.includes('roberto');
-                    const isProfessional = emailLower.includes('matheus') || emailLower.includes('debora');
 
                     const fallbackUser: User = {
                         id: `u-${namePart}-${Date.now()}`,
@@ -849,15 +844,14 @@ class DatabaseService {
                         name: namePart.charAt(0).toUpperCase() + namePart.slice(1),
                         email: email,
                         role: isAdm ? Role.CLINIC_ADMIN : Role.PROFESSIONAL,
-                        professionalId: isAdm ? 'p1' : `p-${namePart}`, // Generate or link professionalId
+                        professionalId: isAdm ? 'p1' : `p-${namePart}`,
                         password: '123'
                     };
 
-                    // Se for profissional, garantimos que o registro do profissional também exista
                     if (fallbackUser.role === Role.PROFESSIONAL) {
                         const existingProf = this.professionals.find(p => p.email.toLowerCase() === emailLower);
                         if (!existingProf) {
-                            const newProf: Professional = {
+                            this.professionals.push({
                                 id: fallbackUser.professionalId!,
                                 clinicId: clinic.id,
                                 userId: fallbackUser.id,
@@ -868,11 +862,9 @@ class DatabaseService {
                                 registrationNumber: 'REG-TEMP',
                                 color: 'bg-emerald-200',
                                 isActive: true
-                            };
-                            this.professionals.push(newProf);
+                            });
                         }
                     }
-
                     this.users.push(fallbackUser);
                     user = fallbackUser;
                 } else {
@@ -881,20 +873,35 @@ class DatabaseService {
             }
 
             console.log(`[DB] Login validado para: ${user.name} na clínica ${clinic.name}`);
-
-            // 5. Load data for this specific clinic (Sets activeClinicId and syncs state)
             await this.loadFromRemote(clinic.id);
-
-            // Previne ponteiros antigos (stale reference) re-buscando o usuário na base que acabou de ser atualizada da nuvem.
-            user = this.users.find(u => u.email === userEmailToMatch && u.clinicId === clinic.id) || user;
-
-            // Não vamos mais sobrescrever o papel deles.
-            // Se o Firebase diz que a Debora é ADMIN, ela será ADMIN e terá acesso aos dois mundos.
-
+            user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id) || user;
             return { user, clinic };
         } catch (error: any) {
             console.error("[DB] Erro no login:", error);
-            throw error; // Re-throw to show in UI
+            throw error;
+        }
+    }
+
+    async loginPatient(email: string, pass: string, slug: string): Promise<{ patient: Patient, clinic: Clinic } | null> {
+        try {
+            const clinic = this.clinics.find(c => c.slug.toLowerCase() === slug.toLowerCase());
+            if (!clinic) throw new Error("Clínica não encontrada.");
+
+            const patient = this.patients.find(p =>
+                p.clinicId === clinic.id &&
+                p.email.toLowerCase() === email.toLowerCase() &&
+                p.password === pass
+            );
+
+            if (patient) {
+                await this.loadFromRemote(clinic.id);
+                const freshPatient = this.patients.find(p => p.id === patient.id) || patient;
+                return { patient: freshPatient, clinic };
+            }
+            return null;
+        } catch (error: any) {
+            console.error("[DB] Erro no login do paciente:", error);
+            throw error;
         }
     }
 

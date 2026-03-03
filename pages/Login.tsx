@@ -344,7 +344,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-4">
+          <a
+            href="/#/patient/login"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl text-white/50 hover:text-white hover:bg-white/10 transition-all text-sm font-bold active:scale-95"
+          >
+            <Icons.User size={18} />
+            Sou Paciente e quero entrar
+          </a>
+
           <p className="text-white/20 text-[10px] uppercase font-bold tracking-[0.2em]">
             Powered by ControlClin — Intelligent Health Architecture
           </p>

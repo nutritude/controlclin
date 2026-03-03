@@ -3,7 +3,8 @@ export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
   CLINIC_ADMIN = 'CLINIC_ADMIN',
   PROFESSIONAL = 'PROFESSIONAL',
-  SECRETARY = 'SECRETARY'
+  SECRETARY = 'SECRETARY',
+  PATIENT = 'PATIENT'
 }
 
 export enum AppointmentStatus {
@@ -571,6 +572,10 @@ export interface Patient {
   lastVisit?: string;
   professionalId?: string; // NOVO: Profissional responsável pelo paciente
   status: 'ATIVO' | 'INATIVO';
+
+  // Login do Paciente
+  username?: string;
+  password?: string;
 }
 
 export interface Appointment {
