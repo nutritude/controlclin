@@ -48,15 +48,6 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
         ${isManagerMode ? 'bg-gray-800' : 'bg-emerald-800'} 
         text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden max-w-[85vw]
       `}>
-        {/* MOBILE CLOSE BUTTON */}
-        <button
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="2xl:hidden absolute top-4 -right-12 p-2 bg-red-600 text-white rounded-full shadow-lg"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
         {/* BRANDING HEADER */}
         <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
           <div className="mb-2 w-full flex justify-center">
