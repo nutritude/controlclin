@@ -635,10 +635,16 @@ class DatabaseService {
         const patient = this.patients.find(p => p.id === patientId);
         if (!patient) return null;
 
-        // Security Lock: Professionals can only see their own patients
-        if (professionalIdFilter && patient.professionalId !== professionalIdFilter) {
-            console.warn(`[DB] Security Block: Professional ${professionalIdFilter} tried to access patient ${patientId}`);
-            return null;
+        // Security Lock: Professionals can only see their own patients OR patients with whom they have an appointment
+        const pidStr = professionalIdFilter ? String(professionalIdFilter).trim() : null;
+        if (pidStr && pidStr !== 'all' && pidStr !== 'undefined') {
+            const isAssigned = String(patient.professionalId).trim() === pidStr;
+            const hasAppointment = this.appointments.some(a => String(a.patientId).trim() === String(patientId).trim() && String(a.professionalId).trim() === pidStr);
+
+            if (!isAssigned && !hasAppointment) {
+                console.warn(`[DB] Security Block for ${patient.name}: ProfFilter=${pidStr}, PatientProf=${patient.professionalId}`);
+                return null;
+            }
         }
 
         // 1. Fetch Timeline (with Backfill)
@@ -674,9 +680,9 @@ class DatabaseService {
         const activeDiagnoses = patient.clinicalSummary?.activeDiagnoses || [];
         const medications = patient.clinicalHistory?.medications || [];
         const anamnesisSummary = [
-            patient.clinicalHistory?.pathologies.join(', '),
-            patient.clinicalHistory?.habits,
-            patient.clinicalHistory?.symptoms
+            Array.isArray(patient.clinicalHistory?.pathologies) ? patient.clinicalHistory?.pathologies.join(', ') : '',
+            patient.clinicalHistory?.habits || '',
+            patient.clinicalHistory?.symptoms || ''
         ].filter(Boolean).join('. ');
 
         // 5. Nutritional
@@ -716,11 +722,11 @@ class DatabaseService {
             exams,
             nutritional: {
                 activePlanTitle: activePlan?.title || null,
-                targets: activePlan ? {
-                    kcal: activePlan.caloricTarget,
-                    protein: activePlan.macroTargets.protein.g,
-                    carbs: activePlan.macroTargets.carbs.g,
-                    fat: activePlan.macroTargets.fat.g
+                targets: (activePlan && activePlan.macroTargets) ? {
+                    kcal: activePlan.caloricTarget || 0,
+                    protein: activePlan.macroTargets.protein?.g || 0,
+                    carbs: activePlan.macroTargets.carbs?.g || 0,
+                    fat: activePlan.macroTargets.fat?.g || 0
                 } : null
             },
             financial: {
@@ -1791,6 +1797,19 @@ class DatabaseService {
         });
     }
 
+    async getOperationalReportDataset(id: string, start: string, end: string, pid?: string) {
+        const appointments = await this.getReportData(id, start, end, pid);
+        const patientsInBase = await this.getPatients(id, pid, (pid && pid !== 'all') ? 'PROFESSIONAL' : 'ADMIN');
+        return {
+            appointments,
+            stats: {
+                activePatients: patientsInBase.length,
+                totalActivities: appointments.length
+            },
+            patientsInBase
+        };
+    }
+
     async getFinancialReportData(id: string, start: string, end: string) {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -1815,31 +1834,154 @@ class DatabaseService {
     }
 
     async getAttendanceReportData(id: string, start: string, end: string, pid?: string) {
-        const appts = await this.getReportData(id, start, end, pid);
-        const total = appts.length;
-        const missed = appts.filter(a => a.status === 'FALTOU' || a.status === 'CANCELADO').length;
-        const noShowRate = total > 0 ? (missed / total) * 100 : 0;
+        const startCurrent = new Date(start);
+        const endCurrent = new Date(end);
+        const durationMs = endCurrent.getTime() - startCurrent.getTime();
 
-        // Riscos
-        const patientsAtRisk = appts.filter(a => a.status === 'FALTOU').map(a => ({
-            id: a.patientId,
-            name: a.patientName,
-            reason: 'Faltou à consulta agendada'
-        }));
+        // Dynamic previous period for comparison
+        const startPrev = new Date(startCurrent.getTime() - durationMs - 1);
+        const endPrev = new Date(startCurrent.getTime() - 1);
+        const startPrevStr = startPrev.toISOString().split('T')[0];
+        const endPrevStr = endPrev.toISOString().split('T')[0];
+
+        const apptsCurrent = await this.getReportData(id, start, end, pid);
+        const apptsPrev = await this.getReportData(id, startPrevStr, endPrevStr, pid);
+
+        const total = apptsCurrent.length;
+        const missed = apptsCurrent.filter(a => a.status === AppointmentStatus.MISSED || a.status === AppointmentStatus.CANCELED).length;
+        const noShowRate = total > 0 ? Math.round((missed / total) * 100) : 0;
+
+        const totalPrev = apptsPrev.length;
+        const missedPrev = apptsPrev.filter(a => a.status === AppointmentStatus.MISSED || a.status === AppointmentStatus.CANCELED).length;
+        const noShowRatePrev = totalPrev > 0 ? Math.round((missedPrev / totalPrev) * 100) : 0;
+
+        const variation = noShowRatePrev === 0 ? 0 : Math.round(((noShowRate - noShowRatePrev) / noShowRatePrev) * 100);
+
+        // Calculate actual loss based on average ticket if available
+        let avgTicket = 150; // default
+        const clinic = this.clinics.find(c => c.id === id);
+        if (clinic) {
+            // Find paid appointments in current period to get real average
+            const paidCurrent = apptsCurrent.filter(a => a.financialStatus === 'PAGO' && a.price);
+            if (paidCurrent.length > 0) {
+                avgTicket = paidCurrent.reduce((acc, a) => acc + (a.price || 0), 0) / paidCurrent.length;
+            }
+        }
+
+        const estimatedImpact = missed * avgTicket;
+
+        // Identify "Chronic" no-showers
+        const patientNoShowCount: Record<string, number> = {};
+        apptsCurrent.filter(a => a.status === AppointmentStatus.MISSED).forEach(a => {
+            patientNoShowCount[a.patientId] = (patientNoShowCount[a.patientId] || 0) + 1;
+        });
+
+        const patientsAtRisk = Object.entries(patientNoShowCount)
+            .map(([pid, count]) => {
+                const p = this.patients.find(pt => pt.id === pid);
+                return {
+                    id: pid,
+                    name: p?.name || 'Desconhecido',
+                    count,
+                    reason: count > 1 ? `Reincidente: ${count} faltas no período.` : 'Faltou à consulta agendada.'
+                };
+            })
+            .sort((a, b) => b.count - a.count);
 
         return {
-            stats: { total, missed, noShowRate, variation: 0 },
-            financial: { estimatedImpact: missed * 150 }, // Valor médio hipotético
+            stats: { total, missed, noShowRate, variation, previousRate: noShowRatePrev },
+            financial: { estimatedImpact, avgTicket },
             risk: { patientsAtRisk }
         };
     }
 
-    // Replaced with the new implementation above
-    // async buildIndividualReportDataset(pid: string, profId?: string) { return ... }
+    async generateReportCrossAnalysis(id: string, data: any[]) {
+        if (!this.ai) return { clinicalAnalysis: "IA Offline. Analise os dados manualmente.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
+        try {
+            const stats = {
+                total: data.length,
+                types: data.reduce((acc, a) => ({ ...acc, [a.type]: (acc[a.type] || 0) + 1 }), {}),
+                insurances: data.reduce((acc, a) => ({ ...acc, [a.insurance]: (acc[a.insurance] || 0) + 1 }), {}),
+                avgAge: Math.round(data.reduce((acc, a) => acc + (typeof a.patientAge === 'number' ? a.patientAge : 0), 0) / data.length)
+            };
 
-    async generateReportCrossAnalysis(id: string, data: any) { return null; }
-    async generateFinancialAnalysis(id: string, data: any) { return null; }
-    async generateAttendanceInsights(data: any) { return null; }
+            const prompt = `Você é um consultor estratégico de gestão de clínicas de saúde (ControlClin). 
+            Analise os seguintes dados operacionais e forneça um resumo analítico para o GESTOR.
+            
+            Dados: ${JSON.stringify(stats)}
+            
+            Retorne um JSON no formato:
+            {
+                "clinicalAnalysis": "Uma frase analítica sobre o perfil da clínica e fluxo",
+                "strategicSuggestions": ["Sugestão 1 de negócio", "Sugestão 2 de marketing/operação"]
+            }`;
+
+            const result = await (this.ai as any).models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: prompt,
+                config: { responseMimeType: "application/json" }
+            });
+
+            return JSON.parse(result.text.trim());
+        } catch (e) {
+            console.error("AI Operational Error", e);
+            return null;
+        }
+    }
+
+    async generateFinancialAnalysis(id: string, data: any[]) {
+        if (!this.ai) return { financialHealth: "IA Offline.", revenueAction: "Revisar transações pendentes." };
+        try {
+            const revenue = data.filter(t => t.status === 'PAGO').reduce((a, b) => a + b.amount, 0);
+            const pending = data.filter(t => t.status === 'PENDENTE').reduce((a, b) => a + b.amount, 0);
+            const methods = data.reduce((acc, t) => ({ ...acc, [t.method]: (acc[t.method] || 0) + 1 }), {});
+
+            const prompt = `Análise Financeira para Clínica. 
+            Faturamento Pago: R$${revenue}
+            Pendentes: R$${pending}
+            Métodos: ${JSON.stringify(methods)}
+            
+            Retorne um JSON:
+            {
+                "financialHealth": "Resumo da saúde de caixa",
+                "revenueAction": "Ação imediata para melhorar faturamento"
+            }`;
+
+            const result = await (this.ai as any).models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: prompt,
+                config: { responseMimeType: "application/json" }
+            });
+            return JSON.parse(result.text.trim());
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async generateAttendanceInsights(data: any) {
+        if (!this.ai) return { insight: "IA Offline.", action: "Revisar lista de riscos." };
+        try {
+            const prompt = `Analise o Absenteísmo da Clínica:
+            Total: ${data.stats.total}
+            Taxas de Falta: ${data.stats.noShowRate}% (Variação: ${data.stats.variation}%)
+            Impacto Financeiro: R$${data.financial.estimatedImpact}
+            
+            Retorne um JSON:
+            {
+                "insight": "Causa provável do absenteísmo baseada nos números",
+                "action": "Estratégia prática para reduzir cancelamentos"
+            }`;
+
+            const result = await (this.ai as any).models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: prompt,
+                config: { responseMimeType: "application/json" }
+            });
+            return JSON.parse(result.text.trim());
+        } catch (e) {
+            return null;
+        }
+    }
 
     // New AI hook for report summary
     async generateComprehensivePatientAISummary(data: IndividualReportSnapshot): Promise<string> {

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
-    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    Pie, PieChart
 } from 'recharts';
 import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapshot, MipanAssessment } from '../types';
 import { db } from '../services/db';
@@ -129,6 +130,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
     // Data State
     const [reportData, setReportData] = useState<any[]>([]);
+    const [operationalStats, setOperationalStats] = useState<{ activePatients: number, patientsInBase: Patient[] } | null>(null);
     const [financialData, setFinancialData] = useState<any[]>([]);
     const [attendanceData, setAttendanceData] = useState<any | null>(null);
     const [individualReportData, setIndividualReportData] = useState<IndividualReportSnapshot | null>(null);
@@ -180,8 +182,9 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
         switch (reportType) {
             case 'OPERATIONAL':
-                const opData = await db.getReportData(clinic.id, startDate, endDate, professionalIdFilter);
-                setReportData(opData);
+                const opDataset = await db.getOperationalReportDataset(clinic.id, startDate, endDate, professionalIdFilter);
+                setReportData(opDataset.appointments);
+                setOperationalStats({ activePatients: opDataset.stats.activePatients, patientsInBase: opDataset.patientsInBase });
                 break;
             case 'FINANCIAL':
                 if (isProfessional) { setLoading(false); return; }
@@ -198,8 +201,12 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                     setLoading(false);
                     return;
                 }
-                // Use the new comprehensive data fetching function
                 const indData = await db.buildIndividualReportDataset(selectedPatientId, professionalIdFilter);
+                if (!indData) {
+                    alert("Não foi possível carregar os dados deste paciente. Verifique se ele está vinculado ao seu perfil ou se possui agendamentos registrados.");
+                    setLoading(false);
+                    return;
+                }
                 setIndividualReportData(indData);
                 break;
         }
@@ -255,7 +262,13 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             // Requirement: "Fresh data mandatory before rendering PDF"
             if (reportType === 'INDIVIDUAL' && selectedPatientId) {
                 const professionalIdFilter = isProfessional ? user.professionalId : undefined;
-                const freshData = await db.buildIndividualReportDataset(selectedPatientId, professionalIdFilter);
+                let freshData = await db.buildIndividualReportDataset(selectedPatientId, professionalIdFilter);
+
+                // Fallback to currently displayed data if fresh fetch fails but we already successfully generated it on screen
+                if ((!freshData || !freshData.patient) && individualReportData && individualReportData.patient.id === selectedPatientId) {
+                    console.warn("[Reports] Fresh re-fetch failed, falling back to cached individual data for PDF.");
+                    freshData = individualReportData;
+                }
 
                 if (!freshData || !freshData.patient) {
                     throw new Error("Dados desatualizados ou incompletos. Recarregue a página e tente novamente.");
@@ -299,88 +312,75 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     };
 
     // --- CHART COMPONENTS & HELPERS ---
-    const VariationIndicator = ({ value }: { value: number }) => {
-        if (value === 0 || !isFinite(value)) return <span className="text-xs text-gray-500">(vs ant. <strong>=</strong>)</span>;
+    const VariationIndicator = ({ value, label = "vs ant." }: { value: number, label?: string }) => {
+        if (value === 0 || !isFinite(value)) return <span className="text-[10px] text-gray-400 font-medium">({label} <strong>=</strong>)</span>;
         const isBad = value > 0; // More no-shows is bad
-        const color = isBad ? 'text-red-500' : 'text-green-500';
+        const color = isBad ? 'text-rose-500' : 'text-emerald-500';
         const arrow = isBad ? '↑' : '↓';
-        return <span className={`text-xs font-bold ${color}`}>{arrow} {Math.abs(value)}% vs ant.</span>;
+        const bgColor = isBad ? 'bg-rose-50' : 'bg-emerald-50';
+        return (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${color} ${bgColor}`}>
+                {arrow} {Math.abs(value).toFixed(1)}% {label}
+            </span>
+        );
     };
 
-    const SimpleBarChart = ({ data }: { data: any[] }) => {
+    const RevenueHistoryChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
         const grouped: Record<string, number> = {};
-        data.forEach(t => {
-            if (t.status === 'PAGO') {
-                const d = new Date(t.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' });
-                grouped[d] = (grouped[d] || 0) + t.amount;
-            }
-        });
-
-        const keys = Object.keys(grouped).sort();
-        const values = keys.map(k => grouped[k]);
-        const maxVal = Math.max(...values, 100);
-
-        if (keys.length === 0) return <p className={`text-xs text-center py-10 ${isManagerMode ? 'text-gray-400' : 'text-gray-400'}`}>Sem dados.</p>;
-
+        data.forEach(t => { if (t.status === 'PAGO') { const d = new Date(t.date).toISOString().split('T')[0]; grouped[d] = (grouped[d] || 0) + t.amount; } });
+        const chartData = Object.entries(grouped).map(([date, amount]) => ({ date, displayDate: new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }), amount })).sort((a, b) => a.date.localeCompare(b.date));
+        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados.</div>;
         return (
-            <div className="flex items-end justify-between h-32 gap-1 mt-2 px-2">
-                {keys.map((date, idx) => {
-                    const val = grouped[date];
-                    const heightPerc = (val / maxVal) * 100;
-                    return (
-                        <div key={idx} className="flex flex-col items-center flex-1 group">
-                            <div className={`text-[9px] mb-0.5 opacity-0 group-hover:opacity-100 font-bold ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>R${val}</div>
-                            <div
-                                className={`w-full rounded-t hover:bg-blue-600 transition-colors ${isManagerMode ? 'bg-indigo-500' : 'bg-blue-500'}`}
-                                style={{ height: `${Math.max(heightPerc, 5)}%` }}
-                            ></div>
-                            <div className={`text-[8px] mt-1 truncate w-full text-center ${isManagerMode ? 'text-gray-400' : 'text-gray-400'}`}>{date}</div>
-                        </div>
-                    )
-                })}
+            <div className="h-48 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                        <defs><linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="displayDate" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        {!isPdf && <RechartsTooltip />}
+                        <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={!isPdf} />
+                    </AreaChart>
+                </ResponsiveContainer>
             </div>
         );
     };
 
-    const MethodDistributionChart = ({ data }: { data: any[] }) => {
+    const MethodDistributionChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
         const grouped: Record<string, number> = {};
-        let total = 0;
-        data.forEach(t => {
-            if (t.status === 'PAGO') {
-                grouped[t.method] = (grouped[t.method] || 0) + t.amount;
-                total += t.amount;
-            }
-        });
-
-        const sorted = Object.entries(grouped).sort(([, a], [, b]) => b - a);
-
-        if (sorted.length === 0) return <p className={`text-xs text-center py-10 ${isManagerMode ? 'text-gray-400' : 'text-gray-400'}`}>Sem dados.</p>;
-
-        const colors: Record<string, string> = {
-            'PIX': 'bg-green-500',
-            'CARTAO_CREDITO': 'bg-blue-500',
-            'DINHEIRO': 'bg-yellow-500',
-            'GUIA_CONVENIO': 'bg-purple-500',
-            'CARTAO_DEBITO': 'bg-sky-500',
-            'BOLETO': 'bg-orange-500',
-        };
-
+        data.forEach(t => { if (t.status === 'PAGO') { const label = t.method?.replace('_', ' ') || 'Outro'; grouped[label] = (grouped[label] || 0) + t.amount; } });
+        const chartData = Object.entries(grouped).map(([name, value]) => ({ name, value }));
+        const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
+        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados.</div>;
         return (
-            <div className="space-y-2 mt-2">
-                {sorted.map(([method, amount]) => {
-                    const perc = total > 0 ? (amount / total) * 100 : 0;
-                    return (
-                        <div key={method}>
-                            <div className="flex justify-between text-xs mb-1">
-                                <span className={`font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-600'}`}>{method}</span>
-                                <span className={`${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>R${amount.toFixed(2)}</span>
-                            </div>
-                            <div className={`w-full rounded-full h-2 ${isManagerMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                <div className={`h-2 rounded-full ${colors[method] || 'bg-gray-500'}`} style={{ width: `${perc}%` }}></div>
-                            </div>
-                        </div>
-                    )
-                })}
+            <div className="h-48 mt-4 flex items-center">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" isAnimationActive={!isPdf}>
+                            {chartData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                        </Pie>
+                        {!isPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v}`} />}
+                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
+    const OperationalTypeChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
+        const grouped: Record<string, number> = {};
+        data.forEach(t => { const label = t.type || 'Consulta'; grouped[label] = (grouped[label] || 0) + 1; });
+        const chartData = Object.entries(grouped).map(([name, value]) => ({ name, value }));
+        return (
+            <div className="h-48 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 'bold' }} width={80} axisLine={false} tickLine={false} />
+                        {!isPdf && <RechartsTooltip cursor={{ fill: '#f8fafc' }} />}
+                        <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={15} isAnimationActive={!isPdf} />
+                    </BarChart>
+                </ResponsiveContainer>
             </div>
         );
     };
@@ -453,33 +453,49 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
                     <div ref={reportContentRef} className="print-area">
                         {/* --- OPERATIONAL REPORT --- */}
-                        {reportType === 'OPERATIONAL' && (
+                        {reportType === 'OPERATIONAL' && reportData && (
                             <div className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'} p-4 rounded-lg border`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Total de Agendamentos no Período</p>
-                                        <p className={`text-3xl font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{reportData.length}</p>
+                                {/* Operational Analytics Header */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Volume Assistencial</h4>
+                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{reportData.length}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Atendimentos no período</p>
                                     </div>
-                                    {!isProfessional && (
-                                        <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg flex items-center justify-between`}>
-                                            <p className={`text-sm font-bold ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Análise com IA (Gemini)</p>
-                                            <button onClick={handleOperationalAI} disabled={analyzing} className={`text-xs px-3 py-1.5 rounded-lg shadow-sm font-bold flex items-center gap-1 ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700')}`}>
-                                                {analyzing ? 'Analisando...' : <>✨ Gerar Insights</>}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
 
-                                {aiAnalysis && (
-                                    <div className="bg-white text-black p-5 rounded-xl border border-gray-300">
-                                        <h4 className="font-bold mb-2 text-gray-900">Análise Clínica (IA)</h4>
-                                        <p className="text-sm mb-4 italic text-gray-800">"{aiAnalysis.clinicalAnalysis}"</p>
-                                        <h4 className="font-bold mb-2 text-gray-900">Sugestões Estratégicas (IA)</h4>
-                                        <ul className="text-sm list-disc list-inside space-y-1 text-gray-800">
-                                            {aiAnalysis.strategicSuggestions.map((s, i) => <li key={i}>{s}</li>)}
-                                        </ul>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Base de Pacientes</h4>
+                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{operationalStats?.activePatients || 0}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Ativos na Clínica</p>
                                     </div>
-                                )}
+
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Mix de Especialidades</h4>
+                                        <OperationalTypeChart data={reportData} isPdf={generatingPdf} />
+                                    </div>
+
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Assessoria Estratégica AI</h4>
+                                        <button onClick={handleOperationalAI} disabled={analyzing} className={`w-full py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all ${analyzing ? (isManagerMode ? 'bg-gray-700' : 'bg-gray-100') : (isManagerMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20')}`}>
+                                            {analyzing ? 'Processando dados...' : <>🔬 Gerar Análise Operacional</>}
+                                        </button>
+
+                                        {aiAnalysis && (
+                                            <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-inner overflow-hidden relative">
+                                                <div className="absolute top-0 right-0 p-2 opacity-10"><span className="text-4xl">🤖</span></div>
+                                                <p className="text-[11px] leading-relaxed text-indigo-300 font-medium mb-3 italic">"{aiAnalysis.clinicalAnalysis}"</p>
+                                                <div className="space-y-2">
+                                                    {(aiAnalysis as any).strategicSuggestions.map((s: string, i: number) => (
+                                                        <div key={i} className="flex gap-2 items-start text-[10px] text-white/80">
+                                                            <div className="w-4 h-4 rounded bg-indigo-500 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">{i + 1}</div>
+                                                            {s}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
                                 {/* Column Selector */}
                                 {!isProfessional && (
@@ -519,45 +535,97 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {operationalStats?.patientsInBase && (
+                                    <div className="mt-12 bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-xl">👥</span>
+                                            <div>
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Censo de Pacientes (Base Ativa)</h4>
+                                                <p className="text-[10px] text-slate-400 font-bold">Pacientes vinculados à sua gestão ou profissional atual</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {operationalStats.patientsInBase.map(p => (
+                                                <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between group hover:border-emerald-200 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isManagerMode ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                            {p.name.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{p.name}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">{p.email || 'Sem e-mail'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">Status Ativo</div>
+                                                </div>
+                                            ))}
+                                            {operationalStats.patientsInBase.length === 0 && (
+                                                <div className="col-span-full py-10 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
+                                                    Nenhum paciente ativo encontrado na base.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* --- FINANCIAL REPORT --- */}
-                        {reportType === 'FINANCIAL' && !isProfessional && (
+                        {reportType === 'FINANCIAL' && !isProfessional && financialData && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'} p-4 rounded-lg border`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Receita Bruta</p><p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>R$ {financialData.reduce((a, b) => a + (b.originalAmount || b.amount), 0).toFixed(2)}</p></div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'} p-4 rounded-lg border`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Descontos</p><p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-orange-400' : 'text-orange-600'}`}>- R$ {financialData.reduce((a, b) => a + ((b.originalAmount || b.amount) * (b.discountPercent || 0) / 100), 0).toFixed(2)}</p></div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'} p-4 rounded-lg border`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Receita Líquida</p><p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-green-400' : 'text-green-600'}`}>R$ {financialData.reduce((a, b) => a + b.amount, 0).toFixed(2)}</p></div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-100'} p-4 rounded-lg border`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pendentes</p><p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-red-400' : 'text-red-600'}`}>R$ {financialData.filter(d => d.status === 'PENDENTE').reduce((a, b) => a + b.amount, 0).toFixed(2)}</p></div>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Faturamento Bruto</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.reduce((acc, t) => acc + (t.originalAmount || t.amount), 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Descontos / Custos</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.reduce((acc, t) => acc + ((t.originalAmount || t.amount) - t.amount), 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Líquido Confirmado</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Inadimplência / Pendente</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.filter(t => t.status === 'PENDENTE').reduce((acc, t) => acc + t.amount, 0).toLocaleString()}</p>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="md:col-span-2 space-y-4">
-                                        <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg flex items-center justify-between`}>
-                                            <p className={`text-sm font-bold ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Análise Financeira (IA)</p>
-                                            <button onClick={handleFinancialAI} disabled={analyzing} className={`text-xs px-3 py-1.5 rounded-lg shadow-sm font-bold flex items-center gap-1 ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700')}`}>
-                                                {analyzing ? 'Analisando...' : <>💡 Gerar Análise</>}
-                                            </button>
-                                        </div>
-                                        {finAnalysis && (
-                                            <div className="bg-white text-black p-5 rounded-xl border border-gray-300">
-                                                <h4 className="font-bold mb-2 text-gray-900">Saúde Financeira (IA)</h4>
-                                                <p className="text-sm mb-4 italic text-gray-800">"{finAnalysis.financialHealth}"</p>
-                                                <h4 className="font-bold mb-2 text-gray-900">Ação Sugerida (IA)</h4>
-                                                <p className="text-sm font-medium text-gray-800">{finAnalysis.revenueAction}</p>
-                                            </div>
-                                        )}
-                                        <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
-                                            <h4 className={`text-sm font-bold mb-2 ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Receita por Dia</h4>
-                                            <SimpleBarChart data={financialData} />
-                                        </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Receita Diária</h4>
+                                        <RevenueHistoryChart data={financialData} isPdf={generatingPdf} />
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
-                                        <h4 className={`text-sm font-bold mb-2 ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Distribuição por Método</h4>
-                                        <MethodDistributionChart data={financialData} />
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Distribuição por Meio de Pagamento</h4>
+                                        <MethodDistributionChart data={financialData} isPdf={generatingPdf} />
                                     </div>
                                 </div>
+
+                                <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-xl flex items-center justify-between border border-dashed border-gray-400`}>
+                                    <div>
+                                        <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Auditoria de Saúde Financeira (IA)</p>
+                                        <p className="text-[10px] text-gray-500">Avaliação baseada no fluxo de faturamento e métodos de pagamento</p>
+                                    </div>
+                                    <button onClick={handleFinancialAI} disabled={analyzing} className={`text-xs px-6 py-2 rounded-xl font-bold ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white shadow-lg' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20')}`}>
+                                        {analyzing ? 'Analisando...' : 'Consultar IA'}
+                                    </button>
+                                </div>
+
+                                {finAnalysis && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-white border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Diagnóstico Financeiro</p>
+                                            <p className="text-sm font-medium text-gray-800">{finAnalysis.financialHealth}</p>
+                                        </div>
+                                        <div className="bg-slate-900 p-4 rounded-xl shadow-sm text-white">
+                                            <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Ação Comercial Sugerida</p>
+                                            <p className="text-sm italic opacity-90">{finAnalysis.revenueAction}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -565,42 +633,92 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         {reportType === 'ATTENDANCE' && attendanceData && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
+                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
                                         <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Amostra (N)</p>
                                         <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{attendanceData.stats.total}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Consultas Avaliadas</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Taxa de Faltas</p>
-                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-red-400' : 'text-red-600'}`}>{attendanceData.stats.noShowRate}%</p>
-                                        <VariationIndicator value={attendanceData.stats.variation} />
+                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
+                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Abstenção</p>
+                                        <div className="flex items-baseline gap-2">
+                                            <p className={`text-2xl font-bold mt-1 ${attendanceData.stats.noShowRate > 20 ? 'text-rose-500' : 'text-emerald-500'}`}>{attendanceData.stats.noShowRate}%</p>
+                                            <VariationIndicator value={attendanceData.stats.variation} />
+                                        </div>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
+                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
                                         <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Impacto Estimado</p>
                                         <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-orange-400' : 'text-orange-600'}`}>R$ {attendanceData.financial.estimatedImpact.toFixed(2)}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Perda Potencial</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Pacientes em Risco</p>
-                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-yellow-400' : 'text-yellow-600'}`}>{attendanceData.risk.patientsAtRisk.length}</p>
+                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
+                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Retenção Crítica</p>
+                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-indigo-400' : 'text-indigo-600'}`}>{attendanceData.risk.patientsAtRisk.length}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes no Limite</p>
                                     </div>
                                 </div>
 
-                                <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg flex items-center justify-between`}>
-                                    <p className={`text-sm font-bold ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Análise de Absenteísmo (IA)</p>
-                                    <button onClick={handleAttendanceAI} disabled={analyzing} className={`text-xs px-3 py-1.5 rounded-lg shadow-sm font-bold flex items-center gap-1 ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700')}`}>
-                                        {analyzing ? 'Analisando...' : <>💡 Sumarizar</>}
-                                    </button>
-                                </div>
-                                {attendanceAiAnalysis && (
-                                    <div className="bg-white text-black p-5 rounded-xl border border-gray-300">
-                                        <h4 className="font-bold mb-2 text-gray-900">Insight Operacional (IA)</h4>
-                                        <p className="text-sm mb-4 italic text-gray-800">"{attendanceAiAnalysis.insight}"</p>
-                                        <h4 className="font-bold mb-2 text-gray-900">Ação Sugerida (IA)</h4>
-                                        <p className="text-sm font-medium text-gray-800">{attendanceAiAnalysis.action}</p>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className={`lg:col-span-2 ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white shadow-sm border-gray-100'} rounded-xl border p-6`}>
+                                        <h4 className={`text-sm font-bold uppercase tracking-widest mb-6 ${isManagerMode ? 'text-gray-400' : 'text-gray-700'}`}>Mapeamento de Evasão (Pacientes Reincidentes)</h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs text-left">
+                                                <thead>
+                                                    <tr className={`border-b ${isManagerMode ? 'border-gray-700 text-gray-500' : 'border-gray-100 text-gray-400'}`}>
+                                                        <th className="pb-3 px-2">Paciente</th>
+                                                        <th className="pb-3 px-2">Faltas</th>
+                                                        <th className="pb-3 px-2">Análise de Risco</th>
+                                                        <th className="pb-3 px-2">Ação</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {attendanceData.risk.patientsAtRisk.slice(0, 5).map((p: any) => (
+                                                        <tr key={p.id} className={`border-b last:border-0 ${isManagerMode ? 'border-gray-700' : 'border-gray-50'}`}>
+                                                            <td className={`py-4 px-2 font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{p.name}</td>
+                                                            <td className="py-4 px-2">
+                                                                <span className={`px-2 py-0.5 rounded-full font-bold ${p.count > 1 ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
+                                                                    {p.count}x
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 px-2 text-[10px] italic opacity-70">{p.reason}</td>
+                                                            <td className="py-4 px-2">
+                                                                <button className="text-emerald-600 font-bold hover:underline">Recuperar via WhatsApp</button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {attendanceData.risk.patientsAtRisk.length === 0 && (
+                                                        <tr><td colSpan={4} className="py-10 text-center text-gray-400 italic">Nenhum alerta de evasão para o período selecionado.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                )}
+
+                                    <div className="space-y-6">
+                                        <div className="bg-slate-900 rounded-xl p-6 shadow-xl border border-slate-800 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><span className="text-5xl">📊</span></div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-4">Parecer Estratégico AI</h4>
+
+                                            <button onClick={handleAttendanceAI} disabled={analyzing} className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'}`}>
+                                                {analyzing ? 'Sincronizando...' : <>⚡ Gerar Insights</>}
+                                            </button>
+
+                                            {attendanceAiAnalysis && (
+                                                <div className="mt-6 animate-in slide-in-from-bottom-2 duration-500">
+                                                    <div className="bg-white/5 border border-white/10 p-4 rounded-xl mb-4">
+                                                        <p className="text-[10px] font-black text-indigo-300 uppercase mb-2">Insight de Fluxo</p>
+                                                        <p className="text-xs text-white/90 leading-relaxed italic">"{attendanceAiAnalysis.insight}"</p>
+                                                    </div>
+                                                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                                                        <p className="text-[10px] font-black text-emerald-400 uppercase mb-2">Ação Recomendada</p>
+                                                        <p className="text-xs text-emerald-50 leading-relaxed font-medium">{attendanceAiAnalysis.action}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
-
                         {/* --- INDIVIDUAL REPORT (SUPER PRONTUÁRIO) --- */}
                         {reportType === 'INDIVIDUAL' && individualReportData && (
                             <IndividualPatientReportView
