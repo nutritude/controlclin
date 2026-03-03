@@ -1,5 +1,4 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlanSnapshot, AIAnalysisResult } from '../types';
 
 export const AIPlanAnalysisService = {
@@ -16,20 +15,21 @@ export const AIPlanAnalysisService = {
     console.log('[AI Plan] API Key detectada. Iniciando análise com Gemini...');
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = buildPrompt(snapshot);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: prompt,
-        config: {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.3, // Low temperature for consistent adherence to guidelines
         }
       });
 
-      if (response && response.text) {
-        return JSON.parse(response.text) as AIAnalysisResult;
+      const responseText = result.response.text();
+      if (responseText) {
+        return JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim()) as AIAnalysisResult;
       }
       throw new Error("Empty response from AI");
 

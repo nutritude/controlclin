@@ -169,14 +169,14 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className={`text-xs md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-white' : 'text-slate-800'} uppercase`}>
-                  {isManagerMode ? 'Portal Gestão' : 'Portal Clínico'}
+                  {isManagerMode ? 'Portal da Clínica (Gestão)' : 'Portal da Clínica'}
                 </h2>
-                <span className="text-[7px] md:text-[8px] bg-slate-100 text-slate-500 px-1 rounded border border-slate-200 font-bold">v2.1.0</span>
+                <span className="text-[7px] md:text-[8px] bg-red-50 text-red-600 px-1 rounded border border-red-200 font-black animate-pulse shadow-sm">v3.1.5 NEW</span>
               </div>
               <div className="flex items-center gap-1.5 md:gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${db.isRemoteEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${db.isRemoteEnabled ? 'bg-emerald-500 animate-pulse ring-2 ring-emerald-500/20' : 'bg-red-500'}`}></div>
                 <span className="text-[8px] md:text-[9px] text-gray-400 uppercase tracking-widest font-black whitespace-nowrap">
-                  {db.isRemoteEnabled ? 'NUVEM SYNC' : 'LOCAL OFFLINE'}
+                  {db.isRemoteEnabled ? 'NUVEM ATIVA' : 'LOCAL OFFLINE'}
                 </span>
               </div>
             </div>

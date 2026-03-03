@@ -1,5 +1,4 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { IndividualReportSnapshot } from '../types';
 
 export const AIClinicalSummaryService = {
@@ -16,19 +15,20 @@ export const AIClinicalSummaryService = {
     console.log('[AI Clinical] API Key detectada. Gerando resumo com Gemini...');
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = buildPrompt(snapshot);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: prompt,
-        config: {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
           temperature: 0.3, // Low temperature to prevent hallucination
         }
       });
 
-      if (response && response.text) {
-        return response.text;
+      const responseText = result.response.text();
+      if (responseText) {
+        return responseText;
       }
       throw new Error("Empty response from AI");
 
