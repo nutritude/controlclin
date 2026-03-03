@@ -370,7 +370,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         );
     };
 
-    const ComparativePerformanceChart = ({ current, prev }: { current: any, prev: any }) => {
+    const ComparativePerformanceChart = ({ current, prev, isPdf }: { current: any, prev: any, isPdf: boolean }) => {
         const data = [
             { name: 'R. Bruta', Atual: current.gross, Anterior: prev.gross },
             { name: 'R. Líquida', Atual: current.netReal, Anterior: prev.netReal },
@@ -387,7 +387,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
                         <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: textColor }} axisLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: textColor }} axisLine={false} />
-                        {!generatingPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v.toFixed(1)}`} />}
+                        {!isPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v.toFixed(1)}`} />}
                         <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: textColor }} />
                         <Bar dataKey="Anterior" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={20} />
                         <Bar dataKey="Atual" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={20} />
@@ -453,7 +453,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         );
     };
 
-    const ProfessionalPerformanceChart = ({ data }: { data: any[] }) => {
+    const ProfessionalPerformanceChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
         if (!data || data.length === 0) return null;
 
         const textColor = isManagerMode ? '#94a3b8' : '#64748b';
@@ -590,7 +590,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
                                         <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Performance por Profissional</h4>
-                                        <ProfessionalPerformanceChart data={operationalStats.professionalPerformance} />
+                                        <ProfessionalPerformanceChart data={operationalStats.professionalPerformance} isPdf={generatingPdf} />
                                     </div>
                                 </div>
 
@@ -770,7 +770,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
                                         <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Desempenho Comparativo</h4>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Período Atual vs Anterior</p>
-                                        <ComparativePerformanceChart current={financialDataset.metrics} prev={financialDataset.comparative} />
+                                        <ComparativePerformanceChart current={financialDataset.metrics} prev={financialDataset.comparative} isPdf={generatingPdf} />
                                     </div>
                                 </div>
 
