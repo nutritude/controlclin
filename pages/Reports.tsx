@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
-    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     Pie, PieChart
 } from 'recharts';
 import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapshot, MipanAssessment } from '../types';
@@ -132,6 +132,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     const [reportData, setReportData] = useState<any[]>([]);
     const [operationalStats, setOperationalStats] = useState<{ activePatients: number, patientsInBase: Patient[] } | null>(null);
     const [financialData, setFinancialData] = useState<any[]>([]);
+    const [financialDataset, setFinancialDataset] = useState<any | null>(null);
     const [attendanceData, setAttendanceData] = useState<any | null>(null);
     const [individualReportData, setIndividualReportData] = useState<IndividualReportSnapshot | null>(null);
 
@@ -188,8 +189,9 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                 break;
             case 'FINANCIAL':
                 if (isProfessional) { setLoading(false); return; }
-                const finData = await db.getFinancialReportData(clinic.id, startDate, endDate);
-                setFinancialData(finData);
+                const finDataset = await db.getFinancialReportDataset(clinic.id, startDate, endDate);
+                setFinancialData(finDataset.transactions);
+                setFinancialDataset(finDataset);
                 break;
             case 'ATTENDANCE':
                 const attData = await db.getAttendanceReportData(clinic.id, startDate, endDate, professionalIdFilter);
@@ -224,9 +226,9 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     };
 
     const handleFinancialAI = async () => {
-        if (financialData.length === 0) return;
+        if (!financialDataset) return;
         setAnalyzing(true);
-        const result = await db.generateFinancialAnalysis(clinic.id, financialData);
+        const result = await db.generateFinancialAnalysis(clinic.id, financialDataset);
         setFinAnalysis(result);
         setAnalyzing(false);
     };
@@ -325,13 +327,19 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         );
     };
 
-    const RevenueHistoryChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
+    const RevenueHistoryChart = ({ dataset, isPdf }: { dataset: any, isPdf: boolean }) => {
+        const { transactions } = dataset;
         const grouped: Record<string, number> = {};
-        data.forEach(t => { if (t.status === 'PAGO') { const d = new Date(t.date).toISOString().split('T')[0]; grouped[d] = (grouped[d] || 0) + t.amount; } });
+        transactions.forEach((t: any) => { if (t.status === 'PAGO') { const d = new Date(t.date).toISOString().split('T')[0]; grouped[d] = (grouped[d] || 0) + t.amount; } });
+
         const chartData = Object.entries(grouped).map(([date, amount]) => ({ date, displayDate: new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }), amount })).sort((a, b) => a.date.localeCompare(b.date));
-        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados.</div>;
+
+        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados de faturamento efetivado no período.</div>;
+
+        const avg = chartData.reduce((acc, d) => acc + d.amount, 0) / chartData.length;
+
         return (
-            <div className="h-48 mt-4">
+            <div className="h-56 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs><linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
@@ -340,26 +348,41 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                         {!isPdf && <RechartsTooltip />}
                         <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={!isPdf} />
+                        <ReferenceLine y={avg} stroke="#f43f5e" strokeDasharray="5 5" label={{ position: 'right', value: 'Média', fill: '#f43f5e', fontSize: 8, fontWeight: 'bold' }} />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
         );
     };
 
-    const MethodDistributionChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
-        const grouped: Record<string, number> = {};
-        data.forEach(t => { if (t.status === 'PAGO') { const label = t.method?.replace('_', ' ') || 'Outro'; grouped[label] = (grouped[label] || 0) + t.amount; } });
-        const chartData = Object.entries(grouped).map(([name, value]) => ({ name, value }));
+    const MethodDistributionChart = ({ dataset, isPdf }: { dataset: any, isPdf: boolean }) => {
+        const { transactions, fees } = dataset;
+        const grouped: Record<string, { value: number, net: number }> = {};
+        transactions.forEach((t: any) => {
+            if (t.status === 'PAGO') {
+                const label = t.method?.replace('_', ' ') || 'Outro';
+                if (!grouped[label]) grouped[label] = { value: 0, net: 0 };
+                grouped[label].value += t.amount;
+                const fee = (fees as any)[t.method] || 0;
+                grouped[label].net += t.amount * (1 - fee);
+            }
+        });
+        const chartData = Object.entries(grouped).map(([name, d]) => ({ name, value: d.value, net: d.net }));
         const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
-        if (chartData.length === 0) return <div className="h-48 flex items-center justify-center text-gray-400 italic text-sm">Sem dados.</div>;
+
+        if (chartData.length === 0) return <div className="h-56 flex items-center justify-center text-gray-400 italic text-sm">Sem transações efetivadas.</div>;
+
         return (
-            <div className="h-48 mt-4 flex items-center">
+            <div className="h-56 mt-4 flex items-center">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" isAnimationActive={!isPdf}>
                             {chartData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                         </Pie>
-                        {!isPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v}`} />}
+                        {!isPdf && <RechartsTooltip formatter={(v: any, name: any, props: any) => {
+                            const d = props.payload;
+                            return [`Bruto: R$ ${v.toFixed(1)}`, `Líquido (est.): R$ ${d.net.toFixed(1)}`];
+                        }} />}
                         <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
                     </PieChart>
                 </ResponsiveContainer>
@@ -572,57 +595,118 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         )}
 
                         {/* --- FINANCIAL REPORT --- */}
-                        {reportType === 'FINANCIAL' && !isProfessional && financialData && (
+                        {reportType === 'FINANCIAL' && !isProfessional && financialDataset && (
                             <div className="space-y-6">
+                                {/* Core Totals */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Faturamento Bruto</p>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.reduce((acc, t) => acc + (t.originalAmount || t.amount), 0).toLocaleString()}</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Receita Bruto</p>
+                                            <VariationIndicator value={((financialDataset.metrics.gross / financialDataset.comparative.gross) - 1) * 100} label="vs ant." />
+                                        </div>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.gross.toFixed(1)}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total faturado (Tabela)</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Descontos / Custos</p>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.reduce((acc, t) => acc + ((t.originalAmount || t.amount) - t.amount), 0).toLocaleString()}</p>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-rose-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Descontos / Isenções</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{financialDataset.metrics.discountIndex.toFixed(1)}%</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Índice Médio de Desconto</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Líquido Confirmado</p>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0).toLocaleString()}</p>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Receita Real Líquida</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.netReal.toFixed(1)}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Após taxas de métodos e descontos</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Inadimplência / Pendente</p>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialData.filter(t => t.status === 'PENDENTE').reduce((acc, t) => acc + t.amount, 0).toLocaleString()}</p>
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-orange-50'} p-6 rounded-xl border shadow-sm`}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Inadimplência (Pendentes)</p>
+                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.pendingAmount.toFixed(1)}</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Aguardando Recebimento</p>
+                                    </div>
+                                </div>
+
+                                {/* KPIs of Efficiency (Analyst View) */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">KPI: Ticket Médio</h4>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-black">R$ {financialDataset.metrics.ticketMedio.toFixed(1)}</span>
+                                            <VariationIndicator value={((financialDataset.metrics.ticketMedio / financialDataset.comparative.ticketMedio) - 1) * 100} />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1">Rentabilidade por agendamento realizado</p>
+                                    </div>
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Taxa de Conversão</h4>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-black">{financialDataset.metrics.conversionRate.toFixed(1)}%</span>
+                                            <VariationIndicator value={financialDataset.metrics.conversionRate - financialDataset.comparative.conversionRate} label="ppt" />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1">Eficiência da recepção (Confirmados / Total)</p>
+                                    </div>
+                                    <div className={`${isManagerMode ? 'bg-rose-900/20 border-rose-900/50' : 'bg-rose-50/50 border-rose-100'} p-6 rounded-2xl border`}>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 mb-3">Custo de Oportunidade</h4>
+                                        <span className="text-2xl font-black text-rose-600">R$ {financialDataset.metrics.lostRevenue.toFixed(1)}</span>
+                                        <p className="text-[10px] text-rose-400 mt-1 font-bold">Receita perdida por faltas (Absenteísmo)</p>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Receita Diária</h4>
-                                        <RevenueHistoryChart data={financialData} isPdf={generatingPdf} />
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className={`text-xs font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Faturamento</h4>
+                                            <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">Linha vermelha = Média do período</span>
+                                        </div>
+                                        <RevenueHistoryChart dataset={financialDataset} isPdf={generatingPdf} />
                                     </div>
                                     <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Distribuição por Meio de Pagamento</h4>
-                                        <MethodDistributionChart data={financialData} isPdf={generatingPdf} />
+                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Pagamento (Gross vs Net)</h4>
+                                        <MethodDistributionChart dataset={financialDataset} isPdf={generatingPdf} />
+                                    </div>
+                                </div>
+
+                                {/* Aging of Receivables */}
+                                <div className={`${isManagerMode ? 'bg-gray-900 border-gray-800' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="text-xl">⏳</span>
+                                        <div>
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Aging de Recebíveis (Inadimplência)</h4>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Distribuição de valores pendentes por tempo de atraso</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                                            <p className="text-[10px] font-black text-amber-500 uppercase">Ate 15 dias</p>
+                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['0-15'].toFixed(1)}</p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                                            <p className="text-[10px] font-black text-orange-600 uppercase">16 a 30 dias</p>
+                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['16-30'].toFixed(1)}</p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                                            <p className="text-[10px] font-black text-rose-600 uppercase">Acima de 30 dias</p>
+                                            <p className="text-xl font-black text-slate-900">R$ {financialDataset.aging['30+'].toFixed(1)}</p>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-xl flex items-center justify-between border border-dashed border-gray-400`}>
                                     <div>
                                         <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Auditoria de Saúde Financeira (IA)</p>
-                                        <p className="text-[10px] text-gray-500">Avaliação baseada no fluxo de faturamento e métodos de pagamento</p>
+                                        <p className="text-[10px] text-gray-500">Avaliação baseada no fluxo de faturamento, tickets e aging de recebíveis</p>
                                     </div>
                                     <button onClick={handleFinancialAI} disabled={analyzing} className={`text-xs px-6 py-2 rounded-xl font-bold ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white shadow-lg' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20')}`}>
-                                        {analyzing ? 'Analisando...' : 'Consultar IA'}
+                                        {analyzing ? 'Analisando...' : 'Consultar IA Auditora'}
                                     </button>
                                 </div>
 
                                 {finAnalysis && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-white border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm">
-                                            <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Diagnóstico Financeiro</p>
-                                            <p className="text-sm font-medium text-gray-800">{finAnalysis.financialHealth}</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-500">
+                                        <div className="bg-white border-l-4 border-indigo-500 p-5 rounded-r-xl shadow-md">
+                                            <p className="text-[10px] font-black text-indigo-600 uppercase mb-2">Parecer do Auditor (AI)</p>
+                                            <p className="text-sm font-medium text-gray-800 leading-relaxed italic">"{finAnalysis.financialHealth}"</p>
                                         </div>
-                                        <div className="bg-slate-900 p-4 rounded-xl shadow-sm text-white">
-                                            <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Ação Comercial Sugerida</p>
-                                            <p className="text-sm italic opacity-90">{finAnalysis.revenueAction}</p>
+                                        <div className="bg-slate-900 p-5 rounded-xl shadow-md text-white border border-indigo-500/30">
+                                            <p className="text-[10px] font-black text-indigo-400 uppercase mb-2">Estratégia Recomendada</p>
+                                            <p className="text-sm font-bold tracking-tight">{finAnalysis.revenueAction}</p>
                                         </div>
                                     </div>
                                 )}

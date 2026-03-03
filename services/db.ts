@@ -1833,6 +1833,80 @@ class DatabaseService {
         return results;
     }
 
+    async getFinancialReportDataset(id: string, start: string, end: string) {
+        const startCurrent = new Date(start + 'T00:00:00');
+        const endCurrent = new Date(end + 'T23:59:59');
+        const durationMs = endCurrent.getTime() - startCurrent.getTime();
+
+        const startPrev = new Date(startCurrent.getTime() - durationMs - 1);
+        const endPrev = new Date(startCurrent.getTime() - 1);
+        const startPrevStr = startPrev.toISOString().split('T')[0];
+        const endPrevStr = endPrev.toISOString().split('T')[0];
+
+        const transactions = await this.getFinancialReportData(id, start, end);
+        const appointments = await this.getReportData(id, start, end); // Basic appointments filtered by clinic
+
+        const transactionsPrev = await this.getFinancialReportData(id, startPrevStr, endPrevStr);
+        const appointmentsPrev = await this.getReportData(id, startPrevStr, endPrevStr);
+
+        // Fees Mapping (simulated/industry average)
+        const FEES = {
+            'PIX': 0,
+            'DINHEIRO': 0,
+            'CARTAO_DEBITO': 0.019,
+            'CARTAO_CREDITO': 0.035,
+            'BOLETO': 0.025,
+            'GUIA_CONVENIO': 0.15
+        };
+
+        const calculateMetrics = (txs: any[], appts: any[]) => {
+            const gross = txs.reduce((acc, t) => acc + (t.originalAmount || t.amount), 0);
+            const netReal = txs.reduce((acc, t) => {
+                const fee = FEES[t.method as keyof typeof FEES] || 0;
+                const amt = t.status === 'PAGO' ? t.amount : 0;
+                return acc + (amt * (1 - fee));
+            }, 0);
+            const discount = txs.reduce((acc, t) => acc + ((t.originalAmount || t.amount) - t.amount), 0);
+            const confirmedAmount = txs.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0);
+            const pendingAmount = txs.filter(t => t.status === 'PENDENTE').reduce((acc, t) => acc + t.amount, 0);
+
+            const realizedAppts = appts.filter(a => a.status === 'COMPLETED' || a.status === 'CONFIRMED' || a.status === 'REALIZADO');
+            const missedAppts = appts.filter(a => a.status === 'MISSED' || a.status === 'CANCELED' || a.status === 'FALTA');
+
+            const ticketMedio = realizedAppts.length > 0 ? (gross / realizedAppts.length) : 0;
+            const lostRevenue = missedAppts.length * ticketMedio;
+            const conversionRate = appts.length > 0 ? (realizedAppts.length / appts.length) * 100 : 0;
+            const discountIndex = gross > 0 ? (discount / gross) * 100 : 0;
+
+            return {
+                gross, netReal, discount, confirmedAmount, pendingAmount,
+                ticketMedio, lostRevenue, conversionRate, discountIndex,
+                totalAppts: appts.length, realizedCount: realizedAppts.length, missedCount: missedAppts.length
+            };
+        };
+
+        const currentMetrics = calculateMetrics(transactions, appointments);
+        const prevMetrics = calculateMetrics(transactionsPrev, appointmentsPrev);
+
+        // Aging of Receivables (Pendente)
+        const now = new Date();
+        const aging = transactions.filter(t => t.status === 'PENDENTE').reduce((acc, t) => {
+            const diffDays = Math.floor((now.getTime() - new Date(t.date).getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays <= 15) acc['0-15'] += t.amount;
+            else if (diffDays <= 30) acc['16-30'] += t.amount;
+            else acc['30+'] += t.amount;
+            return acc;
+        }, { '0-15': 0, '16-30': 0, '30+': 0 });
+
+        return {
+            transactions,
+            metrics: currentMetrics,
+            comparative: prevMetrics,
+            aging,
+            fees: FEES
+        };
+    }
+
     async getAttendanceReportData(id: string, start: string, end: string, pid?: string) {
         const startCurrent = new Date(start);
         const endCurrent = new Date(end);
@@ -1929,22 +2003,35 @@ class DatabaseService {
         }
     }
 
-    async generateFinancialAnalysis(id: string, data: any[]) {
+    async generateFinancialAnalysis(id: string, dataset: any) {
         if (!this.ai) return { financialHealth: "IA Offline.", revenueAction: "Revisar transações pendentes." };
         try {
-            const revenue = data.filter(t => t.status === 'PAGO').reduce((a, b) => a + b.amount, 0);
-            const pending = data.filter(t => t.status === 'PENDENTE').reduce((a, b) => a + b.amount, 0);
-            const methods = data.reduce((acc, t) => ({ ...acc, [t.method]: (acc[t.method] || 0) + 1 }), {});
+            const { metrics, aging, transactions } = dataset;
 
-            const prompt = `Análise Financeira para Clínica. 
-            Faturamento Pago: R$${revenue}
-            Pendentes: R$${pending}
-            Métodos: ${JSON.stringify(methods)}
+            const methods = transactions.reduce((acc: any, t: any) => ({ ...acc, [t.method]: (acc[t.method] || 0) + 1 }), {});
+            const pendingRatio = metrics.gross > 0 ? (metrics.pendingAmount / metrics.gross) * 100 : 0;
+
+            const prompt = `Aja como um Analista Financeiro Senior de Clínicas Médicas. 
+            Analise os dados abaixo do período atual:
+            - Receita Bruta: R$${metrics.gross.toFixed(2)}
+            - Receita Líquida Real (após taxas): R$${metrics.netReal.toFixed(2)}
+            - Ticket Médio por Procedimento: R$${metrics.ticketMedio.toFixed(2)}
+            - Taxa de Conversão de Agendamentos: ${metrics.conversionRate.toFixed(1)}%
+            - Custo de Oportunidade (Faltas): R$${metrics.lostRevenue.toFixed(2)}
+            - Índice de Desconto Médio: ${metrics.discountIndex.toFixed(1)}%
+            - Inadimplência Atual: R$${metrics.pendingAmount.toFixed(2)} (${pendingRatio.toFixed(1)}% do total)
+            - Aging de Recebíveis: 0-15d: R$${aging['0-15']}, 16-30d: R$${aging['16-30']}, 30d+: R$${aging['30+']}
+            - Volume Métodos: ${JSON.stringify(methods)}
             
-            Retorne um JSON:
+            Com base nestes dados:
+            1. Avalie a saúde do faturamento e fluxo de caixa.
+            2. Identifique gargalos de lucratividade (descontos, taxas ou faltas).
+            3. Sugira uma ação comercial imediata e pragmática.
+
+            Retorne um JSON estritamente neste formato:
             {
-                "financialHealth": "Resumo da saúde de caixa",
-                "revenueAction": "Ação imediata para melhorar faturamento"
+                "financialHealth": "Análise técnica curta (máx 3 frases) sobre saúde financeira.",
+                "revenueAction": "Ação comercial/operacional direta."
             }`;
 
             const result = await (this.ai as any).models.generateContent({
