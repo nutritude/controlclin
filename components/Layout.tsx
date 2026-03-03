@@ -36,14 +36,14 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 xl:hidden backdrop-blur-md transition-all duration-300"
+          className="fixed inset-0 bg-black/70 z-[60] 2xl:hidden backdrop-blur-md transition-all duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out xl:relative xl:translate-x-0
+        fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-300 ease-in-out 2xl:relative 2xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isManagerMode ? 'bg-gray-800' : 'bg-emerald-800'} 
         text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden max-w-[85vw]
@@ -51,7 +51,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
         {/* MOBILE CLOSE BUTTON */}
         <button
           onClick={() => setIsMobileMenuOpen(false)}
-          className="xl:hidden absolute top-4 -right-12 p-2 bg-emerald-600 text-white rounded-full shadow-lg"
+          className="2xl:hidden absolute top-4 -right-12 p-2 bg-red-600 text-white rounded-full shadow-lg"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
@@ -154,16 +154,17 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isManagerMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
 
         {/* Top Header */}
-        <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-4 xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
+        <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-4 2xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="xl:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
+              className="2xl:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+            <div className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded animate-bounce">FIX ATIVO v2.1.5</div>
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
