@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-/* Force Vercel Rebuild - v2.0.5 - Adding Fallback Env Var Screen */
+/* Force Vercel Rebuild - v2.1.0 - Responsive Fix Applied */
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { User, Clinic, Role } from './types';
 import Login from './pages/Login';
