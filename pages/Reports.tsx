@@ -544,13 +544,13 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     // --- RENDER ---
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
                 <div>
-                    <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'} flex items-center gap-2`}>
+                    <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight ${isManagerMode ? 'text-white' : 'text-emerald-900'} flex items-center gap-2`}>
                         <Icons.FileText />
-                        Central de Relatórios
+                        Relatórios Inteligentes
                     </h1>
-                    <p className={`mt-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Extraia dados para análises operacionais e financeiras.</p>
+                    <p className={`text-xs md:text-sm font-medium ${isManagerMode ? 'text-gray-400' : 'text-slate-600'}`}>Analise dados clínicos e operacionais para tomada de decisão.</p>
                 </div>
             </div>
 
