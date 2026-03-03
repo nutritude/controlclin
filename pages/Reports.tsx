@@ -343,8 +343,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         const avg = chartData.reduce((acc, d) => acc + d.amount, 0) / chartData.length;
         const peak = chartData.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
 
-        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
-        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+        const textColor = '#64748b';
+        const axisColor = '#e2e8f0';
 
         return (
             <div className="h-64 mt-4">
@@ -377,8 +377,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             { name: 'Pendente', Atual: current.pendingAmount, Anterior: prev.pendingAmount },
         ];
 
-        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
-        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+        const textColor = '#64748b';
+        const axisColor = '#e2e8f0';
 
         return (
             <div className="h-56 mt-4">
@@ -436,8 +436,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         const grouped: Record<string, number> = {};
         data.forEach(t => { const label = t.type || 'Consulta'; grouped[label] = (grouped[label] || 0) + 1; });
         const chartData = Object.entries(grouped).map(([name, value]) => ({ name, value }));
-        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
-        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+        const textColor = '#64748b';
+        const axisColor = '#e2e8f0';
 
         return (
             <div className="h-48 mt-4">
@@ -445,8 +445,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                     <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 'bold', fill: textColor }} width={80} axisLine={false} tickLine={false} />
-                        {!isPdf && <RechartsTooltip cursor={{ fill: isManagerMode ? '#334155' : '#f8fafc' }} />}
-                        <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={15} isAnimationActive={!isPdf} />
+                        {!isPdf && <RechartsTooltip cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} />}
+                        <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={15} isAnimationActive={!isPdf} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -456,8 +456,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     const ProfessionalPerformanceChart = ({ data, isPdf }: { data: any[], isPdf: boolean }) => {
         if (!data || data.length === 0) return null;
 
-        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
-        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+        const textColor = '#64748b';
+        const axisColor = '#e2e8f0';
 
         return (
             <div className="h-64 mt-4">
@@ -490,7 +490,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             </div>
 
             {/* FILTERS & CONTROLS */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl shadow-sm border space-y-4 print:hidden`}>
+            <div className="bg-white border-slate-200 p-6 rounded-2xl shadow-xl border space-y-4 print:hidden">
                 <div className="flex flex-col md:flex-row gap-6">
                     {/* Report Type */}
                     <div className="flex-1">
@@ -530,16 +530,19 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
             {/* REPORT AREA */}
             {generated && (
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl shadow-sm border`}>
+                <div className="bg-white border-slate-200 p-8 rounded-3xl shadow-xl border overflow-hidden">
                     {/* Report Header */}
-                    <div className="flex justify-between items-start mb-6 pb-4 border-b border-dashed border-gray-300 print:hidden">
+                    <div className="flex justify-between items-start mb-8 pb-6 border-b border-dashed border-slate-200 print:hidden">
                         <div>
-                            <h2 className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Resultado do Relatório</h2>
-                            <p className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-gray-600'}`}>Período de {new Date(startDate + 'T00:00:00').toLocaleDateString()} a {new Date(endDate + 'T23:59:59').toLocaleDateString()}</p>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Resultado do Relatório</h2>
+                            <p className="text-sm text-slate-500 font-medium">Período Analisado: {new Date(startDate + 'T00:00:00').toLocaleDateString()} a {new Date(endDate + 'T23:59:59').toLocaleDateString()}</p>
                         </div>
-                        <button onClick={handleDownloadPDF} disabled={generatingPdf} className={`text-sm flex items-center gap-2 font-bold px-4 py-2 rounded-md transition-colors ${isManagerMode ? 'text-red-300 bg-red-900 hover:bg-red-800' : 'text-red-600 bg-red-100 hover:bg-red-200'}`}>
-                            {generatingPdf ? 'Gerando...' : 'Exportar PDF'}
-                        </button>
+                        <div className="flex gap-3">
+                            <button onClick={handleDownloadPDF} disabled={generatingPdf} className="text-xs flex items-center gap-2 font-black px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100">
+                                <Icons.Files className="w-4 h-4" />
+                                {generatingPdf ? 'Gerando...' : 'Exportar PDF'}
+                            </button>
+                        </div>
                     </div>
 
                     <div ref={reportContentRef} className="print-area">
@@ -547,65 +550,67 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         {reportType === 'OPERATIONAL' && reportData && (
                             <div className="space-y-6">
                                 {/* Operational Analytics Cards */}
+                                {/* Operational Analytics Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl border hover:border-emerald-200 transition-colors">
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Volume Assistencial</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Volume Assistencial</p>
                                             <VariationIndicator value={((operationalStats.totalActivities / (operationalStats.comparative?.totalActivities || 1)) - 1) * 100} label="vs ant." />
                                         </div>
-                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{operationalStats.totalActivities}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total de Agendamentos no Período</p>
+                                        <p className="text-3xl font-black text-slate-900 tracking-tighter">{operationalStats.totalActivities}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tight">Total de Agendamentos</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl border hover:border-indigo-200 transition-colors">
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Pacientes Atendidos</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Pacientes Atendidos</p>
                                             <VariationIndicator value={((operationalStats.uniquePatientsInPeriod / (operationalStats.comparative?.uniquePatients || 1)) - 1) * 100} />
                                         </div>
-                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-indigo-900'}`}>{operationalStats.uniquePatientsInPeriod}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Únicos Passando no Período</p>
+                                        <p className="text-3xl font-black text-slate-900 tracking-tighter">{operationalStats.uniquePatientsInPeriod}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tight">Pessoas Únicas no Período</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Base Total Ativa</p>
-                                        <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{operationalStats?.activePatients || 0}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Cadastrados na Clínica</p>
+                                    <div className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl border hover:border-slate-300 transition-colors">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Base Total Ativa</p>
+                                        <p className="text-3xl font-black text-slate-900 tracking-tighter">{operationalStats?.activePatients || 0}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tight">Pacientes no CRM</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-indigo-900/30 border-indigo-500/30' : 'bg-indigo-50 border-indigo-100 shadow-sm'} p-6 rounded-xl border`}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xl">🔬</span>
+                                    <div className="bg-indigo-50/50 border-indigo-100 shadow-sm p-6 rounded-2xl border">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Icons.Brain className="text-indigo-600 w-4 h-4" />
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Audit IA</h4>
                                         </div>
-                                        <button onClick={handleOperationalAI} disabled={analyzing} className={`w-full py-2 px-4 rounded-lg font-bold text-[10px] uppercase tracking-tighter transform active:scale-95 transition-all ${analyzing ? 'bg-gray-400' : 'bg-indigo-600 text-white shadow-lg'}`}>
-                                            {analyzing ? 'Analisando...' : 'Gerar Análise Estratégica'}
+                                        <button onClick={handleOperationalAI} disabled={analyzing} className={`w-full py-2.5 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transform active:scale-95 transition-all shadow-md ${analyzing ? 'bg-slate-300 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg'}`}>
+                                            {analyzing ? 'Analisando...' : 'Análise Estratégica'}
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Especialidades / Tipos</h4>
+                                    <div className="bg-white border-slate-200 shadow-sm p-6 rounded-2xl border">
+                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-slate-500 px-2 border-l-2 border-indigo-500">Mix de Especialidades / Tipos</h4>
                                         <OperationalTypeChart data={reportData} isPdf={generatingPdf} />
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Performance por Profissional</h4>
+                                    <div className="bg-white border-slate-200 shadow-sm p-6 rounded-2xl border">
+                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-slate-500 px-2 border-l-2 border-indigo-500">Performance por Profissional</h4>
                                         <ProfessionalPerformanceChart data={operationalStats.professionalPerformance} isPdf={generatingPdf} />
                                     </div>
                                 </div>
 
                                 {aiAnalysis && (
-                                    <div className="bg-slate-900 p-6 rounded-2xl border-l-[6px] border-indigo-500 shadow-2xl animate-in fade-in slide-in-from-bottom duration-500">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className="p-2 bg-indigo-500/20 rounded-lg"><Icons.Brain className="text-indigo-400 w-5 h-5" /></span>
-                                            <h3 className="text-white font-black uppercase tracking-widest text-xs">Parecer do Auditor de Operações (AI)</h3>
+                                    <div className="bg-slate-50 p-8 rounded-3xl border border-indigo-100 shadow-inner relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-6 opacity-5"><Icons.Brain className="w-40 h-40 text-indigo-900" /></div>
+                                        <div className="flex items-center gap-3 mb-6 relative z-10">
+                                            <span className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200"><Icons.Brain className="text-white w-5 h-5" /></span>
+                                            <h3 className="text-slate-900 font-black uppercase tracking-[0.2em] text-xs underline decoration-indigo-500 decoration-2 underline-offset-4">Parecer Estratégico AI</h3>
                                         </div>
-                                        <p className="text-sm leading-relaxed text-indigo-100 font-medium mb-6 italic">"{aiAnalysis.clinicalAnalysis}"</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <p className="text-base leading-relaxed text-slate-700 font-bold mb-8 italic relative z-10">"{aiAnalysis.clinicalAnalysis}"</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                                             {aiAnalysis.strategicSuggestions.map((s: string, i: number) => (
-                                                <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10 flex gap-3 items-start group hover:bg-white/10 transition-colors">
-                                                    <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 text-[10px] font-black text-white">{i + 1}</div>
-                                                    <p className="text-xs text-white/90 leading-snug">{s}</p>
+                                                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 flex gap-4 items-start shadow-sm hover:border-indigo-400 transition-all transform hover:-translate-y-0.5">
+                                                    <div className="w-6 h-6 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-[10px] font-black border border-indigo-100">{i + 1}</div>
+                                                    <p className="text-xs text-slate-600 leading-relaxed font-bold">{s}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -613,14 +618,14 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                 )}
 
                                 <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className={`text-xs font-black uppercase tracking-widest ${isManagerMode ? 'text-white' : 'text-slate-700'}`}>Listagem Detalhada de Agendamentos</h3>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 px-3 border-l-4 border-slate-300">Detalhamento Agendamentos</h3>
                                         {!isProfessional && (
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Colunas Visíveis:</span>
-                                                <div className="flex flex-wrap gap-1">
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colunas:</span>
+                                                <div className="flex flex-wrap gap-1.5 focus-within:ring-2 focus-within:ring-emerald-500 ring-offset-2 rounded-lg">
                                                     {availableColumns.map(col => (
-                                                        <button key={col.id} onClick={() => toggleColumn(col.id)} className={`px-2 py-0.5 text-[9px] rounded-full border transition-all ${selectedColumns.includes(col.id) ? (isManagerMode ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-emerald-600 text-white border-emerald-700 shadow-sm') : (isManagerMode ? 'bg-gray-700 text-gray-500 border-gray-600' : 'bg-white text-gray-400 border-gray-200 hover:border-emerald-300')}`}>
+                                                        <button key={col.id} onClick={() => toggleColumn(col.id)} className={`px-3 py-1 text-[9px] rounded-lg border font-black transition-all ${selectedColumns.includes(col.id) ? 'bg-indigo-600 text-white border-indigo-700 shadow-md' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'}`}>
                                                             {col.label}
                                                         </button>
                                                     ))}
@@ -628,23 +633,28 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="overflow-x-auto rounded-xl border border-slate-200">
-                                        <table className={`min-w-full divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
-                                            <thead className={`${isManagerMode ? 'bg-gray-700 shadow-inner' : 'bg-slate-50'}`}>
+                                    <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                                        <table className="min-w-full divide-y divide-slate-100">
+                                            <thead className="bg-slate-50/80">
                                                 <tr>
                                                     {selectedColumns.map(colId => (
-                                                        <th key={colId} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-gray-300' : 'text-slate-500'}`}>
+                                                        <th key={colId} className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                                             {availableColumns.find(c => c.id === colId)?.label}
                                                         </th>
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-100'}`}>
+                                            <tbody className="bg-white divide-y divide-slate-50">
                                                 {reportData.map(row => (
                                                     <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                                                         {selectedColumns.map(colId => (
-                                                            <td key={colId} className={`px-4 py-3 whitespace-nowrap text-[11px] font-medium ${isManagerMode ? 'text-gray-200' : 'text-slate-600'}`}>
-                                                                {colId === 'date' ? new Date(row[colId]).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : row[colId]}
+                                                            <td key={colId} className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-700">
+                                                                {colId === 'date' ? (
+                                                                    <div className="flex flex-col">
+                                                                        <span>{new Date(row[colId]).toLocaleDateString()}</span>
+                                                                        <span className="text-[10px] text-slate-400">{new Date(row[colId]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                    </div>
+                                                                ) : row[colId]}
                                                             </td>
                                                         ))}
                                                     </tr>
@@ -654,38 +664,48 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                 </div>
 
-                                <div className="mt-12 bg-slate-50/50 p-6 rounded-3xl border border-dashed border-slate-300">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className={`p-3 rounded-2xl shadow-sm border ${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-                                            <Icons.Users className="text-emerald-600 w-6 h-6" />
+                                <div className="mt-16 bg-slate-50/30 p-10 rounded-[3rem] border-2 border-dashed border-slate-200">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="p-4 bg-white rounded-2xl shadow-xl border border-slate-100 rotate-3">
+                                            <Icons.Users className="text-emerald-500 w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-slate-300' : 'text-slate-700'}`}>Censo de Pacientes (Base Geral)</h4>
-                                            <p className="text-xs text-slate-400 font-medium">Todos os pacientes vinculados à clínica</p>
+                                            <h4 className="text-lg font-black uppercase tracking-[0.3em] text-slate-900">Censo de Pacientes</h4>
+                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Base de Dados Geral (Registros Únicos)</p>
                                         </div>
                                     </div>
-                                    <div className="overflow-hidden rounded-xl border border-slate-200">
-                                        <table className={`min-w-full divide-y ${isManagerMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
-                                            <thead className={`${isManagerMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                                    <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-2xl bg-white">
+                                        <table className="min-w-full divide-y divide-slate-100">
+                                            <thead className="bg-slate-50/50">
                                                 <tr>
-                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>Paciente</th>
-                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>E-mail</th>
-                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>WhatsApp</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Perfil do Paciente</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Contato E-mail</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">WhatsApp</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className={`${isManagerMode ? 'bg-slate-800 divide-slate-700' : 'bg-white divide-slate-200'}`}>
+                                            <tbody className="divide-y divide-slate-50">
                                                 {operationalStats.patientsInBase.map((p: any) => (
-                                                    <tr key={p.id} className={`${isManagerMode ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} transition-colors`}>
-                                                        <td className="px-4 py-3 whitespace-nowrap">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] text-white bg-gradient-to-br from-emerald-400 to-emerald-600">
+                                                    <tr key={p.id} className="hover:bg-emerald-50/30 transition-all group">
+                                                        <td className="px-8 py-6 whitespace-nowrap">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm text-white bg-gradient-to-tr from-emerald-500 to-emerald-400 shadow-lg shadow-emerald-200 group-hover:rotate-6 transition-transform">
                                                                     {p.name.charAt(0)}
                                                                 </div>
-                                                                <span className={`text-xs font-bold ${isManagerMode ? 'text-slate-200' : 'text-slate-800'}`}>{p.name}</span>
+                                                                <div>
+                                                                    <p className="text-sm font-black text-slate-800">{p.name}</p>
+                                                                    <p className="text-[9px] text-slate-400 uppercase font-black mt-0.5 tracking-tighter">ID: {p.id?.slice(0, 8)}</p>
+                                                                </div>
                                                             </div>
                                                         </td>
-                                                        <td className={`px-4 py-3 whitespace-nowrap text-xs ${isManagerMode ? 'text-slate-400' : 'text-slate-500'}`}>{p.email || '-'}</td>
-                                                        <td className={`px-4 py-3 whitespace-nowrap text-xs ${isManagerMode ? 'text-slate-400' : 'text-slate-500'}`}>{p.phone || '-'}</td>
+                                                        <td className="px-8 py-6 whitespace-nowrap">
+                                                            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">{p.email || 'N/A'}</span>
+                                                        </td>
+                                                        <td className="px-8 py-6 whitespace-nowrap">
+                                                            <div className="flex items-center gap-2 text-emerald-600 font-black text-xs bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                                                <Icons.Phone className="w-3.5 h-3.5" />
+                                                                {p.phone || 'N/A'}
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -700,37 +720,37 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                             <div className="space-y-6">
                                 {/* Core Totals */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Receita Bruta</p>
                                             <VariationIndicator value={((financialDataset.metrics.gross / (financialDataset.comparative.gross || 1)) - 1) * 100} label="vs ant." />
                                         </div>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.gross.toFixed(1)}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total faturado (Tabela)</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tight">R$ {financialDataset.metrics.gross.toFixed(1)}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Total faturado</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-rose-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Descontos / Isenções</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Descontos</p>
                                             <VariationIndicator value={financialDataset.metrics.discountIndex - financialDataset.comparative.discountIndex} label="ppt" />
                                         </div>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{financialDataset.metrics.discountIndex.toFixed(1)}%</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Índice Médio de Desconto</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tight">{financialDataset.metrics.discountIndex.toFixed(1)}%</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Índice Médio</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-indigo-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Receita Real Líquida</p>
                                             <VariationIndicator value={((financialDataset.metrics.netReal / (financialDataset.comparative.netReal || 1)) - 1) * 100} />
                                         </div>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.netReal.toFixed(1)}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Após taxas de métodos e descontos</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tight">R$ {financialDataset.metrics.netReal.toFixed(1)}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Após taxas</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-orange-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Inadimplência (Pendentes)</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Inadimplência</p>
                                             <VariationIndicator value={((financialDataset.metrics.pendingAmount / (financialDataset.comparative.pendingAmount || 1)) - 1) * 100} />
                                         </div>
-                                        <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.pendingAmount.toFixed(1)}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Aguardando Recebimento</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tight">R$ {financialDataset.metrics.pendingAmount.toFixed(1)}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Pendentes</p>
                                     </div>
                                 </div>
 
@@ -739,47 +759,47 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     <div className={`${isManagerMode ? 'bg-indigo-900/10 border-indigo-500/10' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">KPI: Ticket Médio</h4>
                                         <div className="flex items-baseline gap-2">
-                                            <span className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>R$ {financialDataset.metrics.ticketMedio.toFixed(1)}</span>
+                                            <span className="text-2xl font-black text-slate-900">R$ {financialDataset.metrics.ticketMedio.toFixed(1)}</span>
                                             <VariationIndicator value={((financialDataset.metrics.ticketMedio / financialDataset.comparative.ticketMedio) - 1) * 100} />
                                         </div>
                                         <p className="text-[10px] text-slate-400 mt-1">Rentabilidade por agendamento realizado</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-indigo-900/10 border-indigo-500/10' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                    <div className="bg-slate-50 border-slate-200 p-6 rounded-2xl border">
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Taxa de Conversão</h4>
                                         <div className="flex items-baseline gap-2">
-                                            <span className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{financialDataset.metrics.conversionRate.toFixed(1)}%</span>
+                                            <span className="text-2xl font-black text-slate-900">{financialDataset.metrics.conversionRate.toFixed(1)}%</span>
                                             <VariationIndicator value={financialDataset.metrics.conversionRate - financialDataset.comparative.conversionRate} label="ppt" />
                                         </div>
                                         <p className="text-[10px] text-slate-400 mt-1">Eficiência da recepção (Confirmados / Total)</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-rose-900/10 border-rose-500/10' : 'bg-rose-50/50 border-rose-100'} p-6 rounded-2xl border`}>
+                                    <div className="bg-rose-50/50 border-rose-100 p-6 rounded-2xl border">
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 mb-3">Custo de Oportunidade</h4>
-                                        <span className={`text-2xl font-black ${isManagerMode ? 'text-rose-400' : 'text-rose-600'}`}>R$ {financialDataset.metrics.lostRevenue.toFixed(1)}</span>
+                                        <span className="text-2xl font-black text-rose-600">R$ {financialDataset.metrics.lostRevenue.toFixed(1)}</span>
                                         <p className="text-[10px] text-rose-400 mt-1 font-bold">Receita perdida por faltas (Absenteísmo)</p>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <div className={`lg:col-span-2 ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
+                                    <div className="lg:col-span-2 bg-white border-slate-200 p-6 rounded-2xl border shadow-sm">
                                         <div className="flex justify-between items-center mb-4">
-                                            <h4 className={`text-xs font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Histórico de Faturamento e Picos</h4>
-                                            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Ponto Verde = Melhor dia do período</span>
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 underline decoration-emerald-500 decoration-2 underline-offset-4">Histórico de Faturamento</h4>
+                                            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold border border-emerald-100 italic">Ponto Verde = Melhor dia do período</span>
                                         </div>
                                         <RevenueHistoryChart dataset={financialDataset} isPdf={generatingPdf} />
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Desempenho Comparativo</h4>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Período Atual vs Anterior</p>
+                                    <div className="bg-white border-slate-200 p-6 rounded-2xl border shadow-sm">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 px-2 border-l-2 border-indigo-500">Desempenho Comparativo</h4>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-4 tracking-tighter">Período Atual vs Anterior</p>
                                         <ComparativePerformanceChart current={financialDataset.metrics} prev={financialDataset.comparative} isPdf={generatingPdf} />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-xl border`}>
-                                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Pagamento (Gross vs Net)</h4>
+                                    <div className="bg-white border-slate-200 p-6 rounded-2xl border shadow-sm">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 px-2 border-l-2 border-indigo-500">Mix de Pagamento (Gross vs Net)</h4>
                                         <MethodDistributionChart dataset={financialDataset} isPdf={generatingPdf} />
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-900 border-gray-800' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                    <div className="bg-white border-slate-200 p-8 rounded-3xl border shadow-inner">
                                         <div className="flex items-center gap-2 mb-6">
                                             <span className="text-xl">⏳</span>
                                             <div>
@@ -804,13 +824,13 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                 </div>
 
-                                <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-xl flex items-center justify-between border border-dashed border-gray-400`}>
+                                <div className="bg-slate-50 p-6 rounded-[2rem] flex items-center justify-between border border-indigo-100 shadow-inner">
                                     <div>
-                                        <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Auditoria de Saúde Financeira (IA)</p>
-                                        <p className="text-[10px] text-gray-500">Avaliação baseada no fluxo de faturamento, tickets e aging de recebíveis</p>
+                                        <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Auditoria de Saúde Financeira (IA)</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Fluxo, tickets e aging de recebíveis</p>
                                     </div>
-                                    <button onClick={handleFinancialAI} disabled={analyzing} className={`text-xs px-6 py-2 rounded-xl font-bold ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white shadow-lg' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20')}`}>
-                                        {analyzing ? 'Analisando...' : 'Consultar IA Auditora'}
+                                    <button onClick={handleFinancialAI} disabled={analyzing} className={`text-xs px-8 py-3 rounded-2xl font-black uppercase tracking-widest shadow-xl transform active:scale-95 transition-all ${analyzing ? 'bg-slate-300 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'}`}>
+                                        {analyzing ? 'Analisando...' : 'Consultar Auditora'}
                                     </button>
                                 </div>
 
@@ -820,9 +840,9 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                             <p className="text-[10px] font-black text-indigo-600 uppercase mb-2">Parecer do Auditor (AI)</p>
                                             <p className="text-sm font-medium text-gray-800 leading-relaxed italic">"{finAnalysis.financialHealth}"</p>
                                         </div>
-                                        <div className="bg-slate-900 p-5 rounded-xl shadow-md text-white border border-indigo-500/30">
-                                            <p className="text-[10px] font-black text-indigo-400 uppercase mb-2">Estratégia Recomendada</p>
-                                            <p className="text-sm font-bold tracking-tight">{finAnalysis.revenueAction}</p>
+                                        <div className="bg-indigo-600 p-6 rounded-2xl shadow-xl text-white border-2 border-indigo-500">
+                                            <p className="text-[10px] font-black text-indigo-100 uppercase mb-3 tracking-[0.2em]">Estratégia Recomendada</p>
+                                            <p className="text-sm font-black tracking-tight leading-relaxed">{finAnalysis.revenueAction}</p>
                                         </div>
                                     </div>
                                 )}
@@ -833,60 +853,54 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                         {reportType === 'ATTENDANCE' && attendanceData && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Amostra (N)</p>
-                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{attendanceData.stats.total}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Consultas Avaliadas</p>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Amostra (N)</p>
+                                        <p className="text-3xl font-black mt-2 text-slate-900">{attendanceData.stats.total}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Consultas Avaliadas</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Abstenção</p>
-                                        <div className="flex items-baseline gap-2">
-                                            <p className={`text-2xl font-bold mt-1 ${attendanceData.stats.noShowRate > 20 ? 'text-rose-500' : 'text-emerald-500'}`}>{attendanceData.stats.noShowRate}%</p>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Abstenção</p>
+                                        <div className="flex items-baseline gap-2 mt-2">
+                                            <p className={`text-3xl font-black ${attendanceData.stats.noShowRate > 20 ? 'text-rose-500' : 'text-emerald-500'}`}>{attendanceData.stats.noShowRate}%</p>
                                             <VariationIndicator value={attendanceData.stats.variation} />
                                         </div>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Impacto Estimado</p>
-                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-orange-400' : 'text-orange-600'}`}>R$ {attendanceData.financial.estimatedImpact.toFixed(2)}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Perda Potencial</p>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Impacto Estimado</p>
+                                        <p className="text-3xl font-black mt-2 text-orange-600">R$ {attendanceData.financial.estimatedImpact.toFixed(1)}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Perda Potencial</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border shadow-sm`}>
-                                        <p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Retenção Crítica</p>
-                                        <p className={`text-2xl font-bold mt-1 ${isManagerMode ? 'text-indigo-400' : 'text-indigo-600'}`}>{attendanceData.risk.patientsAtRisk.length}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes no Limite</p>
+                                    <div className="bg-white border-slate-100 p-6 rounded-2xl border shadow-sm">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Retenção Crítica</p>
+                                        <p className="text-3xl font-black mt-2 text-indigo-600">{attendanceData.risk.patientsAtRisk.length}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Pacientes no Limite</p>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <div className={`lg:col-span-2 ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white shadow-sm border-gray-100'} rounded-xl border p-6`}>
-                                        <h4 className={`text-sm font-bold uppercase tracking-widest mb-6 ${isManagerMode ? 'text-gray-400' : 'text-gray-700'}`}>Mapeamento de Evasão (Pacientes Reincidentes)</h4>
+                                    <div className="lg:col-span-2 bg-white shadow-xl border-slate-200 rounded-3xl border p-8">
+                                        <h4 className="text-sm font-black uppercase tracking-widest mb-6 text-slate-700 underline decoration-indigo-500/30 decoration-2 underline-offset-8">Mapeamento de Evasão (Churn)</h4>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-xs text-left">
-                                                <thead>
-                                                    <tr className={`border-b ${isManagerMode ? 'border-gray-700 text-gray-500' : 'border-gray-100 text-gray-400'}`}>
-                                                        <th className="pb-3 px-2">Paciente</th>
-                                                        <th className="pb-3 px-2">Faltas</th>
-                                                        <th className="pb-3 px-2">Análise de Risco</th>
-                                                        <th className="pb-3 px-2">Ação</th>
+                                                <thead className="bg-slate-50 border-b border-slate-200">
+                                                    <tr className="text-slate-500">
+                                                        <th className="py-4 px-2 font-black uppercase tracking-widest text-[9px]">Paciente</th>
+                                                        <th className="py-4 px-2 font-black uppercase tracking-widest text-[9px] text-center">Faltas</th>
+                                                        <th className="py-4 px-2 font-black uppercase tracking-widest text-[9px] text-center">Última Visita</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {attendanceData.risk.patientsAtRisk.slice(0, 5).map((p: any) => (
-                                                        <tr key={p.id} className={`border-b last:border-0 ${isManagerMode ? 'border-gray-700' : 'border-gray-50'}`}>
-                                                            <td className={`py-4 px-2 font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{p.name}</td>
-                                                            <td className="py-4 px-2">
-                                                                <span className={`px-2 py-0.5 rounded-full font-bold ${p.count > 1 ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
-                                                                    {p.count}x
-                                                                </span>
+                                                    {attendanceData.churnRisk.map((p) => (
+                                                        <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                                            <td className="py-4 px-2 font-black text-slate-800 text-sm">{p.name}</td>
+                                                            <td className="py-4 px-2 text-center">
+                                                                <span className="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-black border border-rose-100">{p.missedCount}</span>
                                                             </td>
-                                                            <td className="py-4 px-2 text-[10px] italic opacity-70">{p.reason}</td>
-                                                            <td className="py-4 px-2">
-                                                                <button className="text-emerald-600 font-bold hover:underline">Recuperar via WhatsApp</button>
-                                                            </td>
+                                                            <td className="py-4 px-2 text-center text-[10px] font-bold text-slate-500 italic">{p.lastVisit}</td>
                                                         </tr>
                                                     ))}
-                                                    {attendanceData.risk.patientsAtRisk.length === 0 && (
-                                                        <tr><td colSpan={4} className="py-10 text-center text-gray-400 italic">Nenhum alerta de evasão para o período selecionado.</td></tr>
+                                                    {attendanceData.churnRisk.length === 0 && (
+                                                        <tr><td colSpan={3} className="py-10 text-center text-gray-400 italic">Nenhum alerta de evasão para o período selecionado.</td></tr>
                                                     )}
                                                 </tbody>
                                             </table>
@@ -949,10 +963,10 @@ const CompositionEvolutionChart = ({ data, isManagerMode, isPdf }: { data: any[]
     if (chartData.length < 2) return <div className={`h-40 flex items-center justify-center text-sm ${isPdf ? 'text-gray-400 border-gray-200' : 'text-gray-500 border-emerald-100 bg-emerald-50'} rounded border border-dashed`}>Dados de composição corporal insuficientes (mín. 2 avaliações).</div>;
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '280px' : '360px' }}>
+        <div className="w-full rounded-2xl p-6 bg-white border border-slate-200 shadow-sm" style={{ height: isPdf ? '280px' : '360px' }}>
             <div className="flex flex-col items-center mb-6">
-                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Composição</h4>
-                <p className={`text-[10px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução de Tecidos Adiposo vs. Magro</p>
+                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-600">Dinâmica de Composição</h4>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Evolução de Tecidos Adiposo vs. Magro</p>
             </div>
             <ResponsiveContainer width="100%" height="80%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -966,16 +980,17 @@ const CompositionEvolutionChart = ({ data, isManagerMode, isPdf }: { data: any[]
                             <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} />
                     {!isPdf && <RechartsTooltip
                         contentStyle={{
                             borderRadius: '12px',
                             border: 'none',
-                            backgroundColor: isManagerMode ? '#1f2937' : '#fff',
+                            backgroundColor: '#fff',
                             boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
                         }}
+                        cursor={{ fill: 'transparent' }}
                     />}
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
                     <Area type="monotone" dataKey="leanMass" name="Massa Magra (kg)" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorLean)" activeDot={{ r: 6 }} />
@@ -1002,13 +1017,13 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
 
     return (
         <div className="w-full" style={{ height: isPdf ? '180px' : '200px' }}>
-            <p className={`text-center text-xs font-bold uppercase mb-2 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Risco Metabólico (RCQ)</p>
+            <p className={`text-center text-xs font-bold uppercase mb-2 text-gray-500`}>Risco Metabólico (RCQ)</p>
             <ResponsiveContainer width="100%" height="90%">
                 <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isManagerMode ? '#374151' : '#e5e7eb'} />
-                    <XAxis dataKey="dateFormatted" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#6b7280' }} />
-                    {!isPdf && <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />}
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="dateFormatted" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    {!isPdf && <RechartsTooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold' }} cursor={{ fill: 'transparent' }} />}
 
                     {/* Background risk zones */}
                     <ReferenceArea y1={0} y2={lowRisk} fill="#10b981" fillOpacity={isPdf ? 0.1 : 0.1} />
@@ -1068,7 +1083,7 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
 
     if (mapData.length < 3) {
         return (
-            <div className={`w-full rounded-2xl p-6 flex flex-col items-center justify-center border border-dashed ${isManagerMode ? 'bg-gray-900 border-gray-700 text-gray-400' : 'bg-white border-emerald-100 text-slate-400'}`} style={{ height: isPdf ? '320px' : '400px' }}>
+            <div className="w-full rounded-2xl p-6 flex flex-col items-center justify-center border border-dashed bg-white border-slate-200 text-slate-400" style={{ height: isPdf ? '320px' : '400px' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -1084,17 +1099,17 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
     const domainRange = [100 - maxDev - padding, 100 + maxDev + padding];
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 shadow-2xl border border-gray-800' : 'bg-white shadow-xl border border-emerald-50'}`} style={{ height: isPdf ? '320px' : '420px' }}>
-            <div className="flex flex-col items-center mb-2">
-                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Assinatura Antropométrica</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1`}>Evolução Proporcional vs. 1ª Avaliação (Base 100%)</p>
+        <div className="w-full rounded-[2rem] p-8 bg-white shadow-xl border border-slate-100" style={{ height: isPdf ? '320px' : '420px' }}>
+            <div className="flex flex-col items-center mb-4">
+                <h4 className="text-sm font-black uppercase tracking-[0.3em] text-indigo-600">Assinatura Antropométrica</h4>
+                <p className="text-[10px] font-black text-slate-300 uppercase mt-1 tracking-widest">Evolução Proporcional (Base 100%)</p>
             </div>
 
             {/* Legenda única e clara */}
             <div className="flex justify-center gap-6 mb-2">
                 <div className="flex items-center gap-1.5">
-                    <svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke={isManagerMode ? '#6b7280' : '#94a3b8'} strokeWidth="2" strokeDasharray="5 3" /></svg>
-                    <span className={`text-[9px] font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-slate-500'}`}>Marco Zero (1ª Avaliação)</span>
+                    <svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 3" /></svg>
+                    <span className={`text-[9px] font-bold uppercase text-slate-500`}>Marco Zero (1ª Avaliação)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
@@ -1104,23 +1119,24 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
 
             <ResponsiveContainer width="100%" height="73%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mapData}>
-                    <PolarGrid stroke={isManagerMode ? '#374151' : '#e2e8f0'} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: isManagerMode ? '#9ca3af' : '#475569', fontSize: 10, fontWeight: 'bold' }} />
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 'bold' }} />
                     <PolarRadiusAxis domain={domainRange} tick={false} axisLine={false} />
                     {!isPdf && <RechartsTooltip
+                        cursor={{ fill: 'transparent' }}
                         content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                                 const d = payload[0].payload;
                                 const chg = d.change;
                                 const pct = Number((d.B - 100).toFixed(1));
                                 return (
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'} p-3 rounded-xl shadow-2xl border text-xs`}>
-                                        <p className="font-bold mb-1 uppercase tracking-wider border-b pb-1">{d.subject}</p>
-                                        <div className="space-y-1 mt-2">
-                                            <div className="flex justify-between gap-4"><span className={isManagerMode ? 'text-gray-400' : 'text-gray-500'}>1ª Avaliação:</span><strong>{d.orig_a} cm</strong></div>
-                                            <div className="flex justify-between gap-4"><span className={isManagerMode ? 'text-gray-400' : 'text-gray-500'}>Avaliação Atual:</span><strong>{d.orig_b} cm</strong></div>
-                                            <div className={`flex justify-between gap-4 font-bold border-t pt-1 mt-1 ${chg < 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                <span>Variação:</span>
+                                    <div className="bg-white border-slate-200 text-slate-900 p-4 rounded-2xl shadow-2xl border text-[11px] font-bold">
+                                        <p className="font-black mb-2 uppercase tracking-[0.2em] border-b border-slate-100 pb-2 text-indigo-600">{d.subject}</p>
+                                        <div className="space-y-1.5 mt-2">
+                                            <div className="flex justify-between gap-6"><span className="text-slate-400">Primeiro:</span><strong>{d.orig_a} cm</strong></div>
+                                            <div className="flex justify-between gap-6"><span className="text-slate-400">Atual:</span><strong>{d.orig_b} cm</strong></div>
+                                            <div className={`flex justify-between gap-6 font-black border-t border-slate-100 pt-2 mt-2 ${chg < 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                <span className="uppercase tracking-tighter">Variação:</span>
                                                 <span>{chg > 0 ? '+' : ''}{chg} cm ({pct > 0 ? '+' : ''}{pct}%)</span>
                                             </div>
                                         </div>
@@ -1131,7 +1147,7 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
                         }}
                     />}
                     {/* A = 100% sempre — representa a 1ª avaliação (marco zero tracejado) */}
-                    <Radar name="Marco Zero" dataKey="A" stroke={isManagerMode ? '#6b7280' : '#94a3b8'} fill="transparent" fillOpacity={0} strokeWidth={1.5} strokeDasharray="5 3" />
+                    <Radar name="Marco Zero" dataKey="A" stroke="#94a3b8" fill="transparent" fillOpacity={0} strokeWidth={1.5} strokeDasharray="5 3" />
                     {/* B = % da última em relação à 1ª — área verde de variação real */}
                     <Radar name="Variação Real" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={isPdf ? 0.25 : 0.45} strokeWidth={3} />
                 </RadarChart>
@@ -1155,14 +1171,14 @@ const GoalThermometer = ({ currentBF, targetBF, isManagerMode, isPdf }: { curren
 
     return (
         <div className="w-full" style={{ height: isPdf ? '100px' : '140px' }}>
-            <p className={`text-center text-xs font-bold uppercase mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Progresso do Objetivo (%GC)</p>
+            <p className={`text-center text-xs font-bold uppercase mb-4 text-gray-500`}>Progresso do Objetivo (%GC)</p>
             <ResponsiveContainer width="100%" height="45%">
                 <BarChart layout="vertical" data={data} margin={{ top: 0, right: 30, left: 20, bottom: 0 }} barGap="-100%">
                     <XAxis type="number" domain={[0, Math.max(currentBF, safeTarget, 30) + 5]} hide />
                     <YAxis dataKey="name" type="category" hide />
 
                     {/* Background track */}
-                    <Bar dataKey="name" fill={isManagerMode ? '#1f2937' : '#f1f5f9'} radius={[10, 10, 10, 10]} barSize={24} isAnimationActive={false} />
+                    <Bar dataKey="name" fill="#f8fafc" radius={[10, 10, 10, 10]} barSize={24} isAnimationActive={false} />
 
                     {/* Progress bar (Overlay) */}
                     <Bar dataKey="Atual" fill={currentBF <= safeTarget ? '#10b981' : '#f59e0b'} radius={[10, 10, 10, 10]} barSize={24} />
@@ -1225,7 +1241,7 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
         .filter(m => Math.abs(m.delta) >= 0.1);
 
     if (data.length === 0) return (
-        <div className={`h-40 flex items-center justify-center text-sm ${isManagerMode ? 'text-gray-400 border-gray-700' : 'text-slate-400 border-emerald-100'} rounded border border-dashed`}>
+        <div className={`h-40 flex items-center justify-center text-sm text-slate-400 border-emerald-100 rounded border border-dashed`}>
             Sem variações detectadas entre as avaliações.
         </div>
     );
@@ -1233,23 +1249,23 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
     const dynamicHeight = Math.max(280, data.length * 38 + 90);
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '300px' : `${dynamicHeight}px` }}>
+        <div className="w-full rounded-2xl p-6 bg-white border border-slate-200 shadow-sm" style={{ height: isPdf ? '300px' : `${dynamicHeight}px` }}>
             <div className="flex flex-col items-center mb-4">
-                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Perdas e Ganhos</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação Líquida de Todos os Perímetros (cm)</p>
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] text-emerald-800`}>Dinâmica de Perdas e Ganhos</h4>
+                <p className={`text-[9px] font-bold text-slate-400 uppercase mt-1 text-center`}>Variação Líquida de Todos os Perímetros (cm)</p>
             </div>
             <ResponsiveContainer width="100%" height="82%">
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 55, left: 5, bottom: 5 }} barSize={Math.min(16, Math.floor(220 / data.length))}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis type="number" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" cm" domain={['auto', 'auto']} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={82} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={'#f1f5f9'} />
+                    <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} unit=" cm" domain={['auto', 'auto']} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={82} />
                     {!isPdf && <RechartsTooltip
-                        cursor={{ fill: isManagerMode ? '#1f2937' : '#f8fafc' }}
+                        cursor={{ fill: 'transparent' }}
                         content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                                 const d = payload[0].payload;
                                 return (
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-2 rounded-lg shadow-xl border text-[10px]`}>
+                                    <div className={`bg-white border-gray-200 p-2 rounded-lg shadow-xl border text-[10px]`}>
                                         <p className="font-bold uppercase mb-1">{d.name}</p>
                                         <p className={d.isPositive ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
                                             {d.delta > 0 ? '+' : ''}{d.delta} cm ({d.pct > 0 ? '+' : ''}{d.pct}%)
@@ -1377,15 +1393,17 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history
     const dynamicH = Math.max(280, data.length * 30 + 100);
 
     return (
-        <div className={`w-full rounded-2xl p-6 ${isManagerMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-emerald-50 shadow-sm'}`} style={{ height: isPdf ? '280px' : `${dynamicH}px` }}>
+        <div className="w-full rounded-2xl p-6 bg-white border border-slate-200 shadow-sm" style={{ height: isPdf ? '280px' : `${dynamicH}px` }}>
             <div className="flex flex-col items-center mb-2">
-                <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>Dinâmica de Gordura Localizada</h4>
-                <p className={`text-[9px] font-bold ${isManagerMode ? 'text-gray-500' : 'text-slate-400'} uppercase mt-1 text-center`}>Variação de Dobras Cutâneas (mm)</p>
-                {activeProtocol && (
-                    <span className={`text-[8px] font-bold mt-1 px-2 py-0.5 rounded-full ${isManagerMode ? 'bg-indigo-900 text-indigo-300' : 'bg-emerald-50 text-emerald-700'}`}>
-                        Protocolo: {PROTOCOL_NAMES[activeProtocol] || activeProtocol}
+                <h4 className={`text-sm font-black uppercase tracking-[0.2em] text-emerald-800`}>Dinâmica de Gordura Localizada</h4>
+                <p className={`text-[9px] font-bold text-slate-400 uppercase mt-1 text-center`}>Variação de Dobras Cutâneas (mm)</p>
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col pt-2">
+                <div className="flex justify-between items-center mb-4 px-2">
+                    <span className="text-[8px] font-black mt-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 italic">
+                        Redução de Dobras = Eficiência Lipolítica
                     </span>
-                )}
+                </div>
             </div>
 
             {/* Alerta de inconsistência de protocolo */}
@@ -1398,16 +1416,16 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history
 
             <ResponsiveContainer width="100%" height="68%">
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 50, left: 5, bottom: 5 }} barSize={Math.min(14, Math.floor(180 / data.length))}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isManagerMode ? '#374151' : '#f1f5f9'} />
-                    <XAxis type="number" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#64748b' }} unit=" mm" domain={['auto', 'auto']} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isManagerMode ? '#9ca3af' : '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={68} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} unit=" mm" domain={['auto', 'auto']} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: '#475569', fontWeight: 'bold' }} axisLine={false} tickLine={false} width={68} />
                     {!isPdf && <RechartsTooltip
-                        cursor={{ fill: isManagerMode ? '#1f2937' : '#f8fafc' }}
+                        cursor={{ fill: 'transparent' }}
                         content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                                 const d = payload[0].payload;
                                 return (
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-2 rounded-lg shadow-xl border text-[10px]`}>
+                                    <div className="bg-white border-slate-200 text-slate-900 p-4 rounded-2xl shadow-2xl border text-[11px] font-bold">
                                         <p className="font-bold uppercase mb-1">{d.name}</p>
                                         <p className={d.delta < 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
                                             {d.delta > 0 ? '+' : ''}{d.delta} mm ({d.pct > 0 ? '+' : ''}{d.pct}%)
@@ -1446,35 +1464,54 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             </div>
 
             {/* 1. Header & ID */}
-            <div className={`flex items-center gap-6 p-6 rounded-xl ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} border border-emerald-100`}>
-                <div className={`h-20 w-20 rounded-full flex items-center justify-center text-4xl font-bold border-4 ${isManagerMode ? 'bg-gray-800 text-gray-300 border-gray-600' : 'bg-white text-emerald-600 border-emerald-200'}`}>
+            <div className="flex items-center gap-6 p-8 rounded-3xl bg-slate-50 border border-slate-200 shadow-inner">
+                <div className="h-20 w-20 rounded-2xl flex items-center justify-center text-4xl font-black bg-white text-indigo-600 border-2 border-indigo-100 shadow-xl rotate-3">
                     {patient.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                    <h3 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{patient.name}</h3>
-                    <p className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
-                    <div className="flex gap-4 mt-2 text-xs opacity-80">
-                        <span>📧 {patient.email}</span>
-                        <span>📞 {patient.phone}</span>
-                        {patient.financial?.insuranceName && <span className="font-bold">🏥 {patient.financial.insuranceName}</span>}
+                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">{patient.name}</h3>
+                    <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
+                    <div className="flex gap-6 mt-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <span className="flex items-center gap-1.5"><Icons.Mail className="w-3.5 h-3.5 text-indigo-400" /> {patient.email}</span>
+                        <span className="flex items-center gap-1.5"><Icons.Phone className="w-3.5 h-3.5 text-emerald-400" /> {patient.phone}</span>
                     </div>
                 </div>
             </div>
 
             {/* 2. KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Paciente Desde</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.patientSince}</p></div>
-                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Total de Consultas</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.totalAppointments}</p></div>
-                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Frequência</p><p className={`text-lg font-bold mt-1 ${metrics.attendanceRate < 80 ? (isManagerMode ? 'text-red-400' : 'text-red-600') : (isManagerMode ? 'text-green-400' : 'text-green-600')}`}>{Number(metrics.attendanceRate).toFixed(1)}%</p></div>
-                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} p-4 rounded-lg border text-center`}><p className={`text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Próxima Consulta</p><p className={`text-lg font-bold mt-1 ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p></div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Desde</p>
+                    <p className="text-xl font-black mt-1 text-slate-900">{metrics.patientSince}</p>
+                </div>
+                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Consultas</p>
+                    <p className="text-xl font-black mt-1 text-slate-900">{metrics.totalAppointments}</p>
+                </div>
+                <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 underline decoration-indigo-500 decoration-2 underline-offset-4 mb-2">Presença (Rate)</p>
+                    <p className={`text-xl font-black text-slate-900 ${metrics.attendanceRate < 80 ? 'text-rose-500' : 'text-emerald-500'}`}>{Number(metrics.attendanceRate).toFixed(1)}%</p>
+                </div>
+                {isManagerMode && (
+                    <div className="bg-emerald-50 border-emerald-100 p-6 rounded-2xl border text-center shadow-inner">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">Receita Total</p>
+                        <p className="text-xl font-black text-emerald-900">R$ {financial.totalPaid.toFixed(0)}</p>
+                    </div>
+                )}
+                {!isManagerMode && (
+                    <div className="bg-white border-slate-100 p-6 rounded-2xl border text-center shadow-sm">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Próxima</p>
+                        <p className="text-xl font-black text-indigo-600">{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                )}
             </div>
 
             {/* 3. AI Analysis Section */}
             {!isPdf && (
-                <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg flex items-center justify-between print:hidden border border-emerald-100`}>
-                    <p className={`text-sm font-bold ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>Análise Clínica Completa (IA)</p>
-                    <button onClick={onAnalyze} disabled={analyzing} className={`text-xs px-3 py-1.5 rounded-lg shadow-sm font-bold flex items-center gap-1 ${analyzing ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700')}`}>
-                        {analyzing ? 'Analisando...' : <>🔬 Gerar Resumo</>}
+                <div className="bg-indigo-50/30 p-4 rounded-2xl flex items-center justify-between print:hidden border border-indigo-100">
+                    <p className="text-sm font-black text-indigo-900 uppercase tracking-widest">Auditoria Clínica Digital (IA)</p>
+                    <button onClick={onAnalyze} disabled={analyzing} className={`text-xs px-5 py-2 rounded-xl shadow-lg font-black flex items-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                        {analyzing ? 'Processando...' : <>🔬 Gerar Análise</>}
                     </button>
                 </div>
             )}
@@ -1485,8 +1522,8 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             )}
 
             {/* 4. Anthropometric Evolution */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border space-y-8`}>
-                <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Painel de Evolução Corporal</h3>
+            <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border space-y-8">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-4 text-slate-400 underline decoration-emerald-500 decoration-2 underline-offset-8">Painel de Evolução Corporal</h3>
 
                 {/* Advanced Charts Grid */}
                 <div
@@ -1535,14 +1572,14 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                             />
                         </div>
                         <div className="w-full">
-                            <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-100'} p-6 rounded-xl border`}>
+                            <div className="bg-slate-50 border-slate-200 p-8 rounded-[2rem] border shadow-inner">
                                 <GoalThermometer
                                     currentBF={anthropometry.history[anthropometry.history.length - 1]?.bodyFatPercentage ?? 0}
                                     targetBF={0}
                                     isManagerMode={isManagerMode}
                                     isPdf={isPdf}
                                 />
-                                {!isPdf && <p className="text-[10px] text-center mt-4 text-gray-500 select-none">O paciente visualiza de forma orgânica o quão próximo está da consolidação do objetivo final de repaginação corporal.</p>}
+                                {!isPdf && <p className="text-[10px] text-center mt-6 text-slate-400 font-bold uppercase tracking-widest select-none">Progresso em direção ao objetivo de composição corporal</p>}
                             </div>
                         </div>
                     </div>
@@ -1550,31 +1587,34 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
 
                 {/* Last Record Table */}
                 {anthropometry.current && (
-                    <div className="mt-6 pt-4 border-t border-dashed border-gray-300">
-                        <h4 className="text-xs font-bold uppercase mb-3">Última Avaliação ({new Date(anthropometry.current.anthro.date).toLocaleDateString()})</h4>
-                        <div className="grid grid-cols-3 gap-4 text-xs">
-                            <div className="p-2 bg-gray-50 rounded">
-                                <strong>Circunferências (cm):</strong>
-                                <ul className="mt-1 space-y-1">
-                                    <li>Cintura: {anthropometry.current.anthro.circumferencesCm.waist ? Number(anthropometry.current.anthro.circumferencesCm.waist).toFixed(1) : '-'}</li>
-                                    <li>Abdômen: {anthropometry.current.anthro.circumferencesCm.abdomen ? Number(anthropometry.current.anthro.circumferencesCm.abdomen).toFixed(1) : '-'}</li>
-                                    <li>Quadril: {anthropometry.current.anthro.circumferencesCm.hip ? Number(anthropometry.current.anthro.circumferencesCm.hip).toFixed(1) : '-'}</li>
+                    <div className="mt-8 pt-8 border-t border-dashed border-slate-200">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-slate-500 text-center">Snapshot da Última Avaliação ({new Date(anthropometry.current.anthro.date).toLocaleDateString()})</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Icons.Ruler className="w-12 h-12 text-indigo-600" /></div>
+                                <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-4">Circunferências (cm)</p>
+                                <ul className="space-y-2">
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Cintura</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.circumferencesCm.waist ? Number(anthropometry.current.anthro.circumferencesCm.waist).toFixed(1) : '-'}</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Abdômen</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.circumferencesCm.abdomen ? Number(anthropometry.current.anthro.circumferencesCm.abdomen).toFixed(1) : '-'}</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Quadril</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.circumferencesCm.hip ? Number(anthropometry.current.anthro.circumferencesCm.hip).toFixed(1) : '-'}</span></li>
                                 </ul>
                             </div>
-                            <div className="p-2 bg-gray-50 rounded">
-                                <strong>Dobras (mm):</strong>
-                                <ul className="mt-1 space-y-1">
-                                    <li>Tríceps: {anthropometry.current.anthro.skinfoldsMm.triceps ? Number(anthropometry.current.anthro.skinfoldsMm.triceps).toFixed(1) : '-'}</li>
-                                    <li>Abdominal: {anthropometry.current.anthro.skinfoldsMm.abdominal ? Number(anthropometry.current.anthro.skinfoldsMm.abdominal).toFixed(1) : '-'}</li>
-                                    <li>Supra-ilíaca: {anthropometry.current.anthro.skinfoldsMm.suprailiac ? Number(anthropometry.current.anthro.skinfoldsMm.suprailiac).toFixed(1) : '-'}</li>
+                            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-colors">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Icons.Activity className="w-12 h-12 text-emerald-600" /></div>
+                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-4">Dobras (mm)</p>
+                                <ul className="space-y-2">
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Tríceps</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.skinfoldsMm.triceps ? Number(anthropometry.current.anthro.skinfoldsMm.triceps).toFixed(1) : '-'}</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Abdominal</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.skinfoldsMm.abdominal ? Number(anthropometry.current.anthro.skinfoldsMm.abdominal).toFixed(1) : '-'}</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Supra-ilíaca</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.skinfoldsMm.suprailiac ? Number(anthropometry.current.anthro.skinfoldsMm.suprailiac).toFixed(1) : '-'}</span></li>
                                 </ul>
                             </div>
-                            <div className="p-2 bg-gray-50 rounded">
-                                <strong>Composição:</strong>
-                                <ul className="mt-1 space-y-1">
-                                    <li>% Gordura: {anthropometry.current.anthro.bodyComp.bodyFatPct ? Number(anthropometry.current.anthro.bodyComp.bodyFatPct).toFixed(1) : '-'}%</li>
-                                    <li>Massa Magra: {anthropometry.current.anthro.bodyComp.leanMassKg ? Number(anthropometry.current.anthro.bodyComp.leanMassKg).toFixed(1) : '-'}kg</li>
-                                    <li>RCQ: {anthropometry.current.anthro.bodyComp.whr ? Number(anthropometry.current.anthro.bodyComp.whr).toFixed(1) : '-'}</li>
+                            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Icons.Zap className="w-12 h-12 text-amber-600" /></div>
+                                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-4">Composição</p>
+                                <ul className="space-y-2">
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">% Gordura</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.bodyComp.bodyFatPct ? Number(anthropometry.current.anthro.bodyComp.bodyFatPct).toFixed(1) : '-'}%</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">Massa Magra</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.bodyComp.leanMassKg ? Number(anthropometry.current.anthro.bodyComp.leanMassKg).toFixed(1) : '-'}kg</span></li>
+                                    <li className="flex justify-between items-center"><span className="text-[10px] font-bold text-slate-500 uppercase">RCQ</span><span className="text-sm font-black text-slate-900">{anthropometry.current.anthro.bodyComp.whr ? Number(anthropometry.current.anthro.bodyComp.whr).toFixed(1) : '-'}</span></li>
                                 </ul>
                             </div>
                         </div>
@@ -1584,51 +1624,98 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
 
             {/* 5. Clinical History & Plan */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
-                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Contexto Clínico</h3>
-                    <div className="space-y-4 text-sm">
-                        <div>
-                            <span className="block font-bold text-xs text-gray-500 uppercase">Diagnósticos Ativos</span>
-                            <p className={`${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{clinical.activeDiagnoses.length > 0 ? clinical.activeDiagnoses.join(', ') : 'Nenhum registrado.'}</p>
+                <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-emerald-500">Contexto Clínico & Diagnósticos</h3>
+                    <div className="space-y-6 text-sm">
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <span className="block font-black text-[9px] text-slate-400 uppercase tracking-widest mb-1">Diagnósticos Ativos</span>
+                            <p className="text-slate-900 font-bold">{clinical.activeDiagnoses.length > 0 ? clinical.activeDiagnoses.join(', ') : 'Nenhum registrado.'}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <span className="block font-black text-[9px] text-slate-400 uppercase tracking-widest mb-1">Medicamentos & Suplementos</span>
+                            <p className="text-slate-900 font-bold">{clinical.medications.length > 0 ? clinical.medications.join(', ') : 'Nenhum registrado.'}</p>
                         </div>
                         <div>
-                            <span className="block font-bold text-xs text-gray-500 uppercase">Medicamentos</span>
-                            <p className={`${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{clinical.medications.length > 0 ? clinical.medications.join(', ') : 'Nenhum registrado.'}</p>
-                        </div>
-                        <div>
-                            <span className="block font-bold text-xs text-gray-500 uppercase">Resumo da Anamnese</span>
-                            <p className={`italic ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>{clinical.anamnesisSummary || 'Não preenchida.'}</p>
+                            <span className="block font-black text-[9px] text-slate-400 uppercase tracking-widest mb-2 px-1">Resumo da Anamnese</span>
+                            <p className="italic text-slate-600 text-xs leading-relaxed font-bold bg-white p-3 rounded-xl border border-dashed border-slate-200">{clinical.anamnesisSummary || 'Não preenchida.'}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
-                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Planejamento Nutricional</h3>
+                <div className="bg-white border-slate-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-8 border relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform"><Icons.Utensils className="w-24 h-24 text-indigo-600" /></div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-indigo-500">Planejamento Nutricional Ativo</h3>
                     {nutritional.activePlanTitle ? (
-                        <div className="space-y-4">
-                            <div className="p-3 bg-green-50 rounded border border-green-100">
-                                <span className="block text-xs text-green-800 font-bold mb-1">Plano Ativo</span>
-                                <p className="text-green-900 font-medium">{nutritional.activePlanTitle}</p>
+                        <div className="space-y-6 relative z-10">
+                            <div className="p-5 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-3xl shadow-lg shadow-indigo-100 border border-indigo-400">
+                                <span className="block text-[9px] text-indigo-100 font-black uppercase tracking-widest mb-1">Título do Plano</span>
+                                <p className="text-white text-lg font-black tracking-tight">{nutritional.activePlanTitle}</p>
                             </div>
                             {nutritional.targets && (
-                                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                                    <div className="p-2 bg-gray-100 rounded"><div>Kcal</div><strong>{Number(nutritional.targets.kcal).toFixed(1)}</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Prot</div><strong>{Number(nutritional.targets.protein).toFixed(1)}g</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Carb</div><strong>{Number(nutritional.targets.carbs).toFixed(1)}g</strong></div>
-                                    <div className="p-2 bg-gray-100 rounded"><div>Gord</div><strong>{Number(nutritional.targets.fat).toFixed(1)}g</strong></div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center shadow-sm">
+                                        <div className="text-[9px] font-black text-slate-400 uppercase mb-1">VET (Kcal)</div>
+                                        <div className="text-sm font-black text-slate-900">{Number(nutritional.targets.kcal).toFixed(0)}</div>
+                                    </div>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center shadow-sm">
+                                        <div className="text-[9px] font-black text-emerald-500 uppercase mb-1">Prot (g)</div>
+                                        <div className="text-sm font-black text-slate-900">{Number(nutritional.targets.protein).toFixed(1)}</div>
+                                    </div>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center shadow-sm">
+                                        <div className="text-[9px] font-black text-indigo-500 uppercase mb-1">Carb (g)</div>
+                                        <div className="text-sm font-black text-slate-900">{Number(nutritional.targets.carbs).toFixed(1)}</div>
+                                    </div>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center shadow-sm">
+                                        <div className="text-[9px] font-black text-amber-500 uppercase mb-1">Gord (g)</div>
+                                        <div className="text-sm font-black text-slate-900">{Number(nutritional.targets.fat).toFixed(1)}</div>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <p className="text-sm italic text-gray-500">Nenhum plano ativo.</p>
+                        <div className="p-10 border-2 border-dashed border-slate-100 rounded-3xl flex items-center justify-center">
+                            <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Nenhum plano ativo no momento</p>
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* 6. Perfil Psicocomportamental MIPAN-20 */}
+            {/* 6. Lab Analysis (Exames) */}
+            {exams && exams.length > 0 && (
+                <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-amber-500">Análise Laboratorial (Exames)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {exams.slice(0, 2).map((exam) => (
+                            <div key={exam.id} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform"><Icons.Beaker className="w-16 h-16 text-amber-600" /></div>
+                                <div className="flex justify-between items-start mb-4 relative z-10">
+                                    <div>
+                                        <p className="text-xs font-black text-slate-900 tracking-tight">{exam.name}</p>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">{new Date(exam.date).toLocaleDateString()}</p>
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black ${exam.status === 'ANALISADO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>{exam.status}</span>
+                                </div>
+                                <div className="space-y-2 relative z-10">
+                                    {exam.markers?.slice(0, 4).map((marker, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-[10px] font-bold py-1.5 border-b border-slate-200 last:border-0">
+                                            <span className="text-slate-500">{marker.name}</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`${marker.interpretation === 'NORMAL' ? 'text-emerald-600' : 'text-rose-600'} font-black`}>{marker.value} {marker.unit}</span>
+                                                <span className="text-[8px] text-slate-300 font-mono tracking-tighter">Ref: {marker.reference.label}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* 7. Perfil Psicocomportamental MIPAN-20 */}
             {data.mipanAssessments && data.mipanAssessments.length > 0 && (
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
-                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-6 ${isManagerMode ? 'text-gray-300' : 'text-indigo-800'}`}>Perfil Psicocomportamental MIPAN-20</h3>
+                <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-indigo-500">Perfil Psicocomportamental MIPAN-20</h3>
 
                     {(() => {
                         const lastMipan = data.mipanAssessments![0];
@@ -1692,18 +1779,18 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             )
             }
 
-            {/* 7. Timeline History */}
-            {/* 7. Timeline History - Excluded from PDF explicitly via Logic and Canvas Filter */}
+            {/* 8. Timeline History */}
+            {/* 8. Timeline History - Excluded from PDF explicitly via Logic and Canvas Filter */}
             {!isPdf && (
-                <div data-html2canvas-ignore="true" className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border print:hidden`}>
-                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Histórico de Eventos</h3>
+                <div data-html2canvas-ignore="true" className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border print:hidden">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-slate-500">Histórico de Eventos</h3>
                     <div className="space-y-4 border-l-2 border-gray-200 ml-2 pl-4">
                         {timeline.length === 0 ? <p className="text-sm text-gray-500 italic">Sem histórico registrado.</p> : timeline.map(event => (
                             <div key={event.id} className="relative">
                                 <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-white"></div>
-                                <p className={`text-xs font-bold ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>{new Date(event.createdAt).toLocaleDateString()} {new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                <p className={`text-sm font-medium ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{event.summary}</p>
-                                <p className={`text-[10px] ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>{event.type.replace('_', ' ')} • {event.createdBy ? event.createdBy.name : 'Sistema'}</p>
+                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(event.createdAt).toLocaleDateString()} {new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p className="text-sm font-black text-slate-900 tracking-tight">{event.summary}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{event.type.replace('_', ' ')} • {event.createdBy ? event.createdBy.name : 'Sistema'}</p>
                             </div>
                         ))}
                     </div>
