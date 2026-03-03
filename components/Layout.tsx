@@ -17,11 +17,11 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
       ? isManagerMode
-        ? 'bg-indigo-700 text-white font-bold shadow-md transform scale-[1.02]'
-        : 'bg-emerald-700 text-white font-bold shadow-md transform scale-[1.02]'
+        ? 'bg-indigo-700 text-white font-black shadow-lg transform scale-[1.02]'
+        : 'bg-emerald-700 text-white font-black shadow-lg transform scale-[1.02]'
       : isManagerMode
         ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-        : 'text-emerald-100 hover:text-white hover:bg-emerald-700 font-medium'
+        : 'text-emerald-100 hover:text-white hover:bg-emerald-700/60 font-medium'
     }`;
 
   const AlertIcon = () => (
@@ -36,18 +36,27 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/60 z-40 xl:hidden backdrop-blur-md transition-all duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+        fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out xl:relative xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isManagerMode ? 'bg-gray-800' : 'bg-emerald-800'} 
         text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden max-w-[85vw]
       `}>
+        {/* MOBILE CLOSE BUTTON */}
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="xl:hidden absolute top-4 -right-12 p-2 bg-emerald-600 text-white rounded-full shadow-lg"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         {/* BRANDING HEADER */}
         <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
           <div className="mb-2 w-full flex justify-center">
@@ -145,11 +154,11 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isManagerMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
 
         {/* Top Header */}
-        <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-4 lg:px-8 py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
+        <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-4 xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+              className="xl:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
