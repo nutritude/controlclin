@@ -43,31 +43,31 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+        fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isManagerMode ? 'bg-gray-800' : 'bg-emerald-800'} 
-        text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden
+        text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden max-w-[85vw]
       `}>
         {/* BRANDING HEADER */}
-        <div className={`p-6 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
-          <div className="mb-3 w-full flex justify-center">
+        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
+          <div className="mb-2 w-full flex justify-center">
             {clinic.logoUrl ? (
               <img
                 src={clinic.logoUrl}
                 alt="Logo"
-                className="max-h-16 w-auto object-contain"
+                className="max-h-12 md:max-h-16 w-auto object-contain"
               />
             ) : (
-              <span className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-2xl font-bold shadow-lg">
+              <span className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg">
                 {clinic.name.charAt(0)}
               </span>
             )}
           </div>
 
-          <h1 className="text-base font-bold tracking-tight text-white w-full break-words leading-tight">
+          <h1 className="text-sm md:text-base font-black uppercase tracking-tight text-white w-full break-words leading-tight">
             {clinic.name}
           </h1>
-          <p className={`text-[10px] mt-1 uppercase tracking-wider truncate w-full ${isManagerMode ? 'text-gray-400' : 'text-emerald-300'}`}>
+          <p className={`text-[9px] mt-1 uppercase tracking-widest font-bold truncate w-full ${isManagerMode ? 'text-gray-400' : 'text-emerald-300'}`}>
             {clinic.slug}.saas.com
           </p>
         </div>
@@ -156,12 +156,14 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
               </svg>
             </button>
 
-            <div className="flex flex-col">
-              <h2 className={`text-sm md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-white' : 'text-slate-800'} uppercase`}>ControlClin SaaS</h2>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col min-w-0">
+              <h2 className={`text-xs md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-white' : 'text-slate-800'} uppercase`}>
+                {isManagerMode ? 'Portal Gestão' : 'Portal Clínico'}
+              </h2>
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <div className={`w-1.5 h-1.5 rounded-full ${db.isRemoteEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-                <span className="text-[9px] text-gray-400 uppercase tracking-widest font-black">
-                  {db.isRemoteEnabled ? 'Cloud Sync Online' : 'Local Only'}
+                <span className="text-[8px] md:text-[9px] text-gray-400 uppercase tracking-widest font-black whitespace-nowrap">
+                  {db.isRemoteEnabled ? 'NUVEM SYNC' : 'LOCAL OFFLINE'}
                 </span>
               </div>
             </div>
