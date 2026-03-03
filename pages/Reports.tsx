@@ -343,20 +343,23 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         const avg = chartData.reduce((acc, d) => acc + d.amount, 0) / chartData.length;
         const peak = chartData.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
 
+        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
+        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+
         return (
             <div className="h-64 mt-4">
                 <div className="flex justify-between items-center px-4 mb-2">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pico do Período: {peak.displayDate} (R$ {peak.amount.toFixed(1)})</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isManagerMode ? 'text-gray-400' : 'text-slate-500'}`}>Pico do Período: {peak.displayDate} (R$ {peak.amount.toFixed(1)})</span>
                     </div>
                 </div>
                 <ResponsiveContainer width="100%" height="90%">
                     <AreaChart data={chartData}>
                         <defs><linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="displayDate" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
+                        <XAxis dataKey="displayDate" tick={{ fontSize: 9, fill: textColor }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: textColor }} axisLine={false} tickLine={false} />
                         {!isPdf && <RechartsTooltip />}
                         <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={!isPdf} />
                         <ReferenceLine y={avg} stroke="#f43f5e" strokeDasharray="5 5" label={{ position: 'right', value: 'Média', fill: '#f43f5e', fontSize: 8, fontWeight: 'bold' }} />
@@ -374,15 +377,18 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             { name: 'Pendente', Atual: current.pendingAmount, Anterior: prev.pendingAmount },
         ];
 
+        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
+        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+
         return (
             <div className="h-56 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ left: 10, right: 30 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} axisLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: textColor }} axisLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: textColor }} axisLine={false} />
                         {!generatingPdf && <RechartsTooltip formatter={(v: any) => `R$ ${v.toFixed(1)}`} />}
-                        <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+                        <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: textColor }} />
                         <Bar dataKey="Anterior" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={20} />
                         <Bar dataKey="Atual" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={20} />
                     </BarChart>
@@ -430,13 +436,16 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         const grouped: Record<string, number> = {};
         data.forEach(t => { const label = t.type || 'Consulta'; grouped[label] = (grouped[label] || 0) + 1; });
         const chartData = Object.entries(grouped).map(([name, value]) => ({ name, value }));
+        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
+        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+
         return (
             <div className="h-48 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                         <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 'bold' }} width={80} axisLine={false} tickLine={false} />
-                        {!isPdf && <RechartsTooltip cursor={{ fill: '#f8fafc' }} />}
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 'bold', fill: textColor }} width={80} axisLine={false} tickLine={false} />
+                        {!isPdf && <RechartsTooltip cursor={{ fill: isManagerMode ? '#334155' : '#f8fafc' }} />}
                         <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={15} isAnimationActive={!isPdf} />
                     </BarChart>
                 </ResponsiveContainer>
@@ -447,15 +456,18 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     const ProfessionalPerformanceChart = ({ data }: { data: any[] }) => {
         if (!data || data.length === 0) return null;
 
+        const textColor = isManagerMode ? '#94a3b8' : '#64748b';
+        const axisColor = isManagerMode ? '#4b5563' : '#e2e8f0';
+
         return (
             <div className="h-64 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold' }} axisLine={false} />
-                        <YAxis tick={{ fontSize: 10 }} axisLine={false} />
-                        <RechartsTooltip formatter={(v: any) => [`${v} atendimentos`]} />
-                        <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: textColor }} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: textColor }} axisLine={false} />
+                        {!isPdf && <RechartsTooltip formatter={(v: any) => [`${v} atendimentos`]} />}
+                        <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px', color: textColor }} />
                         <Bar dataKey="prev" name="Anterior" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="current" name="Atual" fill="#6366f1" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -536,7 +548,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                             <div className="space-y-6">
                                 {/* Operational Analytics Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Volume Assistencial</p>
                                             <VariationIndicator value={((operationalStats.totalActivities / (operationalStats.comparative?.totalActivities || 1)) - 1) * 100} label="vs ant." />
@@ -545,7 +557,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total de Agendamentos no Período</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Pacientes Atendidos</p>
                                             <VariationIndicator value={((operationalStats.uniquePatientsInPeriod / (operationalStats.comparative?.uniquePatients || 1)) - 1) * 100} />
@@ -554,13 +566,13 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Únicos Passando no Período</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50 shadow-sm'} p-6 rounded-xl border`}>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Base Total Ativa</p>
                                         <p className={`text-3xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{operationalStats?.activePatients || 0}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Pacientes Cadastrados na Clínica</p>
                                     </div>
 
-                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-indigo-50 border-indigo-100 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/30 border-indigo-500/30' : 'bg-indigo-50 border-indigo-100 shadow-sm'} p-6 rounded-xl border`}>
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="text-xl">🔬</span>
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Audit IA</h4>
@@ -572,11 +584,11 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
                                         <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Mix de Especialidades / Tipos</h4>
                                         <OperationalTypeChart data={reportData} isPdf={generatingPdf} />
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200 shadow-sm'} p-6 rounded-xl border`}>
                                         <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`}>Performance por Profissional</h4>
                                         <ProfessionalPerformanceChart data={operationalStats.professionalPerformance} />
                                     </div>
@@ -642,28 +654,42 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                 </div>
 
-                                <div className="mt-12 bg-slate-50/50 p-8 rounded-3xl border border-dashed border-slate-300">
+                                <div className="mt-12 bg-slate-50/50 p-6 rounded-3xl border border-dashed border-slate-300">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                                        <div className={`p-3 rounded-2xl shadow-sm border ${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
                                             <Icons.Users className="text-emerald-600 w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-700">Censo de Pacientes (Base Geral)</h4>
-                                            <p className="text-xs text-slate-400 font-medium">Todos os pacientes vinculados à clínica em sua base de dados</p>
+                                            <h4 className={`text-sm font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-slate-300' : 'text-slate-700'}`}>Censo de Pacientes (Base Geral)</h4>
+                                            <p className="text-xs text-slate-400 font-medium">Todos os pacientes vinculados à clínica</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        {operationalStats.patientsInBase.map((p: any) => (
-                                            <div key={p.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 group hover:border-emerald-300 hover:shadow-lg transition-all transform hover:-translate-y-1">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm text-white bg-gradient-to-br from-emerald-400 to-emerald-600`}>
-                                                    {p.name.charAt(0)}
-                                                </div>
-                                                <div className="overflow-hidden">
-                                                    <p className="text-xs font-black text-slate-800 truncate mb-0.5">{p.name}</p>
-                                                    <p className="text-[9px] text-slate-400 font-bold uppercase truncate">{p.email || 'Registro sem e-mail'}</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="overflow-hidden rounded-xl border border-slate-200">
+                                        <table className={`min-w-full divide-y ${isManagerMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
+                                            <thead className={`${isManagerMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                                                <tr>
+                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>Paciente</th>
+                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>E-mail</th>
+                                                    <th className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-slate-300' : 'text-slate-500'}`}>WhatsApp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className={`${isManagerMode ? 'bg-slate-800 divide-slate-700' : 'bg-white divide-slate-200'}`}>
+                                                {operationalStats.patientsInBase.map((p: any) => (
+                                                    <tr key={p.id} className={`${isManagerMode ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} transition-colors`}>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] text-white bg-gradient-to-br from-emerald-400 to-emerald-600">
+                                                                    {p.name.charAt(0)}
+                                                                </div>
+                                                                <span className={`text-xs font-bold ${isManagerMode ? 'text-slate-200' : 'text-slate-800'}`}>{p.name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className={`px-4 py-3 whitespace-nowrap text-xs ${isManagerMode ? 'text-slate-400' : 'text-slate-500'}`}>{p.email || '-'}</td>
+                                                        <td className={`px-4 py-3 whitespace-nowrap text-xs ${isManagerMode ? 'text-slate-400' : 'text-slate-500'}`}>{p.phone || '-'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -674,7 +700,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                             <div className="space-y-6">
                                 {/* Core Totals */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-50'} p-6 rounded-xl border shadow-sm`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Receita Bruta</p>
                                             <VariationIndicator value={((financialDataset.metrics.gross / (financialDataset.comparative.gross || 1)) - 1) * 100} label="vs ant." />
@@ -682,7 +708,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.gross.toFixed(1)}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Total faturado (Tabela)</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-rose-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-rose-50'} p-6 rounded-xl border shadow-sm`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Descontos / Isenções</p>
                                             <VariationIndicator value={financialDataset.metrics.discountIndex - financialDataset.comparative.discountIndex} label="ppt" />
@@ -690,7 +716,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{financialDataset.metrics.discountIndex.toFixed(1)}%</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Índice Médio de Desconto</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-indigo-50'} p-6 rounded-xl border shadow-sm`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Receita Real Líquida</p>
                                             <VariationIndicator value={((financialDataset.metrics.netReal / (financialDataset.comparative.netReal || 1)) - 1) * 100} />
@@ -698,7 +724,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                         <p className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>R$ {financialDataset.metrics.netReal.toFixed(1)}</p>
                                         <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Após taxas de métodos e descontos</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-orange-50'} p-6 rounded-xl border shadow-sm`}>
+                                    <div className={`${isManagerMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-orange-50'} p-6 rounded-xl border shadow-sm`}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Inadimplência (Pendentes)</p>
                                             <VariationIndicator value={((financialDataset.metrics.pendingAmount / (financialDataset.comparative.pendingAmount || 1)) - 1) * 100} />
@@ -710,25 +736,25 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
                                 {/* KPIs of Efficiency (Analyst View) */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/10 border-indigo-500/10' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">KPI: Ticket Médio</h4>
                                         <div className="flex items-baseline gap-2">
-                                            <span className="text-2xl font-black">R$ {financialDataset.metrics.ticketMedio.toFixed(1)}</span>
+                                            <span className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>R$ {financialDataset.metrics.ticketMedio.toFixed(1)}</span>
                                             <VariationIndicator value={((financialDataset.metrics.ticketMedio / financialDataset.comparative.ticketMedio) - 1) * 100} />
                                         </div>
                                         <p className="text-[10px] text-slate-400 mt-1">Rentabilidade por agendamento realizado</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-indigo-900/20 border-indigo-900/50' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-indigo-900/10 border-indigo-500/10' : 'bg-slate-50 border-slate-200'} p-6 rounded-2xl border`}>
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Taxa de Conversão</h4>
                                         <div className="flex items-baseline gap-2">
-                                            <span className="text-2xl font-black">{financialDataset.metrics.conversionRate.toFixed(1)}%</span>
+                                            <span className={`text-2xl font-black ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{financialDataset.metrics.conversionRate.toFixed(1)}%</span>
                                             <VariationIndicator value={financialDataset.metrics.conversionRate - financialDataset.comparative.conversionRate} label="ppt" />
                                         </div>
                                         <p className="text-[10px] text-slate-400 mt-1">Eficiência da recepção (Confirmados / Total)</p>
                                     </div>
-                                    <div className={`${isManagerMode ? 'bg-rose-900/20 border-rose-900/50' : 'bg-rose-50/50 border-rose-100'} p-6 rounded-2xl border`}>
+                                    <div className={`${isManagerMode ? 'bg-rose-900/10 border-rose-500/10' : 'bg-rose-50/50 border-rose-100'} p-6 rounded-2xl border`}>
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 mb-3">Custo de Oportunidade</h4>
-                                        <span className="text-2xl font-black text-rose-600">R$ {financialDataset.metrics.lostRevenue.toFixed(1)}</span>
+                                        <span className={`text-2xl font-black ${isManagerMode ? 'text-rose-400' : 'text-rose-600'}`}>R$ {financialDataset.metrics.lostRevenue.toFixed(1)}</span>
                                         <p className="text-[10px] text-rose-400 mt-1 font-bold">Receita perdida por faltas (Absenteísmo)</p>
                                     </div>
                                 </div>
