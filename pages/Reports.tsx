@@ -276,7 +276,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
                 // Update State & Wait for Render
                 setIndividualReportData(freshData);
-                await new Promise(resolve => setTimeout(resolve, 500)); // Allow DOM to repaint
+                await new Promise(resolve => setTimeout(resolve, 800)); // Increased for DOM stability with heavy charts
             }
 
             const element = reportContentRef.current;
@@ -795,7 +795,7 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
     const chartData = data.filter(d => d.waistCircumference && d.circHip).map(d => ({
         ...d,
         dateFormatted: new Date(d.date).toLocaleDateString(undefined, { month: '2-digit', year: '2-digit' }),
-        rcq: Number((d.waistCircumference / d.circHip).toFixed(2))
+        rcq: Number((d.waistCircumference / d.circHip).toFixed(1))
     }));
 
     if (chartData.length < 2) return null;
@@ -1412,7 +1412,7 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                             </div>
                             {nutritional.targets && (
                                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                                    <div className="p-2 bg-gray-100 rounded"><div>Kcal</div><strong>{Number(nutritional.targets.kcal).toFixed(0)}</strong></div>
+                                    <div className="p-2 bg-gray-100 rounded"><div>Kcal</div><strong>{Number(nutritional.targets.kcal).toFixed(1)}</strong></div>
                                     <div className="p-2 bg-gray-100 rounded"><div>Prot</div><strong>{Number(nutritional.targets.protein).toFixed(1)}g</strong></div>
                                     <div className="p-2 bg-gray-100 rounded"><div>Carb</div><strong>{Number(nutritional.targets.carbs).toFixed(1)}g</strong></div>
                                     <div className="p-2 bg-gray-100 rounded"><div>Gord</div><strong>{Number(nutritional.targets.fat).toFixed(1)}g</strong></div>
@@ -1493,8 +1493,9 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
             }
 
             {/* 7. Timeline History */}
+            {/* 7. Timeline History - Excluded from PDF explicitly via Logic and Canvas Filter */}
             {!isPdf && (
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
+                <div data-html2canvas-ignore="true" className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border print:hidden`}>
                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Histórico de Eventos</h3>
                     <div className="space-y-4 border-l-2 border-gray-200 ml-2 pl-4">
                         {timeline.length === 0 ? <p className="text-sm text-gray-500 italic">Sem histórico registrado.</p> : timeline.map(event => (
