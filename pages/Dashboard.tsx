@@ -485,15 +485,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
   const subtitle = isManagerMode ? `${clinic.name} • Gestão Inteligente de Consultório` : `Bem-vindo(a), ${user.name}!`;
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className={`text-3xl font-bold ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{title}</h1>
-          <p className={`mt-1 ${isManagerMode ? 'text-gray-300' : 'text-slate-600'}`}>{subtitle}</p>
+          <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{title}</h1>
+          <p className={`mt-1 text-sm md:text-base ${isManagerMode ? 'text-gray-300' : 'text-slate-600'}`}>{subtitle}</p>
         </div>
-        <div className="text-right">
-          <span className="block text-xs text-gray-400 uppercase tracking-wider">Última atualização</span>
-          <span className={`text-sm font-medium ${isManagerMode ? 'text-gray-200' : 'text-slate-700'}`}>{new Date().toLocaleTimeString()}</span>
+        <div className="text-left md:text-right bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg w-full md:w-auto">
+          <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-black">Última atualização</span>
+          <span className={`text-sm font-black ${isManagerMode ? 'text-gray-200' : 'text-slate-700'}`}>{new Date().toLocaleTimeString()}</span>
         </div>
       </div>
 

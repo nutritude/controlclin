@@ -1069,7 +1069,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             {/* Header Fixo do Paciente */}
             <div className={`${isManagerMode ? 'bg-gray-800 shadow-lg ring-gray-700 border-indigo-700' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 relative ring-1`}>
                 {/* Header Actions */}
-                <div className="absolute top-4 right-4 flex gap-2">
+                <div className="flex justify-end gap-2 mb-4 md:absolute md:top-4 md:right-4">
                     <button
                         onClick={() => setIsEditModalOpen(true)}
                         className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'}`} title="Editar Pessoais"
@@ -1218,8 +1218,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             </div>
 
             {/* Tabs Navigation */}
-            <div className={`${isManagerMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
-                <nav className="-mb-px flex space-x-8">
+            <div className={`${isManagerMode ? 'border-gray-700' : 'border-gray-200'} border-b overflow-x-auto no-scrollbar`}>
+                <nav className="-mb-px flex space-x-4 md:space-x-8 min-w-max px-2">
                     {[
                         { id: 'HISTORY', label: 'Histórico & Evolução' },
                         { id: 'PRONTUARIO', label: 'Prontuário (IA)' },
@@ -1232,9 +1232,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         <button
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as Tab); setIsEditingTab(false); }}
-                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-colors ${activeTab === tab.id
+                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-black uppercase tracking-widest text-[10px] md:text-xs transition-all ${activeTab === tab.id
                                 ? (isManagerMode ? 'border-indigo-500 text-indigo-400' : 'border-emerald-600 text-emerald-700')
-                                : (isManagerMode ? 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-600' : 'border-transparent text-emerald-500 hover:text-emerald-800 hover:border-emerald-300')
+                                : (isManagerMode ? 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-600' : 'border-transparent text-emerald-500/60 hover:text-emerald-800 hover:border-emerald-300')
                                 }`}
                         >
                             {tab.label}

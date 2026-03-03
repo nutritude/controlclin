@@ -109,7 +109,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
         </button>
       </div>
 
-      <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm overflow-hidden rounded-xl border`}>
+      <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-x-auto custom-scrollbar`}>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'}`}>
             <tr>

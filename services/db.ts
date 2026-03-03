@@ -1,12 +1,13 @@
 import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for deterministic totals
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 import {
     User, Clinic, Professional, Patient, Appointment,
     Role, AppointmentStatus, Exam, AuditLog, ExamMarker, ExamAnalysisResult,
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
-    ExamRequest, MipanAssessment, Prescription, PrescriptionItem
+    ExamRequest, MipanAssessment, Prescription, PrescriptionItem, AdherenceCheckIn
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -152,6 +153,10 @@ const DEFAULT_PATIENTS: Patient[] = [
             ]
         },
         nutritionalPlans: [DEFAULT_PLAN_PT1],
+        adherenceHistory: [
+            { id: 'ad-1', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4'], waterIntakeLiters: 2.5 },
+            { id: 'ad-2', date: '2026-03-02T10:00:00Z', day: '2026-03-02', status: 'PARCIAL', mealsAdhered: ['m-1', 'm-2'], notes: 'Fui a um aniversário no jantar.', waterIntakeLiters: 1.8 }
+        ],
         professionalId: 'system-demo'
     },
     { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'system-demo' },
@@ -226,12 +231,16 @@ const DEFAULT_PATIENTS: Patient[] = [
                 { id: 't-me-3', date: '2026-03-05T10:00:00Z', amount: 50, originalAmount: 50, method: 'DINHEIRO', status: 'PAGO', description: 'Co-participação Exame' }
             ]
         },
+        adherenceHistory: [
+            { id: 'ad-m1', date: '2026-02-28T10:00:00Z', day: '2026-02-28', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 3.0 },
+            { id: 'ad-m2', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 2.8 }
+        ],
         professionalId: 'system-demo'
     }
 ];
 
 class DatabaseService {
-    public ai: GoogleGenAI | null = null;
+    public ai: GoogleGenerativeAI | null = null;
     private clinics: Clinic[] = [];
     private users: User[] = [];
     private professionals: Professional[] = [];
@@ -252,7 +261,7 @@ class DatabaseService {
         const apiKey = meta.env?.VITE_GEMINI_API_KEY;
         if (apiKey && apiKey.length > 0 && apiKey !== 'PLACEHOLDER') {
             try {
-                this.ai = new GoogleGenAI({ apiKey });
+                this.ai = new GoogleGenerativeAI(apiKey);
                 console.log("DatabaseService: AI initialized successfully.");
             } catch (error) {
                 console.warn("GoogleGenAI init failed, AI features disabled.", error);
@@ -708,16 +717,30 @@ class DatabaseService {
         const transactions = patient.financial?.transactions || [];
         const totalPaid = transactions.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0);
         const totalPending = transactions.filter(t => t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO').reduce((acc, t) => acc + t.amount, 0);
-
         // 7. Exams
         const exams = this.exams.filter(e => e.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        // 8. MIPAN
-        const mipanAssessments = await this.getMipanAssessments(patientId);
+        // 8. MIPAN / Nutritional Plan Backup
+        const nutritionalPlan = patient.nutritionalPlan || (patient.nutritionalPlans && patient.nutritionalPlans.length > 0 ? patient.nutritionalPlans[0] : null);
 
-        // Construct the comprehensive snapshot
-        const snapshot: IndividualReportSnapshot = {
-            patient: patient,
+        // 5. Adherence Data
+        const adherenceHistory = patient.adherenceHistory || [];
+        const recentCheckins = adherenceHistory.slice(0, 7);
+        let adherenceScore = 0;
+        if (recentCheckins.length > 0) {
+            const totalStatus = recentCheckins.reduce((acc, c) => {
+                if (c.status === 'TOTAL') return acc + 100;
+                if (c.status === 'PARCIAL') return acc + 50;
+                return acc;
+            }, 0);
+            adherenceScore = Math.round(totalStatus / recentCheckins.length);
+        }
+
+        // 6. Timeline Construction
+        timeline.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        return {
+            patient,
             metrics: {
                 patientSince,
                 totalAppointments: totalAppts,
@@ -727,39 +750,65 @@ class DatabaseService {
             anthropometry: {
                 current: anthroSnapshot.snapshot,
                 history: anthroHistory,
-                hasSufficientData: !!anthroSnapshot.snapshot
+                hasSufficientData: anthroHistory.length > 0
             },
             clinical: {
-                activeDiagnoses,
-                medications,
-                anamnesisSummary,
+                activeDiagnoses: activeDiagnoses,
+                medications: medications,
+                anamnesisSummary: anamnesisSummary,
                 notes: patient.clinicalNotes || []
             },
-            exams,
+            exams: this.exams.filter(e => e.patientId === patientId),
             nutritional: {
-                activePlanTitle: activePlan?.title || null,
-                targets: (activePlan && activePlan.macroTargets) ? {
+                activePlanTitle: activePlan ? activePlan.title || 'Plano Atual' : null,
+                targets: activePlan ? {
                     kcal: activePlan.caloricTarget || 0,
                     protein: activePlan.macroTargets.protein?.g || 0,
                     carbs: activePlan.macroTargets.carbs?.g || 0,
                     fat: activePlan.macroTargets.fat?.g || 0
                 } : null
             },
+            adherence: {
+                score: adherenceScore,
+                history: adherenceHistory
+            },
             financial: {
-                totalPaid,
-                totalPending,
+                totalPaid: patient.financial?.transactions.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0) || 0,
+                totalPending: patient.financial?.transactions.filter(t => t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO').reduce((acc, t) => acc + t.amount, 0) || 0,
                 mode: patient.financial?.mode || 'PARTICULAR'
             },
-            mipanAssessments,
-            timeline: timeline.slice(0, 50), // Cap timeline for report performance
+            mipanAssessments: await this.getMipanAssessments(patientId),
+            timeline: timeline,
             metadata: {
                 generatedAt: new Date().toISOString(),
                 dataVersion: 'v2-comprehensive',
                 source: 'ControlClin DB Service'
             }
         };
+    }
 
-        return snapshot;
+    async recordAdherenceCheckIn(patientId: string, checkin: AdherenceCheckIn, user?: User) {
+        const pIdx = this.patients.findIndex(p => p.id === patientId);
+        if (pIdx === -1) throw new Error("Paciente não encontrado");
+
+        const patient = this.patients[pIdx];
+        const history = patient.adherenceHistory ? [...patient.adherenceHistory] : [];
+
+        // Prevent duplicate check-ins for the same day
+        const dayIdx = history.findIndex(h => h.day === checkin.day);
+        if (dayIdx > -1) {
+            history[dayIdx] = checkin;
+        } else {
+            history.unshift(checkin);
+        }
+
+        this.patients[pIdx] = { ...patient, adherenceHistory: history };
+
+        const summaryText = checkin.status === 'TOTAL' ? "Aderência Total" : (checkin.status === 'PARCIAL' ? "Aderência Parcial" : "Não seguiu a dieta");
+        this.logPatientEvent(patientId, 'ADHERENCE_CHECKIN', checkin, `Check-in de adesão: ${summaryText} para ${checkin.day}`, user || { id: patient.id, name: patient.name, role: 'PATIENT' } as any);
+
+        this.saveToStorage();
+        return this.patients[pIdx];
     }
 
     // --- STANDARD CRUD METHODS (Abbreviated for focus on Nutritional Plan) ---

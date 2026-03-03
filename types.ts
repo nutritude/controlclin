@@ -416,12 +416,25 @@ export interface ClinicalNote {
   content: string; // Texto rico ou simples
 }
 
+// --- PATIENT ADHERENCE CHECK-IN (NEW) ---
+export type AdherenceStatus = 'TOTAL' | 'PARCIAL' | 'NAO_SEGUI';
+
+export interface AdherenceCheckIn {
+  id: string;
+  date: string; // ISO date-time
+  day: string; // YYYY-MM-DD for grouping
+  status: AdherenceStatus;
+  notes?: string;
+  mealsAdhered: string[]; // List of meal IDs that were followed
+  waterIntakeLiters?: number;
+}
+
 // --- PATIENT EVENTS (NEW) ---
 export interface PatientEvent {
   id: string;
   clinicId?: string;
   patientId: string;
-  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "MIPAN_COMPLETED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "PRESCRIPTION_CREATED" | "CUSTOM" | "BACKFILL_INIT";
+  type: "PATIENT_UPDATED" | "ANTHRO_RECORDED" | "EXAM_UPLOADED" | "SOLICITACAO_EXAMES" | "MIPAN_COMPLETED" | "NOTE_ADDED" | "DIAGNOSIS_UPDATED" | "MEDICATION_UPDATED" | "PLAN_CREATED" | "PLAN_UPDATED" | "APPOINTMENT_STATUS" | "PAYMENT_RECORDED" | "PRESCRIPTION_CREATED" | "ADHERENCE_CHECKIN" | "CUSTOM" | "BACKFILL_INIT";
   createdAt: string; // ISO
   createdBy?: { userId: string, name: string, role: string };
   payload: any; // Flexible payload
@@ -510,6 +523,10 @@ export interface IndividualReportSnapshot {
     activePlanTitle: string | null;
     targets: { kcal: number; protein: number; carbs: number; fat: number } | null;
   };
+  adherence: {
+    score: number; // 0-100
+    history: AdherenceCheckIn[];
+  };
   financial: {
     totalPaid: number;
     totalPending: number;
@@ -550,6 +567,7 @@ export interface Patient {
   patientEvents?: PatientEvent[];
   mipanAssessments?: MipanAssessment[];
   prescriptions?: Prescription[];
+  adherenceHistory?: AdherenceCheckIn[]; // NOVO: Histórico de check-ins do paciente
   lastVisit?: string;
   professionalId?: string; // NOVO: Profissional responsável pelo paciente
   status: 'ATIVO' | 'INATIVO';

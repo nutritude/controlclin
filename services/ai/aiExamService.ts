@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Exam, ExamMarker, ExamAnalysisResult, Patient } from '../../types';
 import { LaboratService } from '../laboratService';
 
@@ -16,7 +16,7 @@ export const AIExamService = {
             return [];
         }
 
-        const genAI = new GoogleGenAI({ apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
 
         const prompt = `
       Você é um especialista em biomedicina e extração de dados laboratoriais.
@@ -72,7 +72,7 @@ export const AIExamService = {
 
         if (!apiKey) return getFallbackAnalysis(allMarkers);
 
-        const genAI = new GoogleGenAI({ apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
 
         const prompt = `
       Você é um Nutricionista Clínico Funcional e Especialista em Medicina Laboratorial.

@@ -861,59 +861,54 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${isManagerMode ? 'text-gray-100' : 'text-slate-800'}`}>
 
             {/* TOP TOOLBAR: PLAN SELECTION & MANAGEMENT */}
-            <div className={`xl:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border shadow-sm ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'}`}>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="flex flex-col w-full md:w-auto">
-                        <label className={`text-[10px] uppercase font-bold mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Plano Selecionado</label>
+            <div className={`xl:col-span-3 flex flex-col lg:flex-row gap-4 p-4 rounded-xl border shadow-sm ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'}`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
+                    <div className="flex flex-col w-full sm:w-auto">
+                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Plano Selecionado</label>
                         <select
                             value={currentPlanId || ''}
                             onChange={(e) => {
                                 if (e.target.value === 'NEW') initNewDraft();
                                 else handlePlanSelection(e.target.value);
                             }}
-                            className={`border rounded p-2 text-sm font-medium min-w-[250px] ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full sm:min-w-[200px] ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
                             {plansList.map(p => (
                                 <option key={p.id} value={p.id}>
-                                    {p.status === 'ATIVO' ? '(ATIVO) ' : ''}{p.title || 'Plano sem nome'} - {new Date(p.createdAt).toLocaleDateString()}
+                                    {p.status === 'ATIVO' ? '(ATIVO) ' : ''}{p.title || 'Plano'} - {new Date(p.createdAt).toLocaleDateString()}
                                 </option>
                             ))}
                             {(!currentPlanId && plansList.length === 0) && <option value="">Novo Rascunho</option>}
                         </select>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`mt-4 px-3 py-2 rounded text-xs font-bold border ${isManagerMode ? 'border-gray-600 hover:bg-gray-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all active:scale-95 ${isManagerMode ? 'border-gray-600 hover:bg-gray-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700 shadow-sm'}`}>
                         + Novo
                     </button>
-                </div>
 
-                <div className="flex items-center gap-4 w-full justify-center md:justify-center">
-                    <div className="flex flex-col w-full md:w-auto">
-                        <label className={`text-[10px] uppercase font-bold mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Metodologia</label>
+                    <div className="flex flex-col w-full sm:w-auto mt-2 sm:mt-0">
+                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Metodologia</label>
                         <select
                             value={planMethodology}
                             onChange={(e) => setPlanMethodology(e.target.value as any)}
-                            className={`border rounded p-2 text-sm font-medium ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
                             <option value="ALIMENTOS">Cálculo por Alimentos</option>
-                            <option value="EQUIVALENTES">Equivalentes (Smart Pix)</option>
-                            <option value="QUALITATIVA">Qualitativa (Sem Macros)</option>
+                            <option value="EQUIVALENTES">Equivalentes (Pix)</option>
+                            <option value="QUALITATIVA">Qualitativa</option>
                         </select>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full justify-end">
+                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:justify-end mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                     {syncStatus && (
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full border ${syncStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full border ${syncStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
                             }`}>{syncStatus}</span>
                     )}
-                    {currentPlanId && (
-                        <>
-                            <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-purple-900 text-purple-200' : 'bg-purple-50 text-purple-700')}`}>{isAnalyzing ? '...' : <><Icons.Brain /> Analisar</>}</button>
-                            <button type="button" onClick={handleGenerateAdherenceTips} data-html2pdf-ignore disabled={isAnalyzing} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700')}`}>{isAnalyzing ? '...' : <>🚀 Adesão</>}</button>
-                            <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`px-3 py-2 text-xs font-bold rounded shadow-sm border flex items-center gap-1 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-gray-700 text-gray-200' : 'bg-white text-slate-700')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText /> PDF</>}</button>
-                        </>
-                    )}
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`px-6 py-2 text-sm font-bold rounded text-white shadow-sm flex items-center gap-2 ${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-purple-900 text-purple-200 border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200')}`}>{isAnalyzing ? '...' : <><Icons.Brain className="w-3.5 h-3.5" /> Analisar</>}</button>
+                        <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
+                    </div>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
                         <span>💾</span> Salvar Plano
                     </button>
                 </div>

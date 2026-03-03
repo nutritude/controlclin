@@ -555,16 +555,16 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
             </div>
 
             {/* FILTERS & CONTROLS */}
-            <div className="bg-white border-slate-200 p-6 rounded-2xl shadow-xl border space-y-4 print:hidden">
-                <div className="flex flex-col md:flex-row gap-6">
+            <div className="bg-white border-slate-200 p-4 sm:p-6 rounded-2xl shadow-xl border space-y-4 print:hidden">
+                <div className="flex flex-col lg:flex-row gap-6">
                     {/* Report Type */}
                     <div className="flex-1">
-                        <label className={`block text-sm font-bold mb-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>1. Selecione o Tipo de Relatório</label>
-                        <div className={`flex p-1 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
-                            <button onClick={() => setReportType('OPERATIONAL')} className={`flex-1 py-2 text-sm rounded-md font-bold transition-colors ${reportType === 'OPERATIONAL' ? (isManagerMode ? 'bg-indigo-600 shadow text-white' : 'bg-white shadow text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Operacional</button>
-                            {!isProfessional && <button onClick={() => setReportType('FINANCIAL')} className={`flex-1 py-2 text-sm rounded-md font-bold transition-colors ${reportType === 'FINANCIAL' ? (isManagerMode ? 'bg-indigo-600 shadow text-white' : 'bg-white shadow text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Financeiro</button>}
-                            <button onClick={() => setReportType('ATTENDANCE')} className={`flex-1 py-2 text-sm rounded-md font-bold transition-colors ${reportType === 'ATTENDANCE' ? (isManagerMode ? 'bg-indigo-600 shadow text-white' : 'bg-white shadow text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Absenteísmo</button>
-                            <button onClick={() => setReportType('INDIVIDUAL')} className={`flex-1 py-2 text-sm rounded-md font-bold transition-colors ${reportType === 'INDIVIDUAL' ? (isManagerMode ? 'bg-indigo-600 shadow text-white' : 'bg-white shadow text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Individual</button>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>1. Tipo de Relatório</label>
+                        <div className={`flex flex-wrap p-1 rounded-lg border gap-1 ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
+                            <button onClick={() => setReportType('OPERATIONAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'OPERATIONAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Operacional</button>
+                            {!isProfessional && <button onClick={() => setReportType('FINANCIAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'FINANCIAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Financeiro</button>}
+                            <button onClick={() => setReportType('ATTENDANCE')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'ATTENDANCE' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Presença</button>
+                            <button onClick={() => setReportType('INDIVIDUAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'INDIVIDUAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Individual</button>
                         </div>
                     </div>
 
@@ -595,9 +595,9 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
             {/* REPORT AREA */}
             {generated && (
-                <div className="bg-white border-slate-200 p-8 rounded-3xl shadow-xl border overflow-hidden">
+                <div className="bg-white border-slate-200 p-4 sm:p-8 rounded-3xl shadow-xl border overflow-hidden">
                     {/* Report Header */}
-                    <div className="flex justify-between items-start mb-8 pb-6 border-b border-dashed border-slate-200 print:hidden">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 mb-8 pb-6 border-b border-dashed border-slate-200 print:hidden">
                         <div>
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Resultado do Relatório</h2>
                             <p className="text-sm text-slate-500 font-medium">Período Analisado: {new Date(startDate + 'T00:00:00').toLocaleDateString()} a {new Date(endDate + 'T23:59:59').toLocaleDateString()}</p>
@@ -1687,7 +1687,84 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 )}
             </div>
 
-            {/* 5. Clinical History & Plan */}
+            {/* 5. Adherence Dashboard (NEW) */}
+            <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 underline decoration-indigo-500 decoration-2 underline-offset-8">Check-in de Adesão & Hidratação</h3>
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 rounded-full border border-indigo-100 shadow-sm">
+                        <Icons.Zap className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+                        <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">Score Semanal: {data.adherence.score}%</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Daily Progress Grid */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Últimos 7 Dias</p>
+                        <div className="grid grid-cols-7 gap-2">
+                            {Array.from({ length: 7 }).map((_, i) => {
+                                const d = new Date();
+                                d.setDate(d.getDate() - (6 - i));
+                                const dayStr = d.toISOString().split('T')[0];
+                                const checkin = data.adherence.history.find(h => h.day === dayStr);
+
+                                let colorClass = "bg-slate-50 border-slate-100 text-slate-300";
+                                let icon = "○";
+                                if (checkin?.status === 'TOTAL') { colorClass = "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-200"; icon = "✓"; }
+                                if (checkin?.status === 'PARCIAL') { colorClass = "bg-amber-400 border-amber-500 text-white shadow-lg shadow-amber-100"; icon = "!"; }
+                                if (checkin?.status === 'NAO_SEGUI') { colorClass = "bg-rose-500 border-rose-600 text-white shadow-lg shadow-rose-200"; icon = "✕"; }
+
+                                return (
+                                    <div key={dayStr} className="flex flex-col items-center gap-2">
+                                        <div className={`h-10 w-10 md:h-12 md:w-12 rounded-xl border-2 flex items-center justify-center font-black text-lg transition-all ${colorClass}`}>
+                                            {icon}
+                                        </div>
+                                        <span className="text-[8px] font-black text-slate-400 uppercase">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Meta Insights */}
+                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b pb-2 mb-4">Métricas de Engajamento</h4>
+                        <div className="flex justify-between items-center text-emerald-900">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Hidratação Média</span>
+                            <span className="text-sm font-black text-indigo-600">
+                                {data.adherence.history.length > 0
+                                    ? (data.adherence.history.reduce((acc, h) => acc + (h.waterIntakeLiters || 0), 0) / data.adherence.history.length).toFixed(1)
+                                    : "0"
+                                }L / dia
+                            </span>
+                        </div>
+                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-indigo-500 h-full rounded-full" style={{ width: '70%' }}></div>
+                        </div>
+                        <p className="text-[9px] text-slate-400 italic">O paciente apresenta maior desistência no período noturno (jantares sociais).</p>
+                    </div>
+                </div>
+
+                {/* Patient Notes / Feedback */}
+                {data.adherence.history.some(h => h.notes) && (
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 px-1">Observações do Paciente</p>
+                        <div className="space-y-3">
+                            {data.adherence.history.filter(h => h.notes).slice(0, 3).map((h, i) => (
+                                <div key={i} className="flex gap-3 items-start p-3 bg-white rounded-xl border border-slate-100 shadow-sm group hover:border-indigo-100 transition-colors">
+                                    <div className="p-1.5 bg-indigo-50 rounded-lg group-hover:bg-indigo-100"><Icons.Info className="w-3 h-3 text-indigo-500" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 mb-1">{new Date(h.date).toLocaleDateString('pt-BR')}</p>
+                                        <p className="text-xs text-slate-700 font-medium italic">"{h.notes}"</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* 6. Clinical History & Plan */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 px-3 border-l-4 border-emerald-500">Contexto Clínico & Diagnósticos</h3>
