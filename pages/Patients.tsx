@@ -29,6 +29,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
     cpf: '',
     address: '',
     status: 'ATIVO',
+    password: Math.random().toString(36).slice(-6), // Auto-generate 6-char password
     professionalId: user.professionalId || ''
   });
 
@@ -53,7 +54,6 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
       setLoading(false);
       return;
     }
-
     const data = await db.getPatients(clinic.id, profIdFilter, isManagerMode ? 'ADMIN' : 'PROFESSIONAL');
     setPatients(data);
     setLoading(false);
@@ -69,6 +69,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
       cpf: '',
       address: '',
       status: 'ATIVO',
+      password: Math.random().toString(36).slice(-6),
       professionalId: user.professionalId || (professionals.length > 0 ? professionals[0].id : '')
     });
     setIsModalOpen(true);
@@ -244,6 +245,13 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                     <p className="mt-1 text-xs text-gray-400">Como Gestor, você deve atribuir este paciente a um profissional para que ele apareça na agenda dele.</p>
                   </div>
                 )}
+
+                <div className="md:col-span-2">
+                  <label className={`block text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>Senha de Acesso ao APP *</label>
+                  <input required type="text" name="password" value={formData.password} onChange={handleChange}
+                    className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`} />
+                  <p className="mt-1 text-[10px] text-gray-500 uppercase font-bold">Essa senha será enviada ao paciente para que ele acesse o portal.</p>
+                </div>
               </div>
 
               <div className={`flex justify-end gap-3 mt-6 pt-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-slate-100'}`}>

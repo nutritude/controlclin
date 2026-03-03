@@ -1071,12 +1071,20 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 {/* Header Actions */}
                 <div className="flex justify-end gap-2 mb-4 md:absolute md:top-4 md:right-4">
                     <button
+                        onClick={() => {
+                            const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
+                            window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
+                        }}
+                        className={`px-3 py-2 rounded flex items-center gap-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                        title="Liberar Acesso ao App (WhatsApp)"
+                    >
+                        <span className="text-sm">📱</span> Liberar App
+                    </button>
+                    <button
                         onClick={() => setIsEditModalOpen(true)}
                         className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'}`} title="Editar Pessoais"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
+                        <Icons.Settings className="w-5 h-5" />
                     </button>
                     {isAdmin && (
                         <button
@@ -1840,6 +1848,27 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <option value="PARTICULAR">Particular</option>
                                             <option value="CONVENIO">Convênio Médico</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Gênero</label>
+                                        <select
+                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-slate-300'}`}
+                                            value={formData.gender || ''}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        >
+                                            <option value="Feminino">Feminino</option>
+                                            <option value="Masculino">Masculino</option>
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Senha para o Portal do Paciente</label>
+                                        <input
+                                            type="text"
+                                            className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-300'}`}
+                                            value={formData.password || ''}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        />
+                                        <p className="mt-1 text-[10px] text-gray-500 uppercase font-bold tracking-wider">Senha usada pelo paciente para entrar no app.</p>
                                     </div>
 
                                     {(formData.financial?.mode === 'CONVENIO') && (

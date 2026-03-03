@@ -144,5 +144,23 @@ export const WhatsAppService = {
             `👉 ${url}\n\n` +
             `Quem quiser começar também, me chama! 😄 #ControlClin #Saúde #Resultados`
         );
+    },
+
+    /**
+     * Mensagem para acesso ao App (Paciente)
+     */
+    getAppAccessMessage: (patientName: string, email: string, pass: string, clinicSlug: string) => {
+        const firstName = patientName.split(' ')[0];
+        const base = getAppBaseUrl();
+        const appUrl = clinicSlug ? `${base}/${clinicSlug}` : base;
+
+        return (
+            `Olá ${firstName}! 📱 Seu acesso ao aplicativo da clínica já está liberado!\n\n` +
+            `Acesse pelo link: ${appUrl}\n\n` +
+            `Seus dados de acesso:\n` +
+            `✉️ Email: ${email}\n` +
+            `🔑 Senha: *${pass}*\n\n` +
+            `Qualquer dúvida para acessar, é só me chamar! 😊`
+        );
     }
 };
