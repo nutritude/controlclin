@@ -22,7 +22,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         : null;
 
     const activePlan = patient.nutritionalPlans
-        ? patient.nutritionalPlans.find(p => p.isActive) || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
+        ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
         : patient.nutritionalPlan || null;
 
     function calculateAge(birthDate: string) {
