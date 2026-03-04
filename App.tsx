@@ -17,6 +17,8 @@ import { SuccessCard } from './pages/SuccessCard';
 import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
 import { PatientLogin } from './pages/patient/PatientLogin';
 import { PatientDashboard } from './pages/patient/PatientDashboard';
+import { SaaSLogin } from './pages/saas/SaaSLogin';
+import SaaSDashboard from './pages/saas/SaaSDashboard';
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
 import { db as serviceDb } from './services/db';
@@ -205,6 +207,10 @@ function App() {
 
         {/* Public/Clean Routes outside Layout */}
         <Route path="/success-card/:id" element={<SuccessCard user={user || undefined} clinic={clinic || undefined} />} />
+
+        {/* SaaS Backoffice Routes */}
+        <Route path="/saas/login" element={<SaaSLogin />} />
+        <Route path="/saas/dashboard" element={<SaaSDashboard />} />
       </Routes>
     </Router>
   );
