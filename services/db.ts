@@ -2314,6 +2314,30 @@ class DatabaseService {
                     }
                 }
             }
+
+            // 4. Logic for APP_NOT_LIBERATED (No appLiberadoEm and First appt > 36h)
+            if (!patient.appLiberadoEm && pastAppts.length > 0) {
+                const firstApptDate = new Date(Math.min(...pastAppts.map(a => new Date(a.startTime).getTime())));
+                const diffHours = (today.getTime() - firstApptDate.getTime()) / (1000 * 3600);
+
+                if (diffHours > 36) {
+                    const existing = this.alerts.find(a => a.patientId === patient.id && a.type === 'APP_NOT_LIBERATED' && a.status === 'ACTIVE');
+                    if (!existing) {
+                        this.alerts.push({
+                            id: 'alt_' + Math.random().toString(36).substr(2, 9),
+                            clinicId: id,
+                            patientId: patient.id,
+                            patientName: patient.name,
+                            type: 'APP_NOT_LIBERATED',
+                            severity: 'HIGH',
+                            description: `O acesso ao App do paciente não foi liberado (primeira consulta há mais de 36 horas).`,
+                            createdAt: today.toISOString(),
+                            status: 'ACTIVE'
+                        });
+                        newAlertsCount++;
+                    }
+                }
+            }
         });
 
         if (newAlertsCount > 0) this.saveToStorage();

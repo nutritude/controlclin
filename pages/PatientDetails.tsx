@@ -17,6 +17,8 @@ interface PatientDetailsProps {
     user: User;
     clinic: Clinic;
     isManagerMode: boolean; // New prop
+    isPatientMode?: boolean;
+    patientData?: Patient;
 }
 
 type Tab = 'HISTORY' | 'PRONTUARIO' | 'ANTHRO' | 'NUTRITION' | 'PRESCRIPTION' | 'FINANCIAL' | 'EXAMS';
@@ -171,11 +173,11 @@ const SimpleLineChart = ({ data, dataKey, color, label, isManagerMode }: { data:
 };
 
 
-const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManagerMode }) => {
+const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManagerMode, isPatientMode = false, patientData }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [patient, setPatient] = useState<Patient | null>(null);
+    const [patient, setPatient] = useState<Patient | null>(patientData || null);
     const [professionals, setProfessionals] = useState<Professional[]>([]); // New State
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
@@ -279,11 +281,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const receiptRef = useRef<HTMLDivElement>(null);
 
 
-    const isAdmin = user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN;
+    const isAdmin = !isPatientMode && user && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN);
     // Permissions for clinical header - all non-secretary users can edit
-    const canEditClinical = user.role !== Role.SECRETARY;
+    const canEditClinical = !isPatientMode && user && (user.role !== Role.SECRETARY);
     // isProfessionalUser controls data filtering: in manager mode, see ALL patients; in professional mode, filter by professionalId
-    const isProfessionalUser = !isManagerMode;
+    const isProfessionalUser = !isPatientMode && !isManagerMode;
 
     // Data for chart, including the current unsaved measurement for real-time visualization
     const chartData = useMemo(() => {
@@ -300,12 +302,16 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
 
     useEffect(() => {
+        if (isPatientMode) {
+            setLoading(false);
+            return;
+        }
         if (id) {
             fetchData(id);
             fetchAppointments(id);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id, clinic.id, isProfessionalUser, user.professionalId]); // Added professionalUser and professionalId
+    }, [id, clinic.id, isProfessionalUser, user?.professionalId, isPatientMode]); // Added professionalUser and professionalId
 
     // --- FINANCIAL CALCULATION EFFECT ---
     useEffect(() => {
@@ -1070,22 +1076,30 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             <div className={`${isManagerMode ? 'bg-gray-800 shadow-lg ring-gray-700 border-indigo-700' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 relative ring-1`}>
                 {/* Header Actions */}
                 <div className="flex justify-end gap-2 mb-4 md:absolute md:top-4 md:right-4">
-                    <button
-                        onClick={() => {
-                            const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
-                            window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
-                        }}
-                        className={`px-3 py-2 rounded flex items-center gap-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                        title="Liberar Acesso ao App (WhatsApp)"
-                    >
-                        <span className="text-sm">📱</span> Liberar App
-                    </button>
-                    <button
-                        onClick={() => setIsEditModalOpen(true)}
-                        className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'}`} title="Editar Pessoais"
-                    >
-                        <Icons.Settings className="w-5 h-5" />
-                    </button>
+                    {!isPatientMode && (
+                        <>
+                            <button
+                                onClick={async () => {
+                                    const now = new Date().toISOString();
+                                    await db.updatePatient(user, patient.id, { appLiberadoEm: now });
+                                    setPatient(prev => { if (!prev) return prev; return { ...prev, appLiberadoEm: now } });
+                                    const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
+                                    window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
+                                }}
+                                className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-900/50' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/30'}`}
+                                title="Liberar Acesso ao App (WhatsApp)"
+                            >
+                                <Icons.Smartphone className="w-4 h-4" />
+                                <span>Liberar App</span>
+                            </button>
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'}`} title="Editar Pessoais"
+                            >
+                                <Icons.Settings className="w-5 h-5" />
+                            </button>
+                        </>
+                    )}
                     {isAdmin && (
                         <button
                             onClick={handleDelete}
@@ -2256,6 +2270,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>CPF</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.cpf || ''} onChange={e => setFormData({ ...formData, cpf: e.target.value })} placeholder="000.000.000-00" /></div>
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Telefone</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.estadoCivil || ''} onChange={e => setFormData({ ...formData, estadoCivil: e.target.value })}><option value="">Selecione...</option><option value="Solteiro(a)">Solteiro(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viúvo(a)">Viúvo(a)</option><option value="União Estável">União Estável</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label><input type="number" min="1" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.pessoasEmCasa || ''} onChange={e => setFormData({ ...formData, pessoasEmCasa: parseInt(e.target.value as string, 10) })} /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>E-mail</label><input type="email" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} /></div>

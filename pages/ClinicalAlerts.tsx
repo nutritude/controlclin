@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Clinic, ClinicalAlert, AlertType, AlertSeverity, Role } from '../types'; // Import Role
 import { db } from '../services/db';
 import { Icons } from '../constants';
+import { WhatsAppService } from '../services/whatsappService';
 
 interface ClinicalAlertsProps {
     user: User;
@@ -32,7 +33,8 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
         'RECURRING_ABSENCE': 'Absenteísmo Recorrente',
         'GOAL_EXPIRED': 'Meta Clínica Vencida',
         'MISSED_CRITICAL': 'Falta em Consulta Crítica',
-        'ANTHROMETRY_OVERDUE': 'Avaliação Antropométrica Atrasada'
+        'ANTHROMETRY_OVERDUE': 'Avaliação Antropométrica Atrasada',
+        'APP_NOT_LIBERATED': 'App Não Liberado'
     };
 
     const SEVERITY_STYLES: Record<AlertSeverity, string> = {
@@ -133,6 +135,9 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
                     `Notei que você não pôde comparecer à sua consulta. Espero que esteja tudo bem!\n\n` +
                     `Seria importante reagendarmos o quanto antes, pois essa consulta é uma etapa importante do seu tratamento.\n\n` +
                     `Me fala qual o melhor horário para você e encaixamos na agenda! 😊`;
+                break;
+            case 'APP_NOT_LIBERATED':
+                message = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
                 break;
             default:
                 message =

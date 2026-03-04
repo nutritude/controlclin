@@ -576,6 +576,11 @@ export interface Patient {
   // Login do Paciente
   username?: string;
   password?: string;
+
+  // Dados Adicionais
+  estadoCivil?: string;
+  pessoasEmCasa?: number;
+  appLiberadoEm?: string; // NOVO: Timestamp de quando o WhatsApp/App foi liberado
 }
 
 export interface Appointment {
@@ -665,7 +670,7 @@ export interface AuditLog {
 export type skinfoldProtocol = 'JacksonPollock7' | 'JacksonPollock3' | 'Guedes' | 'DurninWomersley' | 'Faulkner' | 'ISAK';
 
 // --- ALERTAS CLÍNICOS (NOVO) ---
-export type AlertType = 'RETURN_OVERDUE' | 'EXAM_ATTENTION' | 'RECURRING_ABSENCE' | 'GOAL_EXPIRED' | 'MISSED_CRITICAL' | 'ANTHROMETRY_OVERDUE';
+export type AlertType = 'RETURN_OVERDUE' | 'EXAM_ATTENTION' | 'RECURRING_ABSENCE' | 'GOAL_EXPIRED' | 'MISSED_CRITICAL' | 'ANTHROMETRY_OVERDUE' | 'APP_NOT_LIBERATED';
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
 export type AlertStatus = 'ACTIVE' | 'RESOLVED';
 

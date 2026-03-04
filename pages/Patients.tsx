@@ -30,6 +30,8 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
     address: '',
     status: 'ATIVO',
     password: Math.random().toString(36).slice(-6), // Auto-generate 6-char password
+    estadoCivil: '',
+    pessoasEmCasa: '',
     professionalId: user.professionalId || ''
   });
 
@@ -70,6 +72,8 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
       address: '',
       status: 'ATIVO',
       password: Math.random().toString(36).slice(-6),
+      estadoCivil: '',
+      pessoasEmCasa: '',
       professionalId: user.professionalId || (professionals.length > 0 ? professionals[0].id : '')
     });
     setIsModalOpen(true);
@@ -81,6 +85,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
       await db.createPatient(user, {
         ...formData,
         status: formData.status as 'ATIVO' | 'INATIVO',
+        pessoasEmCasa: formData.pessoasEmCasa ? parseInt(formData.pessoasEmCasa as string, 10) : undefined,
         clinicId: clinic.id
       });
       setIsModalOpen(false);
@@ -225,6 +230,25 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                   <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço Completo</label>
                   <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Rua, Número, Bairro, Cidade - UF"
                     className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`} />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label>
+                  <select name="estadoCivil" value={formData.estadoCivil || ''} onChange={handleChange}
+                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`}>
+                    <option value="">Selecione...</option>
+                    <option value="Solteiro(a)">Solteiro(a)</option>
+                    <option value="Casado(a)">Casado(a)</option>
+                    <option value="Divorciado(a)">Divorciado(a)</option>
+                    <option value="Viúvo(a)">Viúvo(a)</option>
+                    <option value="União Estável">União Estável</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label>
+                  <input type="number" name="pessoasEmCasa" min="1" value={formData.pessoasEmCasa || ''} onChange={handleChange}
+                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 {isManagerMode && (
