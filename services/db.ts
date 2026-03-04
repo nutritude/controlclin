@@ -425,7 +425,7 @@ class DatabaseService {
                 const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
                 const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
 
-                if (remoteModified > localModified || isJustSeeded) {
+                if (remoteModified > localModified || (localModified === 0 && isJustSeeded)) {
                     this.isUpdatingFromRemote = true; // Block loop
                     console.log(`[DB] ☁️ Atualização remota recebida (${this.patients.length} -> ${data.patients?.length || 0} pacientes).`);
 
@@ -443,7 +443,7 @@ class DatabaseService {
 
                     (this as any)._localLastModified = remoteModified;
                     this.ensureDemoIntegrity();
-                    this.saveToStorage(false); // Update LocalStorage WITHOUT pushing back to remote immediately
+                    this.saveToStorage(false, remoteModified); // Update LocalStorage WITHOUT pushing back to remote using SAME timestamp
                     this.isUpdatingFromRemote = false; // Unlock
 
                     // Trigger UI refresh (dispatch event)
@@ -459,10 +459,10 @@ class DatabaseService {
      * Centralized Save (LocalStorage + Cloud)
      * Now returns a promise for operations that need to guarantee remote persistence.
      */
-    public async saveToStorage(syncRemote = true) {
-        if (this.isUpdatingFromRemote) return; // Never save back if we are currently receiving from cloud
+    public async saveToStorage(syncRemote = true, manualTimestamp?: number) {
+        if (this.isUpdatingFromRemote && syncRemote) return; // Guard
 
-        (this as any)._localLastModified = Date.now();
+        (this as any)._localLastModified = manualTimestamp || Date.now();
 
         const dataToStore = {
             clinics: this.clinics,
@@ -1117,13 +1117,13 @@ class DatabaseService {
                     ...(this.patients[idx].clinicalSummary || {}),
                     ...(data.clinicalSummary || {})
                 },
-                clinicalHistory: {
-                    ...(this.patients[idx].clinicalHistory || {}),
-                    ...(data.clinicalHistory || {})
-                },
                 anthropometry: {
                     ...(this.patients[idx].anthropometry || {}),
                     ...(data.anthropometry || {})
+                },
+                clinicalHistory: {
+                    ...(this.patients[idx].clinicalHistory || {}),
+                    ...(data.clinicalHistory || {})
                 }
             };
 
@@ -1132,6 +1132,7 @@ class DatabaseService {
             // Detect changes for logging
             if (data.anthropometry) this.logPatientEvent(id, 'ANTHRO_RECORDED', {}, 'Medidas antropométricas atualizadas', user);
             if (data.clinicalSummary) this.logPatientEvent(id, 'DIAGNOSIS_UPDATED', {}, 'Resumo clínico atualizado', user);
+            if (data.clinicalHistory) this.logPatientEvent(id, 'CUSTOM', { type: 'ANAMNESE' }, 'Ficha de anamnese atualizada', user);
 
             this.saveToStorage();
             return updatedPatient;
