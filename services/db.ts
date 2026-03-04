@@ -260,6 +260,26 @@ class DatabaseService {
     private remoteSyncUnsubscribe: (() => void) | null = null;
     private isUpdatingFromRemote: boolean = false; // Guard to prevent infinite loops during sync
 
+    private applyRemoteData(data: any) {
+        this.clinics = data.clinics || [];
+        this.users = data.users || [];
+        this.professionals = data.professionals || [];
+        this.patients = data.patients || [];
+        this.appointments = data.appointments || [];
+        this.exams = data.exams || [];
+        this.alerts = data.alerts || [];
+        this.patientEvents = data.patientEvents || [];
+        this.examRequests = data.examRequests || [];
+        this.mipanAssessments = data.mipanAssessments || [];
+        this.prescriptions = data.prescriptions || [];
+
+        // Update modified flag based on remote
+        const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
+        (this as any)._localLastModified = remoteModified;
+
+        this.ensureDemoIntegrity();
+    }
+
     constructor() {
         const meta = (import.meta as any);
         const apiKey = meta.env?.VITE_GEMINI_API_KEY;
@@ -412,6 +432,39 @@ class DatabaseService {
         console.log(`[DB] 📡 Ativando sincronização em tempo real para: ${targetClinicId}`);
         const docRef = doc(firestore, "clinics", targetClinicId, "data", "main");
 
+        // --- NEW: INITIAL CHECK & MIGRATION & PUSH-UP ---
+        try {
+            const snap = await getDoc(docRef);
+            let data = snap.exists() ? snap.data() : null;
+
+            if (!data && targetClinicId === 'global_v1') {
+                const legacySnap = await getDoc(doc(firestore, "system_data", "global_v1"));
+                if (legacySnap.exists()) {
+                    console.log("[DB] Legacy data found. Migrating...");
+                    data = legacySnap.data();
+                }
+            }
+
+            const localModified = (this as any)._localLastModified || 0;
+            const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
+            const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
+            const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
+
+            if (data) {
+                const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
+                if (localModified > remoteModified && !isJustSeeded) {
+                    await this.saveToRemote(targetClinicId);
+                } else if (remoteModified > localModified || (localModified === 0 && isJustSeeded)) {
+                    this.applyRemoteData(data);
+                    this.saveToStorage(false, remoteModified);
+                }
+            } else if (!isJustSeeded) {
+                await this.saveToRemote(targetClinicId);
+            }
+        } catch (err) {
+            console.error('[DB] Initial sync error:', err);
+        }
+
         // Subscribe to real-time updates
         this.remoteSyncUnsubscribe = onSnapshot(docRef, (snap) => {
             if (snap.exists()) {
@@ -427,26 +480,12 @@ class DatabaseService {
 
                 if (remoteModified > localModified || (localModified === 0 && isJustSeeded)) {
                     this.isUpdatingFromRemote = true; // Block loop
-                    console.log(`[DB] ☁️ Atualização remota recebida (${this.patients.length} -> ${data.patients?.length || 0} pacientes).`);
+                    console.log(`[DB] ☁️ Atualização remota recebida.`);
 
-                    this.clinics = data.clinics || [];
-                    this.users = data.users || [];
-                    this.professionals = data.professionals || [];
-                    this.patients = data.patients || [];
-                    this.appointments = data.appointments || [];
-                    this.exams = data.exams || [];
-                    this.alerts = data.alerts || [];
-                    this.patientEvents = data.patientEvents || [];
-                    this.examRequests = data.examRequests || [];
-                    this.mipanAssessments = data.mipanAssessments || [];
-                    this.prescriptions = data.prescriptions || [];
+                    this.applyRemoteData(data);
+                    this.saveToStorage(false, remoteModified);
 
-                    (this as any)._localLastModified = remoteModified;
-                    this.ensureDemoIntegrity();
-                    this.saveToStorage(false, remoteModified); // Update LocalStorage WITHOUT pushing back to remote using SAME timestamp
                     this.isUpdatingFromRemote = false; // Unlock
-
-                    // Trigger UI refresh (dispatch event)
                     window.dispatchEvent(new CustomEvent('db-remote-sync'));
                 }
             }
