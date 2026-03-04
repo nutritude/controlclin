@@ -117,54 +117,54 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
   return (
     <div className="relative">
       <div className="flex justify-between items-center mb-6">
-        <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>Pacientes</h1>
+        <h1 className={`text-2xl font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-slate-800'}`}>Pacientes</h1>
         <button
           onClick={handleOpenCreate}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 active:scale-95 flex items-center gap-2 font-bold shadow-sm ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 active:scale-95 flex items-center gap-2 font-black uppercase text-xs shadow-md ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
         >
           <span>+</span> Novo Paciente
         </button>
       </div>
 
-      <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-x-auto custom-scrollbar`}>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'}`}>
+      <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-slate-200'} rounded-xl border overflow-x-auto custom-scrollbar`}>
+        <table className="min-w-full divide-y divide-blue-50">
+          <thead className={`${isManagerMode ? 'bg-blue-50' : 'bg-emerald-50'}`}>
             <tr>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Nome</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>CPF</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Contato</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</th>
-              <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Ação</th>
+              <th className={`px-6 py-3 text-left text-xs font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Nome / Cadastro</th>
+              <th className={`px-6 py-3 text-left text-xs font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>CPF</th>
+              <th className={`px-6 py-3 text-left text-xs font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Contato</th>
+              <th className={`px-6 py-3 text-left text-xs font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Status</th>
+              <th className={`px-6 py-3 text-right text-xs font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Ação</th>
             </tr>
           </thead>
-          <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-slate-100'}`}>
+          <tbody className={`${isManagerMode ? 'bg-white divide-blue-50' : 'bg-white divide-slate-100'}`}>
             {patients.map((patient) => (
-              <tr key={patient.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'}`}>
+              <tr key={patient.id} className={`${isManagerMode ? 'hover:bg-blue-50/50' : 'hover:bg-emerald-50'}`}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-teal-800 font-bold shrink-0 ${isManagerMode ? 'bg-teal-900/50 border border-teal-700' : 'bg-emerald-100'}`}>
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold shrink-0 ${isManagerMode ? 'bg-blue-100 text-blue-800 border border-blue-200 shadow-sm' : 'bg-emerald-100 text-teal-800'}`}>
                       {patient.name.charAt(0)}
                     </div>
                     <div className="ml-4">
-                      <div className={`text-sm font-medium ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{patient.name}</div>
-                      <div className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-slate-600'}`}>Nasc: {patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</div>
+                      <div className={`text-sm font-bold ${isManagerMode ? 'text-blue-900' : 'text-slate-900'}`}>{patient.name}</div>
+                      <div className={`text-[11px] font-medium uppercase tracking-tight ${isManagerMode ? 'text-slate-500' : 'text-slate-600'}`}>Nasc: {patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`text-sm font-mono px-2 rounded w-fit ${isManagerMode ? 'text-gray-200 bg-gray-700' : 'text-emerald-700 bg-emerald-50'}`}>{patient.cpf || '-'}</span>
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${isManagerMode ? 'text-blue-800 bg-blue-50 border-blue-100' : 'text-emerald-700 bg-emerald-50'}`}>{patient.cpf || '-'}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`text-sm ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>{patient.email}</div>
-                  <div className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-slate-600'}`}>{patient.phone}</div>
+                  <div className={`text-sm font-medium ${isManagerMode ? 'text-slate-800' : 'text-slate-900'}`}>{patient.email}</div>
+                  <div className={`text-xs font-medium ${isManagerMode ? 'text-slate-500' : 'text-slate-600'}`}>{patient.phone}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${patient.status === 'ATIVO' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {patient.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/patients/${patient.id}`} className={`${isManagerMode ? 'text-indigo-400 hover:text-indigo-200' : 'text-emerald-600 hover:text-emerald-800'} font-bold`}>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold">
+                  <Link to={`/patients/${patient.id}`} className={`${isManagerMode ? 'text-blue-600 hover:text-blue-800' : 'text-emerald-600 hover:text-emerald-800'} transition-colors`}>
                     Abrir Prontuário
                   </Link>
                 </td>
@@ -181,11 +181,11 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
 
       {/* CREATE MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className={`rounded-xl shadow-xl w-full max-w-2xl p-6 relative overflow-y-auto max-h-[90vh] ${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-slate-900'}`}>
-            <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isManagerMode ? 'border-gray-700' : 'border-slate-200'}`}>
-              <h2 className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Cadastrar Novo Paciente</h2>
-              <button onClick={() => setIsModalOpen(false)} className={`${isManagerMode ? 'text-gray-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}>✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/20 backdrop-blur-md p-4">
+          <div className={`rounded-xl shadow-2xl w-full max-w-2xl p-6 relative overflow-y-auto max-h-[90vh] ${isManagerMode ? 'bg-white border border-blue-100 text-slate-800' : 'bg-white text-slate-900'}`}>
+            <div className={`flex justify-between items-center mb-6 border-b pb-3 ${isManagerMode ? 'border-blue-50' : 'border-slate-200'}`}>
+              <h2 className={`text-xl font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>Cadastrar Novo Paciente</h2>
+              <button onClick={() => setIsModalOpen(false)} className={`text-slate-400 hover:text-slate-600 transition-colors`}>✕</button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -193,7 +193,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 <div className="md:col-span-2">
                   <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Nome Completo *</label>
                   <input required type="text" name="name" value={formData.name} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 focus:ring-blue-500 shadow-sm' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`} />
                 </div>
 
                 <div>
@@ -240,7 +240,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 <div className="md:col-span-2">
                   <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço Completo</label>
                   <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Rua, Número, Bairro, Cidade - UF"
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 focus:ring-blue-500 shadow-sm' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`} />
                 </div>
 
                 <div>
@@ -270,7 +270,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                       name="professionalId"
                       value={formData.professionalId}
                       onChange={handleChange}
-                      className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500 focus:border-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500 focus:border-emerald-500'}`}
+                      className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 focus:ring-blue-500 shadow-sm' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
                     >
                       <option value="">Selecione um profissional</option>
                       {professionals.map(p => (
@@ -284,7 +284,7 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 <div className="md:col-span-2">
                   <label className={`block text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>Senha de Acesso ao APP *</label>
                   <input required type="text" name="password" value={formData.password} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-blue-50 border-blue-100 text-blue-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`} />
                   <p className="mt-1 text-[10px] text-gray-500 uppercase font-bold">Essa senha será enviada ao paciente para que ele acesse o portal.</p>
                 </div>
               </div>

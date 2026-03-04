@@ -397,40 +397,63 @@ class DatabaseService {
             if (snap.exists()) {
                 const remote = snap.data();
 
-                // 1. Fusão de Históricos de Antropometria e Resumos Clínicos nos Pacientes
-                this.patients.forEach(localP => {
-                    const remoteP = remote.patients?.find((rp: any) => rp.id === localP.id);
-                    if (remoteP) {
-                        // Merge Antropometria (Gatilho da falha anterior)
-                        if (remoteP.anthropometryHistory && remoteP.anthropometryHistory.length > 0) {
-                            const localHistory = localP.anthropometryHistory || [];
-                            const combined = [...remoteP.anthropometryHistory, ...localHistory];
-                            // Remove duplicatas exatas de mesmo peso na mesma data
+                // 1. Fusão Inteligente de Pacientes e Históricos (SMART BIDIRECTIONAL MERGE)
+                // Garantimos que pacientes na nuvem que não estão no local sejam preservados e que históricos sejam fundidos sem perdas.
+                const remotePatients = remote.patients || [];
+                const localPatientsMap = new Map();
+                this.patients.forEach(p => localPatientsMap.set(p.id, p));
+
+                remotePatients.forEach((remoteP: any) => {
+                    if (!localPatientsMap.has(remoteP.id)) {
+                        // Paciente novo na nuvem (ou que não carregou localmente) -> PRESERVAR
+                        this.patients.push(remoteP);
+                    } else {
+                        // Paciente já existe no local -> FUNDIR DADOS CRÍTICOS
+                        const localP = localPatientsMap.get(remoteP.id);
+
+                        // Merge de Antropometria: Preservar histórico de ambos os lados
+                        const remoteHistory = remoteP.anthropometryHistory || [];
+                        const localHistory = localP.anthropometryHistory || [];
+
+                        if (remoteHistory.length > 0 || localHistory.length > 0) {
+                            const combined = [...remoteHistory, ...localHistory];
+
+                            // Deduplicação robusta: Data ISO (até segundos) + Peso
                             const uniqueMap = new Map();
                             combined.forEach((item: any) => {
-                                const key = `${item.date.split('T')[0]}_${item.weight}`;
+                                if (!item.date) return;
+                                // Usamos a data até os segundos para permitir múltiplas avaliações no mesmo dia
+                                // mas evitar duplicatas de cliques duplos/lag de rede
+                                const datePart = item.date.includes('T') ? item.date.split('.')[0] : item.date;
+                                const key = `${datePart}_${item.weight}`;
                                 uniqueMap.set(key, item);
                             });
+
                             localP.anthropometryHistory = Array.from(uniqueMap.values()).sort(
                                 (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
                             );
 
-                            // A Antropometria "atual" deve ser sempre a última do histórico fundido
+                            // Atualizar o resumo rápido (anthropometry) com o registro mais recente
                             if (localP.anthropometryHistory.length > 0) {
-                                localP.anthropometry = localP.anthropometryHistory[localP.anthropometryHistory.length - 1];
+                                // Se o local for nulo ou o remoto for mais recente, atualizamos o objeto de resumo
+                                localP.anthropometry = { ...localP.anthropometryHistory[localP.anthropometryHistory.length - 1] };
                             }
                         }
 
-                        // Merge Perfil MIPAN e Alertas
+                        // Merge Perfil MIPAN e Alertas Clínicos
                         if (remoteP.clinicalSummary?.psychobehavioral && !localP.clinicalSummary?.psychobehavioral) {
                             if (!localP.clinicalSummary) localP.clinicalSummary = { clinicalGoal: '', activeDiagnoses: [] };
                             localP.clinicalSummary.psychobehavioral = remoteP.clinicalSummary.psychobehavioral;
                         }
+
+                        // Merge de Planos Nutricionais (se houver novos na nuvem)
+                        if (remoteP.nutritionalPlans && (!localP.nutritionalPlans || localP.nutritionalPlans.length < remoteP.nutritionalPlans.length)) {
+                            localP.nutritionalPlans = remoteP.nutritionalPlans;
+                        }
                     }
                 });
 
-                // 2. Fusão de Arrays Gengéricos (Agendamentos, Eventos, Exames, Prescrições)
-                // Se alguém (secretária) adicionou algo na nuvem, não queremos apagar só porque o Profissional salvou um paciente.
+                // 2. Fusão de Arrays Genéricos (Agendamentos, Eventos, Exames)
                 const mergeArray = (localArr: any[], remoteArr: any[]) => {
                     if (!remoteArr) return localArr;
                     const localIds = new Set(localArr.map(x => x.id));

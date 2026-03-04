@@ -16,9 +16,20 @@ const db = getFirestore(app);
 async function check() {
     const snap = await getDoc(doc(db, "clinics", "c1", "data", "main"));
     const p = snap.data().patients.find(x => x.name.includes("Joventina"));
-    console.log("HISTORY:");
+
+    console.log("--- HISTÓRICO ANTROPOMÉTRICO ---");
     p.anthropometryHistory?.forEach(h => {
-        console.log(h.date, "Peso:", h.weight, "Dobras:", h.skinfoldTriceps ? 'Sim' : 'Não', "Circ:", h.circWaist ? 'Sim' : 'Não');
+        console.log(h.date, "Peso:", h.weight);
+    });
+
+    console.log("\n--- PEDIDOS DE EXAMES ---");
+    p.examRequests?.forEach(e => {
+        console.log(e.date, "Status:", e.status, "Title:", e.title);
+    });
+
+    console.log("\n--- RESULTADOS DE EXAMES ---");
+    p.clinicalSummary?.exams?.forEach(e => {
+        console.log(e.date || 'S/D', "Tipo:", e.type, "Valor:", e.value);
     });
 }
 check().catch(console.error);

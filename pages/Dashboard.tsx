@@ -40,7 +40,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Financeiro */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
             <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Receita Total (LTV)</p>
             <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
@@ -51,7 +51,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
         </div>
 
         {/* Pacientes */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
             <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Base de Pacientes</p>
             <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>{stats.activePatients} <span className={`text-base font-normal ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>ativos</span></h3>
@@ -62,7 +62,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
         </div>
 
         {/* Operacional */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
             <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Taxa de Faltas</p>
             <h3 className={`text-3xl font-bold mt-2 ${stats.noShowRate > 15 ? 'text-red-500' : (isManagerMode ? 'text-blue-600' : 'text-green-400')}`}>
@@ -75,7 +75,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
         </div>
 
         {/* Demográfico Rápido */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 transition-all hover:shadow-md`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 transition-all hover:shadow-md`}>
           <p className={`text-sm font-medium uppercase tracking-wider mb-3 ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Perfil de Gênero</p>
           <div className="flex items-center gap-4">
             <div className={`flex-1 text-center p-2 rounded ${isManagerMode ? 'bg-blue-50' : 'bg-gray-700'}`}>
@@ -93,7 +93,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* CHARTS & LISTS ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Top Pathologies (Epidemiologia) */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 lg:col-span-2`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 lg:col-span-2`}>
           <h3 className={`text-lg font-bold mb-6 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Top Patologias (Perfil Epidemiológico)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
@@ -110,24 +110,24 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
             </div>
 
             {/* AI INSIGHTS BOX */}
-            <div className={`rounded-lg p-5 text-sm flex flex-col justify-between border ${isManagerMode ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-200' : 'bg-indigo-900/80 border-indigo-700 text-gray-100'}`}>
+            <div className={`rounded-lg p-5 text-sm flex flex-col justify-between border ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-indigo-900/80 border-indigo-700 text-gray-100'}`}>
               <div>
-                <div className={`flex items-center gap-2 mb-2 font-bold uppercase tracking-wide text-xs ${isManagerMode ? 'text-blue-100' : 'text-purple-400'}`}>
-                  <Icons.Brain /> IA Manager
+                <div className={`flex items-center gap-2 mb-2 font-black uppercase tracking-wide text-[10px] ${isManagerMode ? 'text-blue-600' : 'text-purple-400'}`}>
+                  <Icons.Brain /> IA Manager Insight
                 </div>
-                <h4 className={`font-bold mb-2 ${isManagerMode ? 'text-white' : 'text-white'}`}>Insight Clínico:</h4>
-                <p className="italic">"{aiInsights?.insight || 'Analisando dados...'}"</p>
+                <h4 className={`font-black mb-2 ${isManagerMode ? 'text-blue-900' : 'text-white'}`}>Análise Clínica:</h4>
+                <p className={`italic ${isManagerMode ? 'text-slate-700' : 'text-gray-100'}`}>"{aiInsights?.insight || 'Analisando dados estratégicos...'}"</p>
               </div>
-              <div className={`mt-4 pt-4 border-t ${isManagerMode ? 'border-blue-400/50' : 'border-indigo-700'}`}>
-                <span className={`block font-bold mb-1 ${isManagerMode ? 'text-white' : 'text-white'}`}>Ação Sugerida:</span>
-                <p className={`${isManagerMode ? 'text-blue-50' : 'text-purple-300'} font-medium`}>{aiInsights?.action || 'Aguarde...'}</p>
+              <div className={`mt-4 pt-4 border-t ${isManagerMode ? 'border-blue-100' : 'border-indigo-700'}`}>
+                <span className={`block font-black mb-1 ${isManagerMode ? 'text-blue-900' : 'text-white'}`}>Ação Sugerida:</span>
+                <p className={`${isManagerMode ? 'text-blue-700' : 'text-purple-300'} font-bold`}>{aiInsights?.action || 'Aguarde processamento...'}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Next Appointments (Operational View) */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
+        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
           <h3 className={`text-lg font-bold mb-4 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Agenda Imediata</h3>
           <div className="space-y-4 flex-1">
             {nextAppointments.length === 0 ? (
@@ -296,10 +296,10 @@ const SmartOutreach = ({ patients, nextAppointments, clinic, user, navigate }: a
   return (
     <div className="bg-white border-blue-100 shadow-sm rounded-xl border p-6 flex flex-col h-full">
       <div className="flex justify-between items-center mb-5">
-        <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+        <h3 className="text-lg font-black text-blue-900 flex items-center gap-2 uppercase tracking-tight">
           <span className="text-xl">💡</span> Smart Outreach
         </h3>
-        <span className="bg-blue-600 text-white text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm">
+        <span className="bg-blue-100 text-blue-800 text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-blue-200">
           {suggestions.length} ações
         </span>
       </div>
@@ -326,7 +326,7 @@ const SmartOutreach = ({ patients, nextAppointments, clinic, user, navigate }: a
               {/* Botão de ação */}
               <button
                 onClick={() => handleOutreach(s)}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all active:scale-95 shadow-sm"
+                className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all active:scale-95 shadow-md shadow-blue-200"
               >
                 <span>💬</span> Enviar via WhatsApp
               </button>

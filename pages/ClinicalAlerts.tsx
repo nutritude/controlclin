@@ -186,25 +186,25 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
         <div className="space-y-6">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'} flex items-center gap-2`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <h1 className={`text-2xl font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'} flex items-center gap-2`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         Monitoramento de Alertas Clínicos
                     </h1>
-                    <p className={`mt-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Acompanhamento ativo de pendências e riscos dos pacientes.</p>
+                    <p className={`mt-1 font-medium ${isManagerMode ? 'text-blue-700/70' : 'text-emerald-700'}`}>Acompanhamento ativo de pendências e riscos dos pacientes.</p>
                 </div>
                 <button
                     onClick={handleRunAnalysis}
                     disabled={analyzing}
-                    className={`px-4 py-2 rounded-md shadow font-bold text-white flex items-center gap-2 transition-colors ${analyzing ? 'bg-gray-400 cursor-not-allowed' : (isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700')}`}
+                    className={`px-6 py-2 rounded-lg shadow-md font-black uppercase text-xs text-white flex items-center gap-2 transition-all active:scale-95 ${analyzing ? 'bg-slate-300 cursor-not-allowed' : (isManagerMode ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-emerald-600 hover:bg-emerald-700')}`}
                 >
                     {analyzing ? (
-                        <>Processando...</>
+                        <>Processando Análise...</>
                     ) : (
                         <>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                            Executar Análise
+                            Executar Nova Análise
                         </>
                     )}
                 </button>
@@ -212,32 +212,32 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                    <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Alertas de Alta Prioridade</p>
-                    <p className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-red-400' : 'text-red-600'}`}>{stats.high}</p>
+                <div className={`${isManagerMode ? 'bg-white border-blue-50' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                    <p className={`text-xs font-black uppercase tracking-wide ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>Alertas de Alta Prioridade</p>
+                    <p className={`text-3xl font-black mt-2 ${isManagerMode ? 'text-red-500' : 'text-red-600'}`}>{stats.high}</p>
                 </div>
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                    <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Média Prioridade</p>
-                    <p className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-orange-400' : 'text-orange-600'}`}>{stats.medium}</p>
+                <div className={`${isManagerMode ? 'bg-white border-blue-50' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                    <p className={`text-xs font-black uppercase tracking-wide ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>Média Prioridade</p>
+                    <p className={`text-3xl font-black mt-2 ${isManagerMode ? 'text-orange-500' : 'text-orange-600'}`}>{stats.medium}</p>
                 </div>
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                    <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Baixa Prioridade</p>
-                    <p className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-400' : 'text-slate-600'}`}>{stats.low}</p>
+                <div className={`${isManagerMode ? 'bg-white border-blue-50' : 'bg-emerald-50 border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                    <p className={`text-xs font-black uppercase tracking-wide ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>Baixa Prioridade</p>
+                    <p className={`text-3xl font-black mt-2 ${isManagerMode ? 'text-slate-500' : 'text-slate-600'}`}>{stats.low}</p>
                 </div>
             </div>
 
             {/* Filter and List */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow overflow-hidden rounded-lg border`}>
-                <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 border-gray-700' : 'bg-emerald-50 border-gray-200'}`}>
-                    <h2 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Alertas Ativos ({filteredAlerts.length})</h2>
+            <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-gray-200'} shadow-sm overflow-hidden rounded-xl border`}>
+                <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-gray-200'}`}>
+                    <h2 className={`text-lg font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>Alertas Ativos ({filteredAlerts.length})</h2>
                     <div className="flex gap-4">
                         <div>
-                            <label htmlFor="filterSeverity" className={`block text-xs font-medium uppercase ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Prioridade</label>
+                            <label htmlFor="filterSeverity" className={`block text-[10px] font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Prioridade</label>
                             <select
                                 id="filterSeverity"
                                 value={filterSeverity}
                                 onChange={(e) => setFilterSeverity(e.target.value as AlertSeverity | 'ALL')}
-                                className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md ${isManagerMode ? 'bg-gray-600 border-gray-500 text-gray-100' : 'bg-white border-gray-300 text-emerald-900'}`}
+                                className={`mt-1 block w-full pl-3 pr-10 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg font-bold ${isManagerMode ? 'bg-white text-slate-800 shadow-sm border border-blue-100' : 'bg-white border-gray-300 text-emerald-900'}`}
                             >
                                 <option value="ALL">Todas</option>
                                 <option value="HIGH">Alta</option>
@@ -246,14 +246,14 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="filterType" className={`block text-xs font-medium uppercase ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Tipo de Alerta</label>
+                            <label htmlFor="filterType" className={`block text-[10px] font-black uppercase tracking-wider ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Tipo de Alerta</label>
                             <select
                                 id="filterType"
                                 value={filterType}
                                 onChange={(e) => setFilterType(e.target.value as AlertType | 'ALL')}
-                                className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md ${isManagerMode ? 'bg-gray-600 border-gray-500 text-gray-100' : 'bg-white border-gray-300 text-emerald-900'}`}
+                                className={`mt-1 block w-full pl-3 pr-10 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg font-bold ${isManagerMode ? 'bg-white text-slate-800 shadow-sm border border-blue-100' : 'bg-white border-gray-300 text-emerald-900'}`}
                             >
-                                <option value="ALL">Todos</option>
+                                <option value="ALL">Todos os Tipos</option>
                                 {Object.entries(ALERT_TYPES_LABELS).map(([key, label]) => (
                                     <option key={key} value={key}>{label}</option>
                                 ))}
@@ -261,41 +261,41 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
                         </div>
                     </div>
                 </div>
-                <ul className={`divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                <ul className={`divide-y ${isManagerMode ? 'divide-blue-50' : 'divide-gray-200'}`}>
                     {filteredAlerts.length === 0 ? (
                         <li className={`p-6 text-center italic ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Nenhum alerta ativo com os filtros selecionados.</li>
                     ) : (
                         filteredAlerts.map(alert => (
-                            <li key={alert.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'} flex items-start justify-between p-6 transition-colors`}>
+                            <li key={alert.id} className={`${isManagerMode ? 'hover:bg-blue-50/30' : 'hover:bg-emerald-50'} flex items-start justify-between p-6 transition-colors`}>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${SEVERITY_STYLES[alert.severity]}`}>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-tight border shadow-sm ${SEVERITY_STYLES[alert.severity]}`}>
                                             {alert.severity === 'HIGH' ? 'ALTA' : alert.severity === 'MEDIUM' ? 'MÉDIA' : 'BAIXA'}
                                         </span>
-                                        <span className={`text-sm font-medium ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>{ALERT_TYPES_LABELS[alert.type]}</span>
+                                        <span className={`text-xs font-black uppercase tracking-tight ${isManagerMode ? 'text-slate-500' : 'text-emerald-800'}`}>{ALERT_TYPES_LABELS[alert.type]}</span>
                                     </div>
-                                    <p className={`text-base font-bold mb-1 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{alert.patientName}</p>
-                                    <p className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>{alert.description}</p>
-                                    <p className={`text-xs mt-2 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Gerado: {getDaysAgo(alert.createdAt)} ({new Date(alert.createdAt).toLocaleDateString()})</p>
+                                    <p className={`text-base font-black tracking-tight mb-1 ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{alert.patientName}</p>
+                                    <p className={`text-sm font-medium ${isManagerMode ? 'text-slate-600' : 'text-emerald-700'}`}>{alert.description}</p>
+                                    <p className={`text-[10px] font-bold uppercase tracking-widest mt-2 ${isManagerMode ? 'text-slate-400' : 'text-gray-500'}`}>Gerado: {getDaysAgo(alert.createdAt)} ({new Date(alert.createdAt).toLocaleDateString()})</p>
                                 </div>
                                 <div className="flex-shrink-0 ml-4 flex items-center gap-3">
                                     <Link
                                         to={`/patients/${alert.patientId}`}
-                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight transition-all active:scale-95 flex items-center gap-1 ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                         Ver Paciente
                                     </Link>
                                     <button
                                         onClick={() => handleWhatsAppAction(alert)}
-                                        className="px-3 py-1.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors flex items-center gap-1"
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight transition-all active:scale-95 flex items-center gap-1 ${isManagerMode ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                                         title="Enviar WhatsApp"
                                     >
-                                        <span className="text-lg">💬</span> WhatsApp
+                                        <span className="text-xl">💬</span> WhatsApp
                                     </button>
                                     <button
                                         onClick={() => openResolveModal(alert)}
-                                        className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${isManagerMode ? 'text-gray-300 hover:text-white hover:bg-gray-600 border-gray-600' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300'}`}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight transition-all active:scale-95 border ${isManagerMode ? 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-slate-200' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300'}`}
                                     >
                                         Resolver
                                     </button>
@@ -308,39 +308,39 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
 
             {/* Resolve Alert Modal */}
             {resolveModalOpen && selectedAlert && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-md p-6 relative`}>
-                        <h2 className={`text-xl font-bold mb-4 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Resolver Alerta Clínico</h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/20 backdrop-blur-md p-4">
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-gray-900'} rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-blue-50`}>
+                        <h2 className={`text-xl font-black uppercase tracking-tight mb-4 ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>Resolver Alerta Clínico</h2>
 
-                        <div className={`p-4 rounded-md border mb-4 ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}>
-                            <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{selectedAlert.patientName}</p>
-                            <p className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>{selectedAlert.description}</p>
+                        <div className={`p-4 rounded-xl border mb-5 ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}>
+                            <p className={`text-sm font-black ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{selectedAlert.patientName}</p>
+                            <p className={`text-sm font-medium italic ${isManagerMode ? 'text-blue-700/70' : 'text-emerald-700'}`}>{selectedAlert.description}</p>
                         </div>
 
                         <div>
-                            <label htmlFor="resolveNotes" className={`block text-sm font-medium mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Notas de Resolução (Opcional)</label>
+                            <label htmlFor="resolveNotes" className={`block text-[11px] font-black uppercase tracking-wider mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Notas de Resolução (Opcional)</label>
                             <textarea
                                 id="resolveNotes"
                                 rows={3}
-                                className={`w-full border rounded p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                className={`w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isManagerMode ? 'bg-white border-blue-100 text-slate-800 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                 placeholder="Detalhes sobre como o alerta foi resolvido..."
                                 value={resolveNotes}
                                 onChange={e => setResolveNotes(e.target.value)}
                             />
                         </div>
 
-                        <div className={`flex justify-end gap-2 pt-4 mt-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <div className={`flex justify-end gap-3 pt-5 mt-5 border-t ${isManagerMode ? 'border-blue-50' : 'border-gray-100'}`}>
                             <button
                                 type="button"
                                 onClick={() => { setResolveModalOpen(false); setSelectedAlert(null); }}
-                                className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                className={`px-4 py-2 border rounded-lg font-black uppercase text-xs transition-colors ${isManagerMode ? 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="button"
                                 onClick={handleResolve}
-                                className={`px-6 py-2 text-white rounded font-bold shadow-md ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                className={`px-6 py-2 text-white rounded-lg font-black uppercase text-xs shadow-md active:scale-95 transition-all ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                             >
                                 Confirmar Resolução
                             </button>
