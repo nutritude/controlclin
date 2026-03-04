@@ -56,15 +56,17 @@ const DEFAULT_CLINICS: Clinic[] = [
     }
 ];
 const DEFAULT_USERS: User[] = [
-    { id: 'u0', clinicId: 'system', name: 'Super Admin', email: 'root@control.com', role: Role.SUPER_ADMIN, password: '123' },
-    { id: 'u1', clinicId: 'c1', name: 'Dr. Roberto Mendes', email: 'roberto@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p1', password: '123' },
-    { id: 'u2', clinicId: 'c1', name: 'Dra. Camila Nutri', email: 'camila@control.com', role: Role.PROFESSIONAL, professionalId: 'p2', password: '123' },
-    { id: 'u3', clinicId: 'c1', name: 'Dr. Rangel Angelo', email: 'rangel@control.com', role: Role.PROFESSIONAL, professionalId: 'p3', password: '123' },
+    { id: 'u-root', clinicId: 'c1', name: 'Super Admin', email: 'root@control.com', role: Role.SUPER_ADMIN, password: '123' },
+    { id: 'u-rangel', clinicId: 'c1', name: 'Dr. Rangel', email: 'rangel@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-rangel', password: '123' },
+    { id: 'u-marcella', clinicId: 'c1', name: 'Dra. Marcella', email: 'marcella@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-marcella', password: '123' },
+    { id: 'u-debora', clinicId: 'c1', name: 'Dra. Debora', email: 'debora@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-debora', password: '123' },
+    { id: 'u-matheus', clinicId: 'c1', name: 'Dr. Matheus', email: 'matheus@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-matheus', password: '123' },
 ];
 const DEFAULT_PROFESSIONALS: Professional[] = [
-    { id: 'p1', clinicId: 'c1', userId: 'u1', name: 'Dr. Roberto Mendes', email: 'roberto@control.com', phone: '999', specialty: 'Neurologia', registrationNumber: 'CRM 123', color: 'bg-blue-200', isActive: true },
-    { id: 'p2', clinicId: 'c1', userId: 'u2', name: 'Dra. Camila Nutri', email: 'camila@control.com', phone: '888', specialty: 'Nutrição', registrationNumber: 'CRN 555', color: 'bg-green-200', isActive: true },
-    { id: 'p3', clinicId: 'c1', userId: 'u3', name: 'Dr. Rangel Angelo', email: 'rangel@control.com', phone: '777', specialty: 'Psiquiatria', registrationNumber: 'CRM 999', color: 'bg-red-200', isActive: true }
+    { id: 'p-rangel', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Dermatologia', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
+    { id: 'p-marcella', clinicId: 'c1', userId: 'u-marcella', name: 'Dra. Marcella', email: 'marcella@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-green-200', isActive: true },
+    { id: 'p-debora', clinicId: 'c1', userId: 'u-debora', name: 'Dra. Debora', email: 'debora@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-purple-200', isActive: true },
+    { id: 'p-matheus', clinicId: 'c1', userId: 'u-matheus', name: 'Dr. Matheus', email: 'matheus@control.com', phone: '', specialty: 'Médico', color: 'bg-indigo-200', isActive: true },
 ];
 
 const DEFAULT_PLAN_PT1: NutritionalPlan = {
@@ -443,9 +445,12 @@ class DatabaseService {
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
                 const localModified = (this as any)._localLastModified || 0;
 
-                // Sync: Remote takes precedence if newer
-                if (remoteModified > localModified) {
-                    console.log(`[DB] 🔽 Baixando atualização remota...`);
+                // CRITICAL RECOVERY OVERRIDE: 
+                // We recently performed a master database repair. 
+                // Many clients have a broken local storage (e.g. they think they are not admins because they cached old data).
+                // We MUST force download the remote state, ignoring `localModified` to break them out of bad local cache.
+                if (true) {
+                    console.log(`[DB] 🔽 Baixando atualização remota (FORCED RECOVERY)...`);
                     this.applyRemoteData(data);
                     this.saveToStorage(false, remoteModified);
                 }
