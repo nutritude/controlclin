@@ -17,9 +17,18 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const planExportRef = useRef<HTMLDivElement>(null);
 
+    // Registro do histórico mais recente (mesma fonte que a aba Antropometria do profissional)
     const lastAnthro = patient.anthropometryHistory && patient.anthropometryHistory.length > 0
         ? [...patient.anthropometryHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
         : null;
+
+    // % Gordura: prioridade → histórico mais recente → registro atual → '--'
+    const displayBodyFat: string = (() => {
+        const fromHistory = lastAnthro?.bodyFatPercentage;
+        const fromCurrent = patient.anthropometry?.bodyFatPercentage;
+        const val = fromHistory ?? fromCurrent;
+        return (val !== undefined && val !== null && val > 0) ? `${val}%` : '--';
+    })();
 
     const activePlan = patient.nutritionalPlans
         ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
@@ -78,11 +87,11 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                     <p className="text-xl font-black text-slate-800">{lastAnthro?.weight ?? patient.anthropometry?.weight ?? '--'} <span className="text-xs font-medium text-slate-500">kg</span></p>
                 </div>
                 <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-100">
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-3">
                         <Icons.Activity className="w-4 h-4" />
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">IMC</p>
-                    <p className="text-xl font-black text-slate-800">{lastAnthro?.bmi ?? patient.anthropometry?.bmi ?? '--'}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">% Gordura</p>
+                    <p className="text-xl font-black text-slate-800">{displayBodyFat}</p>
                 </div>
             </div>
 
@@ -256,7 +265,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                         { label: 'Cintura', value: patient.anthropometry?.circWaist, unit: 'cm' },
                         { label: 'Quadril', value: patient.anthropometry?.circHip, unit: 'cm' },
                         { label: 'Altura', value: patient.anthropometry?.height, unit: 'cm' },
-                        { label: 'BF Estimado', value: lastAnthro?.bodyFatPercentage ?? patient.anthropometry?.bodyFatPercentage, unit: '%' },
+                        { label: '% Gordura', value: displayBodyFat, unit: '' },
                     ].map(({ label, value, unit }) => (
                         <div key={label} className="p-4 bg-slate-50 rounded-2xl">
                             <p className="text-[10px] font-black text-slate-400 uppercase">{label}</p>
