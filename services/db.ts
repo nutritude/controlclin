@@ -383,11 +383,72 @@ class DatabaseService {
     }
 
     private async saveToRemote(clinicId?: string) {
-        if (!this.isRemoteEnabled) return;
+        if (!this.isRemoteEnabled || this.isUpdatingFromRemote) return;
 
         const targetClinicId = clinicId || this.activeClinicId || this.clinics[0]?.id || 'global_v1';
 
         try {
+            const docRef = doc(firestore, "clinics", targetClinicId, "data", "main");
+
+            // --- PROTEÇÃO CRÍTICA DE DADOS (SMART MERGE) ---
+            // Antes de jogar nossos dados na nuvem, pegamos a versão fresca do servidor 
+            // e fazemos a fusão (merge) inteligente para NÃO perder hisróricos (ex: Antropometria).
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                const remote = snap.data();
+
+                // 1. Fusão de Históricos de Antropometria e Resumos Clínicos nos Pacientes
+                this.patients.forEach(localP => {
+                    const remoteP = remote.patients?.find((rp: any) => rp.id === localP.id);
+                    if (remoteP) {
+                        // Merge Antropometria (Gatilho da falha anterior)
+                        if (remoteP.anthropometryHistory && remoteP.anthropometryHistory.length > 0) {
+                            const localHistory = localP.anthropometryHistory || [];
+                            const combined = [...remoteP.anthropometryHistory, ...localHistory];
+                            // Remove duplicatas exatas de mesmo peso na mesma data
+                            const uniqueMap = new Map();
+                            combined.forEach((item: any) => {
+                                const key = `${item.date.split('T')[0]}_${item.weight}`;
+                                uniqueMap.set(key, item);
+                            });
+                            localP.anthropometryHistory = Array.from(uniqueMap.values()).sort(
+                                (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                            );
+
+                            // A Antropometria "atual" deve ser sempre a última do histórico fundido
+                            if (localP.anthropometryHistory.length > 0) {
+                                localP.anthropometry = localP.anthropometryHistory[localP.anthropometryHistory.length - 1];
+                            }
+                        }
+
+                        // Merge Perfil MIPAN e Alertas
+                        if (remoteP.clinicalSummary?.psychobehavioral && !localP.clinicalSummary?.psychobehavioral) {
+                            if (!localP.clinicalSummary) localP.clinicalSummary = {};
+                            localP.clinicalSummary.psychobehavioral = remoteP.clinicalSummary.psychobehavioral;
+                        }
+                    }
+                });
+
+                // 2. Fusão de Arrays Gengéricos (Agendamentos, Eventos, Exames, Prescrições)
+                // Se alguém (secretária) adicionou algo na nuvem, não queremos apagar só porque o Profissional salvou um paciente.
+                const mergeArray = (localArr: any[], remoteArr: any[]) => {
+                    if (!remoteArr) return localArr;
+                    const localIds = new Set(localArr.map(x => x.id));
+                    remoteArr.forEach(r => {
+                        if (!localIds.has(r.id)) localArr.push(r);
+                    });
+                    return localArr;
+                };
+
+                this.appointments = mergeArray(this.appointments, remote.appointments);
+                this.patientEvents = mergeArray(this.patientEvents, remote.patientEvents);
+                this.exams = mergeArray(this.exams, remote.exams);
+                this.examRequests = mergeArray(this.examRequests, remote.examRequests);
+                this.prescriptions = mergeArray(this.prescriptions, remote.prescriptions);
+                this.mipanAssessments = mergeArray(this.mipanAssessments, remote.mipanAssessments);
+            }
+            // --- FIM DA PROTEÇÃO ---
+
             const data = {
                 clinics: this.clinics,
                 users: this.users,
@@ -401,17 +462,19 @@ class DatabaseService {
                 mipanAssessments: this.mipanAssessments,
                 prescriptions: this.prescriptions,
                 updatedAt: new Date().toISOString(),
-                lastModified: (this as any)._localLastModified || Date.now()
+                lastModified: Date.now()
             };
 
             const sanitizedData = JSON.parse(JSON.stringify(data));
+            await setDoc(docRef, sanitizedData);
 
-            // PATH CHANGE: clinics/{clinicId}/data/main
-            await setDoc(doc(firestore, "clinics", targetClinicId, "data", "main"), sanitizedData);
-            console.log(`[DB] Remote sync successful for clinic: ${targetClinicId}`);
+            // Atualizamos a modificação interna para não causar loop no listener do Firestore
+            (this as any)._localLastModified = data.lastModified;
+
+            console.log(`[DB] 🛡️ Smart Sync (Safe Merge) executado com sucesso: ${targetClinicId}`);
         } catch (err: any) {
-            console.error("DatabaseService: Remote sync failed.", err?.message || err);
-            throw new Error(`Firebase Error: ${err.code || 'permission/auth'} - ${err.message || err}`);
+            console.error("DatabaseService: Falha crítica de sync. Dados mantidos apenas locais por segurança.", err?.message || err);
+            throw new Error(`Erro na Nucléia de Dados: ${err.message || err}`);
         }
     }
 
