@@ -5,24 +5,58 @@
 // ============================================================
 
 import { db } from './db';
-import { Clinic, Role, User } from '../types';
+import { Clinic } from '../types';
 
 // ─── TIPOS DO BACKOFFICE ────────────────────────────────────
 
-export type PlanType = 'STARTER' | 'ESSENTIAL' | 'PROFESSIONAL' | 'CLINIC' | 'ENTERPRISE';
+export type PlanType = 'STARTER' | 'ESSENTIAL' | 'PROFESSIONAL' | 'CLINIC' | 'ENTERPRISE' | 'CUSTOM';
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'canceled';
+export type PaymentCycle = 'monthly' | 'quarterly' | 'semester' | 'yearly';
+export type CouponType = 'PERCENTAGE' | 'FIXED';
+
+export interface SaaSPlan {
+    id: PlanType;
+    name: string;
+    slug: string;
+    description: string;
+    maxManagers: number;
+    maxProfessionals: number;
+    maxPatients: 'unlimited' | number;
+    features: string[];
+    availableCycles: PaymentCycle[];
+    basePrice: number; // Mensal
+    discounts: Record<PaymentCycle, number>; // Em percentual (ex: 0.10 para 10%)
+    isActive: boolean;
+}
+
+export interface SaaSCoupon {
+    id: string;
+    code: string;
+    type: CouponType;
+    value: number;
+    expiresAt: string;
+    maxUses: number;
+    currentUses: number;
+    maxPerCustomer: number;
+    applicablePlans: PlanType[] | 'ALL';
+    firstCycleOnly: boolean;
+    isActive: boolean;
+}
 
 export interface SaaSClinic extends Clinic {
-    plan: PlanType;
-    isActive: boolean;
-    status: 'active' | 'trial' | 'inactive';
-    cycle: 'monthly' | 'quarterly' | 'semester' | 'yearly';
-    createdAt: string;
-    expiresAt?: string;
-    patientsCount?: number;
-    professionalsCount?: number;
-    appointmentsThisMonth?: number;
-    adminEmail?: string;
-    adminName?: string;
+    planId: PlanType;
+    status: SubscriptionStatus;
+    cycle: PaymentCycle;
+    startDate: string;
+    nextBillingDate: string;
+    responsibleName: string;
+    responsibleEmail: string;
+    responsiblePhone: string;
+    cnpj?: string;
+    usedCouponId?: string;
+    patientsCount: number;
+    professionalsCount: number;
+    activeUsersCount: number;
 }
 
 export interface SaaSMetrics {
@@ -30,18 +64,14 @@ export interface SaaSMetrics {
     activeClinics: number;
     inactiveClinics: number;
     trialClinics: number;
-    starterCount: number;
-    essentialCount: number;
-    professionalCount: number;
-    clinicCount: number;
-    enterpriseCount: number;
-    totalPatients: number;
-    totalProfessionals: number;
-    totalAppointments: number;
+    pastDueClinics: number;
     mrr: number;
     arr: number;
+    ltv: number;
+    cac: number;
     churnRate: number;
     conversionRate: number;
+    plansDistribution: Record<PlanType, number>;
 }
 
 export interface SaaSAdmin {
@@ -50,27 +80,93 @@ export interface SaaSAdmin {
     name: string;
 }
 
-// ─── PLANOS E PREÇOS ───────────────────────────────────────
+// ─── CONFIGURAÇÃO PADRÃO DE PLANOS ─────────────────────────
 
-export const PLANS: Record<PlanType, { label: string; price: number; color: string; limit: number }> = {
-    STARTER: { label: 'Starter', price: 97, color: 'bg-slate-100 text-slate-700 border-slate-200', limit: 200 },
-    ESSENTIAL: { label: 'Essencial', price: 147, color: 'bg-emerald-100 text-emerald-700 border-emerald-200', limit: 500 },
-    PROFESSIONAL: { label: 'Profissional', price: 197, color: 'bg-blue-100 text-blue-700 border-blue-200', limit: 1000 },
-    CLINIC: { label: 'Clínica', price: 297, color: 'bg-purple-100 text-purple-700 border-purple-200', limit: 5000 },
-    ENTERPRISE: { label: 'Enterprise', price: 497, color: 'bg-violet-100 text-violet-700 border-violet-200', limit: 99999 },
-};
+export const DEFAULT_PLANS: SaaSPlan[] = [
+    {
+        id: 'STARTER',
+        name: 'Starter',
+        slug: 'starter',
+        description: 'Ideal para profissionais autônomos iniciando.',
+        maxManagers: 1,
+        maxProfessionals: 0,
+        maxPatients: 'unlimited',
+        features: ['Agenda', 'Prontuário', 'Relatórios Básicos'],
+        availableCycles: ['monthly', 'yearly'],
+        basePrice: 97,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.15, yearly: 0.2 },
+        isActive: true
+    },
+    {
+        id: 'ESSENTIAL',
+        name: 'Essencial',
+        slug: 'essential',
+        description: 'Gestor + 1 Profissional. Ideal para parcerias.',
+        maxManagers: 1,
+        maxProfessionals: 1,
+        maxPatients: 'unlimited',
+        features: ['Agenda', 'Prontuário', 'WhatsApp Integrado', 'Relatórios'],
+        availableCycles: ['monthly', 'quarterly', 'semester', 'yearly'],
+        basePrice: 147,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.2, yearly: 0.3 },
+        isActive: true
+    },
+    {
+        id: 'PROFESSIONAL',
+        name: 'Profissional',
+        slug: 'professional',
+        description: 'Foco em produtividade para pequenos consultórios.',
+        maxManagers: 1,
+        maxProfessionals: 2,
+        maxPatients: 'unlimited',
+        features: ['Tudo do Essencial', 'IA Nutricional', 'Gestão Financeira'],
+        availableCycles: ['monthly', 'quarterly', 'semester', 'yearly'],
+        basePrice: 197,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.2, yearly: 0.3 },
+        isActive: true
+    },
+    {
+        id: 'CLINIC',
+        name: 'Clínica',
+        slug: 'clinic',
+        description: 'Multi-profissionais com recursos avançados.',
+        maxManagers: 1,
+        maxProfessionals: 4,
+        maxPatients: 'unlimited',
+        features: ['Tudo do Professional', 'Múltiplas Agendas', 'BI Avançado'],
+        availableCycles: ['monthly', 'quarterly', 'semester', 'yearly'],
+        basePrice: 297,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.2, yearly: 0.3 },
+        isActive: true
+    },
+    {
+        id: 'ENTERPRISE',
+        name: 'Enterprise',
+        slug: 'enterprise',
+        description: 'Solução completa para grandes redes.',
+        maxManagers: 2,
+        maxProfessionals: 8,
+        maxPatients: 'unlimited',
+        features: ['Multi-clínicas', 'API Externas', 'Suporte VIP'],
+        availableCycles: ['monthly', 'quarterly', 'semester', 'yearly'],
+        basePrice: 497,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.2, yearly: 0.3 },
+        isActive: true
+    }
+];
 
 // ─── CREDENCIAL DO SUPER ADMIN SAAS ───────────────────────
-// Em produção, mover para variável de ambiente ou Firebase Auth
 const SAAS_ADMIN: SaaSAdmin = {
     email: 'admin@controlclin.com',
     password: 'admin123',
     name: 'Admin ControlClin',
 };
 
-// ─── STORAGE KEY ──────────────────────────────────────────
+// ─── STORAGE KEYS ──────────────────────────────────────────
 const SAAS_SESSION_KEY = 'saas_admin_session';
 const SAAS_CLINICS_KEY = 'saas_clinics_registry';
+const SAAS_PLANS_KEY = 'saas_plans_registry';
+const SAAS_COUPONS_KEY = 'saas_coupons_registry';
 
 // ─── SERVIÇO ──────────────────────────────────────────────
 
@@ -100,64 +196,99 @@ export const saasService = {
         } catch { return 'Admin'; }
     },
 
-    // ── Gestão de Clínicas ───────────────────────────────────
+    // ── Gestão de Planos ─────────────────────────────────────
+    async getPlans(): Promise<SaaSPlan[]> {
+        const stored = localStorage.getItem(SAAS_PLANS_KEY);
+        if (!stored) {
+            this._savePlans(DEFAULT_PLANS);
+            return DEFAULT_PLANS;
+        }
+        return JSON.parse(stored);
+    },
+
+    _savePlans(plans: SaaSPlan[]): void {
+        localStorage.setItem(SAAS_PLANS_KEY, JSON.stringify(plans));
+    },
+
+    // ── Gestão de Cupons ─────────────────────────────────────
+    async getCoupons(): Promise<SaaSCoupon[]> {
+        const stored = localStorage.getItem(SAAS_COUPONS_KEY);
+        if (!stored) {
+            const defaultCoupons: SaaSCoupon[] = [
+                {
+                    id: '1',
+                    code: 'LANCAMENTO50',
+                    type: 'PERCENTAGE',
+                    value: 50,
+                    expiresAt: '2026-03-31',
+                    maxUses: 100,
+                    currentUses: 12,
+                    maxPerCustomer: 1,
+                    applicablePlans: 'ALL',
+                    firstCycleOnly: true,
+                    isActive: true
+                }
+            ];
+            this._saveCoupons(defaultCoupons);
+            return defaultCoupons;
+        }
+        return JSON.parse(stored);
+    },
+
+    _saveCoupons(coupons: SaaSCoupon[]): void {
+        localStorage.setItem(SAAS_COUPONS_KEY, JSON.stringify(coupons));
+    },
+
+    // ── Gestão de Assinantes ───────────────────────────────────
     async getAllClinics(): Promise<SaaSClinic[]> {
         try {
-            // Tenta carregar do registro SaaS local
             const stored = localStorage.getItem(SAAS_CLINICS_KEY);
             const registry: SaaSClinic[] = stored ? JSON.parse(stored) : [];
 
-            // Garante que a clínica demo padrão existe no registro
-            const mainClinic = await db.getClinic('c1');
-            if (mainClinic && !registry.find(c => c.id === 'c1')) {
+            // Mock de dados se estiver vazio
+            if (registry.length === 0) {
+                const mainClinic = await db.getClinic('c1');
                 const demo: SaaSClinic = {
-                    ...mainClinic,
-                    plan: 'PROFESSIONAL',
-                    isActive: true,
+                    ...(mainClinic || { id: 'c1', name: 'Clínica Demo', slug: 'demo', isActive: true }),
+                    planId: 'PROFESSIONAL',
                     status: 'active',
                     cycle: 'monthly',
-                    createdAt: new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(),
-                    patientsCount: 42,
+                    startDate: '2025-01-01T00:00:00Z',
+                    nextBillingDate: '2026-04-01T00:00:00Z',
+                    responsibleName: 'Administrador Demo',
+                    responsibleEmail: 'admin@clinicademo.com',
+                    responsiblePhone: '(11) 99999-9999',
+                    patientsCount: 156,
                     professionalsCount: 3,
-                    appointmentsThisMonth: 128,
-                    adminEmail: 'admin@clinicademo.com',
-                    adminName: 'Administrador Demo',
+                    activeUsersCount: 3,
+                    isActive: true
                 };
-                registry.unshift(demo);
 
-                // Adiciona mais algumas fakes para o dashboard ficar bonito como no print
                 const fake1: SaaSClinic = {
                     ...demo,
                     id: 'fake-1',
                     name: 'ControlClin Excellence',
                     slug: 'excellence',
-                    plan: 'PROFESSIONAL',
+                    planId: 'PROFESSIONAL',
                     status: 'active',
                     cycle: 'yearly',
-                    createdAt: '2025-06-15T10:00:00Z',
+                    startDate: '2025-06-15T10:00:00Z',
+                    nextBillingDate: '2026-06-15T10:00:00Z',
                 };
                 const fake2: SaaSClinic = {
                     ...demo,
                     id: 'fake-2',
                     name: 'Clínica Nutri Vida',
                     slug: 'nutrivida',
-                    plan: 'ESSENTIAL',
+                    planId: 'ESSENTIAL',
                     status: 'trial',
                     cycle: 'monthly',
-                    createdAt: '2026-02-20T14:30:00Z',
-                };
-                const fake3: SaaSClinic = {
-                    ...demo,
-                    id: 'fake-3',
-                    name: 'Centro de Nutrição Avançada',
-                    slug: 'avancada',
-                    plan: 'CLINIC',
-                    status: 'active',
-                    cycle: 'yearly',
-                    createdAt: '2025-12-01T09:00:00Z',
+                    startDate: '2026-02-20T14:30:00Z',
+                    nextBillingDate: '2026-03-20T14:30:00Z',
+                    patientsCount: 12,
                 };
 
-                registry.push(fake1, fake2, fake3);
+                registry.push(demo, fake1, fake2);
                 this._saveRegistry(registry);
             }
 
@@ -170,103 +301,48 @@ export const saasService = {
     async getMetrics(): Promise<SaaSMetrics> {
         const clinics = await this.getAllClinics();
         const active = clinics.filter(c => c.status === 'active');
-        const trial = clinics.filter(c => c.status === 'trial');
-        const mrr = active.reduce((acc, c) => acc + (PLANS[c.plan]?.price || 0), 0);
+        const plans = await this.getPlans();
+
+        const mrr = active.reduce((acc, c) => {
+            const plan = plans.find(p => p.id === c.planId);
+            return acc + (plan?.basePrice || 0);
+        }, 0);
+
+        const dist: Record<PlanType, number> = {
+            STARTER: 0, ESSENTIAL: 0, PROFESSIONAL: 0, CLINIC: 0, ENTERPRISE: 0, CUSTOM: 0
+        };
+        clinics.forEach(c => dist[c.planId]++);
 
         return {
             totalClinics: clinics.length,
             activeClinics: active.length,
-            inactiveClinics: clinics.filter(c => c.status === 'inactive').length,
-            trialClinics: trial.length,
-            starterCount: clinics.filter(c => c.plan === 'STARTER').length,
-            essentialCount: clinics.filter(c => c.plan === 'ESSENTIAL').length,
-            professionalCount: clinics.filter(c => c.plan === 'PROFESSIONAL').length,
-            clinicCount: clinics.filter(c => c.plan === 'CLINIC').length,
-            enterpriseCount: clinics.filter(c => c.plan === 'ENTERPRISE').length,
-            totalPatients: clinics.reduce((acc, c) => acc + (c.patientsCount || 0), 0),
-            totalProfessionals: clinics.reduce((acc, c) => acc + (c.professionalsCount || 0), 0),
-            totalAppointments: clinics.reduce((acc, c) => acc + (c.appointmentsThisMonth || 0), 0),
+            inactiveClinics: clinics.filter(c => c.status === 'canceled').length,
+            trialClinics: clinics.filter(c => c.status === 'trial').length,
+            pastDueClinics: clinics.filter(c => c.status === 'past_due').length,
             mrr,
             arr: mrr * 12,
-            churnRate: 0,
+            ltv: mrr * 24 / (clinics.length || 1), // Simulado
+            cac: 450, // Simulado
+            churnRate: 2.4,
             conversionRate: 67,
+            plansDistribution: dist
         };
     },
 
-    async createClinic(data: {
-        name: string;
-        slug: string;
-        adminName: string;
-        adminEmail: string;
-        adminPassword: string;
-        plan: PlanType;
-        cycle?: 'monthly' | 'quarterly' | 'semester' | 'yearly';
-    }): Promise<SaaSClinic> {
+    async createClinic(data: Partial<SaaSClinic>): Promise<SaaSClinic> {
         const clinics = await this.getAllClinics();
-
-        // Verifica slug único
-        if (clinics.find(c => c.slug === data.slug)) {
-            throw new Error(`Slug "${data.slug}" já está em uso.`);
-        }
-
         const id = `clinic-${Date.now()}`;
-        const newClinic: SaaSClinic = {
-            id,
-            name: data.name,
-            slug: data.slug,
-            isActive: true,
-            status: 'trial',
-            cycle: data.cycle || 'monthly',
-            plan: data.plan,
-            createdAt: new Date().toISOString(),
-            adminName: data.adminName,
-            adminEmail: data.adminEmail,
-            patientsCount: 0,
-            professionalsCount: 0,
-            appointmentsThisMonth: 0,
-        };
-
+        const newClinic = { ...data, id } as SaaSClinic;
         const updated = [newClinic, ...clinics];
         this._saveRegistry(updated);
         return newClinic;
     },
 
-    async updateClinic(id: string, updates: Partial<SaaSClinic>): Promise<void> {
-        const clinics = await this.getAllClinics();
-        const idx = clinics.findIndex(c => c.id === id);
-        if (idx === -1) throw new Error('Clínica não encontrada.');
-        clinics[idx] = { ...clinics[idx], ...updates };
-        this._saveRegistry(clinics);
-    },
-
-    async toggleClinicStatus(id: string): Promise<void> {
-        const clinics = await this.getAllClinics();
-        const idx = clinics.findIndex(c => c.id === id);
-        if (idx === -1) throw new Error('Clínica não encontrada.');
-        clinics[idx].isActive = !clinics[idx].isActive;
-        this._saveRegistry(clinics);
-    },
-
-    async deleteClinic(id: string): Promise<void> {
-        if (id === 'c1') throw new Error('A clínica demo principal não pode ser removida.');
-        const clinics = await this.getAllClinics();
-        const updated = clinics.filter(c => c.id !== id);
-        this._saveRegistry(updated);
-    },
-
-    // ── Utilitários internos ─────────────────────────────────
     _saveRegistry(clinics: SaaSClinic[]): void {
         localStorage.setItem(SAAS_CLINICS_KEY, JSON.stringify(clinics));
     },
 
     generateSlug(name: string): string {
-        return name
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9\s-]/g, '')
-            .trim()
-            .replace(/\s+/g, '-')
-            .substring(0, 30);
+        return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').substring(0, 30);
     },
 };

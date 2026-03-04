@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { saasService, SaaSMetrics, SaaSClinic, PLANS } from '../../services/saasService';
+import {
+    saasService,
+    SaaSMetrics,
+    SaaSClinic,
+    SaaSPlan,
+    SaaSCoupon,
+    PlanType,
+    SubscriptionStatus
+} from '../../services/saasService';
 import {
     LayoutDashboard,
     Package,
@@ -13,13 +21,308 @@ import {
     DollarSign,
     Timer,
     ArrowDownRight,
-    Target
+    Target,
+    Plus,
+    CheckCircle2,
+    XCircle,
+    AlertCircle,
+    MoreHorizontal,
+    Search,
+    ShieldCheck,
+    CreditCard,
+    Zap
 } from 'lucide-react';
+
+// --- SUB-COMPONENTS ---
+
+const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard label="MRR" value={`R$ ${metrics.mrr.toLocaleString()}`} icon={<DollarSign size={20} />} color="amber" />
+            <MetricCard label="ARR" value={`R$ ${metrics.arr.toLocaleString()}`} icon={<TrendingUp size={20} />} color="indigo" />
+            <MetricCard label="LTV" value={`R$ ${metrics.ltv.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<CreditCard size={20} />} color="emerald" />
+            <MetricCard label="Churn Rate" value={`${metrics.churnRate}%`} icon={<ArrowDownRight size={20} />} color="red" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-[#111827] border border-white/5 p-8 rounded-[32px] shadow-xl">
+                <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-3 mb-8">
+                    <BarChart3 className="text-purple-500" size={20} />
+                    Distribuição por Plano
+                </h3>
+                <div className="space-y-6">
+                    {Object.entries(metrics.plansDistribution).map(([plan, count]) => {
+                        const pct = (count / (metrics.totalClinics || 1)) * 100;
+                        return (
+                            <div key={plan} className="space-y-2">
+                                <div className="flex justify-between text-xs font-bold uppercase">
+                                    <span className="text-slate-400">{plan}</span>
+                                    <span className="text-white">{count} ({pct.toFixed(0)}%)</span>
+                                </div>
+                                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-purple-600 transition-all duration-1000" style={{ width: `${pct}%` }}></div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="bg-[#111827] border border-white/5 p-8 rounded-[32px] shadow-xl">
+                <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-3 mb-8">
+                    <Target className="text-teal-400" size={20} />
+                    Funil de Conversão
+                </h3>
+                <div className="space-y-10 py-4">
+                    <FunilStep label="Novos Leads (Trail)" value={metrics.trialClinics} total={metrics.totalClinics} color="bg-blue-500" />
+                    <FunilStep label="Assinantes Pagos" value={metrics.activeClinics} total={metrics.totalClinics} color="bg-emerald-500" />
+                    <FunilStep label="Taxa de Conversão" value={`${metrics.conversionRate}%`} total={100} color="bg-purple-500" />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const PlansTab: React.FC<{ plans: SaaSPlan[] }> = ({ plans }) => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex justify-between items-center bg-[#111827] border border-white/5 p-6 rounded-[24px]">
+            <div>
+                <h2 className="text-lg font-bold text-white">Configuração de Planos</h2>
+                <p className="text-xs text-slate-500">Gerencie limites, preços e features de cada nível de assinatura.</p>
+            </div>
+            <button className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-purple-600/20">
+                <Plus size={18} /> Novo Plano
+            </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map(plan => (
+                <div key={plan.id} className="bg-[#111827] border border-white/5 rounded-[32px] p-8 relative overflow-hidden group hover:border-purple-500/30 transition-all">
+                    {!plan.isActive && <div className="absolute top-4 right-4 bg-red-500/20 text-red-400 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Inativo</div>}
+                    <h4 className="text-xl font-bold text-white mb-2">{plan.name}</h4>
+                    <p className="text-xs text-slate-500 mb-6 line-clamp-2">{plan.description}</p>
+
+                    <div className="text-2xl font-black text-white mb-8">
+                        R$ {plan.basePrice.toLocaleString()} <span className="text-xs font-medium text-slate-500">/mês</span>
+                    </div>
+
+                    <div className="space-y-4 mb-8">
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-400">Usuários</span>
+                            <span className="text-white font-bold">{1 + plan.maxProfessionals} (1 Gestor + {plan.maxProfessionals} Prof.)</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-400">Pacientes</span>
+                            <span className="text-white font-bold">{plan.maxPatients === 'unlimited' ? '∞ Ilimitado' : plan.maxPatients}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-8">
+                        {plan.features.slice(0, 3).map(f => (
+                            <span key={f} className="text-[9px] font-bold uppercase tracking-wider bg-white/5 text-slate-400 px-2.5 py-1.5 rounded-lg border border-white/5">{f}</span>
+                        ))}
+                        {plan.features.length > 3 && <span className="text-[9px] font-bold text-purple-400 px-1 py-1">+{plan.features.length - 3}</span>}
+                    </div>
+
+                    <button className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-widest transition-all border border-white/10">Editar Plano</button>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const CouponsTab: React.FC<{ coupons: SaaSCoupon[] }> = ({ coupons }) => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex justify-between items-center bg-[#111827] border border-white/5 p-6 rounded-[24px]">
+            <div>
+                <h2 className="text-lg font-bold text-white">Gestão de Cupons</h2>
+                <p className="text-xs text-slate-500">Crie códigos promocionais para campanhas de marketing.</p>
+            </div>
+            <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all">
+                <Plus size={18} /> Criar Cupom
+            </button>
+        </div>
+
+        <div className="bg-[#111827] border border-white/5 rounded-[32px] overflow-hidden">
+            <table className="w-full">
+                <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <tr>
+                        <th className="px-8 py-5 text-left">Código</th>
+                        <th className="px-8 py-5 text-left">Valor / Tipo</th>
+                        <th className="px-8 py-5 text-center">Uso</th>
+                        <th className="px-8 py-5 text-center">Status</th>
+                        <th className="px-8 py-5 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                    {coupons.map(coupon => (
+                        <tr key={coupon.id} className="hover:bg-white/[0.02] transition-colors group">
+                            <td className="px-8 py-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-indigo-500/20 text-indigo-400 p-2 rounded-lg"><Ticket size={16} /></div>
+                                    <span className="font-black text-white tracking-widest">{coupon.code}</span>
+                                </div>
+                            </td>
+                            <td className="px-8 py-5">
+                                <span className="text-sm font-bold text-slate-300">
+                                    {coupon.type === 'PERCENTAGE' ? `${coupon.value}% de desconto` : `R$ ${coupon.value} OFF`}
+                                </span>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold mt-1">Validade: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</p>
+                            </td>
+                            <td className="px-8 py-5">
+                                <div className="space-y-2 max-w-[120px] mx-auto">
+                                    <div className="flex justify-between text-[10px] font-bold">
+                                        <span className="text-slate-500">Progresso</span>
+                                        <span className="text-slate-300">{coupon.currentUses}/{coupon.maxUses}</span>
+                                    </div>
+                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-500" style={{ width: `${(coupon.currentUses / coupon.maxUses) * 100}%` }}></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-8 py-5 text-center">
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${coupon.isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {coupon.isActive ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                                <button className="p-2 text-slate-500 hover:text-white transition-colors"><MoreHorizontal size={20} /></button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
+const SubscribersTab: React.FC<{ subscribers: SaaSClinic[] }> = ({ subscribers }) => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-[#111827] border border-white/5 p-6 rounded-[24px] flex items-center gap-4">
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-slate-500"><Search size={20} /></div>
+            <input
+                type="text"
+                placeholder="Buscar por clínica, CNPJ ou responsável..."
+                className="bg-transparent border-none text-white text-sm focus:ring-0 w-full"
+            />
+        </div>
+
+        <div className="bg-[#111827] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-white/5 text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
+                        <tr>
+                            <th className="px-8 py-6">Clínica / Responsável</th>
+                            <th className="px-8 py-6">Status / Plano</th>
+                            <th className="px-8 py-6 text-center">Uso (Pac. / Prof.)</th>
+                            <th className="px-8 py-6 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {subscribers.map(sub => (
+                            <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="px-8 py-5">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white shadow-lg">
+                                            {sub.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">{sub.name}</p>
+                                            <p className="text-xs text-slate-500">{sub.responsibleName} • {sub.responsibleEmail}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-8 py-5">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <StatusBadge status={sub.status} />
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">• {sub.cycle}</span>
+                                    </div>
+                                    <p className="text-xs font-bold text-indigo-400">{sub.planId}</p>
+                                </td>
+                                <td className="px-8 py-5 text-center">
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-white">{sub.patientsCount}</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pac</p>
+                                        </div>
+                                        <div className="w-px h-6 bg-white/5"></div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-white">{sub.professionalsCount}</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Prof</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-8 py-5 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <button className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-400 border border-white/5 transition-all">Detalhes</button>
+                                        <button className="p-2 text-slate-600 hover:text-white transition-colors"><MoreHorizontal size={18} /></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+);
+
+// --- HELPER COMPONENTS ---
+
+const MetricCard: React.FC<{ label: string, value: any, icon: any, color: string }> = ({ label, value, icon, color }) => {
+    const colors: any = {
+        amber: 'bg-amber-400/10 text-amber-400',
+        indigo: 'bg-indigo-400/10 text-indigo-400',
+        emerald: 'bg-emerald-400/10 text-emerald-400',
+        red: 'bg-red-400/10 text-red-400',
+        purple: 'bg-purple-400/10 text-purple-400',
+    };
+    return (
+        <div className="bg-[#111827] border border-white/5 p-6 rounded-[32px] hover:border-white/10 transition-all group">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-inner ${colors[color]}`}>
+                {icon}
+            </div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{label}</p>
+            <h3 className="text-2xl font-black text-white tracking-tight">{value}</h3>
+        </div>
+    );
+};
+
+const FunilStep: React.FC<{ label: string, value: any, total: number, color: string }> = ({ label, value, total, color }) => (
+    <div className="relative">
+        <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+            <span className="text-sm font-black text-white">{value}</span>
+        </div>
+        <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+            <div className={`h-full ${color} transition-all duration-1000 shadow-lg`} style={{ width: '100%' }}></div>
+        </div>
+    </div>
+);
+
+const StatusBadge: React.FC<{ status: SubscriptionStatus }> = ({ status }) => {
+    const styles: any = {
+        trial: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+        active: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+        past_due: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+        canceled: 'bg-red-500/10 text-red-500 border-red-500/20',
+    };
+    const labels: any = { trial: 'Trial', active: 'Ativo', past_due: 'Inadimplente', canceled: 'Cancelado' };
+    return (
+        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${styles[status]}`}>
+            {labels[status]}
+        </span>
+    );
+};
+
+// --- MAIN DASHBOARD COMPONENT ---
 
 const SaaSDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [metrics, setMetrics] = useState<SaaSMetrics | null>(null);
-    const [recentClinics, setRecentClinics] = useState<SaaSClinic[]>([]);
+    const [plans, setPlans] = useState<SaaSPlan[]>([]);
+    const [coupons, setCoupons] = useState<SaaSCoupon[]>([]);
+    const [subscribers, setSubscribers] = useState<SaaSClinic[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -29,232 +332,85 @@ const SaaSDashboard: React.FC = () => {
             return;
         }
 
-        const loadData = async () => {
-            const m = await saasService.getMetrics();
-            const c = await saasService.getAllClinics();
+        const loadAll = async () => {
+            const [m, p, c, s] = await Promise.all([
+                saasService.getMetrics(),
+                saasService.getPlans(),
+                saasService.getCoupons(),
+                saasService.getAllClinics()
+            ]);
             setMetrics(m);
-            setRecentClinics(c.slice(0, 5));
+            setPlans(p);
+            setCoupons(c);
+            setSubscribers(s);
             setLoading(false);
         };
-        loadData();
+        loadAll();
     }, [navigate]);
-
-    const handleLogout = () => {
-        saasService.logout();
-        navigate('/saas/login');
-    };
-
-    if (loading || !metrics) return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-    );
-
-    const tabs = [
-        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-        { id: 'plans', label: 'Planos', icon: <Package size={18} /> },
-        { id: 'coupons', label: 'Cupons', icon: <Ticket size={18} /> },
-        { id: 'subscribers', label: 'Assinantes', icon: <Users size={18} /> },
-        { id: 'invoices', label: 'Faturas', icon: <FileText size={18} /> },
-    ];
 
     return (
         <div className="min-h-screen bg-[#0a0f1e] text-slate-300 font-sans pb-12">
-
-            {/* Top Navigation */}
-            <header className="bg-[#111827] border-b border-white/5 py-4 px-8 flex items-center justify-between sticky top-0 z-50 shadow-xl">
+            <header className="bg-[#111827] border-b border-white/5 py-4 px-8 flex items-center justify-between sticky top-0 z-50">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg border border-white/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                        <ShieldCheck className="text-white" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-white font-bold leading-none mb-1">ControlClin Backoffice</h1>
-                        <p className="text-purple-400 text-[10px] font-black uppercase tracking-wider">Gestão SaaS</p>
+                        <h1 className="text-white font-bold leading-none mb-1">ControlClin SaaS</h1>
+                        <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.2em]">Backoffice Admin</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="text-right">
+                <div className="flex items-center gap-4">
+                    <div className="hidden md:block text-right mr-4">
                         <p className="text-white text-xs font-bold">{saasService.getAdminName()}</p>
-                        <p className="text-slate-500 text-[10px] uppercase font-black">Administrador SaaS</p>
+                        <p className="text-slate-500 text-[10px] uppercase font-bold">Root Account</p>
                     </div>
                     <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/5 group"
+                        onClick={() => { saasService.logout(); navigate('/saas/login'); }}
+                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 transition-all border border-white/5"
                     >
-                        <LogOut size={16} className="group-hover:rotate-12 transition-transform" />
-                        <span className="text-xs font-bold uppercase tracking-wider">Sair</span>
+                        <LogOut size={20} />
                     </button>
                 </div>
             </header>
 
-            {/* Menu Tabs */}
-            <nav className="px-8 mt-6">
-                <div className="flex gap-2 bg-[#111827] p-1.5 rounded-2xl w-fit border border-white/5 shadow-2xl">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-xl transition-all font-bold text-xs uppercase tracking-wide ${activeTab === tab.id
-                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                }`}
-                        >
-                            {tab.icon}
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </nav>
+            <div className="px-8 mt-8">
+                <nav className="flex gap-2 bg-[#111827] p-1.5 rounded-2xl w-fit border border-white/5 mb-10 shadow-xl">
+                    <TabBtn id="dashboard" icon={<LayoutDashboard size={18} />} label="Analytics" activeTab={activeTab} setTab={setActiveTab} />
+                    <TabBtn id="plans" icon={<Package size={18} />} label="Planos" activeTab={activeTab} setTab={setActiveTab} />
+                    <TabBtn id="coupons" icon={<Ticket size={18} />} label="Cupons" activeTab={activeTab} setTab={setActiveTab} />
+                    <TabBtn id="subscribers" icon={<Users size={18} />} label="Assinantes" activeTab={activeTab} setTab={setActiveTab} />
+                </nav>
 
-            <main className="px-8 mt-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
-                    {[
-                        { label: 'MRR', value: `R$ ${metrics.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: <DollarSign size={18} />, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-                        { label: 'ARR', value: `R$ ${metrics.arr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: <TrendingUp size={18} />, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
-                        { label: 'Assinantes Ativos', value: metrics.activeClinics, icon: <Users size={18} />, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-                        { label: 'Em Trial', value: metrics.trialClinics, icon: <Timer size={18} />, color: 'text-orange-400', bg: 'bg-orange-400/10' },
-                        { label: 'Churn Rate', value: `${metrics.churnRate}%`, icon: <ArrowDownRight size={18} />, color: 'text-red-400', bg: 'bg-red-400/10' },
-                        { label: 'Conversão Trial → Pago', value: `${metrics.conversionRate}%`, icon: <Target size={18} />, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-                    ].map((card, i) => (
-                        <div key={i} className="bg-[#111827] border border-white/5 p-6 rounded-3xl shadow-lg relative overflow-hidden group hover:border-white/10 transition-colors">
-                            <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-gradient-to-br from-white/5 to-transparent blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                            <div className={`w-10 h-10 ${card.bg} ${card.color} flex items-center justify-center rounded-2xl mb-4 shadow-inner`}>
-                                {card.icon}
-                            </div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{card.label}</p>
-                            <h3 className="text-xl font-bold text-white tracking-tight">{card.value}</h3>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Charts Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Subscribers by Plan */}
-                    <div className="bg-[#111827] border border-white/5 p-8 rounded-[40px] shadow-xl">
-                        <div className="flex justify-between items-center mb-10">
-                            <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                                <BarChart3 className="text-purple-500" size={20} />
-                                Assinantes por Plano
-                            </h3>
-                        </div>
-                        <div className="space-y-6">
-                            {[
-                                { label: 'Starter', count: metrics.starterCount, color: 'from-slate-500 to-slate-600' },
-                                { label: 'Essencial', count: metrics.essentialCount, color: 'from-emerald-500 to-teal-600' },
-                                { label: 'Profissional', count: metrics.professionalCount, color: 'from-blue-500 to-indigo-600' },
-                                { label: 'Clínica', count: metrics.clinicCount, color: 'from-purple-500 to-violet-600' },
-                                { label: 'Enterprise', count: metrics.enterpriseCount, color: 'from-amber-500 to-orange-600' },
-                            ].map((plan, i) => {
-                                const percentage = metrics.totalClinics > 0 ? (plan.count / metrics.totalClinics) * 100 : 0;
-                                return (
-                                    <div key={i} className="space-y-2">
-                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
-                                            <span className="text-slate-400">{plan.label}</span>
-                                            <span className="text-white">{plan.count}</span>
-                                        </div>
-                                        <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-[1px] border border-white/5">
-                                            <div
-                                                className={`h-full rounded-full bg-gradient-to-r ${plan.color} shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all duration-1000 ease-out`}
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                        <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-600">Sincronizando Dados...</p>
                     </div>
-
-                    {/* Subscribers by Cycle */}
-                    <div className="bg-[#111827] border border-white/5 p-8 rounded-[40px] shadow-xl">
-                        <div className="flex justify-between items-center mb-10">
-                            <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                                <Timer className="text-teal-500" size={20} />
-                                Assinantes por Ciclo
-                            </h3>
-                        </div>
-                        <div className="space-y-6">
-                            {[
-                                { label: 'Mensal', count: recentClinics.filter(c => c.cycle === 'monthly').length, color: 'from-teal-400 to-teal-600' },
-                                { label: 'Trimestral', count: recentClinics.filter(c => c.cycle === 'quarterly').length, color: 'from-teal-400 to-teal-600' },
-                                { label: 'Semestral', count: recentClinics.filter(c => c.cycle === 'semester').length, color: 'from-teal-400 to-teal-600' },
-                                { label: 'Anual', count: recentClinics.filter(c => c.cycle === 'yearly').length, color: 'from-teal-400 to-teal-600' },
-                            ].map((cycle, i) => {
-                                const percentage = metrics.totalClinics > 0 ? (cycle.count / metrics.totalClinics) * 100 : 0;
-                                return (
-                                    <div key={i} className="space-y-2">
-                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
-                                            <span className="text-slate-400">{cycle.label}</span>
-                                            <span className="text-white">{cycle.count}</span>
-                                        </div>
-                                        <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-[1px] border border-white/5">
-                                            <div
-                                                className={`h-full rounded-full bg-gradient-to-r ${cycle.color} transition-all duration-1000 delay-300 ease-out`}
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Recent Subscriptions Table */}
-                <div className="bg-[#111827] border border-white/5 rounded-[40px] shadow-xl overflow-hidden">
-                    <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-white uppercase tracking-widest">Últimas Assinaturas</h3>
-                        <button className="text-purple-400 hover:text-purple-300 text-xs font-black uppercase tracking-widest transition-colors">Ver todos</button>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-white/5 text-slate-500 text-[10px] uppercase font-black tracking-widest">
-                                <tr>
-                                    <th className="px-8 py-4">Clínica</th>
-                                    <th className="px-8 py-4">Plano</th>
-                                    <th className="px-8 py-4 text-center">Status</th>
-                                    <th className="px-8 py-4 text-right">Data</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {recentClinics.map((clinic) => (
-                                    <tr key={clinic.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-bold text-slate-400 border border-white/5">
-                                                    {clinic.name.charAt(0)}
-                                                </div>
-                                                <span className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">{clinic.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <span className="text-xs font-medium text-slate-400">{PLANS[clinic.plan]?.label}</span>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${clinic.status === 'active'
-                                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                                    : clinic.status === 'trial'
-                                                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                                                        : 'bg-slate-500/10 text-slate-500 border-slate-500/20'
-                                                }`}>
-                                                {clinic.status === 'active' ? 'Ativo' : clinic.status === 'trial' ? 'Trial' : 'Inativo'}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5 text-right font-mono text-xs text-slate-500">
-                                            {new Date(clinic.createdAt).toLocaleDateString('pt-BR')}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
+                ) : (
+                    <>
+                        {activeTab === 'dashboard' && metrics && <AnalyticsTab metrics={metrics} />}
+                        {activeTab === 'plans' && <PlansTab plans={plans} />}
+                        {activeTab === 'coupons' && <CouponsTab coupons={coupons} />}
+                        {activeTab === 'subscribers' && <SubscribersTab subscribers={subscribers} />}
+                    </>
+                )}
+            </div>
         </div>
     );
 };
+
+const TabBtn: React.FC<{ id: string, icon: any, label: string, activeTab: string, setTab: any }> = ({ id, icon, label, activeTab, setTab }) => (
+    <button
+        onClick={() => setTab(id)}
+        className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-wider ${activeTab === id
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            }`}
+    >
+        {icon} {label}
+    </button>
+);
 
 export default SaaSDashboard;
