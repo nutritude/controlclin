@@ -419,7 +419,8 @@ class DatabaseService {
             return;
         }
 
-        const targetClinicId = clinicId || this.activeClinicId || this.clinics[0]?.id || 'global_v1';
+        // PRIORITIZE 'c1' (REAL CLINIC) OVER 'global_v1' (LEGACY/DEMO)
+        const targetClinicId = clinicId || this.activeClinicId || (this.clinics.length > 0 ? this.clinics[0].id : null) || 'c1';
         this.activeClinicId = targetClinicId;
 
         // --- NEW: REAL-TIME SYNC LISTENER (ONSNAPSHOT) ---
@@ -432,34 +433,24 @@ class DatabaseService {
         console.log(`[DB] 📡 Ativando sincronização em tempo real para: ${targetClinicId}`);
         const docRef = doc(firestore, "clinics", targetClinicId, "data", "main");
 
-        // --- NEW: INITIAL CHECK & MIGRATION & PUSH-UP ---
+        // --- 2. INITIAL CHECK ---
         try {
+            console.log(`[DB] 🔍 Sincronização direta: ${targetClinicId}`);
             const snap = await getDoc(docRef);
-            let data = snap.exists() ? snap.data() : null;
 
-            if (!data && targetClinicId === 'global_v1') {
-                const legacySnap = await getDoc(doc(firestore, "system_data", "global_v1"));
-                if (legacySnap.exists()) {
-                    console.log("[DB] Legacy data found. Migrating...");
-                    data = legacySnap.data();
-                }
-            }
-
-            const localModified = (this as any)._localLastModified || 0;
-            const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
-            const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
-            const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
-
-            if (data) {
+            if (snap.exists()) {
+                const data = snap.data();
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
-                if (localModified > remoteModified && !isJustSeeded) {
-                    await this.saveToRemote(targetClinicId);
-                } else if (remoteModified > localModified || (localModified === 0 && isJustSeeded)) {
+                const localModified = (this as any)._localLastModified || 0;
+
+                // Sync: Remote takes precedence if newer
+                if (remoteModified > localModified) {
+                    console.log(`[DB] 🔽 Baixando atualização remota...`);
                     this.applyRemoteData(data);
                     this.saveToStorage(false, remoteModified);
                 }
-            } else if (!isJustSeeded) {
-                await this.saveToRemote(targetClinicId);
+            } else {
+                console.warn(`[DB] ⚠️ Clínica ${targetClinicId} sem dados na nuvem.`);
             }
         } catch (err) {
             console.error('[DB] Initial sync error:', err);
