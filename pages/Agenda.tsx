@@ -605,34 +605,34 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
     return (
         <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px] space-y-4">
             {/* HEADER */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} p-4 rounded-xl shadow-sm border flex flex-col lg:flex-row justify-between items-center gap-4 z-50 relative`}>
+            <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-slate-200'} p-4 rounded-xl shadow-sm border flex flex-col lg:flex-row justify-between items-center gap-4 z-50 relative`}>
                 <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-start">
-                    <div className={`flex ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} rounded-lg p-1`}>
-                        <button onClick={() => handleNav('prev')} className={`p-1 rounded-md shadow-sm transition-all ${isManagerMode ? 'hover:bg-gray-600' : 'hover:bg-emerald-100'}`}>
-                            <svg className={`w-5 h-5 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    <div className={`flex ${isManagerMode ? 'bg-blue-50/50' : 'bg-emerald-50'} rounded-lg p-1 border border-blue-100/50`}>
+                        <button onClick={() => handleNav('prev')} className={`p-1 rounded-md shadow-sm transition-all ${isManagerMode ? 'hover:bg-blue-100' : 'hover:bg-emerald-100'}`}>
+                            <svg className={`w-5 h-5 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
-                        <button onClick={() => handleNav('next')} className={`p-1 rounded-md shadow-sm transition-all ${isManagerMode ? 'hover:bg-gray-600' : 'hover:bg-emerald-100'}`}>
-                            <svg className={`w-5 h-5 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        <button onClick={() => handleNav('next')} className={`p-1 rounded-md shadow-sm transition-all ${isManagerMode ? 'hover:bg-blue-100' : 'hover:bg-emerald-100'}`}>
+                            <svg className={`w-5 h-5 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                     </div>
                     <div className="relative group">
                         <div className="flex items-center gap-2 cursor-pointer">
-                            <h2 className={`text-xl font-bold capitalize min-w-[150px] text-center ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{getNavLabel()}</h2>
+                            <h2 className={`text-xl font-black uppercase tracking-tight min-w-[150px] text-center ${isManagerMode ? 'text-blue-900' : 'text-slate-800'}`}>{getNavLabel()}</h2>
                             <Icons.Calendar />
                         </div>
                         <input type="date" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleDateChange} />
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto z-50">
-                    <div className={`flex ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} p-1 rounded-lg`}>
+                    <div className={`flex ${isManagerMode ? 'bg-blue-50/50' : 'bg-emerald-50'} p-1 rounded-lg border border-blue-100/50`}>
                         {(['DAY', 'WEEK', 'MONTH', 'YEAR', 'TEAM'] as ViewMode[])
                             .filter(mode => mode !== 'TEAM' || !isProfessionalUser || isManagerMode)
                             .map(mode => (
                                 <button key={mode} onClick={() => setViewMode(mode)}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all 
+                                    className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all
                         ${viewMode === mode
-                                            ? (isManagerMode ? 'bg-indigo-700 shadow text-white' : 'bg-white shadow text-emerald-600')
-                                            : (isManagerMode ? 'text-gray-300 hover:text-white hover:bg-gray-600' : 'text-emerald-700 hover:text-emerald-900')}
+                                            ? (isManagerMode ? 'bg-blue-600 shadow-lg text-white' : 'bg-white shadow text-emerald-600')
+                                            : (isManagerMode ? 'text-blue-400 hover:text-blue-600 hover:bg-blue-50' : 'text-emerald-700 hover:text-emerald-900')}
                         `}
                                 >
                                     {mode === 'DAY' ? 'Dia' : mode === 'WEEK' ? 'Semana' : mode === 'MONTH' ? 'Mês' : mode === 'YEAR' ? 'Ano' : 'Equipe'}
@@ -642,28 +642,28 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                     {(!isProfessionalUser || isManagerMode) && (
                         <div className="relative" ref={filterRef}>
                             <button onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                className={`flex items-center justify-between w-full sm:w-48 border px-3 py-2 rounded-lg shadow-sm text-sm transition-colors 
-                    ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50 focus:ring-emerald-500'}`}
+                                className={`flex items-center justify-between w-full sm:w-48 border px-3 py-2 rounded-lg shadow-sm text-xs font-black uppercase tracking-widest transition-colors
+                    ${isManagerMode ? 'bg-white border-blue-200 text-blue-900 hover:bg-blue-50 focus:ring-blue-500' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50 focus:ring-emerald-500'}`}
                             >
                                 <span className="truncate">{selectedProfIds.includes('all') ? 'Todos Profissionais' : `${selectedProfIds.length} selecionado(s)`}</span>
                                 <svg className={`w-4 h-4 ml-2 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             </button>
                             {isFilterOpen && (
-                                <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-xl border z-[60] overflow-hidden animate-fadeIn ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'}`}>
-                                    <div className={`p-2 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'}`}>
-                                        <label className={`flex items-center p-2 rounded cursor-pointer ${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'}`}>
+                                <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-2xl border z-[60] overflow-hidden animate-fadeIn ${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-emerald-200'}`}>
+                                    <div className={`p-2 border-b ${isManagerMode ? 'border-blue-50' : 'border-emerald-100'}`}>
+                                        <label className={`flex items-center p-2 rounded cursor-pointer ${isManagerMode ? 'hover:bg-blue-50' : 'hover:bg-emerald-50'}`}>
                                             <input type="checkbox" checked={selectedProfIds.includes('all')} onChange={() => handleToggleProf('all')}
-                                                className={`rounded h-4 w-4 border-gray-300 ${isManagerMode ? 'text-indigo-600 focus:ring-indigo-500 bg-gray-600' : 'text-emerald-600 focus:ring-emerald-500'}`} />
-                                            <span className={`ml-2 text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-700'}`}>Todos Profissionais</span>
+                                                className={`rounded h-4 w-4 border-gray-300 ${isManagerMode ? 'text-blue-600 focus:ring-blue-500 shadow-sm' : 'text-emerald-600 focus:ring-emerald-500'}`} />
+                                            <span className={`ml-2 text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-900' : 'text-emerald-700'}`}>Todos Profissionais</span>
                                         </label>
                                     </div>
                                     <div className="max-h-60 overflow-y-auto custom-scrollbar p-2">
                                         {professionals.map(p => (
-                                            <label key={p.id} className={`flex items-center p-2 rounded cursor-pointer ${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'}`}>
+                                            <label key={p.id} className={`flex items-center p-2 rounded cursor-pointer ${isManagerMode ? 'hover:bg-blue-50' : 'hover:bg-emerald-50'}`}>
                                                 <input type="checkbox" checked={selectedProfIds.includes(p.id) && !selectedProfIds.includes('all')} onChange={() => handleToggleProf(p.id)}
-                                                    className={`rounded h-4 w-4 border-gray-300 ${isManagerMode ? 'text-indigo-600 focus:ring-indigo-500 bg-gray-600' : 'text-emerald-600 focus:ring-emerald-500'}`} />
+                                                    className={`rounded h-4 w-4 border-gray-300 ${isManagerMode ? 'text-blue-600 focus:ring-blue-500 shadow-sm' : 'text-emerald-600 focus:ring-emerald-500'}`} />
                                                 <div className={`w-2 h-2 rounded-full mx-2 ${p.color}`}></div>
-                                                <span className={`text-sm truncate ${isManagerMode ? 'text-gray-300' : 'text-slate-700'}`}>{p.name}</span>
+                                                <span className={`text-[10px] font-black uppercase tracking-tight truncate ${isManagerMode ? 'text-slate-600' : 'text-slate-700'}`}>{p.name}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -672,33 +672,33 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                         </div>
                     )}
                     <button onClick={() => handleOpenCreate()}
-                        className={`w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-bold shadow transition-transform duration-200 active:scale-95 flex items-center justify-center gap-2 
-                ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                        className={`w-full sm:w-auto px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2
+                ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                     >
-                        <span>+</span> Novo
+                        <span>+</span> Novo Agendamento
                     </button>
                 </div>
             </div>
 
             {/* CONTENT AREA */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} flex-1 shadow-sm rounded-xl overflow-hidden flex flex-col relative z-0`}>
+            <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-slate-200'} flex-1 shadow-sm rounded-xl overflow-hidden flex flex-col relative z-0`}>
                 {(viewMode === 'DAY' || viewMode === 'TEAM') && (
                     <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-                        <div className={`flex border-b ${isManagerMode ? 'border-gray-700' : 'border-slate-200'} sticky top-0 ${isManagerMode ? 'bg-gray-800' : 'bg-white'} z-30 shadow-sm`}>
-                            <div className={`w-16 flex-shrink-0 ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'} border-r`}></div>
+                        <div className={`flex border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-200'} sticky top-0 ${isManagerMode ? 'bg-white' : 'bg-white'} z-30 shadow-sm`}>
+                            <div className={`w-16 flex-shrink-0 ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-emerald-50 border-emerald-200'} border-r`}></div>
                             {viewMode === 'TEAM' || visibleProfessionals.length > 1 ? (
                                 visibleProfessionals.map(prof => (
-                                    <div key={prof.id} className={`flex-1 min-w-[160px] p-3 text-center border-r ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'} flex flex-col items-center`}>
-                                        <div className={`w-8 h-8 rounded-full ${prof.color} flex items-center justify-center text-xs font-bold mb-1 shadow text-gray-700 border border-black/5`}>{prof.name.charAt(0)}</div>
-                                        <span className={`text-sm font-bold truncate w-full ${isManagerMode ? 'text-white' : 'text-emerald-800'}`}>{prof.name}</span>
+                                    <div key={prof.id} className={`flex-1 min-w-[160px] p-3 text-center border-r ${isManagerMode ? 'border-blue-50' : 'border-emerald-100'} flex flex-col items-center`}>
+                                        <div className={`w-8 h-8 rounded-full ${prof.color} flex items-center justify-center text-xs font-bold mb-1 shadow-md text-slate-800 border border-black/10`}>{prof.name.charAt(0)}</div>
+                                        <span className={`text-[10px] font-black uppercase tracking-tight truncate w-full ${isManagerMode ? 'text-blue-900' : 'text-emerald-800'}`}>{prof.name}</span>
                                     </div>
                                 ))
                             ) : (
-                                <div className={`flex-1 p-3 text-center ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50/50'}`}>
+                                <div className={`flex-1 p-3 text-center ${isManagerMode ? 'bg-blue-50/30' : 'bg-emerald-50/50'}`}>
                                     <div className="flex items-center justify-center gap-2">
-                                        <span className={`font-bold uppercase tracking-wider text-sm ${isManagerMode ? 'text-white' : 'text-emerald-800'}`}>Agenda do Dia</span>
-                                        <span className={`text-xs ${isManagerMode ? 'text-gray-500' : 'text-emerald-600'}`}>|</span>
-                                        <span className={`text-sm ${isManagerMode ? 'text-gray-300' : 'text-slate-700'}`}>{selectedProfIds.includes('all') ? 'Todos' : visibleProfessionals[0]?.name}</span>
+                                        <span className={`font-black uppercase tracking-wider text-xs ${isManagerMode ? 'text-blue-900' : 'text-emerald-800'}`}>Agenda do Dia</span>
+                                        <span className={`text-xs ${isManagerMode ? 'text-blue-200' : 'text-emerald-600'}`}>|</span>
+                                        <span className={`text-xs font-bold uppercase ${isManagerMode ? 'text-slate-600' : 'text-slate-700'}`}>{selectedProfIds.includes('all') ? 'Todos Profissionais' : visibleProfessionals[0]?.name}</span>
                                     </div>
                                 </div>
                             )}
@@ -706,30 +706,30 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                         <div className="relative">
                             {currentTimePercentage !== null && (
                                 <div className="absolute left-0 right-0 z-40 flex items-center pointer-events-none" style={{ top: `${currentTimePercentage}%` }}>
-                                    <div className={`w-16 text-right pr-2 text-xs font-bold text-red-600 bg-white bg-opacity-80 relative z-50 ${isManagerMode ? 'bg-gray-800 text-red-400' : ''}`}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                    <div className="w-full h-[2px] bg-red-500 shadow-sm relative"><div className="absolute left-0 -mt-1 w-2 h-2 rounded-full bg-red-600"></div></div>
+                                    <div className={`w-16 text-right pr-2 text-[10px] font-black tracking-widest text-rose-600 bg-white shadow-sm rounded-r relative z-50 ${isManagerMode ? 'text-rose-500' : ''}`}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                    <div className="w-full h-[2px] bg-rose-500/50 shadow-sm relative"><div className="absolute left-0 -mt-1 w-2.5 h-2.5 rounded-full bg-rose-600 shadow-md"></div></div>
                                 </div>
                             )}
                             {hours.map(hour => (
-                                <div key={hour} className={`flex min-h-[100px] border-b ${isManagerMode ? 'border-gray-700' : 'border-slate-100'} group relative`}>
-                                    <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-xs font-bold text-slate-400 border-r ${isManagerMode ? 'border-gray-700 bg-gray-700' : 'border-emerald-200 bg-emerald-50'} sticky left-0 z-20`}>{hour}:00</div>
-                                    <div className="absolute inset-0 border-b border-slate-50 border-dashed pointer-events-none z-0" style={{ top: '50%' }}></div>
+                                <div key={hour} className={`flex min-h-[100px] border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-100'} group relative`}>
+                                    <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-[10px] font-black tracking-widest text-slate-400 border-r ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-200 bg-emerald-50'} sticky left-0 z-20`}>{hour}:00</div>
+                                    <div className="absolute inset-0 border-b border-blue-100/30 border-dashed pointer-events-none z-0" style={{ top: '50%' }}></div>
                                     {viewMode === 'TEAM' || visibleProfessionals.length > 1 ? (
                                         visibleProfessionals.map(prof => {
                                             const slotAppts = filteredAppointments.filter(a => a.professionalId === prof.id && new Date(a.startTime).getHours() === hour);
                                             return (
-                                                <div key={prof.id} className={`flex-1 min-w-[160px] border-r ${isManagerMode ? 'border-gray-700 hover:bg-gray-700' : 'border-emerald-100 hover:bg-emerald-50/50'} relative transition-colors`}>
+                                                <div key={prof.id} className={`flex-1 min-w-[160px] border-r ${isManagerMode ? 'border-blue-50 hover:bg-blue-50/20' : 'border-emerald-100 hover:bg-emerald-50/50'} relative transition-colors`}>
                                                     <div onClick={() => handleOpenCreate(currentDate, hour, prof.id)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
-                                                        <span className={`${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'} text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm`}>+ Agendar</span>
+                                                        <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
                                                     </div>
                                                     {slotAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="full" />)}
                                                 </div>
                                             );
                                         })
                                     ) : (
-                                        <div className={`flex-1 relative ${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50/50'} transition-colors`}>
+                                        <div className={`flex-1 relative ${isManagerMode ? 'hover:bg-blue-50/20' : 'hover:bg-emerald-50/50'} transition-colors`}>
                                             <div onClick={() => handleOpenCreate(currentDate, hour)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
-                                                <span className={`${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'} text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm`}>+ Agendar</span>
+                                                <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
                                             </div>
                                             {filteredAppointments.filter(a => new Date(a.startTime).getHours() === hour).map(appt => (<AppointmentCard key={appt.id} appt={appt} viewType="full" />))}
                                         </div>
@@ -741,24 +741,24 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                 )}
                 {viewMode === 'WEEK' && (
                     <div className="flex-1 overflow-auto custom-scrollbar flex flex-col">
-                        <div className={`flex border-b ${isManagerMode ? 'border-gray-700' : 'border-slate-200'} sticky top-0 ${isManagerMode ? 'bg-gray-800' : 'bg-white'} z-30`}>
-                            <div className={`w-16 flex-shrink-0 border-r ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}></div>
+                        <div className={`flex border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-200'} sticky top-0 ${isManagerMode ? 'bg-white' : 'bg-white'} z-30`}>
+                            <div className={`w-16 flex-shrink-0 border-r ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}></div>
                             {Array.from({ length: 7 }).map((_, i) => {
                                 const d = new Date(getDateRange().start);
                                 d.setDate(d.getDate() + i);
                                 const isToday = d.toDateString() === new Date().toDateString();
                                 const isOpen = daysOpen.includes(d.getDay());
                                 return (
-                                    <div key={i} className={`flex-1 min-w-[140px] p-2 text-center border-r ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'} ${isToday ? (isManagerMode ? 'bg-indigo-900' : 'bg-emerald-100') : (isManagerMode ? 'bg-gray-800' : 'bg-white')} ${!isOpen ? 'bg-gray-50 opacity-50' : ''}`}>
-                                        <div className={`text-xs uppercase font-bold ${isToday ? (isManagerMode ? 'text-indigo-400' : 'text-emerald-700') : (isManagerMode ? 'text-gray-300' : 'text-emerald-600')}`}>{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
-                                        <div className={`text-xl font-bold ${isToday ? (isManagerMode ? 'text-white' : 'text-emerald-800') : (isManagerMode ? 'text-gray-100' : 'text-slate-900')}`}>{d.getDate()}</div>
+                                    <div key={i} className={`flex-1 min-w-[140px] p-2 text-center border-r ${isManagerMode ? 'border-blue-50' : 'border-emerald-100'} ${isToday ? (isManagerMode ? 'bg-blue-600/10' : 'bg-emerald-100') : (isManagerMode ? 'bg-white' : 'bg-white')} ${!isOpen ? 'bg-slate-50 opacity-50' : ''}`}>
+                                        <div className={`text-[10px] uppercase font-black tracking-widest ${isToday ? (isManagerMode ? 'text-blue-700' : 'text-emerald-700') : (isManagerMode ? 'text-blue-400' : 'text-emerald-600')}`}>{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
+                                        <div className={`text-xl font-black ${isToday ? (isManagerMode ? 'text-blue-900' : 'text-emerald-800') : (isManagerMode ? 'text-slate-800' : 'text-slate-900')}`}>{d.getDate()}</div>
                                     </div>
                                 );
                             })}
                         </div>
                         {hours.map(hour => (
-                            <div key={hour} className={`flex min-h-[80px] border-b ${isManagerMode ? 'border-gray-700' : 'border-slate-100'}`}>
-                                <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-xs font-bold text-slate-400 border-r ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50 border-emerald-200'} sticky left-0 z-20`}>{hour}:00</div>
+                            <div key={hour} className={`flex min-h-[80px] border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-100'}`}>
+                                <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 border-r ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-emerald-50 border-emerald-200'} sticky left-0 z-20`}>{hour}:00</div>
                                 {Array.from({ length: 7 }).map((_, i) => {
                                     const d = new Date(getDateRange().start);
                                     d.setDate(d.getDate() + i);
@@ -767,7 +767,7 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                         return aDate.getDate() === d.getDate() && aDate.getMonth() === d.getMonth() && aDate.getHours() === hour;
                                     });
                                     return (
-                                        <div key={i} className={`flex-1 min-w-[140px] border-r ${isManagerMode ? 'border-gray-700 hover:bg-gray-700' : 'border-emerald-100 hover:bg-emerald-50'} relative`}>
+                                        <div key={i} className={`flex-1 min-w-[140px] border-r ${isManagerMode ? 'border-blue-50 hover:bg-blue-50/10' : 'border-emerald-100 hover:bg-emerald-50'} relative`}>
                                             <div onClick={() => handleOpenCreate(d, hour)} className="absolute inset-0 cursor-pointer z-10"></div>
                                             {slotAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="full" />)}
                                         </div>
@@ -779,9 +779,9 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                 )}
                 {viewMode === 'MONTH' && (
                     <div className="flex-1 overflow-hidden flex flex-col">
-                        <div className={`grid grid-cols-7 border-b ${isManagerMode ? 'border-gray-700 bg-gray-800' : 'border-emerald-200 bg-emerald-50'}`}>
+                        <div className={`grid grid-cols-7 border-b ${isManagerMode ? 'border-blue-50 bg-blue-50/50' : 'border-emerald-200 bg-emerald-50'}`}>
                             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                                <div key={day} className={`py-2 text-center text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>{day}</div>
+                                <div key={day} className={`py-2 text-center text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>{day}</div>
                             ))}
                         </div>
                         <div className="flex-1 grid grid-cols-7 grid-rows-5 lg:grid-rows-6">
@@ -791,7 +791,7 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                 const startDayOfWeek = startMonth.getDay();
                                 const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
                                 for (let i = 0; i < startDayOfWeek; i++) {
-                                    days.push(<div key={`pad-${i}`} className={`${isManagerMode ? 'bg-gray-700 border-gray-700' : 'bg-slate-50 border-slate-100'} border-r border-b`}></div>);
+                                    days.push(<div key={`pad-${i}`} className={`${isManagerMode ? 'bg-blue-50/30 border-blue-50' : 'bg-slate-50 border-slate-100'} border-r border-b`}></div>);
                                 }
                                 for (let i = 1; i <= daysInMonth; i++) {
                                     const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
@@ -799,16 +799,16 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                     const dayAppts = filteredAppointments.filter(a => new Date(a.startTime).getDate() === i);
                                     days.push(
                                         <div key={i}
-                                            className={`border-r border-b ${isManagerMode ? 'border-gray-700' : 'border-slate-100'} p-1 relative transition-colors flex flex-col group 
-                                    ${isToday ? (isManagerMode ? 'bg-indigo-900/50' : 'bg-emerald-50/30') : (isManagerMode ? 'bg-gray-800' : 'bg-white')} 
-                                    ${isManagerMode ? 'hover:bg-indigo-900' : 'hover:bg-emerald-50'}`}
+                                            className={`border-r border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-100'} p-1 relative transition-colors flex flex-col group
+                                    ${isToday ? (isManagerMode ? 'bg-blue-50/50' : 'bg-emerald-50/30') : (isManagerMode ? 'bg-white' : 'bg-white')}
+                                    ${isManagerMode ? 'hover:bg-blue-50/70' : 'hover:bg-emerald-50'}`}
                                             onClick={() => { setCurrentDate(dayDate); setViewMode('DAY'); }}
                                         >
-                                            <span className={`text-xs font-bold mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? (isManagerMode ? 'bg-indigo-600 text-white shadow-md' : 'bg-emerald-600 text-white shadow-md') : (isManagerMode ? 'text-gray-200' : 'text-slate-700')}`}>{i}</span>
-                                            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
-                                                {dayAppts.slice(0, 4).map(appt => (<AppointmentCard key={appt.id} appt={appt} viewType="mini" />))}
-                                                {dayAppts.length > 4 && (<div className={`text-[10px] text-center font-medium ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>+ {dayAppts.length - 4} mais</div>)}
+                                            <div className={`text-sm font-black text-right ${isToday ? (isManagerMode ? 'text-blue-600' : 'text-emerald-600') : (isManagerMode ? 'text-slate-400' : 'text-slate-700')}`}>{i}</div>
+                                            <div className="flex-1 overflow-y-auto mt-1 space-y-0.5 custom-scrollbar h-0 group">
+                                                {dayAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="mini" />)}
                                             </div>
+                                            {dayAppts.length > 4 && (<div className={`text-[10px] text-center font-bold pb-1 ${isManagerMode ? 'text-blue-400' : 'text-emerald-600'}`}>+ {dayAppts.length - 4} mais</div>)}
                                         </div>
                                     );
                                 }
@@ -818,29 +818,29 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                     </div>
                 )}
                 {viewMode === 'YEAR' && (
-                    <div className={`flex-1 overflow-y-auto p-6 ${isManagerMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {Array.from({ length: 12 }).map((_, mIdx) => {
-                                const monthDate = new Date(currentDate.getFullYear(), mIdx, 1);
-                                const daysInMonth = new Date(currentDate.getFullYear(), mIdx + 1, 0).getDate();
-                                const monthAppts = filteredAppointments.filter(a => new Date(a.startTime).getMonth() === mIdx);
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {Array.from({ length: 12 }).map((_, monthIdx) => {
+                                const mDate = new Date(currentDate.getFullYear(), monthIdx, 1);
+                                const daysInM = new Date(currentDate.getFullYear(), monthIdx + 1, 0).getDate();
+                                const firstD = mDate.getDay();
+                                const mAppts = appointments.filter(a => new Date(a.startTime).getMonth() === monthIdx);
+
                                 return (
-                                    <div key={mIdx}
-                                        className={`${isManagerMode ? 'bg-gray-800 border-gray-700 hover:shadow-lg' : 'bg-white border-slate-200 hover:shadow-md'} rounded-xl shadow-sm border p-4 transition-shadow cursor-pointer`}
-                                        onClick={() => { setCurrentDate(monthDate); setViewMode('MONTH'); }}
-                                    >
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h3 className={`font-bold capitalize ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{monthDate.toLocaleDateString('pt-BR', { month: 'long' })}</h3>
-                                            <span className={`text-xs px-2 py-1 rounded ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-emerald-100 text-emerald-700'}`}>{monthAppts.length} agend.</span>
-                                        </div>
-                                        <div className="grid grid-cols-7 gap-1">
-                                            {Array.from({ length: daysInMonth }).map((_, dIdx) => {
-                                                const count = monthAppts.filter(a => new Date(a.startTime).getDate() === dIdx + 1).length;
-                                                let bgClass = isManagerMode ? 'bg-gray-700' : 'bg-gray-100';
-                                                if (count > 0) bgClass = isManagerMode ? 'bg-indigo-700' : 'bg-emerald-200';
-                                                if (count > 2) bgClass = isManagerMode ? 'bg-indigo-500' : 'bg-emerald-400';
-                                                if (count > 5) bgClass = isManagerMode ? 'bg-indigo-300' : 'bg-emerald-600';
-                                                return (<div key={dIdx} className={`h-2 w-2 rounded-full mx-auto ${bgClass}`} title={`${dIdx + 1}: ${count} agendamentos`}></div>)
+                                    <div key={monthIdx} className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-white border-slate-200'} rounded-lg border p-3 flex flex-col h-fit transition-transform hover:scale-[1.02]`}>
+                                        <h4 className={`text-center font-black uppercase tracking-widest mb-3 ${isManagerMode ? 'text-blue-900' : 'text-emerald-800'}`}>{mDate.toLocaleDateString('pt-BR', { month: 'long' })}</h4>
+                                        <div className="grid grid-cols-7 gap-1 flex-1">
+                                            {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => (
+                                                <div key={d} className={`text-[9px] font-black text-center ${isManagerMode ? 'text-blue-300' : 'text-slate-400'}`}>{d}</div>
+                                            ))}
+                                            {Array.from({ length: firstD }).map((_, i) => <div key={`p-${i}`} className="h-6"></div>)}
+                                            {Array.from({ length: daysInM }).map((_, i) => {
+                                                const hasAppts = mAppts.some(a => new Date(a.startTime).getDate() === i + 1);
+                                                return (
+                                                    <div key={i} className={`h-6 flex items-center justify-center text-[10px] rounded transition-colors ${hasAppts ? (isManagerMode ? 'bg-blue-600 text-white font-bold shadow-sm' : 'bg-emerald-500 text-white font-bold shadow-sm') : (isManagerMode ? 'text-slate-600 hover:bg-blue-50' : 'text-slate-600 hover:bg-emerald-50')}`}>
+                                                        {i + 1}
+                                                    </div>
+                                                );
                                             })}
                                         </div>
                                     </div>
@@ -853,137 +853,174 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
 
             {/* --- MODAL (REVISED STYLE) --- */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 animate-fadeIn">
-                    <div className={`flex flex-col rounded-xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] ${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-slate-900'}`}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-blue-900/20 backdrop-blur-md p-4 animate-fadeIn">
+                    <div className={`flex flex-col rounded-xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] ${isManagerMode ? 'bg-white border border-blue-100 text-slate-800' : 'bg-white text-slate-900'}`}>
                         {/* Modal Header */}
-                        <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'border-gray-700' : 'border-slate-200'}`}>
-                            <h2 className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{modalMode === 'create' ? 'Novo Agendamento' : 'Editar'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} className={`${isManagerMode ? 'text-gray-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}>✕</button>
+                        <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'border-slate-200'}`}>
+                            <h2 className={`text-xl font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{modalMode === 'create' ? 'Novo Agendamento' : 'Editar Agendamento'}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className={`text-slate-400 hover:text-slate-600 transition-colors`}>✕</button>
                         </div>
 
                         {/* Modal Body */}
-                        <form id="agendaForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+                        <form id="agendaForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar">
                             {formError && (
-                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs flex items-center gap-2">
+                                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-bold flex items-center gap-2">
                                     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     {formError}
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data</label>
-                                    <input type="date" required
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        value={formDate} onChange={e => { setFormDate(e.target.value); setFormError(null); }} onBlur={handleDateBlur} />
+                            {/* Patient Selection Row */}
+                            <div className={`p-4 rounded-lg border ${isManagerMode ? 'bg-blue-50/30 border-blue-100' : 'bg-slate-50 border-slate-200'}`}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Paciente *</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormPatientMode(formPatientMode === 'search' ? 'new' : 'search')}
+                                        className={`text-[10px] font-black uppercase tracking-widest underline ${isManagerMode ? 'text-blue-600' : 'text-emerald-600'}`}
+                                    >
+                                        {formPatientMode === 'search' ? '+ Novo Paciente' : 'Voltar para busca'}
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Horário</label>
-                                    <div className="flex gap-2">
-                                        <input type="time" required
-                                            className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                            value={formStartTime} onChange={handleStartTimeChange} />
-                                        <input type="time" required
-                                            className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                            value={formEndTime} onChange={e => setFormEndTime(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div>
-                                <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Paciente</label>
-                                {modalMode === 'create' && formPatientMode === 'search' && (
-                                    <select required
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        value={formPatientId} onChange={e => setFormPatientId(e.target.value)}>
-                                        <option value="">Selecione um paciente existente</option>
-                                        {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                    </select>
-                                )}
-                                {modalMode === 'create' && formPatientMode === 'new' && (
-                                    <input type="text" placeholder="Nome do Novo Paciente"
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        value={formNewPatientName} onChange={e => setFormNewPatientName(e.target.value)} />
-                                )}
-                                {modalMode === 'create' && (
-                                    <div className={`flex gap-4 text-xs mt-2 ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>
-                                        <button type="button" onClick={() => setFormPatientMode('search')} className={`hover:underline ${formPatientMode === 'search' ? 'font-bold' : ''}`}>Buscar Existente</button>
-                                        <button type="button" onClick={() => setFormPatientMode('new')} className={`hover:underline ${formPatientMode === 'new' ? 'font-bold' : ''}`}>Novo Paciente</button>
-                                    </div>
-                                )}
-                                {modalMode === 'edit' && (
-                                    <p className={`p-2 rounded font-bold text-sm ${isManagerMode ? 'bg-gray-700 text-gray-200' : 'bg-emerald-50 text-emerald-800'}`}>{formNewPatientName}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Profissional</label>
-                                <select
-                                    className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                    value={formProfessionalId} onChange={e => setFormProfessionalId(e.target.value)}>
-                                    {professionals.map(p => <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>)}
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Tipo de Consulta</label>
+                                {formPatientMode === 'search' ? (
                                     <select
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        value={formType} onChange={e => setFormType(e.target.value)}>
-                                        <option value="ROTINA">Rotina</option>
-                                        <option value="AVALIACAO">Avaliação</option>
+                                        required
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-slate-300'}`}
+                                        value={formPatientId}
+                                        onChange={(e) => setFormPatientId(e.target.value)}
+                                        disabled={modalMode === 'edit'}
+                                    >
+                                        <option value="">Selecione um paciente...</option>
+                                        {patients.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        required
+                                        placeholder="Nome completo do novo paciente"
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-slate-300'}`}
+                                        value={formNewPatientName}
+                                        onChange={(e) => setFormNewPatientName(e.target.value)}
+                                    />
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Profissional Responsável *</label>
+                                    <select
+                                        required
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-blue-900' : 'bg-white border-slate-300'}`}
+                                        value={formProfessionalId}
+                                        onChange={(e) => setFormProfessionalId(e.target.value)}
+                                    >
+                                        {professionals.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-1">
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Data *</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-slate-300'}`}
+                                        value={formDate}
+                                        onChange={(e) => setFormDate(e.target.value)}
+                                        onBlur={handleDateBlur}
+                                    />
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-1">
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Tipo de Consulta</label>
+                                    <select
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-blue-900' : 'bg-white border-slate-300'}`}
+                                        value={formType}
+                                        onChange={(e) => setFormType(e.target.value)}
+                                    >
+                                        <option value="ROTINA">Rotina / Primeira Vez</option>
                                         <option value="RETORNO">Retorno</option>
+                                        <option value="PROCEDIMENTO">Procedimento</option>
+                                        <option value="ONLINE">Online</option>
                                     </select>
                                 </div>
+
                                 <div>
-                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label>
-                                    <select
-                                        className={`w-full border rounded p-2 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                        value={formStatus} onChange={e => setFormStatus(e.target.value as AppointmentStatus)}>
-                                        <option value={AppointmentStatus.SCHEDULED}>Agendado</option>
-                                        <option value={AppointmentStatus.CONFIRMED}>Confirmado</option>
-                                        <option value={AppointmentStatus.CANCELED}>Cancelado</option>
-                                        <option value={AppointmentStatus.COMPLETED}>Realizado</option>
-                                        <option value={AppointmentStatus.MISSED}>Faltou</option>
-                                    </select>
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Início *</label>
+                                    <input
+                                        type="time"
+                                        required
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-slate-300'}`}
+                                        value={formStartTime}
+                                        onChange={handleStartTimeChange}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Término *</label>
+                                    <input
+                                        type="time"
+                                        required
+                                        className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-slate-300'}`}
+                                        value={formEndTime}
+                                        onChange={(e) => setFormEndTime(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="col-span-2">
+                                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>Status do Agendamento</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                                        {[
+                                            { id: AppointmentStatus.SCHEDULED, label: 'Agendado', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+                                            { id: AppointmentStatus.CONFIRMED, label: 'Confirmado', color: 'bg-green-100 text-green-800 border-green-200' },
+                                            { id: AppointmentStatus.MISSED, label: 'Faltou', color: 'bg-red-100 text-red-800 border-red-200' },
+                                            { id: AppointmentStatus.CANCELED, label: 'Cancelado', color: 'bg-gray-100 text-gray-800 border-gray-200' }
+                                        ].map(status => (
+                                            <button
+                                                key={status.id}
+                                                type="button"
+                                                onClick={() => setFormStatus(status.id)}
+                                                className={`py-2 px-1 text-[10px] font-black uppercase tracking-tighter rounded-md border transition-all ${formStatus === status.id ? `${status.color} shadow-md scale-105` : `${isManagerMode ? 'bg-white border-blue-100 text-blue-300 hover:bg-blue-50' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}`}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'} p-4 rounded-lg border`}>
-                                <h4 className={`text-xs font-bold uppercase mb-3 flex items-center gap-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>
-                                    💰 Dados Financeiros
-                                </h4>
+                            {/* Financial Integration Section */}
+                            <div className={`p-4 rounded-lg border ${isManagerMode ? 'bg-rose-50/20 border-rose-100' : 'bg-blue-50 border-blue-100'}`}>
+                                <h3 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${isManagerMode ? 'text-rose-600' : 'text-blue-700'}`}>
+                                    <span className="text-sm">💰</span> Gestão Financeira Local
+                                </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className={`block text-xs font-bold mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Valor (R$)</label>
-                                        <input
-                                            type="number" min="0" step="0.01"
-                                            className={`w-full border rounded p-1.5 text-sm font-bold focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-600 border-gray-500 text-white focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                            placeholder="0,00" value={formPrice} onChange={e => setFormPrice(e.target.value)}
-                                        />
+                                        <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-rose-400' : 'text-blue-600'}`}>Valor (R$)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-3 text-xs font-bold text-slate-400">R$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0,00"
+                                                className={`w-full border rounded-lg p-3 pl-10 text-sm font-bold shadow-sm focus:ring-2 focus:ring-rose-500 ${isManagerMode ? 'bg-white border-rose-100 text-slate-800' : 'bg-white border-blue-200'}`}
+                                                value={formPrice}
+                                                onChange={(e) => setFormPrice(e.target.value)}
+                                            />
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className={`block text-xs font-bold mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status Pag.</label>
+                                        <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-rose-400' : 'text-blue-600'}`}>Status</label>
                                         <select
-                                            className={`w-full border rounded p-1.5 text-sm font-medium focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-600 border-gray-500 text-white focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                            value={formFinancialStatus} onChange={e => setFormFinancialStatus(e.target.value as FinancialStatus)}
+                                            className={`w-full border rounded-lg p-3 text-sm font-bold shadow-sm focus:ring-2 focus:ring-rose-500 ${isManagerMode ? 'bg-white border-rose-100 text-rose-800' : 'bg-white border-blue-200'}`}
+                                            value={formFinancialStatus}
+                                            onChange={(e) => setFormFinancialStatus(e.target.value as FinancialStatus)}
                                         >
                                             <option value="PENDENTE">Pendente</option>
                                             <option value="PAGO">Pago</option>
-                                        </select>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className={`block text-xs font-bold mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método Pag.</label>
-                                        <select
-                                            className={`w-full border rounded p-1.5 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-600 border-gray-500 text-white focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
-                                            value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value as PaymentMethod)}
-                                        >
-                                            <option value="PIX">Pix</option>
-                                            <option value="DINHEIRO">Dinheiro</option>
-                                            <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-                                            <option value="CARTAO_DEBITO">Cartão de Débito</option>
-                                            <option value="GUIA_CONVENIO">Guia Convênio</option>
                                         </select>
                                     </div>
                                 </div>
@@ -991,26 +1028,38 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                         </form>
 
                         {/* Modal Footer */}
-                        <div className={`flex justify-between items-center px-6 py-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-slate-100'}`}>
-                            {modalMode === 'edit' && editingAppointmentId && (
-                                <button type="button" onClick={handleDelete}
-                                    className={`text-sm font-bold flex items-center gap-1 px-3 py-1.5 rounded transition-colors ${isManagerMode ? 'text-red-400 hover:text-red-200 hover:bg-red-900/50' : 'text-red-600 hover:text-red-800 hover:bg-red-50'}`}
+                        <div className={`px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-4 ${isManagerMode ? 'bg-blue-50/30 border-blue-100' : 'bg-slate-50 border-slate-200'}`}>
+                            {modalMode === 'edit' ? (
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    className="w-full sm:w-auto text-[10px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-800 underline transition-colors"
                                 >
-                                    Excluir
+                                    Excluir Agendamento
                                 </button>
-                            )}
-                            <div className="flex-1"></div>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => setIsModalOpen(false)}
-                                    className={`px-5 py-2.5 border rounded-lg text-sm font-bold shadow-sm transition-colors ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Cancelar</button>
-                                <button type="submit" form="agendaForm"
-                                    className={`px-6 py-2.5 text-white rounded-lg text-sm font-bold shadow-sm transition-all duration-200 active:scale-95 ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>Salvar Agendamento</button>
+                            ) : <div></div>}
+
+                            <div className="flex gap-3 w-full sm:w-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all ${isManagerMode ? 'bg-white border-blue-200 text-blue-900 hover:bg-blue-50' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSubmit}
+                                    type="submit"
+                                    className={`flex-1 sm:flex-none px-8 py-2 rounded-lg text-xs font-black uppercase tracking-widest text-white shadow-xl transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                >
+                                    {modalMode === 'create' ? 'Agendar' : 'Salvar Alterações'}
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 

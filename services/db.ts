@@ -12,6 +12,7 @@ import {
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { saasService } from './saasService';
 
 // --- CONFIGURATION CONSTANTS (Single Source of Truth) ---
 export const CIRCUMFERENCES_CONFIG: { key: keyof Anthropometry; label: string }[] = [
@@ -57,14 +58,14 @@ const DEFAULT_CLINICS: Clinic[] = [
 ];
 const DEFAULT_USERS: User[] = [
     { id: 'u-root', clinicId: 'c1', name: 'Super Admin', email: 'root@control.com', role: Role.SUPER_ADMIN, password: '123' },
-    { id: 'u-rangel', clinicId: 'c1', name: 'Dr. Rangel', email: 'rangel@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-rangel', password: '123' },
-    { id: 'u-marcella', clinicId: 'c1', name: 'Dra. Marcella', email: 'marcella@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-marcella', password: '123' },
+    { id: 'u-rangel', clinicId: 'c1', name: 'Dr. Rangel', email: 'rangel@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p3', password: '123' },
+    { id: 'u-marcella', clinicId: 'c1', name: 'Dra. Marcella', email: 'marcella@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p2', password: '123' },
     { id: 'u-debora', clinicId: 'c1', name: 'Dra. Debora', email: 'debora@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-debora', password: '123' },
     { id: 'u-matheus', clinicId: 'c1', name: 'Dr. Matheus', email: 'matheus@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-matheus', password: '123' },
 ];
 const DEFAULT_PROFESSIONALS: Professional[] = [
-    { id: 'p-rangel', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Dermatologia', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
-    { id: 'p-marcella', clinicId: 'c1', userId: 'u-marcella', name: 'Dra. Marcella', email: 'marcella@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-green-200', isActive: true },
+    { id: 'p3', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Dermatologia', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
+    { id: 'p2', clinicId: 'c1', userId: 'u-marcella', name: 'Dra. Marcella', email: 'marcella@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-green-200', isActive: true },
     { id: 'p-debora', clinicId: 'c1', userId: 'u-debora', name: 'Dra. Debora', email: 'debora@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-purple-200', isActive: true },
     { id: 'p-matheus', clinicId: 'c1', userId: 'u-matheus', name: 'Dr. Matheus', email: 'matheus@control.com', phone: '', specialty: 'Médico', registrationNumber: 'CRM', color: 'bg-indigo-200', isActive: true },
 ];
@@ -160,9 +161,9 @@ const DEFAULT_PATIENTS: Patient[] = [
             { id: 'ad-1', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4'], waterIntakeLiters: 2.5 },
             { id: 'ad-2', date: '2026-03-02T10:00:00Z', day: '2026-03-02', status: 'PARCIAL', mealsAdhered: ['m-1', 'm-2'], notes: 'Fui a um aniversário no jantar.', waterIntakeLiters: 1.8 }
         ],
-        professionalId: 'system-demo'
+        professionalId: 'p3'
     },
-    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', password: '123', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'system-demo' },
+    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', password: '123', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'p3' },
     {
         id: 'pt_meire',
         clinicId: 'c1',
@@ -239,7 +240,7 @@ const DEFAULT_PATIENTS: Patient[] = [
             { id: 'ad-m1', date: '2026-02-28T10:00:00Z', day: '2026-02-28', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 3.0 },
             { id: 'ad-m2', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 2.8 }
         ],
-        professionalId: 'system-demo'
+        professionalId: 'p3'
     }
 ];
 
@@ -469,6 +470,8 @@ class DatabaseService {
                 this.examRequests = mergeArray(this.examRequests, remote.examRequests);
                 this.prescriptions = mergeArray(this.prescriptions, remote.prescriptions);
                 this.mipanAssessments = mergeArray(this.mipanAssessments, remote.mipanAssessments);
+                this.professionals = mergeArray(this.professionals, remote.professionals);
+                this.users = mergeArray(this.users, remote.users);
             }
             // --- FIM DA PROTEÇÃO ---
 
@@ -531,12 +534,12 @@ class DatabaseService {
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
                 const localModified = (this as any)._localLastModified || 0;
 
-                if (remoteModified > localModified) {
-                    console.log(`[DB] 🔽 Baixando atualização remota (Versão mais nova)...`);
-                    this.applyRemoteData(data);
-                    this.saveToStorage(false, remoteModified);
-                } else if (localModified === 0) {
-                    console.log(`[DB] 🔽 Baixando carga inicial...`);
+                const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
+                const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
+                const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
+
+                if (remoteModified > localModified || isJustSeeded) {
+                    console.log(`[DB] 🔽 Baixando atualização remota (Versão mais nova ou Recuperação de Dados)...`);
                     this.applyRemoteData(data);
                     this.saveToStorage(false, remoteModified);
                 } else {
@@ -959,6 +962,15 @@ class DatabaseService {
             const clinic = this.clinics.find(c => c.slug.toLowerCase() === slug.toLowerCase());
             if (!clinic) throw new Error("Clínica não encontrada.");
 
+            // --- VALIDAÇÃO SAAS (ACESSA APENAS SE TRIAL OU ACTIVE) ---
+            const saasStatus = await saasService.getClinicStatus(clinic.id);
+            if (saasStatus === 'canceled' || saasStatus === 'past_due') {
+                // Permite apenas se o usuário for o Root Admin global ou se for a Clínica Principal Demo
+                if (clinic.id !== 'c1' && email.toLowerCase() !== 'root@control.com') {
+                    throw new Error(`Acesso bloqueado: Assinatura ${saasStatus === 'canceled' ? 'Cancelada' : 'Aguardando Pagamento'}. Entre em contato com o suporte.`);
+                }
+            }
+
             // 2. Real Auth with Firebase (with DEV bypass)
             let userEmailToMatch = email.trim().toLowerCase();
             if (pass !== "123") {
@@ -1026,6 +1038,15 @@ class DatabaseService {
         try {
             const clinic = this.clinics.find(c => c.slug.toLowerCase() === slug.toLowerCase());
             if (!clinic) throw new Error("Clínica não encontrada.");
+
+            // --- VALIDAÇÃO SAAS (ACESSA APENAS SE TRIAL OU ACTIVE) ---
+            const saasStatus = await saasService.getClinicStatus(clinic.id);
+            if (saasStatus === 'canceled' || saasStatus === 'past_due') {
+                // Permite apenas se o usuário for o Root Admin global ou se for a Clínica Principal Demo
+                if (clinic.id !== 'c1' && email.toLowerCase() !== 'root@control.com') {
+                    throw new Error(`Acesso bloqueado: Assinatura ${saasStatus === 'canceled' ? 'Cancelada' : 'Aguardando Pagamento'}. Entre em contato com o suporte.`);
+                }
+            }
 
             const patient = this.patients.find(p =>
                 p.clinicId === clinic.id &&
@@ -2537,6 +2558,38 @@ class DatabaseService {
 
     async getClinics(): Promise<Clinic[]> {
         return this.clinics;
+    }
+
+    async createClinic(data: Partial<Clinic>): Promise<Clinic> {
+        const id = data.id || `c-${Date.now()}`;
+        const newClinic: Clinic = {
+            id,
+            name: data.name || 'Nova Clínica',
+            slug: data.slug || id,
+            isActive: true,
+            primaryColor: data.primaryColor || '#7c3aed',
+            aiConfig: data.aiConfig || { personality: 'ANALITICA', focus: 'FATURAMENTO' },
+            scheduleConfig: data.scheduleConfig || { openTime: '08:00', closeTime: '18:00', daysOpen: [1, 2, 3, 4, 5], slotDuration: 30 }
+        };
+        this.clinics.push(newClinic);
+        await this.saveToStorage();
+        return newClinic;
+    }
+
+    async createUser(data: Partial<User>): Promise<User> {
+        const id = data.id || `u-${Date.now()}`;
+        const newUser: User = {
+            id,
+            clinicId: data.clinicId!,
+            name: data.name || 'Usuário',
+            email: data.email || '',
+            role: data.role || Role.PROFESSIONAL,
+            password: data.password || '123',
+            professionalId: data.professionalId
+        };
+        this.users.push(newUser);
+        await this.saveToStorage();
+        return newUser;
     }
 
     // --- MIPAN-20 (PSICOCOMPORTAMENTAL) ---

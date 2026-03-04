@@ -197,42 +197,42 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>CPF</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>CPF</label>
                   <input type="text" name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00"
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data de Nascimento *</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Data de Nascimento *</label>
                   <input required type="date" name="birthDate" value={formData.birthDate} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Telefone / WhatsApp *</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Telefone / WhatsApp *</label>
                   <input required type="text" name="phone" value={formData.phone} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>E-mail</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>E-mail</label>
                   <input type="email" name="email" value={formData.email} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Gênero Biológico</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Gênero Biológico</label>
                   <select name="gender" value={formData.gender} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`}>
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`}>
                     <option value="Feminino">Feminino</option>
                     <option value="Masculino">Masculino</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Status</label>
                   <select name="status" value={formData.status} onChange={handleChange as any}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`}>
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`}>
                     <option value="ATIVO">Ativo</option>
                     <option value="INATIVO">Inativo</option>
                   </select>
@@ -244,9 +244,9 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Estado Civil</label>
                   <select name="estadoCivil" value={formData.estadoCivil || ''} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`}>
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`}>
                     <option value="">Selecione...</option>
                     <option value="Solteiro(a)">Solteiro(a)</option>
                     <option value="Casado(a)">Casado(a)</option>
@@ -257,27 +257,27 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 </div>
 
                 <div>
-                  <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Pessoas em Casa</label>
                   <input type="number" name="pessoasEmCasa" min="1" value={formData.pessoasEmCasa || ''} onChange={handleChange}
-                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-300 text-emerald-900'}`} />
+                    className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`} />
                 </div>
 
                 {isManagerMode && (
                   <div className="md:col-span-2">
-                    <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Profissional Responsável *</label>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Profissional Responsável *</label>
                     <select
                       required
                       name="professionalId"
                       value={formData.professionalId}
                       onChange={handleChange}
-                      className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 focus:ring-blue-500 shadow-sm' : 'bg-white border-slate-300 text-emerald-900 focus:ring-emerald-500'}`}
+                      className={`mt-1 block w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-slate-300 text-emerald-900'}`}
                     >
                       <option value="">Selecione um profissional</option>
                       {professionals.map(p => (
                         <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>
                       ))}
                     </select>
-                    <p className="mt-1 text-xs text-gray-400">Como Gestor, você deve atribuir este paciente a um profissional para que ele apareça na agenda dele.</p>
+                    <p className={`mt-1 text-[10px] font-bold uppercase ${isManagerMode ? 'text-blue-400' : 'text-gray-400'}`}>Como Gestor, você deve atribuir este paciente a um profissional para que ele apareça na agenda dele.</p>
                   </div>
                 )}
 
@@ -289,11 +289,11 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
                 </div>
               </div>
 
-              <div className={`flex justify-end gap-3 mt-6 pt-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-slate-100'}`}>
+              <div className={`flex justify-end gap-3 mt-6 pt-4 border-t ${isManagerMode ? 'border-blue-50' : 'border-slate-100'}`}>
                 <button type="button" onClick={() => setIsModalOpen(false)}
-                  className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Cancelar</button>
+                  className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Cancelar</button>
                 <button type="submit"
-                  className={`px-6 py-2 text-white rounded-md font-medium transition-transform active:scale-95 ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>Salvar Paciente</button>
+                  className={`px-6 py-2 text-white rounded-md font-black uppercase text-xs shadow-xl transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>Salvar Paciente</button>
               </div>
             </form>
           </div>

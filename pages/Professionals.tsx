@@ -155,7 +155,7 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
     // RBAC Guard: Only allow access to admins
     if (user.role !== Role.CLINIC_ADMIN && user.role !== Role.SUPER_ADMIN) {
         return (
-            <div className={`${isManagerMode ? 'text-gray-100' : 'text-gray-900'} p-8 text-center`}>
+            <div className={`${isManagerMode ? 'text-blue-900' : 'text-gray-900'} p-8 text-center`}>
                 <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
                 <p>Apenas administradores podem acessar esta área.</p>
             </div>
@@ -176,8 +176,8 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
 
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>Gestão de Profissionais</h1>
-                    <p className={`mt-1 ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Cadastre a equipe, configure acessos e cores da agenda.</p>
+                    <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-gray-900'}`}>Gestão de Profissionais</h1>
+                    <p className={`mt-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-500'}`}>Cadastre a equipe, configure acessos e cores da agenda.</p>
                 </div>
                 <button
                     onClick={handleOpenCreate}
@@ -187,38 +187,38 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                 </button>
             </div>
 
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow overflow-hidden rounded-lg`}>
+            <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-gray-200'} shadow overflow-hidden rounded-lg`}>
                 <table className="min-w-full divide-y divide-gray-200">
-                    <thead className={`${isManagerMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <thead className={`${isManagerMode ? 'bg-blue-50/50 border-b border-blue-100' : 'bg-gray-50'}`}>
                         <tr>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Profissional</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Registro</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Contato</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Agenda</th>
-                            <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-gray-500'}`}>Ações</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-gray-500'}`}>Profissional</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-gray-500'}`}>Registro</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-gray-500'}`}>Contato</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-gray-500'}`}>Agenda</th>
+                            <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-gray-500'}`}>Ações</th>
                         </tr>
                     </thead>
-                    <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
+                    <tbody className={`${isManagerMode ? 'bg-white divide-blue-50' : 'bg-white divide-gray-200'}`}>
                         {professionals.map(prof => (
-                            <tr key={prof.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                            <tr key={prof.id} className={`${isManagerMode ? 'hover:bg-blue-50/50' : 'hover:bg-gray-50'}`}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <div className={`h-8 w-8 rounded-full ${prof.color} flex items-center justify-center font-bold text-xs border border-gray-300 mr-3`}>
+                                        <div className={`h-8 w-8 rounded-full ${prof.color} flex items-center justify-center font-bold text-xs border border-gray-300 mr-3 shadow-inner`}>
                                             {prof.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <div className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>{prof.name}</div>
-                                            <div className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>{prof.specialty}</div>
+                                            <div className={`text-sm font-bold ${isManagerMode ? 'text-blue-900' : 'text-gray-900'}`}>{prof.name}</div>
+                                            <div className={`text-xs ${isManagerMode ? 'text-blue-600' : 'text-gray-500'}`}>{prof.specialty}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono px-2 rounded w-fit text-gray-500 bg-gray-50">{prof.registrationNumber}</td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-sm font-mono px-2 rounded w-fit ${isManagerMode ? 'text-blue-800 bg-blue-50/50' : 'text-gray-500 bg-gray-50'}`}>{prof.registrationNumber}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`text-xs ${isManagerMode ? 'text-gray-200' : 'text-gray-900'}`}>{prof.email}</div>
-                                    <div className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    <div className={`text-xs ${isManagerMode ? 'text-slate-700' : 'text-gray-900'}`}>{prof.email}</div>
+                                    <div className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
                                         {prof.phone ? `Cel: ${prof.phone}` : ''}
                                     </div>
-                                    {prof.whatsapp && <div className={`text-xs font-bold ${isManagerMode ? 'text-emerald-400' : 'text-green-600'}`}>Zap: {prof.whatsapp}</div>}
+                                    {prof.whatsapp && <div className={`text-xs font-bold ${isManagerMode ? 'text-blue-600' : 'text-green-600'}`}>Zap: {prof.whatsapp}</div>}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${prof.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -242,31 +242,31 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
 
             {/* Create/Edit Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]`}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/40 backdrop-blur-sm p-4">
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-gray-900'} rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border border-blue-100`}>
                         {/* Header */}
-                        <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                            <h2 className="text-lg font-bold">{editingId ? 'Editar Cadastro' : 'Novo Profissional'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} className={`${isManagerMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}>✕</button>
+                        <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
+                            <h2 className={`text-lg font-bold ${isManagerMode ? 'text-blue-900' : 'text-gray-900'}`}>{editingId ? 'Editar Cadastro' : 'Novo Profissional'}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className={`text-gray-400 hover:text-blue-600 transition-colors`}>✕</button>
                         </div>
 
                         {/* Tabs */}
-                        <div className={`flex border-b ${isManagerMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <div className={`flex border-b ${isManagerMode ? 'border-blue-100' : 'border-gray-200'}`}>
                             <button
                                 onClick={() => setActiveTab('PERSONAL')}
-                                className={`flex-1 py-3 text-sm font-medium text-center ${activeTab === 'PERSONAL' ? (isManagerMode ? 'border-b-2 border-indigo-500 text-indigo-400 bg-gray-800' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
+                                className={`flex-1 py-3 text-sm font-medium text-center transition-all ${activeTab === 'PERSONAL' ? (isManagerMode ? 'border-b-2 border-blue-600 text-blue-700 bg-blue-50/30' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50/20' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
                             >
                                 1. Dados Pessoais
                             </button>
                             <button
                                 onClick={() => setActiveTab('PROFESSIONAL')}
-                                className={`flex-1 py-3 text-sm font-medium text-center ${activeTab === 'PROFESSIONAL' ? (isManagerMode ? 'border-b-2 border-indigo-500 text-indigo-400 bg-gray-800' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
+                                className={`flex-1 py-3 text-sm font-medium text-center transition-all ${activeTab === 'PROFESSIONAL' ? (isManagerMode ? 'border-b-2 border-blue-600 text-blue-700 bg-blue-50/30' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50/20' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
                             >
                                 2. Profissional
                             </button>
                             <button
                                 onClick={() => setActiveTab('ACCESS')}
-                                className={`flex-1 py-3 text-sm font-medium text-center ${activeTab === 'ACCESS' ? (isManagerMode ? 'border-b-2 border-indigo-500 text-indigo-400 bg-gray-800' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
+                                className={`flex-1 py-3 text-sm font-medium text-center transition-all ${activeTab === 'ACCESS' ? (isManagerMode ? 'border-b-2 border-blue-600 text-blue-700 bg-blue-50/30' : 'border-b-2 border-blue-600 text-blue-600 bg-blue-50') : (isManagerMode ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50/20' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}`}
                             >
                                 3. Acesso (Login)
                             </button>
@@ -279,29 +279,29 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                             {activeTab === 'PERSONAL' && (
                                 <div className="space-y-4 animate-fadeIn">
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Nome Completo *</label>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Nome Completo *</label>
                                         <input
                                             type="text" required
-                                            className={`mt-1 block w-full border rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2.5 focus:ring-blue-500 focus:border-blue-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>CPF</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>CPF</label>
                                             <input
                                                 type="text"
                                                 placeholder="000.000.000-00"
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                 value={formData.cpf} onChange={e => setFormData({ ...formData, cpf: e.target.value })}
                                             />
                                         </div>
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Telefone / Celular</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Telefone / Celular</label>
                                             <input
                                                 type="text"
                                                 placeholder="(00) 00000-0000"
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                 value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                             />
                                         </div>
@@ -309,50 +309,50 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
 
                                     <div className="grid grid-cols-1 gap-4">
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>WhatsApp (Opcional)</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>WhatsApp (Opcional)</label>
                                             <input
                                                 type="text"
                                                 placeholder="(00) 00000-0000"
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                 value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })}
                                             />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>CEP</label>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>CEP</label>
                                         <input
                                             type="text"
                                             placeholder="00000-000"
-                                            className={`mt-1 block w-32 border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-32 border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.cep} onChange={e => setFormData({ ...formData, cep: e.target.value })}
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Endereço Residencial</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Endereço Residencial</label>
                                             <input
                                                 type="text"
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                 value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })}
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Cidade</label>
+                                                <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Cidade</label>
                                                 <input
                                                     type="text"
-                                                    className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                    className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                     value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })}
                                                 />
                                             </div>
                                             <div>
-                                                <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Estado</label>
+                                                <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Estado</label>
                                                 <input
                                                     type="text"
                                                     maxLength={2}
-                                                    className={`mt-1 block w-full border rounded-md p-2 uppercase ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                    className={`mt-1 block w-full border rounded-md p-2.5 uppercase ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                                     value={formData.state} onChange={e => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
                                                 />
                                             </div>
@@ -365,36 +365,36 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                             {activeTab === 'PROFESSIONAL' && (
                                 <div className="space-y-4 animate-fadeIn">
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Especialidade *</label>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Especialidade *</label>
                                         <input
                                             type="text" required
                                             placeholder="Ex: Cardiologia, Nutrição..."
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.specialty} onChange={e => setFormData({ ...formData, specialty: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Registro Profissional (Conselho) *</label>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Registro Profissional (Conselho) *</label>
                                         <input
                                             type="text" required
                                             placeholder="Ex: CRM-SP 123456"
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.registrationNumber} onChange={e => setFormData({ ...formData, registrationNumber: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Cor na Agenda</label>
-                                        <div className={`flex gap-2 flex-wrap p-3 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'} mb-2`}>Cor na Agenda</label>
+                                        <div className={`flex gap-2 flex-wrap p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50/30 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
                                             {colorOptions.map(c => (
                                                 <button
                                                     key={c}
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, color: c })}
-                                                    className={`w-8 h-8 rounded-full border-2 ${c} ${formData.color === c ? (isManagerMode ? 'border-indigo-400 scale-110 shadow-md' : 'border-gray-900 scale-110 shadow-md') : 'border-transparent'}`}
+                                                    className={`w-8 h-8 rounded-full border-2 ${c} ${formData.color === c ? (isManagerMode ? 'border-blue-600 scale-110 shadow-md' : 'border-gray-900 scale-110 shadow-md') : 'border-transparent'}`}
                                                 />
                                             ))}
                                         </div>
-                                        <p className={`text-xs mt-1 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Essa cor será usada para identificar os agendamentos deste profissional.</p>
+                                        <p className={`text-[10px] mt-1 font-bold uppercase ${isManagerMode ? 'text-blue-600' : 'text-gray-500'}`}>Essa cor será usada para identificar os agendamentos deste profissional.</p>
                                     </div>
                                 </div>
                             )}
@@ -410,42 +410,42 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                                     </div>
 
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>E-mail de Login *</label>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>E-mail de Login *</label>
                                         <input
                                             type="email" required
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>
                                             {editingId ? 'Redefinir Senha (deixe em branco para manter)' : 'Senha Inicial *'}
                                         </label>
                                         <input
                                             type="password"
                                             required={!editingId}
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
                                             value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })}
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Nível de Acesso</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Nível de Acesso</label>
                                             <select
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-white border-gray-300'}`}
                                                 value={formData.role}
                                                 onChange={e => setFormData({ ...formData, role: e.target.value as Role })}
                                             >
-                                                <option value={Role.PROFESSIONAL}>Apenas Profissional (Agenda/Pacientes)</option>
+                                                <option value={Role.PROFESSIONAL}>Apenas Profissional</option>
                                                 <option value={Role.CLINIC_ADMIN}>Administrador da Clínica</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Status da Conta</label>
+                                            <label className={`block text-sm font-bold uppercase tracking-wide mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-700'}`}>Status da Conta</label>
                                             <select
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-white border-gray-300'}`}
                                                 value={String(formData.isActive)} // Ensure value is a string
                                                 onChange={e => setFormData({ ...formData, isActive: e.target.value === 'true' })}
                                             >
@@ -458,7 +458,7 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                             )}
 
                             {/* Footer Buttons */}
-                            <div className={`flex justify-between items-center pt-6 border-t mt-6 ${isManagerMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                            <div className={`flex justify-between items-center pt-6 border-t mt-6 ${isManagerMode ? 'border-blue-100' : 'border-gray-100'}`}>
 
                                 {/* DELETE BUTTON (Left Aligned for UX) */}
                                 <div className="flex items-center">
@@ -466,12 +466,12 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                                         <button
                                             type="button"
                                             onClick={() => requestDelete(editingId)}
-                                            className={`text-sm font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${isManagerMode ? 'text-red-400 hover:text-red-200 hover:bg-red-900' : 'text-red-600 hover:text-red-800 hover:bg-red-50'}`}
+                                            className={`text-sm font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${isManagerMode ? 'text-rose-600 hover:text-rose-800 hover:bg-rose-50' : 'text-red-600 hover:text-red-800 hover:bg-red-50'}`}
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
-                                            Excluir
+                                            Excluir Profissional
                                         </button>
                                     )}
                                 </div>
@@ -481,19 +481,19 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                                         <button type="button" onClick={() => {
                                             if (activeTab === 'ACCESS') setActiveTab('PROFESSIONAL');
                                             if (activeTab === 'PROFESSIONAL') setActiveTab('PERSONAL');
-                                        }} className={`${isManagerMode ? 'text-gray-300 hover:underline' : 'text-gray-600 hover:underline'} text-sm mr-2`}>Voltar</button>
+                                        }} className={`${isManagerMode ? 'text-blue-600 hover:underline' : 'text-gray-600 hover:underline'} text-sm mr-2 font-bold`}>Voltar</button>
                                     )}
 
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>Cancelar</button>
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>Cancelar</button>
                                     {activeTab === 'ACCESS' ? (
-                                        <button type="submit" className={`px-6 py-2 text-white rounded-md font-medium shadow-sm ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                                        <button type="submit" className={`px-6 py-2 text-white rounded-md font-bold shadow-xl transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                                             Salvar Cadastro
                                         </button>
                                     ) : (
                                         <button type="button" onClick={() => {
                                             if (activeTab === 'PERSONAL') setActiveTab('PROFESSIONAL');
                                             if (activeTab === 'PROFESSIONAL') setActiveTab('ACCESS');
-                                        }} className={`px-6 py-2 text-white rounded-md font-medium ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-900 hover:bg-black'}`}>
+                                        }} className={`px-6 py-2 text-white rounded-md font-bold shadow-lg transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-900 hover:bg-black'}`}>
                                             Próximo &rarr;
                                         </button>
                                     )}
@@ -507,24 +507,24 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
             {/* Delete Confirmation Modal */}
             {deleteConfirmId && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-900 border-gray-200'} rounded-xl shadow-2xl w-full max-w-md overflow-hidden border`}>
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100' : 'bg-white text-gray-900 border-gray-200'} rounded-xl shadow-2xl w-full max-w-md overflow-hidden border`}>
                         <div className={`p-6 text-center`}>
-                            <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                                <svg className="w-7 h-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center">
+                                <svg className="w-7 h-7 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </div>
                             <h3 className="text-lg font-bold mb-2">Confirmar Exclusão</h3>
-                            <p className={`text-sm mb-1 ${isManagerMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            <p className={`text-sm mb-1 ${isManagerMode ? 'text-slate-700' : 'text-gray-600'}`}>
                                 <strong>{professionals.find(p => p.id === deleteConfirmId)?.name}</strong>
                             </p>
-                            <p className={`text-xs mb-6 ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <p className={`text-xs mb-6 ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
                                 A exclusão é irreversível. O acesso do usuário será revogado e agendamentos futuros serão cancelados.
                             </p>
                             <div className="flex gap-3 justify-center">
                                 <button
                                     onClick={() => setDeleteConfirmId(null)}
-                                    className={`px-5 py-2.5 rounded-lg font-bold text-sm border transition-colors ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                    className={`px-5 py-2.5 rounded-lg font-bold text-sm border transition-colors ${isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                                 >
                                     Cancelar
                                 </button>

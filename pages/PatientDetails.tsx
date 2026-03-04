@@ -597,6 +597,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     bodyFatPercentage: anthro.bodyFatPercentage,
                     fatMass: anthro.fatMass,
                     leanMass: anthro.leanMass,
+                    residualMass: anthro.residualMass,
+                    boneMass: anthro.boneMass,
+                    cmb: anthro.cmb,
                     waistToHipRatio: anthro.waistToHipRatio,
                 };
 
@@ -658,7 +661,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     // --- ANTHROPOMETRY REAL-TIME CALCULATION (ENHANCED PROTOCOLS) ---
     const anthropometryResults = useMemo(() => {
         if (!patient || !formData.anthropometry) {
-            return { bmi: 0, bodyFatPercentage: 0, fatMass: 0, leanMass: 0, waistToHipRatio: 0 };
+            return { bmi: 0, bodyFatPercentage: 0, fatMass: 0, leanMass: 0, residualMass: 0, boneMass: 0, cmb: 0, waistToHipRatio: 0 };
         }
 
         const anthro = formData.anthropometry;
@@ -749,11 +752,30 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         const finalBf = Math.max(0, parseFloat(bf.toFixed(1)));
 
         // 4. Fat Mass & Lean Mass
-        const fatMass = (weight && finalBf) ? parseFloat(((weight * finalBf) / 100).toFixed(1)) : 0;
-        const leanMass = (weight && fatMass) ? parseFloat((weight - fatMass).toFixed(1)) : 0;
+        const leanMass = weight && finalBf ? weight - (weight * (finalBf / 100)) : 0;
+        const fatMass = weight && finalBf ? weight * (finalBf / 100) : 0;
 
-        return { bmi, bodyFatPercentage: finalBf, fatMass, leanMass, waistToHipRatio };
+        // 4. Advanced Indicators (New)
+        // Residual Mass (Wurch - Generic used if not provided)
+        let residualMass = anthro.residualMass || (gender === 'Masculino' ? weight * 0.24 : weight * 0.209);
+        // Bone Mass (Von Dobeln/Rocha style - simplified for now or provided)
+        let boneMass = anthro.boneMass || (gender === 'Masculino' ? weight * 0.15 : weight * 0.12);
+        // CMB (Circunferência Muscular do Braço)
+        let cmb = anthro.cmb || 0;
+        if (cmb === 0 && anthro.circArmRelaxed && anthro.skinfoldTriceps) {
+            cmb = anthro.circArmRelaxed - (Math.PI * (anthro.skinfoldTriceps / 10));
+        }
 
+        return {
+            bmi,
+            bodyFatPercentage: finalBf,
+            fatMass: parseFloat(fatMass.toFixed(2)),
+            leanMass: parseFloat(leanMass.toFixed(2)),
+            residualMass: parseFloat(residualMass.toFixed(2)),
+            boneMass: parseFloat(boneMass.toFixed(2)),
+            cmb: parseFloat(cmb.toFixed(2)),
+            waistToHipRatio
+        };
     }, [formData.anthropometry, patient, calculateAge]);
 
     // --- ANTHROPOMETRY DELAY ALERT ---
@@ -1392,12 +1414,12 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Esquerda: Anamnese */}
                         <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
-                            <h3 className={`text-lg font-bold mb-4 border-b pb-2 ${isManagerMode ? 'text-white border-gray-700' : 'text-emerald-900 border-emerald-100'}`}>Anamnese</h3>
+                            <h3 className={`text-lg font-bold mb-4 border-b pb-2 ${isManagerMode ? 'text-blue-900 border-blue-100' : 'text-emerald-900 border-emerald-100'}`}>Anamnese</h3>
                             <div className="space-y-5">
                                 {isEditingTab ? (
                                     <>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Patologias (CID ou Nome)</label>
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Patologias (CID ou Nome)</label>
                                             <div className="mt-1">
                                                 <CidAutocomplete
                                                     selectedPathologies={formData.clinicalHistory?.pathologies || []}
@@ -1407,7 +1429,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             </div>
                                         </div>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Alergias</label>
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Alergias</label>
                                             <input
                                                 type="text"
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
@@ -1417,7 +1439,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             />
                                         </div>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Medicamentos</label>
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Medicamentos</label>
                                             <input
                                                 type="text"
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
@@ -1427,7 +1449,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             />
                                         </div>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Hábitos</label>
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Hábitos</label>
                                             <textarea
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 rows={3}
@@ -1437,7 +1459,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             />
                                         </div>
                                         <div>
-                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sintomas</label>
+                                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Sintomas</label>
                                             <textarea
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 rows={3}
@@ -1467,20 +1489,20 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         </div>
                                         <div>
                                             <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Medicamentos em Uso</span>
-                                            <ul className={`mt-1 list-disc list-inside text-sm font-medium ${isManagerMode ? 'text-gray-100' : 'text-emerald-900'}`}>
+                                            <ul className={`mt-1 list-disc list-inside text-sm font-medium ${isManagerMode ? 'text-slate-700' : 'text-emerald-900'}`}>
                                                 {(patient.clinicalHistory?.medications && patient.clinicalHistory.medications.length > 0) ? patient.clinicalHistory.medications.map(m => <li key={m}>{m}</li>) : <li className={`list-none italic ${isManagerMode ? 'text-blue-600' : 'text-emerald-600'}`}>Nenhum medicamento registrado</li>}
                                             </ul>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
                                             <div>
                                                 <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Hábitos</span>
-                                                <p className={`text-sm mt-1 p-3 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
+                                                <p className={`text-sm mt-1 p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50/50 border-blue-100 text-slate-800' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
                                                     {patient.clinicalHistory?.habits || 'Nenhum hábito registrado'}
                                                 </p>
                                             </div>
                                             <div>
                                                 <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Sintomas</span>
-                                                <p className={`text-sm mt-1 p-3 rounded-lg border italic ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
+                                                <p className={`text-sm mt-1 p-3 rounded-lg border italic ${isManagerMode ? 'bg-blue-50/50 border-blue-100 text-slate-800' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
                                                     "{patient.clinicalHistory?.symptoms || 'Nenhum sintoma registrado'}"
                                                 </p>
                                             </div>
@@ -1492,11 +1514,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
                         {/* Direita: Timeline Editável */}
                         <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
-                            <div className={`flex justify-between items-center mb-4 border-b pb-2 ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'}`}>
-                                <h3 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Timeline de Evolução</h3>
+                            <div className={`flex justify-between items-center mb-4 border-b pb-2 ${isManagerMode ? 'border-blue-100' : 'border-emerald-100'}`}>
+                                <h3 className={`text-lg font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>Timeline de Evolução</h3>
                                 <button
                                     onClick={() => setIsTimelineModalOpen(true)}
-                                    className={`text-xs px-3 py-1.5 rounded hover:bg-emerald-700 flex items-center gap-1 font-bold shadow-sm ${isManagerMode ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}
+                                    className={`text-xs px-3 py-1.5 rounded hover:bg-emerald-700 flex items-center gap-1 font-bold shadow-sm ${isManagerMode ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}
                                 >
                                     <span className="text-lg font-bold">+</span> Evento
                                 </button>
@@ -1517,17 +1539,17 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     )}
                                                     <div className="relative flex space-x-3">
                                                         <div>
-                                                            <span className={`h-8 w-8 rounded-full ${style.color} flex items-center justify-center ring-8 ${isManagerMode ? 'ring-gray-800' : 'ring-white'} text-white text-xs shadow-sm`}>
+                                                            <span className={`h-8 w-8 rounded-full ${style.color} flex items-center justify-center ring-8 ${isManagerMode ? 'ring-blue-50' : 'ring-white'} text-white text-xs shadow-sm`}>
                                                                 {style.icon}
                                                             </span>
                                                         </div>
                                                         <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                                                             <div>
-                                                                <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{event.title}</p>
-                                                                {event.description && <p className={`text-sm mt-1 p-2 rounded border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-800'}`}>{event.description}</p>}
+                                                                <p className={`text-sm font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{event.title}</p>
+                                                                {event.description && <p className={`text-sm mt-1 p-2 rounded border ${isManagerMode ? 'bg-blue-50/50 border-blue-100 text-slate-800' : 'bg-emerald-50 border-emerald-100 text-emerald-800'}`}>{event.description}</p>}
                                                             </div>
                                                             <div className={`text-right text-sm whitespace-nowrap flex flex-col items-end ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>
-                                                                <time className={`font-semibold ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>{new Date(event.date).toLocaleDateString()}</time>
+                                                                <time className={`font-semibold ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>{new Date(event.date).toLocaleDateString()}</time>
                                                                 <button
                                                                     onClick={() => handleDeleteTimelineEvent(event.id)}
                                                                     className="text-red-400 hover:text-red-600 text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity font-bold"
@@ -1561,11 +1583,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 {activeTab === 'PRONTUARIO' && (
                     <div className="space-y-6">
                         {/* Editor */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
-                            <h3 className={`text-lg font-medium mb-2 flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
+                            <h3 className={`text-lg font-medium mb-2 flex items-center gap-2 ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>
                                 <span className="text-2xl">📝</span> Nova Anotação Clínica
                             </h3>
-                            <p className={`text-xs mb-4 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>
+                            <p className={`text-xs mb-4 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>
                                 Descreva o estado do paciente de forma simples e use a IA para converter em termos técnicos médicos.
                             </p>
 
@@ -1583,7 +1605,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     disabled={isImprovingText || !noteContent.trim()}
                                     className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-colors
                                   ${isImprovingText
-                                            ? (isManagerMode ? 'bg-purple-900 text-purple-400 cursor-wait' : 'bg-emerald-100 text-emerald-400 cursor-wait')
+                                            ? (isManagerMode ? 'bg-blue-100 text-blue-400 cursor-wait' : 'bg-emerald-100 text-emerald-400 cursor-wait')
                                             : (isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm')}
                               `}
                                 >
@@ -1607,11 +1629,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         </div>
 
                         {/* Lista de Notas Anteriores */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow rounded-lg overflow-hidden border`}>
-                            <div className={`px-6 py-4 border-b ${isManagerMode ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-emerald-50'}`}>
-                                <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Histórico de Anotações</h3>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white'} shadow rounded-lg overflow-hidden border`}>
+                            <div className={`px-6 py-4 border-b ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-gray-200 bg-emerald-50'}`}>
+                                <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Histórico de Anotações</h3>
                             </div>
-                            <ul className={`divide-y ${isManagerMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                            <ul className={`divide-y ${isManagerMode ? 'divide-blue-100' : 'divide-gray-200'}`}>
                                 {(!patient.clinicalNotes || patient.clinicalNotes.length === 0) ? (
                                     <li className={`p-6 text-center text-sm ${isManagerMode ? 'text-gray-500' : 'text-gray-500'}`}>Nenhuma anotação registrada.</li>
                                 ) : (
@@ -1681,7 +1703,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                             procedureDate: e.target.value
                                                         }
                                                     }))}
-                                                    className={`p-1 border rounded text-xs font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white font-bold' : 'bg-white border-emerald-300 text-emerald-900 font-bold'}`}
+                                                    className={`p-1 border rounded text-xs font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-white border-emerald-300 text-emerald-900 font-bold'}`}
                                                 />
                                             </div>
                                         </div>
@@ -1724,7 +1746,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     disabled={!isEditingTab}
                                                     value={formData.anthropometry?.[field] || ''}
                                                     onChange={e => updateAnthroData(field, e.target.value)}
-                                                    className={`w-full mt-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 font-bold' : 'bg-white border-emerald-300 font-bold'} disabled:bg-gray-100`}
+                                                    className={`w-full mt-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-white border-emerald-300 font-bold'} disabled:bg-gray-100`}
                                                 />
                                             </div>
                                         ))}
@@ -1781,21 +1803,25 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
                                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Resultados da Composição Corporal</h3>
                                     <div className="space-y-3">
-                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-indigo-900 border-indigo-700' : 'bg-emerald-100 border-emerald-200'}`}>
-                                            <div className="text-xs font-bold">IMC</div>
-                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>{anthropometryResults.bmi || '--'}</div>
+                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-blue-600 border-blue-700' : 'bg-emerald-100 border-emerald-200'}`}>
+                                            <div className="text-xs font-bold text-white">IMC</div>
+                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-blue-100' : 'text-emerald-700'}`}>{anthropometryResults.bmi || '--'}</div>
                                         </div>
-                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}>
-                                            <div className="text-xs font-bold">% Gordura Corporal</div>
-                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.bodyFatPercentage > 0 ? `${anthropometryResults.bodyFatPercentage}%` : '--'}</div>
+                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}>
+                                            <div className="text-xs font-bold">Percentual de Gordura</div>
+                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.bodyFatPercentage > 0 ? `${anthropometryResults.bodyFatPercentage}%` : '--'}</div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Gorda</div><div className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.fatMass > 0 ? `${anthropometryResults.fatMass} kg` : '--'}</div></div>
-                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Magra</div><div className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.leanMass > 0 ? `${anthropometryResults.leanMass} kg` : '--'}</div></div>
+                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Gorda</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.fatMass > 0 ? `${anthropometryResults.fatMass} kg` : '--'}</div></div>
+                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Magra</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.leanMass > 0 ? `${anthropometryResults.leanMass} kg` : '--'}</div></div>
                                         </div>
-                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-emerald-50 border-emerald-200'}`}>
+                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}>
                                             <div className="text-xs font-bold">Relação Cintura/Quadril (RCQ)</div>
-                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{anthropometryResults.waistToHipRatio > 0 ? anthropometryResults.waistToHipRatio : '--'}</div>
+                                            <div className={`text-2xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.waistToHipRatio > 0 ? anthropometryResults.waistToHipRatio : '--'}</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Residual</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.residualMass > 0 ? `${anthropometryResults.residualMass} kg` : '--'}</div></div>
+                                            <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">CMB (Musc. Braço)</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.cmb > 0 ? `${anthropometryResults.cmb} cm` : '--'}</div></div>
                                         </div>
 
                                         {/* SUCCESS CARD ACTION - Use Link for cleaner behavior */}
@@ -1898,8 +1924,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     [...patient.anthropometryHistory]
                                         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                         .map((record, idx) => (
-                                            <div key={idx} onClick={() => handleEditAnthroHistory(record)} className={`relative pl-8 p-3 -ml-3 rounded-lg cursor-pointer transition-colors ${isManagerMode ? 'hover:bg-gray-700/50' : 'hover:bg-slate-50'}`}>
-                                                <div className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full border-4 ${isManagerMode ? 'bg-indigo-500 border-gray-900' : 'bg-emerald-500 border-white'} shadow-sm`}></div>
+                                            <div key={idx} onClick={() => handleEditAnthroHistory(record)} className={`relative pl-8 p-3 -ml-3 rounded-lg cursor-pointer transition-colors ${isManagerMode ? 'hover:bg-blue-50/50' : 'hover:bg-slate-50'}`}>
+                                                <div className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full border-4 ${isManagerMode ? 'bg-blue-600 border-white' : 'bg-emerald-500 border-white'} shadow-sm`}></div>
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     <div>
                                                         <div className={`text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>
@@ -1970,7 +1996,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div>
                                         <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Modo de Atendimento</label>
                                         <select
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                             value={formData.financial?.mode}
                                             onChange={e => updateNestedData('financial', 'mode', e.target.value)}
                                         >
@@ -2041,10 +2067,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método / Condição</th>
                                         <th className={`px-6 py-3 text-right text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Valor Líquido</th>
                                         <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</th>
-                                        <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Ações</th>
+                                        <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-blue-800' : 'text-emerald-700'}`}>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-emerald-200'}`}>
+                                <tbody className={`${isManagerMode ? 'bg-white divide-blue-100' : 'bg-white divide-emerald-200'}`}>
                                     {financialTransactions.length === 0 ? (
                                         <tr><td colSpan={6} className={`px-6 py-10 text-center italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>Nenhuma movimentação registrada.</td></tr>
                                     ) : (

@@ -546,11 +546,11 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
                 <div>
-                    <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight ${isManagerMode ? 'text-white' : 'text-emerald-900'} flex items-center gap-2`}>
+                    <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'} flex items-center gap-2`}>
                         <Icons.FileText />
                         Relatórios Inteligentes
                     </h1>
-                    <p className={`text-xs md:text-sm font-medium ${isManagerMode ? 'text-gray-400' : 'text-slate-600'}`}>Analise dados clínicos e operacionais para tomada de decisão.</p>
+                    <p className={`text-xs md:text-sm font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-600'}`}>Analise dados clínicos e operacionais para tomada de decisão.</p>
                 </div>
             </div>
 
@@ -559,35 +559,34 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Report Type */}
                     <div className="flex-1">
-                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>1. Tipo de Relatório</label>
-                        <div className={`flex flex-wrap p-1 rounded-lg border gap-1 ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
-                            <button onClick={() => setReportType('OPERATIONAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'OPERATIONAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Operacional</button>
-                            {!isProfessional && <button onClick={() => setReportType('FINANCIAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'FINANCIAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Financeiro</button>}
-                            <button onClick={() => setReportType('ATTENDANCE')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'ATTENDANCE' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Presença</button>
-                            <button onClick={() => setReportType('INDIVIDUAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'INDIVIDUAL' ? (isManagerMode ? 'bg-indigo-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-gray-300' : 'text-gray-600')}`}>Individual</button>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>1. Tipo de Relatório</label>
+                        <div className={`flex flex-wrap p-1 rounded-lg border gap-1 ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-gray-100 border-gray-200'}`}>
+                            <button onClick={() => setReportType('OPERATIONAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'OPERATIONAL' ? (isManagerMode ? 'bg-blue-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-blue-400 hover:text-blue-600' : 'text-gray-600')}`}>Operacional</button>
+                            {!isProfessional && <button onClick={() => setReportType('FINANCIAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'FINANCIAL' ? (isManagerMode ? 'bg-blue-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-blue-400 hover:text-blue-600' : 'text-gray-600')}`}>Financeiro</button>}
+                            <button onClick={() => setReportType('ATTENDANCE')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'ATTENDANCE' ? (isManagerMode ? 'bg-blue-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-blue-400 hover:text-blue-600' : 'text-gray-600')}`}>Presença</button>
+                            <button onClick={() => setReportType('INDIVIDUAL')} className={`flex-1 min-w-[100px] py-2 text-[10px] md:text-xs rounded-md font-black uppercase tracking-wider transition-all ${reportType === 'INDIVIDUAL' ? (isManagerMode ? 'bg-blue-600 shadow-lg text-white' : 'bg-white shadow-lg text-emerald-600') : (isManagerMode ? 'text-blue-400 hover:text-blue-600' : 'text-gray-600')}`}>Individual</button>
                         </div>
                     </div>
 
                     {/* Date / Patient Filter */}
                     <div className="flex-1">
-                        <label className={`block text-sm font-bold mb-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>2. Defina os Filtros</label>
+                        <label className={`block text-xs font-black uppercase tracking-widest mb-2 ${isManagerMode ? 'text-blue-700' : 'text-emerald-800'}`}>2. Defina os Filtros</label>
                         {reportType === 'INDIVIDUAL' ? (
-                            <select value={selectedPatientId} onChange={e => setSelectedPatientId(e.target.value)} className={`w-full border rounded-md p-2.5 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-emerald-900'}`}>
+                            <select value={selectedPatientId} onChange={e => setSelectedPatientId(e.target.value)} className={`w-full border rounded-md p-2.5 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`}>
                                 {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={`w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-emerald-900'}`} />
-                                <span className={`${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>até</span>
-                                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={`w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-emerald-900'}`} />
+                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`} />
+                                <span className={`text-[10px] font-black uppercase ${isManagerMode ? 'text-blue-400' : 'text-gray-500'}`}>até</span>
+                                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`} />
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Action Button */}
-                <div className="flex justify-center pt-4 border-t border-dashed border-gray-200">
-                    <button onClick={handleGenerate} disabled={loading} className={`px-8 py-3 rounded-lg shadow font-bold text-white flex items-center gap-2 transition-transform active:scale-95 ${loading ? 'bg-gray-400' : (isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700')}`}>
+                <div className="flex justify-center pt-4 border-t border-dashed border-blue-100">
+                    <button onClick={handleGenerate} disabled={loading} className={`px-8 py-3 rounded-lg shadow-xl font-black uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 ${loading ? 'bg-slate-400' : (isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700')}`}>
                         {loading ? 'Gerando...' : 'Gerar Relatório'}
                     </button>
                 </div>

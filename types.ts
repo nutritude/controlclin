@@ -101,6 +101,9 @@ export interface AnthropometryRecord extends Partial<Omit<Anthropometry, 'weight
   bodyFatPercentage?: number;
   fatMass?: number;
   leanMass?: number;
+  residualMass?: number; // NOVO
+  boneMass?: number;     // NOVO
+  cmb?: number;          // NOVO: Circunferência Muscular do Braço
 }
 
 export interface Anthropometry {
@@ -145,7 +148,10 @@ export interface Anthropometry {
   bodyFatPercentage?: number; // %GC
   fatMass?: number; // Massa Gorda (kg)
   leanMass?: number; // Massa Magra (kg)
+  residualMass?: number; // NOVO: Massa Residual (kg)
+  boneMass?: number;     // NOVO: Massa Óssea (kg)
   waistToHipRatio?: number; // RCQ
+  cmb?: number; // NOVO: Circunferência Muscular do Braço (cm)
 
   // Análise e Notas
   notes?: string;

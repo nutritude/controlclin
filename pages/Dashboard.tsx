@@ -40,51 +40,51 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Financeiro */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
           <div>
-            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Receita Total (LTV)</p>
-            <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Receita Total (LTV)</p>
+            <h3 className={`text-2xl font-black mt-2 text-blue-900`}>R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className={`${isManagerMode ? 'text-blue-700 bg-blue-50 border-blue-200' : 'text-green-300 bg-green-900/50 border-green-700'} px-2 py-0.5 rounded-md font-medium border`}>Ticket Médio: R$ {stats.ticketMedio.toFixed(0)}</span>
+            <span className={`text-blue-700 bg-blue-50 border-blue-200 px-2 py-0.5 rounded-md font-black uppercase text-[10px] border shadow-sm`}>Ticket Médio: R$ {stats.ticketMedio.toFixed(0)}</span>
           </div>
         </div>
 
         {/* Pacientes */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
           <div>
-            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Base de Pacientes</p>
-            <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>{stats.activePatients} <span className={`text-base font-normal ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>ativos</span></h3>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Base de Pacientes</p>
+            <h3 className={`text-2xl font-black mt-2 text-blue-900`}>{stats.activePatients} <span className={`text-sm font-medium text-slate-400 capitalize`}>ativos</span></h3>
           </div>
-          <div className={`mt-4 text-sm ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
+          <div className={`mt-4 text-[10px] font-bold uppercase tracking-tight text-slate-500`}>
             Total de agendamentos: {stats.appointmentsCount}
           </div>
         </div>
 
         {/* Operacional */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
+        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
           <div>
-            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Taxa de Faltas</p>
-            <h3 className={`text-3xl font-bold mt-2 ${stats.noShowRate > 15 ? 'text-red-500' : (isManagerMode ? 'text-blue-600' : 'text-green-400')}`}>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Taxa de Faltas</p>
+            <h3 className={`text-2xl font-black mt-2 ${stats.noShowRate > 15 ? 'text-rose-500' : 'text-blue-600'}`}>
               {stats.noShowRate}%
             </h3>
           </div>
-          <div className={`mt-4 text-xs ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>
+          <div className={`mt-4 text-[10px] font-bold uppercase tracking-tight text-slate-400`}>
             Índice de absenteísmo global
           </div>
         </div>
 
         {/* Demográfico Rápido */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 transition-all hover:shadow-md`}>
-          <p className={`text-sm font-medium uppercase tracking-wider mb-3 ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Perfil de Gênero</p>
+        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 transition-all hover:shadow-md hover:border-blue-200`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Perfil de Gênero</p>
           <div className="flex items-center gap-4">
-            <div className={`flex-1 text-center p-2 rounded ${isManagerMode ? 'bg-blue-50' : 'bg-gray-700'}`}>
-              <span className="block text-xl font-bold text-blue-500">{stats.genderDistribution.Masculino}</span>
-              <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Homens</span>
+            <div className={`flex-1 text-center p-2 rounded bg-blue-50/50 border border-blue-100`}>
+              <span className="block text-xl font-black text-blue-600">{stats.genderDistribution.Masculino}</span>
+              <span className={`text-[10px] font-black uppercase text-slate-500`}>Homens</span>
             </div>
-            <div className={`flex-1 text-center p-2 rounded ${isManagerMode ? 'bg-pink-50' : 'bg-gray-700'}`}>
-              <span className="block text-xl font-bold text-pink-500">{stats.genderDistribution.Feminino}</span>
-              <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Mulheres</span>
+            <div className={`flex-1 text-center p-2 rounded bg-rose-50 border border-rose-100`}>
+              <span className="block text-xl font-black text-rose-500">{stats.genderDistribution.Feminino}</span>
+              <span className={`text-[10px] font-black uppercase text-rose-400`}>Mulheres</span>
             </div>
           </div>
         </div>
@@ -93,8 +93,8 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* CHARTS & LISTS ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Top Pathologies (Epidemiologia) */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 lg:col-span-2`}>
-          <h3 className={`text-lg font-bold mb-6 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Top Patologias (Perfil Epidemiológico)</h3>
+        <div className={`bg-white border-blue-100 shadow-sm rounded-xl border p-6 lg:col-span-2`}>
+          <h3 className={`text-lg font-black uppercase tracking-tight mb-6 text-blue-900`}>Top Patologias (Perfil Epidemiológico)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               {stats.topPathologies.map((p: any, idx: number) => (
@@ -102,46 +102,49 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
                   key={idx}
                   label={p.name}
                   value={p.count}
-                  color={['bg-red-500', 'bg-orange-500', 'bg-blue-500'][idx % 3]}
-                  isManagerMode={isManagerMode}
+                  color={['bg-blue-600', 'bg-blue-400', 'bg-blue-300'][idx % 3]}
+                  isManagerMode={true}
                 />
               ))}
-              {stats.topPathologies.length === 0 && <p className="text-sm text-gray-400">Dados insuficientes.</p>}
+              {stats.topPathologies.length === 0 && <p className="text-sm text-slate-400 italic">Dados insuficientes.</p>}
             </div>
 
             {/* AI INSIGHTS BOX */}
-            <div className={`rounded-lg p-5 text-sm flex flex-col justify-between border ${isManagerMode ? 'bg-blue-50 border-blue-200 text-slate-800 shadow-sm' : 'bg-indigo-900/80 border-indigo-700 text-gray-100'}`}>
-              <div>
-                <div className={`flex items-center gap-2 mb-2 font-black uppercase tracking-wide text-[10px] ${isManagerMode ? 'text-blue-600' : 'text-purple-400'}`}>
-                  <Icons.Brain /> IA Manager Insight
-                </div>
-                <h4 className={`font-black mb-2 ${isManagerMode ? 'text-blue-900' : 'text-white'}`}>Análise Clínica:</h4>
-                <p className={`italic ${isManagerMode ? 'text-slate-700' : 'text-gray-100'}`}>"{aiInsights?.insight || 'Analisando dados estratégicos...'}"</p>
+            <div className={`rounded-xl p-6 text-sm flex flex-col justify-between border bg-blue-50 border-blue-100 text-blue-900 shadow-sm relative overflow-hidden`}>
+              <div className="absolute top-0 right-0 p-2 opacity-10">
+                <Icons.Brain size={48} />
               </div>
-              <div className={`mt-4 pt-4 border-t ${isManagerMode ? 'border-blue-100' : 'border-indigo-700'}`}>
-                <span className={`block font-black mb-1 ${isManagerMode ? 'text-blue-900' : 'text-white'}`}>Ação Sugerida:</span>
-                <p className={`${isManagerMode ? 'text-blue-700' : 'text-purple-300'} font-bold`}>{aiInsights?.action || 'Aguarde processamento...'}</p>
+              <div>
+                <div className={`flex items-center gap-2 mb-3 font-black uppercase tracking-wider text-[10px] text-blue-600`}>
+                  <Icons.Brain size={14} /> IA Manager Insight
+                </div>
+                <h4 className={`font-black mb-2 text-blue-900 uppercase text-xs`}>Análise Clínica:</h4>
+                <p className={`italic font-medium text-blue-800/80 leading-relaxed`}>"{aiInsights?.insight || 'Analisando dados estratégicos...'}"</p>
+              </div>
+              <div className={`mt-6 pt-4 border-t border-blue-100`}>
+                <span className={`block font-black mb-1 text-blue-900 uppercase text-xs`}>Ação Sugerida:</span>
+                <p className={`text-blue-700 font-black uppercase text-xs tracking-tight`}>{aiInsights?.action || 'Aguarde processamento...'}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Next Appointments (Operational View) */}
-        <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
-          <h3 className={`text-lg font-bold mb-4 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Agenda Imediata</h3>
+        <div className={`bg-white border-blue-100 shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
+          <h3 className={`text-lg font-black uppercase tracking-tight mb-4 text-blue-900`}>Agenda Imediata</h3>
           <div className="space-y-4 flex-1">
             {nextAppointments.length === 0 ? (
-              <p className={`text-center py-4 ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>Agenda livre nos próximos dias.</p>
+              <p className={`text-center py-4 text-slate-400 italic font-medium`}>Agenda livre nos próximos dias.</p>
             ) : (
               nextAppointments.map((app: Appointment) => (
-                <div key={app.id} className={`flex items-start gap-3 pb-3 border-b ${isManagerMode ? 'border-blue-50' : 'border-gray-700'} last:border-0 last:pb-0`}>
-                  <div className={`w-2 h-12 rounded-full ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : (isManagerMode ? 'bg-blue-100' : 'bg-gray-600')}`}></div>
-                  <div>
-                    <p className={`font-bold ${isManagerMode ? 'text-slate-800' : 'text-white'} text-sm`}>{app.patientName}</p>
-                    <p className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                <div key={app.id} className={`flex items-start gap-4 pb-4 border-b border-blue-50 last:border-0 last:pb-0 group/app`}>
+                  <div className={`w-1 h-12 rounded-full transition-transform group-hover/app:scale-y-110 ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : 'bg-blue-200'}`}></div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-black text-blue-900 text-sm truncate`}>{app.patientName}</p>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5`}>
                       {new Date(app.startTime).toLocaleDateString()} às {new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <span className={`${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-blue-900/50 text-blue-300'} px-1.5 rounded mt-1 inline-block text-xs font-medium uppercase tracking-tight border`}>{app.type}</span>
+                    <span className={`bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5 rounded-full mt-2 inline-block text-[9px] font-black uppercase tracking-widest border shadow-sm`}>{app.type}</span>
                   </div>
                 </div>
               ))
@@ -149,7 +152,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
           </div>
           <button
             onClick={() => navigate('/agenda')}
-            className={`w-full mt-4 text-sm text-center py-2 rounded-lg font-medium transition-colors duration-200 ${isManagerMode ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'} active:scale-95`}
+            className={`w-full mt-6 text-[10px] font-black uppercase tracking-widest text-center py-3 rounded-lg transition-all duration-200 bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-600 hover:text-white hover:shadow-lg active:scale-95`}
           >
             Ver agenda completa
           </button>

@@ -77,9 +77,22 @@ function App() {
 
       if (storedUserRaw && storedClinicRaw) {
         try {
-          const parsedUser = JSON.parse(storedUserRaw);
+          let parsedUser = JSON.parse(storedUserRaw);
           const parsedClinic = JSON.parse(storedClinicRaw);
           const storedLoginMode = localStorage.getItem('app_login_mode') as 'ADMIN' | 'PROFESSIONAL' | null;
+
+          // --- CRITICAL SESSION RE-SYNC ---
+          // After loading from remote, the internal professionalId might have changed. 
+          // We must ensure the session 'user' object reflects the latest database state.
+          const clinicId = parsedClinic.id;
+          const allUsers = await serviceDb.getUsers(clinicId);
+          const freshUser = allUsers.find(u => u.email.toLowerCase() === parsedUser.email.toLowerCase());
+
+          if (freshUser) {
+            console.log(`[System] Session Re-sync: ${freshUser.name} (PID: ${freshUser.professionalId})`);
+            parsedUser = freshUser;
+            localStorage.setItem('app_user', JSON.stringify(freshUser));
+          }
 
           setUser(parsedUser);
           setClinic(parsedClinic);
@@ -138,6 +151,23 @@ function App() {
 
     loadData();
   }, []);
+
+  // --- Real-time Session Sync ---
+  useEffect(() => {
+    const handleRemoteSync = async () => {
+      if (user && clinic) {
+        console.log('[System] ☁️ DB Sync detected. Refreshing session user...');
+        const allUsers = await serviceDb.getUsers(clinic.id);
+        const freshUser = allUsers.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+        if (freshUser) {
+          setUser(freshUser);
+          localStorage.setItem('app_user', JSON.stringify(freshUser));
+        }
+      }
+    };
+    window.addEventListener('db-remote-sync', handleRemoteSync);
+    return () => window.removeEventListener('db-remote-sync', handleRemoteSync);
+  }, [user, clinic]);
 
   const handleLogin = (u: User, c: Clinic, mode: 'ADMIN' | 'PROFESSIONAL') => {
     setUser(u);

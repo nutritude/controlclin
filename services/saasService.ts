@@ -330,12 +330,145 @@ export const saasService = {
     },
 
     async createClinic(data: Partial<SaaSClinic>): Promise<SaaSClinic> {
+        if (!data.name || !data.responsibleEmail || !data.planId) {
+            throw new Error('Dados obrigatórios ausentes: Nome, Email ou Plano.');
+        }
+
         const clinics = await this.getAllClinics();
         const id = `clinic-${Date.now()}`;
-        const newClinic = { ...data, id } as SaaSClinic;
+
+        // Cálculo da próxima cobrança
+        const startDate = new Date();
+        const nextBillingDate = new Date();
+        switch (data.cycle) {
+            case 'monthly': nextBillingDate.setMonth(startDate.getMonth() + 1); break;
+            case 'quarterly': nextBillingDate.setMonth(startDate.getMonth() + 3); break;
+            case 'semester': nextBillingDate.setMonth(startDate.getMonth() + 6); break;
+            case 'yearly': nextBillingDate.setFullYear(startDate.getFullYear() + 1); break;
+            default: nextBillingDate.setMonth(startDate.getMonth() + 1);
+        }
+
+        const newClinic: SaaSClinic = {
+            id,
+            name: data.name,
+            slug: data.slug || this.generateSlug(data.name),
+            isActive: true,
+            status: data.status || 'trial',
+            planId: data.planId,
+            cycle: data.cycle || 'monthly',
+            startDate: startDate.toISOString(),
+            nextBillingDate: nextBillingDate.toISOString(),
+            responsibleName: data.responsibleName || '',
+            responsibleEmail: data.responsibleEmail,
+            responsiblePhone: data.responsiblePhone || '',
+            cnpj: data.cnpj || '',
+            patientsCount: 0,
+            professionalsCount: 0,
+            activeUsersCount: 1,
+        };
+
+        // --- AUTOPROVISIONING NA BASE DE DADOS PRINCIPAL ---
+        try {
+            // 1. Cria a Clínica no Workspace
+            await db.createClinic({
+                id: newClinic.id,
+                name: newClinic.name,
+                slug: newClinic.slug
+            });
+
+            // 2. Cria o Usuário Administrador da Clínica
+            await db.createUser({
+                clinicId: newClinic.id,
+                name: newClinic.responsibleName,
+                email: newClinic.responsibleEmail,
+                role: 'CLINIC_ADMIN' as any,
+                password: '123' // Senha padrão para primeiro login (deve ser alterada)
+            });
+            console.log(`[SaaS] Workspace provisionado para ${newClinic.name} (${newClinic.id})`);
+        } catch (err) {
+            console.error('[SaaS] Erro no autoprovisionamento:', err);
+            // Mesmo se o provisionamento falhar no DB principal, registramos no SaaS 
+            // para permitir tentativas manuais de "Retry Provisoning" no futuro.
+        }
+
         const updated = [newClinic, ...clinics];
         this._saveRegistry(updated);
         return newClinic;
+    },
+
+    // ── Fluxo de Captação (Landing Page) ───────────────────────
+    // Este método seria chamado por uma API pública após preenchimento no site
+    async registerFromLandingPage(data: {
+        name: string,
+        email: string,
+        phone: string,
+        planId: PlanType,
+        cycle: PaymentCycle
+    }): Promise<SaaSClinic> {
+        console.log('[SaaS] Nova captação da Landing Page:', data.name);
+
+        // 1. Validações básicas
+        if (!this.validateEmail(data.email)) throw new Error('E-mail inválido');
+
+        // 2. Cria o registro com status TRIAL (liberação imediata por 7 dias p/ exemplo)
+        const clinic = await this.createClinic({
+            name: data.name,
+            responsibleEmail: data.email,
+            responsiblePhone: data.phone,
+            responsibleName: data.name, // Nome da clínica como nome inicial do resp.
+            planId: data.planId,
+            cycle: data.cycle,
+            status: 'trial'
+        });
+
+        return clinic;
+    },
+
+    // ── Simulação de Checkout / Pagamento ─────────────────────
+    async processPayment(clinicId: string, transactionId: string): Promise<boolean> {
+        console.log(`[SaaS] Processando pagamento para clínica ${clinicId}. Transação: ${transactionId}`);
+
+        const clinics = await this.getAllClinics();
+        const idx = clinics.findIndex(c => c.id === clinicId);
+
+        if (idx === -1) throw new Error('Clínica não encontrada');
+
+        // Simula verificação com gateway de pagamento
+        const isSuccess = true;
+
+        if (isSuccess) {
+            clinics[idx].status = 'active';
+            clinics[idx].isActive = true;
+
+            // Recalcula billing date baseado na data de pagamento
+            const nextDate = new Date();
+            const cycle = clinics[idx].cycle;
+            if (cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+            else if (cycle === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
+
+            clinics[idx].nextBillingDate = nextDate.toISOString();
+
+            this._saveRegistry(clinics);
+            console.log(`[SaaS] Conta ${clinicId} ativada com sucesso após pagamento.`);
+            return true;
+        }
+
+        return false;
+    },
+
+    async getClinicStatus(clinicId: string): Promise<SubscriptionStatus> {
+        const clinics = await this.getAllClinics();
+        const clinic = clinics.find(c => c.id === clinicId);
+        return clinic ? clinic.status : 'active'; // Default active if not found (legacy)
+    },
+
+    validateEmail(email: string): boolean {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+
+    validateCNPJ(cnpj: string): boolean {
+        const cleaned = cnpj.replace(/\D/g, '');
+        return cleaned.length === 14;
     },
 
     _saveRegistry(clinics: SaaSClinic[]): void {

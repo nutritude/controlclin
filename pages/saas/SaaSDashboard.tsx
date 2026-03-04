@@ -7,7 +7,8 @@ import {
     SaaSPlan,
     SaaSCoupon,
     PlanType,
-    SubscriptionStatus
+    SubscriptionStatus,
+    PaymentCycle
 } from '../../services/saasService';
 import {
     LayoutDashboard,
@@ -196,74 +197,248 @@ const CouponsTab: React.FC<{ coupons: SaaSCoupon[] }> = ({ coupons }) => (
     </div>
 );
 
-const SubscribersTab: React.FC<{ subscribers: SaaSClinic[] }> = ({ subscribers }) => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-[#111827] border border-white/5 p-6 rounded-[24px] flex items-center gap-4">
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-slate-500"><Search size={20} /></div>
-            <input
-                type="text"
-                placeholder="Buscar por clínica, CNPJ ou responsável..."
-                className="bg-transparent border-none text-white text-sm focus:ring-0 w-full"
-            />
-        </div>
+const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], onRefresh: () => void }> = ({ subscribers, plans, onRefresh }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState<Partial<SaaSClinic>>({
+        name: '',
+        cnpj: '',
+        responsibleName: '',
+        responsibleEmail: '',
+        responsiblePhone: '',
+        planId: 'PROFESSIONAL',
+        cycle: 'monthly',
+        status: 'trial'
+    });
 
-        <div className="bg-[#111827] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-white/5 text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
-                        <tr>
-                            <th className="px-8 py-6">Clínica / Responsável</th>
-                            <th className="px-8 py-6">Status / Plano</th>
-                            <th className="px-8 py-6 text-center">Uso (Pac. / Prof.)</th>
-                            <th className="px-8 py-6 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {subscribers.map(sub => (
-                            <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="px-8 py-5">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white shadow-lg">
-                                            {sub.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white text-sm">{sub.name}</p>
-                                            <p className="text-xs text-slate-500">{sub.responsibleName} • {sub.responsibleEmail}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-8 py-5">
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <StatusBadge status={sub.status} />
-                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">• {sub.cycle}</span>
-                                    </div>
-                                    <p className="text-xs font-bold text-indigo-400">{sub.planId}</p>
-                                </td>
-                                <td className="px-8 py-5 text-center">
-                                    <div className="flex items-center justify-center gap-4">
-                                        <div className="text-center">
-                                            <p className="text-sm font-bold text-white">{sub.patientsCount}</p>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pac</p>
-                                        </div>
-                                        <div className="w-px h-6 bg-white/5"></div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-bold text-white">{sub.professionalsCount}</p>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Prof</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-8 py-5 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-400 border border-white/5 transition-all">Detalhes</button>
-                                        <button className="p-2 text-slate-600 hover:text-white transition-colors"><MoreHorizontal size={18} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await saasService.createClinic(formData);
+            setIsModalOpen(false);
+            onRefresh();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-center bg-[#111827] border border-white/5 p-6 rounded-[24px] gap-4">
+                <div className="flex bg-white/5 p-3 rounded-xl border border-white/5 text-slate-500 w-full md:max-w-md">
+                    <Search size={20} className="mr-3" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por clínica, CNPJ ou responsável..."
+                        className="bg-transparent border-none text-white text-sm focus:ring-0 w-full"
+                    />
+                </div>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-purple-600/30 w-full md:w-auto overflow-hidden relative group"
+                >
+                    <Plus size={18} /> Novo Assinante
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                </button>
             </div>
+
+            <div className="bg-[#111827] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-white/5 text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
+                            <tr>
+                                <th className="px-8 py-6">Clínica / Responsável</th>
+                                <th className="px-8 py-6">Status / Plano</th>
+                                <th className="px-8 py-6 text-center">Uso (Pac. / Prof.)</th>
+                                <th className="px-8 py-6 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-slate-400">
+                            {subscribers.map(sub => (
+                                <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-8 py-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-white shadow-lg overflow-hidden border border-white/5">
+                                                {sub.id === 'c1' ? <img src="/logo192.png" alt="logo" className="w-6 h-6" onError={(e) => (e.currentTarget.style.display = 'none')} /> : sub.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-white text-sm">{sub.name}</p>
+                                                <p className="text-[11px] text-slate-500 font-medium">{sub.responsibleName} • {sub.responsibleEmail}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <StatusBadge status={sub.status} />
+                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">• {sub.cycle}</span>
+                                        </div>
+                                        <p className="text-xs font-bold text-indigo-400">{sub.planId}</p>
+                                    </td>
+                                    <td className="px-8 py-5 text-center">
+                                        <div className="flex items-center justify-center gap-4">
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-white">{sub.patientsCount}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pac</p>
+                                            </div>
+                                            <div className="w-px h-6 bg-white/5"></div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-white">{sub.professionalsCount}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Prof</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-5 text-right">
+                                        <div className="flex items-center justify-end gap-2 text-slate-500">
+                                            {(sub.status === 'trial' || sub.status === 'past_due') && (
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm(`Simular pagamento e ativação para ${sub.name}?`)) {
+                                                            await saasService.processPayment(sub.id, 'TX-' + Date.now());
+                                                            onRefresh();
+                                                        }
+                                                    }}
+                                                    className="bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-400 border border-emerald-500/10 transition-all"
+                                                >
+                                                    Ativar
+                                                </button>
+                                            )}
+                                            <button className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-indigo-400 border border-white/5 transition-all">Detalhes</button>
+                                            <button className="p-2 hover:text-white transition-colors"><MoreHorizontal size={18} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* CREATE SUBSCRIBER MODAL */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#111827] border border-white/10 rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[90vh] overflow-y-auto relative custom-scrollbar">
+                        <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">✕</button>
+
+                        <div className="mb-10 text-center">
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Novo Assinante SaaS</h2>
+                            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Registro Administrativo de Clínica / Profissional</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {/* DADOS DA CLÍNICA */}
+                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
+                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
+                                        <Zap size={18} className="text-purple-500" />
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Dados da Clínica</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InputField label="Nome da Clínica / Profissional" value={formData.name} onChange={v => setFormData({ ...formData, name: v })} placeholder="Ex: Clínica Nutri Vida" />
+                                        <InputField label="CNPJ / CPF" value={formData.cnpj} onChange={v => setFormData({ ...formData, cnpj: v })} placeholder="00.000.000/0000-00" />
+                                    </div>
+                                </div>
+
+                                {/* DADOS DO RESPONSÁVEL */}
+                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
+                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
+                                        <Users size={18} className="text-indigo-500" />
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Responsável Administrativo</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <InputField label="Nome Completo" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: Dr. João Silva" />
+                                        <InputField label="E-mail (Login)" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@clinica.com" />
+                                        <InputField label="Telefone / WhatsApp" value={formData.responsiblePhone} onChange={v => setFormData({ ...formData, responsiblePhone: v })} placeholder="(11) 99999-9999" />
+                                    </div>
+                                </div>
+
+                                {/* PLANO E CICLO */}
+                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
+                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
+                                        <Package size={18} className="text-amber-500" />
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plano & Assinatura</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <SelectField
+                                            label="Selecione o Plano"
+                                            value={formData.planId}
+                                            options={plans.map(p => ({ label: p.name, value: p.id }))}
+                                            onChange={v => setFormData({ ...formData, planId: v as PlanType })}
+                                        />
+                                        <SelectField
+                                            label="Ciclo de Pagamento"
+                                            value={formData.cycle}
+                                            options={[
+                                                { label: 'Mensal', value: 'monthly' },
+                                                { label: 'Trimestral', value: 'quarterly' },
+                                                { label: 'Semestral', value: 'semester' },
+                                                { label: 'Anual', value: 'yearly' }
+                                            ]}
+                                            onChange={v => setFormData({ ...formData, cycle: v as PaymentCycle })}
+                                        />
+                                        <SelectField
+                                            label="Status Inicial"
+                                            value={formData.status}
+                                            options={[
+                                                { label: 'Período Trial', value: 'trial' },
+                                                { label: 'Assinatura Ativa', value: 'active' },
+                                                { label: 'Inadimplente (Bloqueado)', value: 'past_due' }
+                                            ]}
+                                            onChange={v => setFormData({ ...formData, status: v as SubscriptionStatus })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-4 pt-10 mt-8 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-8 py-3 rounded-2xl border border-white/10 text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-10 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-purple-600/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {loading ? 'Processando...' : 'Finalizar Cadastro'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+};
+
+const InputField: React.FC<{ label: string, value: any, onChange: (v: string) => void, placeholder: string }> = ({ label, value, onChange, placeholder }) => (
+    <div className="space-y-2">
+        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{label}</label>
+        <input
+            type="text"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium"
+            placeholder={placeholder}
+        />
+    </div>
+);
+
+const SelectField: React.FC<{ label: string, value: any, options: { label: string, value: string }[], onChange: (v: string) => void }> = ({ label, value, options, onChange }) => (
+    <div className="space-y-2">
+        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{label}</label>
+        <select
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-black"
+        >
+            {options.map(opt => <option key={opt.value} value={opt.value} className="bg-[#111827] text-white py-2">{opt.label}</option>)}
+        </select>
     </div>
 );
 
@@ -393,7 +568,18 @@ const SaaSDashboard: React.FC = () => {
                         {activeTab === 'dashboard' && metrics && <AnalyticsTab metrics={metrics} />}
                         {activeTab === 'plans' && <PlansTab plans={plans} />}
                         {activeTab === 'coupons' && <CouponsTab coupons={coupons} />}
-                        {activeTab === 'subscribers' && <SubscribersTab subscribers={subscribers} />}
+                        {activeTab === 'subscribers' && (
+                            <SubscribersTab
+                                subscribers={subscribers}
+                                plans={plans}
+                                onRefresh={async () => {
+                                    const m = await saasService.getMetrics();
+                                    const s = await saasService.getAllClinics();
+                                    setMetrics(m);
+                                    setSubscribers(s);
+                                }}
+                            />
+                        )}
                     </>
                 )}
             </div>
@@ -405,8 +591,8 @@ const TabBtn: React.FC<{ id: string, icon: any, label: string, activeTab: string
     <button
         onClick={() => setTab(id)}
         className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-wider ${activeTab === id
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
             }`}
     >
         {icon} {label}
