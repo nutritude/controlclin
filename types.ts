@@ -202,6 +202,7 @@ export interface ClinicalHistory {
 export interface PatientClinicalSummary {
   clinicalGoal: string;
   activeDiagnoses: string[];
+  psychobehavioral?: any; // NOVO: Armazenamento do perfil MIPAN
   updatedAt?: string;
 }
 

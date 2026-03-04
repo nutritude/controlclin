@@ -1022,7 +1022,9 @@ const CompositionEvolutionChart = ({ data, isManagerMode, isPdf }: { data: any[]
     const chartData = data.filter(d => d.fatMass != null && d.leanMass != null).map(d => ({
         ...d,
         dateFormatted: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' }),
-        pesoTotal: Number((d.fatMass + d.leanMass).toFixed(1))
+        leanMass: Number(d.leanMass),
+        fatMass: Number(d.fatMass),
+        pesoTotal: Number((Number(d.fatMass) + Number(d.leanMass)).toFixed(1))
     }));
 
     if (chartData.length < 2) return <div className={`h-40 flex items-center justify-center text-sm ${isPdf ? 'text-gray-400 border-gray-200' : 'text-gray-500 border-emerald-100 bg-emerald-50'} rounded border border-dashed`}>Dados de composição corporal insuficientes (mín. 2 avaliações).</div>;
@@ -1118,7 +1120,7 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
     const getFirst = (getter: (r: any) => number | undefined): number => {
         for (let i = 0; i < history.length; i++) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
@@ -1127,7 +1129,7 @@ const HabitRadarChart = ({ history, isManagerMode, isPdf }: { history: any[], is
     const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
@@ -1271,21 +1273,23 @@ const MeasurementDeltaChart = ({ history, isManagerMode, isPdf }: { history: any
     const getFirst = (getter: (r: any) => number | undefined): number => {
         for (let i = 0; i < history.length; i++) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
     const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
 
-    const riskKeys = ['Cintura', 'Abdômen', 'Quadril'];
+    const riskKeys = ['Peso', '% Gordura', 'Cintura', 'Abdômen', 'Quadril'];
 
     const measures = [
+        { key: 'Peso', a: getFirst(r => r.weight), b: getLatest(r => r.weight) },
+        { key: '% Gordura', a: getFirst(r => r.bodyFatPercentage), b: getLatest(r => r.bodyFatPercentage) },
         { key: 'Pescoço', a: getFirst(r => r.circNeck), b: getLatest(r => r.circNeck) },
         { key: 'Ombro', a: getFirst(r => r.circShoulder), b: getLatest(r => r.circShoulder) },
         { key: 'Tórax', a: getFirst(r => r.circChest), b: getLatest(r => r.circChest) },
@@ -1425,7 +1429,7 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history
     const getFirst = (getter: (r: any) => number | undefined): number => {
         for (let i = 0; i < history.length; i++) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
@@ -1433,7 +1437,7 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history
     const getLatest = (getter: (r: any) => number | undefined): number => {
         for (let i = history.length - 1; i >= 0; i--) {
             const v = getter(history[i]);
-            if (v != null && v > 0) return v;
+            if (v != null && Number(v) > 0) return Number(v);
         }
         return 0;
     };
@@ -1521,6 +1525,70 @@ const SkinfoldDeltaChart = ({ history, isManagerMode, isPdf, gender }: { history
 };
 
 
+const MeasurementsComparisonTable = ({ history, isPdf }: { history: any[], isPdf: boolean }) => {
+    if (!history || history.length < 2) return null;
+
+    const first = history[0];
+    const latest = history[history.length - 1];
+
+    const metrics = [
+        { label: 'Peso', key: 'weight', unit: 'kg' },
+        { label: 'Gordura corporal', key: 'bodyFatPercentage', unit: '%' },
+        { label: 'Massa Magra', key: 'leanMass', unit: 'kg' },
+        { label: 'Cintura', key: 'circWaist', unit: 'cm' },
+        { label: 'Abdômen', key: 'circAbdomen', unit: 'cm' },
+        { label: 'Quadril', key: 'circHip', unit: 'cm' }
+    ];
+
+    return (
+        <div className="bg-white border-slate-200 rounded-2xl border shadow-sm overflow-hidden mb-8">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Comparativo de Evolução: Início vs. Atual</p>
+                <div className="flex gap-4 text-[9px] font-bold text-slate-400 uppercase">
+                    <span>Início: {new Date(first.date).toLocaleDateString()}</span>
+                    <span>Atual: {new Date(latest.date).toLocaleDateString()}</span>
+                </div>
+            </div>
+            <table className="w-full text-left">
+                <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                        <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase">Indicador</th>
+                        <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-right">Inicial</th>
+                        <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-right">Atual</th>
+                        <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-center">Variação</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                    {metrics.map(m => {
+                        const v1 = first[m.key] || first[m.key === 'circWaist' ? 'waistCircumference' : m.key === 'circHip' ? 'hipCircumference' : m.key];
+                        const v2 = latest[m.key] || latest[m.key === 'circWaist' ? 'waistCircumference' : m.key === 'circHip' ? 'hipCircumference' : m.key];
+
+                        if (v1 == null || v2 == null) return null;
+
+                        const diff = v2 - v1;
+                        const pct = ((v2 / v1) - 1) * 100;
+                        const isReductionMetric = ['weight', 'bodyFatPercentage', 'circWaist', 'circAbdomen', 'circHip'].includes(m.key);
+                        const isGood = isReductionMetric ? diff < 0 : diff > 0;
+
+                        return (
+                            <tr key={m.key} className="hover:bg-slate-50/30 transition-colors">
+                                <td className="px-4 py-2.5 text-[10px] font-bold text-slate-600 uppercase">{m.label}</td>
+                                <td className="px-4 py-2.5 text-xs font-black text-slate-400 text-right">{Number(v1).toFixed(1)} {m.unit}</td>
+                                <td className="px-4 py-2.5 text-xs font-black text-slate-900 text-right">{Number(v2).toFixed(1)} {m.unit}</td>
+                                <td className="px-4 py-2.5 text-center">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${isGood ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                        {diff > 0 ? '+' : ''}{diff.toFixed(1)}{m.unit} ({diff > 0 ? '+' : ''}{pct.toFixed(1)}%)
+                                    </span>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 // --- NEW COMPONENT: INDIVIDUAL PATIENT REPORT VIEW (SUPER PRONTUÁRIO) ---
 const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing, aiSummary, isPdf }: { data: IndividualReportSnapshot, isManagerMode: boolean, onAnalyze: () => void, analyzing: boolean, aiSummary: string | null, isPdf: boolean }) => {
     const { patient, metrics, anthropometry, clinical, exams, nutritional, financial, timeline, metadata } = data;
@@ -1590,7 +1658,10 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 </div>
             )}
 
-            {/* 4. Anthropometric Evolution */}
+            {/* 4. Comparative Measurements Table (NEW) */}
+            <MeasurementsComparisonTable history={anthropometry.history} isPdf={isPdf} />
+
+            {/* 5. Anthropometric Evolution */}
             <div className="bg-white border-slate-200 shadow-xl rounded-[2.5rem] p-8 border space-y-8">
                 <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-4 text-slate-400 underline decoration-emerald-500 decoration-2 underline-offset-8">Painel de Evolução Corporal</h3>
 

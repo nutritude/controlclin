@@ -858,20 +858,20 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
 
     return (
-        <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${isManagerMode ? 'text-gray-100' : 'text-slate-800'}`}>
+        <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>
 
             {/* TOP TOOLBAR: PLAN SELECTION & MANAGEMENT */}
-            <div className={`xl:col-span-3 flex flex-col lg:flex-row gap-4 p-4 rounded-xl border shadow-sm ${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'}`}>
+            <div className={`xl:col-span-3 flex flex-col lg:flex-row gap-4 p-4 rounded-xl border shadow-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`}>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
                     <div className="flex flex-col w-full sm:w-auto">
-                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Plano Selecionado</label>
+                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Plano Selecionado</label>
                         <select
                             value={currentPlanId || ''}
                             onChange={(e) => {
                                 if (e.target.value === 'NEW') initNewDraft();
                                 else handlePlanSelection(e.target.value);
                             }}
-                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full sm:min-w-[200px] ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
+                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full sm:min-w-[200px] ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
                             {plansList.map(p => (
                                 <option key={p.id} value={p.id}>
@@ -881,16 +881,16 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             {(!currentPlanId && plansList.length === 0) && <option value="">Novo Rascunho</option>}
                         </select>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all active:scale-95 ${isManagerMode ? 'border-gray-600 hover:bg-gray-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700 shadow-sm'}`}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all active:scale-95 ${isManagerMode ? 'border-blue-300 hover:bg-blue-50 text-blue-700 shadow-sm' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700 shadow-sm'}`}>
                         + Novo
                     </button>
 
                     <div className="flex flex-col w-full sm:w-auto mt-2 sm:mt-0">
-                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Metodologia</label>
+                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Metodologia</label>
                         <select
                             value={planMethodology}
                             onChange={(e) => setPlanMethodology(e.target.value as any)}
-                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
+                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
                             <option value="ALIMENTOS">Cálculo por Alimentos</option>
                             <option value="EQUIVALENTES">Equivalentes (Pix)</option>
@@ -905,23 +905,23 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             }`}>{syncStatus}</span>
                     )}
                     <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-purple-900 text-purple-200 border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200')}`}>{isAnalyzing ? '...' : <><Icons.Brain className="w-3.5 h-3.5" /> Analisar</>}</button>
-                        <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
+                        <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-purple-50 text-purple-700 border-purple-200')}`}>{isAnalyzing ? '...' : <><Icons.Brain className="w-3.5 h-3.5" /> Analisar</>}</button>
+                        <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
                         <span>💾</span> Salvar Plano
                     </button>
                 </div>
             </div>
 
             {/* LEFT COLUMN */}
-            <div className="space-y-6">
+            <div className="space-y-6 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto custom-scrollbar xl:pb-8 pr-1">
                 {/* Energy Calculator */}
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-5 border relative overflow-hidden`}>
+                <div className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-5 border relative overflow-hidden`}>
                     {/* Header com Manual Toggle */}
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex flex-col">
-                            <h3 className={`text-sm font-black uppercase tracking-tighter ${isManagerMode ? 'text-indigo-400' : 'text-emerald-700'}`}>Estimativa Energética</h3>
+                            <h3 className={`text-sm font-black uppercase tracking-tighter ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Estimativa Energética</h3>
                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Precisão Diagnóstica</p>
                         </div>
                         <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
@@ -958,7 +958,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 <select
                                     value={patientProfile}
                                     onChange={(e) => setPatientProfile(e.target.value as any)}
-                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-slate-200'}`}
+                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white border-slate-200'}`}
                                 >
                                     {Object.entries(PROFILE_CONFIGS).map(([key, cfg]) => (
                                         <option key={key} value={key}>{cfg.label}</option>
@@ -970,7 +970,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 <select
                                     value={calcFormula}
                                     onChange={(e) => setCalcFormula(e.target.value as any)}
-                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-slate-200'}`}
+                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white border-slate-200'}`}
                                 >
                                     {(PROFILE_CONFIGS[patientProfile as keyof typeof PROFILE_CONFIGS] || PROFILE_CONFIGS.ADULTO_EUTROFICO).formulas.map(f => (
                                         <option key={f} value={f}>{f.replace('_', ' ')}</option>
@@ -991,7 +991,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             onClick={() => setPregnancyTrimestre(t as any)}
                                             className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all border ${pregnancyTrimestre === t
                                                 ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                                                : isManagerMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-slate-600'
+                                                : isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-200 text-slate-600'
                                                 }`}
                                         >
                                             {t}º Trimestre
@@ -1008,7 +1008,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 <select
                                     value={calcActivityFactor}
                                     onChange={(e) => setCalcActivityFactor(Number(e.target.value))}
-                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-slate-200'}`}
+                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white border-slate-200'}`}
                                 >
                                     {ACTIVITY_FACTORS_DETAILED.map(fa => (
                                         <option key={fa.value} value={fa.value}>{fa.label}</option>
@@ -1020,7 +1020,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 <select
                                     value={calcInjuryFactor}
                                     onChange={(e) => setCalcInjuryFactor(Number(e.target.value))}
-                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-slate-200'}`}
+                                    className={`border rounded-lg p-2 text-xs font-bold transition-all ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white border-slate-200'}`}
                                 >
                                     {INJURY_FACTORS.map(fi => (
                                         <option key={fi.value} value={fi.value}>{fi.label}</option>
@@ -1108,17 +1108,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <div className={`p-3 rounded-xl text-center border ${isManagerMode ? 'bg-gray-700/50 border-gray-600 text-gray-200' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
+                                <div className={`p-3 rounded-xl text-center border ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
                                     <p className="text-[9px] uppercase font-black opacity-60">TMB Basal ({calcFormula})</p>
                                     <p className="text-xl font-bold">{calculatedResults.bmr} <span className="text-[10px] font-medium opacity-50">kcal</span></p>
                                 </div>
-                                <div className={`p-3 rounded-xl text-center border ring-2 ring-emerald-500/10 ${isManagerMode ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
+                                <div className={`p-3 rounded-xl text-center border ring-2 ring-emerald-500/10 ${isManagerMode ? 'bg-blue-100 border-blue-300 text-blue-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
                                     <p className="text-[9px] uppercase font-black text-emerald-600">GET Total</p>
                                     <p className="text-xl font-black">{calculatedResults.tdee} <span className="text-[10px] font-medium text-emerald-600">kcal</span></p>
                                 </div>
                             </div>
 
-                            <div className={`p-4 rounded-xl text-center border shadow-sm transition-all ${isManagerMode ? 'bg-indigo-900/50 border-indigo-700' : 'bg-indigo-600 text-white shadow-indigo-100'}`}>
+                            <div className={`p-4 rounded-xl text-center border shadow-sm transition-all ${isManagerMode ? 'bg-blue-600 border-blue-500 text-white shadow-blue-100' : 'bg-indigo-600 text-white shadow-indigo-100'}`}>
                                 <p className="text-[10px] uppercase font-black opacity-80 mb-1">Meta Atribuída (Prescrição)</p>
                                 <p className="text-3xl font-black">{targetKcal} <span className="text-sm font-medium opacity-60">kcal</span></p>
                                 <button
@@ -1149,20 +1149,28 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 </div>
 
                 {/* Daily Totals Summary */}
-                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-5 border`}>
+                <div className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-md rounded-xl p-5 border sticky top-2 z-[45]`}>
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Acompanhamento de Metas</h3>
-                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold uppercase">Real vs Meta</span>
+                        <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Acompanhamento de Metas</h3>
+                        <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md font-black uppercase border border-indigo-100 flex items-center gap-1">
+                            <span>Prescrito vs Desejado</span>
+                        </span>
                     </div>
 
                     <div className="space-y-4">
                         {/* CALORIAS PROGRESS */}
                         <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-bold">
+                            <div className="flex justify-between text-xs font-bold items-end">
                                 <span>Energia (Kcal)</span>
-                                <span className={dailyTotals.calories > targetKcal * 1.05 ? 'text-red-500' : (isManagerMode ? 'text-indigo-400' : 'text-emerald-600')}>
-                                    {dailyTotals.calories} / {targetKcal}
-                                </span>
+                                <div className="flex gap-3 text-[10px] uppercase font-black">
+                                    <span className={dailyTotals.calories > targetKcal * 1.05 ? 'text-red-500' : (isManagerMode ? 'text-blue-600' : 'text-emerald-700')}>
+                                        P: {dailyTotals.calories}
+                                    </span>
+                                    <span className="text-gray-400">|</span>
+                                    <span className={isManagerMode ? 'text-blue-700' : 'text-indigo-600'}>
+                                        D: {targetKcal}
+                                    </span>
+                                </div>
                             </div>
                             <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden border border-gray-200/50">
                                 <div
@@ -1181,8 +1189,10 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             ].map(m => (
                                 <div key={m.key} className="space-y-1">
                                     <div className="flex justify-between items-center px-0.5">
-                                        <span className={`text-[10px] font-black text-${m.color}-500 uppercase`}>{m.key}</span>
-                                        <span className="text-[9px] font-bold text-gray-500">{m.val}g</span>
+                                        <span className={`text-[10px] font-black text-${m.color}-500 uppercase`}>{m.label} ({m.key})</span>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[11px] font-bold text-gray-700 leading-none">{m.val}g</span>
+                                        </div>
                                     </div>
                                     <div className="h-2 w-full bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden border border-gray-200/30">
                                         <div
@@ -1190,14 +1200,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             style={{ width: `${Math.min(100, (m.val / (m.target || 1)) * 100)}%` }}
                                         />
                                     </div>
-                                    <div className="text-[8px] text-center text-gray-400">Meta: {m.target}g</div>
+                                    <div className="text-[9px] font-bold flex justify-between px-1 text-gray-500 uppercase mt-0.5">
+                                        <span className="text-emerald-600" title="Prescrito">P: {m.val}g</span>
+                                        <span className="text-indigo-500" title="Desejado">D: {m.target}g</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 pt-2">
-                            <button onClick={() => setShowMicrosModal(true)} className={`text-xs py-2 border rounded font-bold transition-all ${isManagerMode ? 'border-gray-600 hover:bg-gray-700 text-gray-300' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>Micronutrientes</button>
-                            <button onClick={() => setShowShoppingListModal(true)} className={`text-xs py-2 border rounded font-bold transition-all ${isManagerMode ? 'border-gray-600 hover:bg-gray-700 text-gray-300' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>Lista de Compras</button>
+                            <button onClick={() => setShowMicrosModal(true)} className={`text-xs py-2 border rounded font-bold transition-all ${isManagerMode ? 'border-blue-200 hover:bg-blue-50 text-blue-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>Micronutrientes</button>
+                            <button onClick={() => setShowShoppingListModal(true)} className={`text-xs py-2 border rounded font-bold transition-all ${isManagerMode ? 'border-blue-200 hover:bg-blue-50 text-blue-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>Lista de Compras</button>
                         </div>
                     </div>
                 </div>
@@ -1211,7 +1224,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     {analysisResult && (
                         <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-100'} shadow-md rounded-xl p-6 border animate-slideIn`}>
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className={`text-lg font-bold flex items-center gap-2 ${isManagerMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
+                                <h3 className={`text-lg font-bold flex items-center gap-2 ${isManagerMode ? 'text-blue-700' : 'text-indigo-700'}`}>
                                     <Icons.Brain /> Análise Inteligente do Plano
                                 </h3>
                                 {analysisResult.isFallback && (
@@ -1220,17 +1233,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             </div>
 
                             <div className="mb-4">
-                                <p className={`text-sm italic ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>"{analysisResult.summary}"</p>
+                                <p className={`text-sm italic ${isManagerMode ? 'text-slate-600' : 'text-gray-700'}`}>"{analysisResult.summary}"</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-6">
-                                <div className={`p-4 rounded-lg ${isManagerMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                <div className={`p-4 rounded-lg ${isManagerMode ? 'bg-blue-50' : 'bg-gray-50'}`}>
                                     <h4 className="font-bold mb-2">Pontos Fortes & Achados</h4>
                                     <ul className="list-disc list-inside space-y-1 text-xs">
                                         {analysisResult.guidelines.keyFindings.map((k, i) => <li key={i}>{k}</li>)}
                                     </ul>
                                 </div>
-                                <div className={`p-4 rounded-lg ${isManagerMode ? 'bg-gray-700' : 'bg-red-50'}`}>
+                                <div className={`p-4 rounded-lg ${isManagerMode ? 'bg-red-50' : 'bg-red-50'}`}>
                                     <h4 className="font-bold mb-2 text-red-600">Atenção / Riscos</h4>
                                     <ul className="list-disc list-inside space-y-1 text-xs text-red-700">
                                         {analysisResult.guidelines.risks.length > 0 ? analysisResult.guidelines.risks.map((k, i) => <li key={i}>{k}</li>) : <li>Nenhum risco crítico identificado.</li>}
@@ -1244,7 +1257,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                     <h4 className="font-bold text-sm mb-3">Sugestões de Substituição (Guia Alimentar)</h4>
                                     <div className="space-y-3">
                                         {analysisResult.substitutions.map((sub, idx) => (
-                                            <div key={idx} className={`p-3 rounded border text-xs ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                                            <div key={idx} className={`p-3 rounded border text-xs ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
                                                 <p className="font-bold mb-1">{sub.foodName} <span className="font-normal text-gray-500">({sub.foodCategory})</span></p>
                                                 <ul className="space-y-1 pl-2 border-l-2 border-green-300">
                                                     {sub.replacements.map((r, ri) => (
@@ -1266,9 +1279,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     )}
 
                     {adherenceAnalysis && (
-                        <div className={`p-5 rounded-xl border animate-slideUp shadow-sm ${isManagerMode ? 'bg-gray-800 border-blue-900/50' : 'bg-blue-50/40 border-blue-100'}`}>
+                        <div className={`p-5 rounded-xl border animate-slideUp shadow-sm ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-blue-50/40 border-blue-100'}`}>
                             <div className="flex justify-between items-center mb-4">
-                                <h4 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 ${isManagerMode ? 'text-blue-400' : 'text-blue-800'}`}>
+                                <h4 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 ${isManagerMode ? 'text-blue-700' : 'text-blue-800'}`}>
                                     🚀 Estratégias de Adesão (IA)
                                 </h4>
                                 <button onClick={() => setAdherenceAnalysis(null)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
@@ -1299,28 +1312,28 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     )}
 
                     {/* CONFIG & ACTIONS */}
-                    <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-6 border`}>
+                    <div className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-6 border`}>
                         <div className="mb-6">
-                            <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Nome do Plano (Identificação)</label>
-                            <input type="text" value={planTitle} onChange={e => setPlanTitle(e.target.value)} className={`w-full p-2 border rounded text-base font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-slate-200 text-slate-800'}`} placeholder="Ex: Hipertrofia Fase 1" />
+                            <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Nome do Plano (Identificação)</label>
+                            <input type="text" value={planTitle} onChange={e => setPlanTitle(e.target.value)} className={`w-full p-2 border rounded text-base font-bold ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white border-slate-200 text-slate-800'}`} placeholder="Ex: Hipertrofia Fase 1" />
                         </div>
 
                         {/* Macro Targets Inputs */}
                         <div className="grid grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estratégia</label>
-                                <input type="text" value={planStrategy} onChange={e => setPlanStrategy(e.target.value)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-slate-200'}`} />
+                                <input type="text" value={planStrategy} onChange={e => setPlanStrategy(e.target.value)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`} />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Metodologia</label>
-                                <select value={planMethodology} onChange={e => setPlanMethodology(e.target.value as any)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-slate-200'}`}>
+                                <select value={planMethodology} onChange={e => setPlanMethodology(e.target.value as any)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`}>
                                     <option value="ALIMENTOS">Plano por Alimentos</option>
                                     <option value="EQUIVALENTES">Lista de Substituição</option>
                                 </select>
                             </div>
                         </div>
                         {/* Targets Visualization */}
-                        <div className={`p-4 rounded border ${isManagerMode ? 'bg-gray-900 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className={`p-4 rounded border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
                             <div className="flex justify-between mb-2">
                                 <span className="text-xs font-black uppercase tracking-wider text-emerald-800">Metas Diárias</span>
                                 <div className="flex items-center gap-2">
@@ -1359,8 +1372,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
                     {/* MEALS LIST - DYNAMIC HEADER */}
                     <div className="flex justify-between items-center">
-                        <h3 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>Cronograma de Refeições</h3>
-                        <button onClick={handleAddMeal} className={`px-3 py-1 text-xs font-bold rounded border shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}>
+                        <h3 className={`text-lg font-bold ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>Cronograma de Refeições</h3>
+                        <button onClick={handleAddMeal} className={`px-3 py-1 text-xs font-bold rounded border shadow-sm ${isManagerMode ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}>
                             + Refeição
                         </button>
                     </div>
@@ -1371,8 +1384,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         {meals.map((meal, mIndex) => {
                             const mealTotal = NutrientCalc.calculateDailyTotals([meal]);
                             return (
-                                <div key={meal.id} className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-hidden`}>
-                                    <div className={`p-3 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-slate-50 border-slate-100'}`}>
+                                <div key={meal.id} className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-hidden`}>
+                                    <div className={`p-3 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
                                         <div className="flex items-center gap-3">
                                             {/* Actions Menu */}
                                             <div className="flex flex-col gap-0.5 mr-1">
@@ -1381,7 +1394,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             </div>
                                             <div>
                                                 <div className="flex items-baseline gap-2 cursor-pointer hover:underline" onClick={() => handleEditMeal(meal)}>
-                                                    <h4 className={`font-bold ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{meal.name}</h4>
+                                                    <h4 className={`font-bold ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>{meal.name}</h4>
                                                     {meal.time && <span className="text-xs font-mono bg-gray-200 text-gray-700 px-1 rounded">{meal.time}</span>}
                                                     <span className="text-xs text-blue-500">✎</span>
                                                 </div>
@@ -1393,7 +1406,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                         <div className="flex gap-2">
                                             <button onClick={() => handleDuplicateMeal(meal)} className={`text-xs px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors font-medium`} title="Duplicar Refeição">Duplicar</button>
                                             <button onClick={() => handleDeleteMeal(meal.id)} className={`text-xs px-2 py-1 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors font-medium`} title="Remover Refeição">Excluir</button>
-                                            <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-gray-500 text-gray-300 hover:bg-gray-600' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
+                                            <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
                                         </div>
                                     </div>
                                     <div className="p-3">
@@ -1402,13 +1415,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                 {meal.items.map((item, idx) => (
                                                     <li
                                                         key={idx}
-                                                        className={`flex flex-col gap-1 p-2 rounded border border-transparent transition-all ${isManagerMode ? 'bg-gray-900' : 'bg-gray-50 border-slate-100 hover:border-emerald-200'}`}
+                                                        className={`flex flex-col gap-1 p-2 rounded border border-transparent transition-all ${isManagerMode ? 'bg-blue-50 border-blue-200 hover:border-blue-300' : 'bg-gray-50 border-slate-100 hover:border-emerald-200'}`}
                                                     >
                                                         <div className="flex justify-between items-center group cursor-pointer" onClick={() => openAddItemModal(meal.id, false, idx)}>
                                                             <div className="flex flex-col">
-                                                                <span className={`font-medium flex items-center gap-2 ${isManagerMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                                                                <span className={`font-medium flex items-center gap-2 ${isManagerMode ? 'text-slate-700' : 'text-slate-700'}`}>
                                                                     <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px]">✏️</span>
-                                                                    <span><strong className={`${isManagerMode ? 'text-indigo-400' : 'text-emerald-700'}`}>{formatMealItemQuantity(item)}</strong> - {item.customName || item.name}</span>
+                                                                    <span><strong className={`${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>{formatMealItemQuantity(item)}</strong> - {item.customName || item.name}</span>
                                                                 </span>
                                                                 <span className="text-[10px] text-gray-400 pl-6">
                                                                     {item.calculatedCalories} kcal | P {item.calculatedProtein} | C {item.calculatedCarbs} | G {item.calculatedFat}
@@ -1418,7 +1431,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                                 {!item.foodId.startsWith('custom') && (
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, item.foodId); }}
-                                                                        className={`p-1.5 rounded-full transition-colors ${isManagerMode ? 'hover:bg-gray-700 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                                                        className={`p-1.5 rounded-full transition-colors ${isManagerMode ? 'hover:bg-blue-100 text-blue-600' : 'hover:bg-emerald-100 text-emerald-600'}`}
                                                                         title="Opções de Substituição"
                                                                     >
                                                                         <Icons.DotsVertical className="w-4 h-4" />
@@ -1443,7 +1456,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                                             {!sub.foodId.startsWith('custom') && (
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, sub.foodId); }}
-                                                                                    className={`p-1 opacity-0 group-hover/sub:opacity-100 rounded-full transition-all ${isManagerMode ? 'hover:bg-gray-700 text-indigo-400' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                                                                                    className={`p-1 opacity-0 group-hover/sub:opacity-100 rounded-full transition-all ${isManagerMode ? 'hover:bg-blue-50 text-blue-600' : 'hover:bg-emerald-50 text-emerald-600'}`}
                                                                                     title="Substituir esta opção"
                                                                                 >
                                                                                     <Icons.DotsVertical className="w-3.5 h-3.5" />
@@ -1494,16 +1507,16 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             {/* MEAL CONFIG MODAL */}
             {isMealModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-sm p-6`}>
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-2xl' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-sm p-6`}>
                         <h3 className="text-lg font-bold mb-4">{mealForm.id ? 'Editar Refeição' : 'Nova Refeição'}</h3>
                         <div className="space-y-3">
                             <div>
                                 <label className="text-xs font-bold uppercase mb-1 block">Nome</label>
-                                <input type="text" value={mealForm.name} onChange={e => setMealForm({ ...mealForm, name: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`} placeholder="Ex: Pré-treino" />
+                                <input type="text" value={mealForm.name} onChange={e => setMealForm({ ...mealForm, name: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} placeholder="Ex: Pré-treino" />
                             </div>
                             <div>
                                 <label className="text-xs font-bold uppercase mb-1 block">Horário (Opcional)</label>
-                                <input type="time" value={mealForm.time} onChange={e => setMealForm({ ...mealForm, time: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`} />
+                                <input type="time" value={mealForm.time} onChange={e => setMealForm({ ...mealForm, time: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
                             </div>
                         </div>
                         <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
@@ -1517,14 +1530,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             {/* MICRONUTRIENTS MODAL (REVISED: DETERMINISTIC TABLE) */}
             {showMicrosModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'} rounded-lg shadow-xl w-full max-w-lg p-6 flex flex-col max-h-[80vh]`}>
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-black'} rounded-lg shadow-xl w-full max-w-lg p-6 flex flex-col max-h-[80vh]`}>
                         <div className="flex justify-between items-center mb-4 border-b pb-2">
                             <h3 className="text-lg font-bold">Tabela de Nutrientes do Plano</h3>
                             <button onClick={() => setShowMicrosModal(false)}>✕</button>
                         </div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead className={`${isManagerMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-black'}`}>
+                                <thead className={`${isManagerMode ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-black'}`}>
                                     <tr>
                                         <th className="text-left p-2">Nutriente</th>
                                         <th className="text-right p-2">Total Calculado</th>
@@ -1534,23 +1547,23 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 <tbody>
                                     {/* Macronutrientes */}
                                     <tr className="font-bold bg-gray-50/10">
-                                        <td className={`p-2 ${isManagerMode ? 'text-white' : 'text-black'}`}>Calorias</td>
+                                        <td className={`p-2 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Calorias</td>
                                         <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-400' : 'text-emerald-700'}`}>{dailyTotals.calories} kcal</td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-gray-300' : 'text-black'}`}>Proteína</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{dailyTotals.protein} g</td>
+                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Proteína</td>
+                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.protein} g</td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-gray-300' : 'text-black'}`}>Carboidratos</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{dailyTotals.carbs} g</td>
+                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Carboidratos</td>
+                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.carbs} g</td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-gray-300' : 'text-black'}`}>Gorduras Totais</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{dailyTotals.fat} g</td>
+                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Gorduras Totais</td>
+                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.fat} g</td>
                                         <td></td>
                                     </tr>
                                     {/* Micronutrientes c/ DRI Analysis */}
@@ -1568,7 +1581,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                         const isHigh = m.isMax && pct > 100;
                                         return (
                                             <tr key={m.label} className="border-b border-gray-100 dark:border-gray-700">
-                                                <td className={`p-2 ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>{m.label}</td>
+                                                <td className={`p-2 ${isManagerMode ? 'text-slate-600' : 'text-gray-700'}`}>{m.label}</td>
                                                 <td className="text-right p-2 font-bold">
                                                     {m.val} {m.unit}
                                                     <div className="text-[10px] text-gray-400 font-normal">DRI: {m.ref}{m.unit}</div>
@@ -1586,7 +1599,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                     })}
                                 </tbody>
                             </table>
-                            <p className={`text-[10px] mt-4 text-center ${isManagerMode ? 'text-gray-500' : 'text-black'}`}>
+                            <p className={`text-[10px] mt-4 text-center ${isManagerMode ? 'text-slate-500' : 'text-black'}`}>
                                 * Valores calculados com base na Tabela TACO/IBGE e densidade nutricional dos alimentos cadastrados.
                                 Alguns micronutrientes podem estar subestimados se o cadastro do alimento estiver incompleto.
                             </p>
@@ -1598,7 +1611,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             {/* SHOPPING LIST MODAL */}
             {showShoppingListModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col`}>
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-sm' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col`}>
                         <h3 className="text-lg font-bold mb-4">Lista de Compras (Semanal)</h3>
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {Object.entries(ShoppingListService.generate(meals)).map(([category, items]) => (

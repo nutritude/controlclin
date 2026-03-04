@@ -66,7 +66,7 @@ const DEFAULT_PROFESSIONALS: Professional[] = [
     { id: 'p-rangel', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Dermatologia', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
     { id: 'p-marcella', clinicId: 'c1', userId: 'u-marcella', name: 'Dra. Marcella', email: 'marcella@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-green-200', isActive: true },
     { id: 'p-debora', clinicId: 'c1', userId: 'u-debora', name: 'Dra. Debora', email: 'debora@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-purple-200', isActive: true },
-    { id: 'p-matheus', clinicId: 'c1', userId: 'u-matheus', name: 'Dr. Matheus', email: 'matheus@control.com', phone: '', specialty: 'Médico', color: 'bg-indigo-200', isActive: true },
+    { id: 'p-matheus', clinicId: 'c1', userId: 'u-matheus', name: 'Dr. Matheus', email: 'matheus@control.com', phone: '', specialty: 'Médico', registrationNumber: 'CRM', color: 'bg-indigo-200', isActive: true },
 ];
 
 const DEFAULT_PLAN_PT1: NutritionalPlan = {
@@ -423,7 +423,7 @@ class DatabaseService {
 
                         // Merge Perfil MIPAN e Alertas
                         if (remoteP.clinicalSummary?.psychobehavioral && !localP.clinicalSummary?.psychobehavioral) {
-                            if (!localP.clinicalSummary) localP.clinicalSummary = {};
+                            if (!localP.clinicalSummary) localP.clinicalSummary = { clinicalGoal: '', activeDiagnoses: [] };
                             localP.clinicalSummary.psychobehavioral = remoteP.clinicalSummary.psychobehavioral;
                         }
                     }
@@ -804,11 +804,18 @@ class DatabaseService {
             : new Date().toLocaleDateString();
 
         // 3. Anthropometry
-        // Ensure current snapshot + history are aligned
+        // Ensure current snapshot + history are aligned and sorted chronologically
         const anthroSnapshot = await this.getAnthroSnapshot(patientId);
-        const anthroHistory = patient.anthropometryHistory || [];
-        // Add current if not saved in history yet? Typically UI handles this, but let's ensure
-        // Report should show "Last Evaluation" from the robust snapshot builder
+        let anthroHistory = [...(patient.anthropometryHistory || [])];
+
+        // Ensure chronological order for evolution analysis
+        anthroHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Snapshot of current vs history alignment
+        if (anthroSnapshot.snapshot) {
+            // If current is not in history, append it? 
+            // Better to assume history is the source of truth for reports.
+        }
 
         // 4. Clinical Context
         const activeDiagnoses = patient.clinicalSummary?.activeDiagnoses || [];
@@ -1710,54 +1717,46 @@ class DatabaseService {
         } = anthro as any;
 
         try {
-            if (protocol === 'JacksonPollock7') {
-                const skinfolds = [skinfoldChest, skinfoldAbdominal, skinfoldThigh, skinfoldTriceps, skinfoldSubscapular, skinfoldSuprailiac, skinfoldAxillary];
-                if (skinfolds.every(sf => typeof sf === 'number' && sf > 0)) {
-                    const sum = skinfolds.reduce((s, v) => s! + v!, 0)!;
+            // Simplified required folds logic for DB (mapping to SKINFOLD_PROTOCOLS labels conceptually)
+            const PROTOCOL_REQUIREMENTS: Record<string, string[]> = {
+                JacksonPollock7: ['skinfoldChest', 'skinfoldAbdominal', 'skinfoldThigh', 'skinfoldTriceps', 'skinfoldSubscapular', 'skinfoldSuprailiac', 'skinfoldAxillary'],
+                JacksonPollock3: (patient.gender === 'Masculino') ? ['skinfoldChest', 'skinfoldAbdominal', 'skinfoldThigh'] : ['skinfoldTriceps', 'skinfoldSuprailiac', 'skinfoldThigh'],
+                Guedes: (patient.gender === 'Masculino') ? ['skinfoldTriceps', 'skinfoldSuprailiac', 'skinfoldAbdominal'] : ['skinfoldThigh', 'skinfoldSuprailiac', 'skinfoldSubscapular'],
+                DurninWomersley: ['skinfoldBiceps', 'skinfoldTriceps', 'skinfoldSubscapular', 'skinfoldSuprailiac'],
+                Faulkner: ['skinfoldTriceps', 'skinfoldSubscapular', 'skinfoldSuprailiac', 'skinfoldAbdominal']
+            };
+
+            const required = PROTOCOL_REQUIREMENTS[protocol];
+            const hasAllData = required ? required.every(f => typeof (anthro as any)[f] === 'number' && (anthro as any)[f] > 0) : false;
+
+            if (hasAllData && age > 0) {
+                const sum = required!.reduce((s, f) => s + ((anthro as any)[f] || 0), 0);
+
+                if (protocol === 'JacksonPollock7') {
                     if (patient.gender === 'Masculino') {
                         bodyDensity = 1.112 - (0.00043499 * sum) + (0.00000055 * Math.pow(sum, 2)) - (0.00028826 * age);
                     } else {
                         bodyDensity = 1.097 - (0.00046971 * sum) + (0.00000056 * Math.pow(sum, 2)) - (0.00012828 * age);
                     }
-                    if (bodyDensity > 0) bodyFatPercentage = (495 / bodyDensity) - 450;
-                }
-            } else if (protocol === 'JacksonPollock3') {
-                if (patient.gender === 'Masculino') {
-                    const sum = (skinfoldChest || 0) + (skinfoldAbdominal || 0) + (skinfoldThigh || 0);
-                    if (sum > 0) {
+                } else if (protocol === 'JacksonPollock3') {
+                    if (patient.gender === 'Masculino') {
                         bodyDensity = 1.10938 - (0.0008267 * sum) + (0.0000016 * Math.pow(sum, 2)) - (0.0002574 * age);
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
-                    }
-                } else {
-                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldThigh || 0);
-                    if (sum > 0) {
+                    } else {
                         bodyDensity = 1.0994921 - (0.0009929 * sum) + (0.0000023 * Math.pow(sum, 2)) - (0.0001392 * age);
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
                     }
-                }
-            } else if (protocol === 'Guedes') {
-                if (patient.gender === 'Masculino') {
-                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
-                    if (sum > 0) {
+                } else if (protocol === 'Guedes') {
+                    if (patient.gender === 'Masculino') {
                         bodyDensity = 1.17136 - (0.06706 * Math.log10(sum));
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
-                    }
-                } else {
-                    const sum = (skinfoldThigh || 0) + (skinfoldSuprailiac || 0) + (skinfoldSubscapular || 0);
-                    if (sum > 0) {
+                    } else {
                         bodyDensity = 1.16650 - (0.07063 * Math.log10(sum));
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
                     }
-                }
-            } else if (protocol === 'DurninWomersley') {
-                const sum = (skinfoldBiceps || 0) + (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0);
-                if (sum > 0) {
+                } else if (protocol === 'DurninWomersley') {
                     let c = 0, m = 0;
                     if (patient.gender === 'Masculino') {
                         if (age < 20) { c = 1.1620; m = 0.0630; }
                         else if (age < 30) { c = 1.1631; m = 0.0632; }
                         else if (age < 40) { c = 1.1422; m = 0.0544; }
-                        else if (age < 50) { c = 1.1333; m = 0.0612; }
+                        else if (age < 50) { c = 1.1620; m = 0.0700; } // FIXED CONSTANT
                         else { c = 1.1715; m = 0.0779; }
                     } else {
                         if (age < 20) { c = 1.1549; m = 0.0678; }
@@ -1767,11 +1766,18 @@ class DatabaseService {
                         else { c = 1.1339; m = 0.0645; }
                     }
                     bodyDensity = c - (m * Math.log10(sum));
+                } else if (protocol === 'Faulkner') {
+                    bodyFatPercentage = (sum * 0.153) + 5.783;
+                }
+
+                if (bodyDensity > 0 && protocol !== 'Faulkner') {
                     bodyFatPercentage = (495 / bodyDensity) - 450;
                 }
-            } else if (protocol === 'Faulkner') {
-                const sum = (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
-                if (sum > 0) bodyFatPercentage = (sum * 0.153) + 5.783;
+
+                // Reliability Guard: prevent unrealistic results from bad inputs
+                if (bodyFatPercentage < 2 || bodyFatPercentage > 75) {
+                    bodyFatPercentage = 0;
+                }
             }
         } catch (e) {
             console.error("Anthro calculation error in DB service", e);

@@ -131,7 +131,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-            <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] flex flex-col`}>
+            <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-200' : 'bg-white text-gray-900'} rounded-lg shadow-2xl w-full max-w-lg p-6 max-h-[90vh] flex flex-col`}>
                 <h3 className="text-lg font-bold mb-4 border-b pb-2">
                     {editingItem ? 'Editar Alimento' : 'Adicionar Alimento'}
                 </h3>
@@ -142,7 +142,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                             <input
                                 type="text"
                                 autoFocus
-                                className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`}
+                                className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`}
                                 placeholder="Buscar no catálogo (ex: Arroz, Frango)..."
                                 value={searchQuery}
                                 onChange={e => handleSearch(e.target.value)}
@@ -152,7 +152,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                                     <button
                                         key={item.id}
                                         onClick={() => handleSelectFood(item)}
-                                        className={`w-full text-left p-2 rounded border flex justify-between items-center ${isManagerMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-100'}`}
+                                        className={`w-full text-left p-2 rounded border flex justify-between items-center ${isManagerMode ? 'hover:bg-blue-50 border-blue-200 bg-white' : 'hover:bg-gray-50 border-gray-100'}`}
                                     >
                                         <div className="flex flex-col">
                                             <span className="font-medium">{item.namePt}</span>
@@ -188,7 +188,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                                             setCustomPortionValue('');
                                         }}
                                         disabled={!!customPortionValue}
-                                        className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'} disabled:opacity-50`}
+                                        className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'} disabled:opacity-50`}
                                     >
                                         {selectedFood.portions.map((p, i) => <option key={i} value={i}>{p.label} ({p.grams}g)</option>)}
                                         <option value="-1" disabled={!customPortionValue}>-- Outra quantidade --</option>
@@ -207,7 +207,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                                                 if (e.target.value) setSelectedPortionIndex(-1);
                                                 else setSelectedPortionIndex(0);
                                             }}
-                                            className={`flex-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`}
+                                            className={`flex-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`}
                                         />
                                         <span className="text-xs text-gray-500 font-bold">{getUnidade(selectedFood)}</span>
                                     </div>
@@ -227,13 +227,13 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                                         type="number" step="0.1"
                                         value={quantityMultiplier}
                                         onChange={e => setQuantityMultiplier(parseFloat(e.target.value))}
-                                        className={`w-16 p-1 text-center border rounded text-sm ${isManagerMode ? 'bg-gray-700' : 'bg-white'}`}
+                                        className={`w-16 p-1 text-center border rounded text-sm ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`}
                                     />
                                 </div>
                             </div>
 
                             {preview && (
-                                <div className={`p-4 rounded-lg border ${isManagerMode ? 'bg-gray-900 border-gray-700' : 'bg-emerald-50 border-emerald-100'}`}>
+                                <div className={`p-4 rounded-lg border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-100'}`}>
                                     <div className="text-[10px] uppercase font-bold text-gray-500 mb-2">Calculado para este item:</div>
                                     <div className="grid grid-cols-4 gap-2 text-center">
                                         <div><div className="text-[10px] text-gray-400">Kcal</div><div className="font-bold text-lg">{preview.kcal}</div></div>
@@ -258,16 +258,16 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                             </div>
                             <div>
                                 <label className="text-xs font-bold block mb-1">Descrição</label>
-                                <input placeholder="Ex: Whey Protein Importado" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`} />
+                                <input placeholder="Ex: Whey Protein Importado" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
                             </div>
                             <div className="flex gap-2">
                                 <div className="flex-1">
                                     <label className="text-xs font-bold block mb-1">Qtd</label>
-                                    <input type="number" value={customItemQty} onChange={e => setCustomItemQty(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`} />
+                                    <input type="number" value={customItemQty} onChange={e => setCustomItemQty(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
                                 </div>
                                 <div className="flex-1">
                                     <label className="text-xs font-bold block mb-1">Unidade</label>
-                                    <select value={customItemUnit} onChange={e => setCustomItemUnit(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white'}`}>
+                                    <select value={customItemUnit} onChange={e => setCustomItemUnit(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`}>
                                         <option value="un">un (unidade)</option>
                                         <option value="g">g (gramas)</option>
                                         <option value="ml">ml (mililitros)</option>
@@ -283,7 +283,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                 <div className="mt-6 pt-4 border-t flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className={`px-4 py-2 border rounded text-sm font-medium ${isManagerMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
+                        className={`px-4 py-2 border rounded text-sm font-medium ${isManagerMode ? 'border-blue-200 hover:bg-blue-50 text-blue-700' : 'border-gray-200 hover:bg-gray-50'}`}
                     >
                         Cancelar
                     </button>

@@ -200,13 +200,19 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const [editingAnthroDate, setEditingAnthroDate] = useState<string | null>(null);
 
     const handleNewAnthro = () => {
-        setFormData(prev => ({ ...prev, anthropometry: { procedureDate: new Date().toISOString().split('T')[0] } as any }));
+        const localDateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        setFormData(prev => ({ ...prev, anthropometry: { procedureDate: localDateStr } as any }));
         setEditingAnthroDate(null);
         setIsEditingTab(true);
     };
 
     const handleEditAnthroHistory = (record: AnthropometryRecord) => {
-        setFormData(prev => ({ ...prev, anthropometry: { ...record, procedureDate: record.date } as any }));
+        let dateVal = record.date;
+        if (dateVal.length === 10) dateVal += 'T12:00';
+        const d = new Date(dateVal);
+        const localDateStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+        setFormData(prev => ({ ...prev, anthropometry: { ...record, procedureDate: localDateStr } as any }));
         setEditingAnthroDate(record.date);
         setIsEditingTab(true);
     };
@@ -553,7 +559,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 Object.assign(updatedData.anthropometry, anthropometryResults);
 
                 const anthro = updatedData.anthropometry;
-                const recordDate = anthro.procedureDate || new Date().toISOString().split('T')[0];
+                const recordDate = anthro.procedureDate || new Date().toISOString();
 
                 const newRecord: AnthropometryRecord = {
                     date: recordDate,
@@ -597,13 +603,17 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 // Update history conditionally (edit vs new)
                 const history = patient.anthropometryHistory || [];
                 const idx = history.findIndex((r: AnthropometryRecord) => r.date === (editingAnthroDate || recordDate));
+                let newHistory = [...history];
+
                 if (idx !== -1) {
-                    const newHistory = [...history];
                     newHistory[idx] = newRecord;
-                    updatedData.anthropometryHistory = newHistory;
                 } else {
-                    updatedData.anthropometryHistory = [...history, newRecord];
+                    newHistory.push(newRecord);
                 }
+
+                // SORT chronologically to ensure report graphs are correct
+                newHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                updatedData.anthropometryHistory = newHistory;
 
                 // Preserve AI analysis if it exists
                 updatedData.anthropometry.anthroAiAnalysis = anthroAnalysisResult ? JSON.stringify(anthroAnalysisResult) : undefined;
@@ -673,68 +683,62 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         } = anthro;
 
         try {
-            if (protocol === 'JacksonPollock7') {
-                const skinfolds = [skinfoldChest, skinfoldAbdominal, skinfoldThigh, skinfoldTriceps, skinfoldSubscapular, skinfoldSuprailiac, skinfoldAxillary];
-                if (skinfolds.every(sf => typeof sf === 'number' && sf > 0) && age > 0) {
-                    const sum = skinfolds.reduce((s, v) => s! + v!, 0)!;
-                    if (gender === 'Masculino') {
-                        bodyDensity = 1.112 - (0.00043499 * sum) + (0.00000055 * Math.pow(sum, 2)) - (0.00028826 * age);
-                    } else {
-                        bodyDensity = 1.097 - (0.00046971 * sum) + (0.00000056 * Math.pow(sum, 2)) - (0.00012828 * age);
+            const protocolDef = SKINFOLD_PROTOCOLS[protocol as keyof typeof SKINFOLD_PROTOCOLS];
+            if (protocolDef && protocol !== 'ISAK') {
+                const requiredFolds = protocolDef.folds(gender);
+                const hasAllFolds = requiredFolds.every(f => typeof anthro[f] === 'number' && anthro[f]! > 0);
+
+                if (hasAllFolds && age > 0) {
+                    const sum = requiredFolds.reduce((s, f) => s + (anthro[f] as number), 0);
+
+                    if (protocol === 'JacksonPollock7') {
+                        if (gender === 'Masculino') {
+                            bodyDensity = 1.112 - (0.00043499 * sum) + (0.00000055 * Math.pow(sum, 2)) - (0.00028826 * age);
+                        } else {
+                            bodyDensity = 1.097 - (0.00046971 * sum) + (0.00000056 * Math.pow(sum, 2)) - (0.00012828 * age);
+                        }
+                    } else if (protocol === 'JacksonPollock3') {
+                        if (gender === 'Masculino') {
+                            bodyDensity = 1.10938 - (0.0008267 * sum) + (0.0000016 * Math.pow(sum, 2)) - (0.0002574 * age);
+                        } else {
+                            bodyDensity = 1.0994921 - (0.0009929 * sum) + (0.0000023 * Math.pow(sum, 2)) - (0.0001392 * age);
+                        }
+                    } else if (protocol === 'Guedes') {
+                        if (gender === 'Masculino') {
+                            bodyDensity = 1.17136 - (0.06706 * Math.log10(sum));
+                        } else {
+                            bodyDensity = 1.16650 - (0.07063 * Math.log10(sum));
+                        }
+                    } else if (protocol === 'DurninWomersley') {
+                        let c = 0, m = 0;
+                        if (gender === 'Masculino') {
+                            if (age < 20) { c = 1.1620; m = 0.0630; }
+                            else if (age < 30) { c = 1.1631; m = 0.0632; }
+                            else if (age < 40) { c = 1.1422; m = 0.0544; }
+                            else if (age < 50) { c = 1.1620; m = 0.0700; } // FIXED CONSTANT
+                            else { c = 1.1715; m = 0.0779; }
+                        } else {
+                            if (age < 20) { c = 1.1549; m = 0.0678; }
+                            else if (age < 30) { c = 1.1599; m = 0.0717; }
+                            else if (age < 40) { c = 1.1423; m = 0.0632; }
+                            else if (age < 50) { c = 1.1333; m = 0.0612; }
+                            else { c = 1.1339; m = 0.0645; }
+                        }
+                        bodyDensity = c - (m * Math.log10(sum));
+                    } else if (protocol === 'Faulkner') {
+                        bodyFatPercentage = (sum * 0.153) + 5.783;
                     }
-                    if (bodyDensity > 0) bodyFatPercentage = (495 / bodyDensity) - 450;
-                }
-            } else if (protocol === 'JacksonPollock3') {
-                if (gender === 'Masculino') {
-                    const sum = (skinfoldChest || 0) + (skinfoldAbdominal || 0) + (skinfoldThigh || 0);
-                    if (sum > 0) {
-                        bodyDensity = 1.10938 - (0.0008267 * sum) + (0.0000016 * Math.pow(sum, 2)) - (0.0002574 * age);
+
+                    if (bodyDensity > 0 && protocol !== 'Faulkner') {
+                        // Formula de Siri
                         bodyFatPercentage = (495 / bodyDensity) - 450;
                     }
-                } else {
-                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldThigh || 0);
-                    if (sum > 0) {
-                        bodyDensity = 1.0994921 - (0.0009929 * sum) + (0.0000023 * Math.pow(sum, 2)) - (0.0001392 * age);
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
+
+                    // Safety check to prevent hallucinated %
+                    if (bodyFatPercentage < 2 || bodyFatPercentage > 75) {
+                        bodyFatPercentage = 0;
                     }
                 }
-            } else if (protocol === 'Guedes') {
-                if (gender === 'Masculino') {
-                    const sum = (skinfoldTriceps || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
-                    if (sum > 0) {
-                        bodyDensity = 1.17136 - (0.06706 * Math.log10(sum));
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
-                    }
-                } else {
-                    const sum = (skinfoldThigh || 0) + (skinfoldSuprailiac || 0) + (skinfoldSubscapular || 0);
-                    if (sum > 0) {
-                        bodyDensity = 1.16650 - (0.07063 * Math.log10(sum));
-                        bodyFatPercentage = (495 / bodyDensity) - 450;
-                    }
-                }
-            } else if (protocol === 'DurninWomersley') {
-                const sum = (skinfoldBiceps || 0) + (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0);
-                if (sum > 0) {
-                    let c = 0, m = 0;
-                    if (gender === 'Masculino') {
-                        if (age < 20) { c = 1.1620; m = 0.0630; }
-                        else if (age < 30) { c = 1.1631; m = 0.0632; }
-                        else if (age < 40) { c = 1.1422; m = 0.0544; }
-                        else if (age < 50) { c = 1.1333; m = 0.0612; }
-                        else { c = 1.1715; m = 0.0779; }
-                    } else {
-                        if (age < 20) { c = 1.1549; m = 0.0678; }
-                        else if (age < 30) { c = 1.1599; m = 0.0717; }
-                        else if (age < 40) { c = 1.1423; m = 0.0632; }
-                        else if (age < 50) { c = 1.1333; m = 0.0612; }
-                        else { c = 1.1339; m = 0.0645; }
-                    }
-                    bodyDensity = c - (m * Math.log10(sum));
-                    bodyFatPercentage = (495 / bodyDensity) - 450;
-                }
-            } else if (protocol === 'Faulkner') {
-                const sum = (skinfoldTriceps || 0) + (skinfoldSubscapular || 0) + (skinfoldSuprailiac || 0) + (skinfoldAbdominal || 0);
-                if (sum > 0) bodyFatPercentage = (sum * 0.153) + 5.783;
             }
         } catch (e) {
             console.error("Anthro calculation error", e);
@@ -1668,9 +1672,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className="flex items-center gap-2">
                                                 <label className="text-xs font-medium whitespace-nowrap">Data:</label>
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     disabled={!isEditingTab}
-                                                    value={formData.anthropometry?.procedureDate || new Date().toISOString().split('T')[0]}
+                                                    value={formData.anthropometry?.procedureDate || ''}
                                                     onChange={e => setFormData(prev => ({
                                                         ...prev,
                                                         anthropometry: {
@@ -1900,7 +1904,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     <div>
                                                         <div className={`text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>
-                                                            {new Date(record.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                            {new Date(record.date).toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' às')}
                                                         </div>
                                                         <div className="flex flex-wrap gap-2 mt-2">
                                                             <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-700'}`}>Peso: {record.weight}kg</div>
@@ -2220,7 +2224,37 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         </section>
 
                         <section className="mt-6">
-                            <h2 className="text-base font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">Detalhamento das Medidas</h2>
+                            <h2 className="text-base font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">Tabela Comparativa de Evolução (Medidas x Data)</h2>
+                            {(() => {
+                                const historySorted = patient.anthropometryHistory ? [...patient.anthropometryHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) : [];
+                                if (historySorted.length === 0) return <p className="text-xs text-gray-500 italic">Nenhum histórico disponível.</p>;
+                                const cols = historySorted.slice(-6);
+                                return (
+                                    <table className="w-full text-[10px] text-left border-collapse mb-8">
+                                        <thead>
+                                            <tr className="border-b-2 border-emerald-200 bg-emerald-50/50">
+                                                <th className="py-2 pr-2 px-2 text-emerald-800">Medida</th>
+                                                {cols.map((h, i) => <th key={i} className="py-2 px-1 text-center text-emerald-800">{new Date(h.date).toLocaleDateString()}</th>)}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Peso (kg)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center font-bold">{Number(h.weight || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">IMC</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.bmi || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 bg-emerald-50/30 hover:bg-emerald-50/60"><td className="py-1.5 pr-2 px-2 font-bold text-emerald-800">Gordura Corporal (%)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center font-bold text-emerald-900">{h.bodyFatPercentage ? Number(h.bodyFatPercentage).toFixed(1) + '%' : '--'}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 bg-emerald-50/30 hover:bg-emerald-50/60"><td className="py-1.5 pr-2 px-2 font-bold text-emerald-800">Massa Magra (kg)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center font-bold text-emerald-900">{h.leanMass ? Number(h.leanMass).toFixed(1) : '--'}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Cintura (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circWaist || h.waistCircumference || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Abdômen (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circAbdomen || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Quadril (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circHip || h.hipCircumference || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Tórax (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circChest || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Braço (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circArmRelaxed || h.circArmContracted || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Coxa (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circThigh || 0).toFixed(1)}</td>)}</tr>
+                                            <tr className="border-b border-gray-100 hover:bg-slate-50"><td className="py-1.5 pr-2 px-2 font-bold text-gray-700">Panturrilha (cm)</td>{cols.map((h, i) => <td key={i} className="py-1.5 px-1 text-center">{Number(h.circCalf || 0).toFixed(1)}</td>)}</tr>
+                                        </tbody>
+                                    </table>
+                                );
+                            })()}
+
+                            <h2 className="text-base font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">Snapshot da Última Medida Individual</h2>
                             <div className="grid grid-cols-2 gap-8">
                                 <div>
                                     <h3 className="font-bold text-sm mb-2">Circunferências (cm)</h3>
