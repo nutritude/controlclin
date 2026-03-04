@@ -1072,13 +1072,17 @@ const MetabolicRiskChart = ({ data, isManagerMode, isPdf, gender }: { data: any[
     const lowRisk = gender === 'Feminino' ? 0.80 : 0.90;
     const modRisk = gender === 'Feminino' ? 0.85 : 0.95;
 
-    const chartData = data.filter(d => d.waistCircumference && d.circHip).map(d => ({
-        ...d,
-        dateFormatted: new Date(d.date).toLocaleDateString(undefined, { month: '2-digit', year: '2-digit' }),
-        rcq: Number((d.waistCircumference / d.circHip).toFixed(1))
-    }));
+    const chartData = data.filter(d => (d.waistCircumference || d.circWaist) && (d.hipCircumference || d.circHip)).map(d => {
+        const w = d.waistCircumference || d.circWaist;
+        const h = d.hipCircumference || d.circHip;
+        return {
+            ...d,
+            dateFormatted: new Date(d.date).toLocaleDateString(undefined, { month: '2-digit', year: '2-digit' }),
+            rcq: Number((w / h).toFixed(2))
+        };
+    });
 
-    if (chartData.length < 2) return null;
+    if (chartData.length < 1) return null;
 
     return (
         <div className="w-full" style={{ height: isPdf ? '180px' : '200px' }}>

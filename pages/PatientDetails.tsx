@@ -545,11 +545,38 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     weight: anthro.weight,
                     height: anthro.height,
                     bmi: anthro.bmi || 0,
+                    // Compatibilidade legada
                     waistCircumference: anthro.circWaist,
-                    // Added for graphing
+                    hipCircumference: anthro.circHip,
+                    // Circunferências completas (para gráficos de evolução)
+                    circNeck: anthro.circNeck,
+                    circShoulder: anthro.circShoulder,
+                    circChest: anthro.circChest,
+                    circWaist: anthro.circWaist,
+                    circAbdomen: anthro.circAbdomen,
+                    circHip: anthro.circHip,
+                    circArmRelaxed: anthro.circArmRelaxed,
+                    circArmContracted: anthro.circArmContracted,
+                    circForearm: anthro.circForearm,
+                    circThigh: anthro.circThigh,
+                    circCalf: anthro.circCalf,
+                    // Dobras cutâneas (para SkinfoldDeltaChart)
+                    skinfoldTriceps: anthro.skinfoldTriceps,
+                    skinfoldSubscapular: anthro.skinfoldSubscapular,
+                    skinfoldBiceps: anthro.skinfoldBiceps,
+                    skinfoldChest: anthro.skinfoldChest,
+                    skinfoldAxillary: anthro.skinfoldAxillary,
+                    skinfoldSuprailiac: anthro.skinfoldSuprailiac,
+                    skinfoldAbdominal: anthro.skinfoldAbdominal,
+                    skinfoldThigh: anthro.skinfoldThigh,
+                    skinfoldCalf: anthro.skinfoldCalf,
+                    // Protocolo de dobras (para identificação nos gráficos)
+                    skinfoldProtocol: anthro.skinfoldProtocol,
+                    // Composição corporal calculada (para CompositionEvolutionChart e GoalThermometer)
                     bodyFatPercentage: anthro.bodyFatPercentage,
                     fatMass: anthro.fatMass,
-                    leanMass: anthro.leanMass
+                    leanMass: anthro.leanMass,
+                    waistToHipRatio: anthro.waistToHipRatio,
                 };
 
                 // Update history conditionally (edit vs new)
@@ -1060,6 +1087,48 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         }
     };
 
+    const handleMarkAsPaid = async (trans: FinancialTransaction) => {
+        if (!patient) return;
+        if (trans.status === 'PAGO') return;
+
+        const confirmPay = window.confirm(
+            `Confirmar pagamento de R$ ${trans.amount.toFixed(2)} referente a:\n"${trans.description}"?\n\nEsta ação irá marcar o lançamento como PAGO.`
+        );
+        if (!confirmPay) return;
+
+        try {
+            await db.updateTransaction(user, patient.id, trans.id, {
+                status: 'PAGO',
+                date: new Date().toISOString()
+            });
+            // Recarrega dados do paciente para refletir o novo status
+            await fetchData(patient.id);
+        } catch (err: any) {
+            console.error("Erro ao atualizar status:", err);
+            alert("Erro ao atualizar status do pagamento: " + (err.message || err));
+        }
+    };
+
+    const handleSendReceiptViaWhatsApp = (trans: FinancialTransaction) => {
+        if (!patient || !clinic) return;
+
+        const firstName = patient.name.split(' ')[0];
+        const dateStr = new Date(trans.date).toLocaleDateString('pt-BR');
+        const methodLabel = PAYMENT_METHODS_LABELS[trans.method] || trans.method;
+
+        const msg =
+            `💚 *Recibo de Pagamento - ${clinic.name}*\n\n` +
+            `Olá *${firstName}*! Segue seu comprovante de pagamento:\n\n` +
+            `📋 *Descrição:* ${trans.description}\n` +
+            `💰 *Valor:* R$ ${trans.amount.toFixed(2)}\n` +
+            `💳 *Forma de Pagamento:* ${methodLabel}\n` +
+            `📅 *Data:* ${dateStr}\n` +
+            `🆔 *Ref:* ${trans.id.slice(0, 8).toUpperCase()}\n\n` +
+            `Obrigado pela confiança! Qualquer dúvida, estamos à disposição. 😊`;
+
+        window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
+    };
+
     if (loading || !patient) return <div>Carregando prontuário...</div>;
 
     // Calculos Financeiros
@@ -1280,7 +1349,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     <div className="flex justify-end mb-4">
                         {isEditingTab ? (
                             <div className="flex gap-2">
-                                <button onClick={() => { setIsEditingTab(false); setEditingAnthroDate(null); }} className={`px-3 py-1 font-bold rounded hover:bg-gray-50 text-sm shadow-sm ${isManagerMode ? 'bg-gray-700 border border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-300 text-gray-700'}`}>Cancelar</button>
+                                <button onClick={() => { setIsEditingTab(false); setEditingAnthroDate(null); if (patient) setFormData(patient); }} className={`px-3 py-1 font-bold rounded hover:bg-gray-50 text-sm shadow-sm ${isManagerMode ? 'bg-gray-700 border border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-300 text-gray-700'}`}>Cancelar</button>
                                 <button onClick={handleSaveTab} className={`text-sm px-4 py-1 rounded shadow-sm font-bold ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>Salvar Alterações</button>
                             </div>
                         ) : (
@@ -1324,8 +1393,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <input
                                                 type="text"
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                                defaultValue={(formData.clinicalHistory?.allergies || []).join(', ')}
+                                                value={(formData.clinicalHistory?.allergies || []).join(', ')}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'allergies', e.target.value.split(',').map(s => s.trim()))}
+                                                placeholder="Ex: Amendoim, Lactose, Dipirona..."
                                             />
                                         </div>
                                         <div>
@@ -1333,26 +1403,29 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <input
                                                 type="text"
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                                defaultValue={(formData.clinicalHistory?.medications || []).join(', ')}
+                                                value={(formData.clinicalHistory?.medications || []).join(', ')}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'medications', e.target.value.split(',').map(s => s.trim()))}
+                                                placeholder="Ex: Metformina, Losartana..."
                                             />
                                         </div>
                                         <div>
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Hábitos</label>
                                             <textarea
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                                rows={2}
-                                                defaultValue={formData.clinicalHistory?.habits || ''}
+                                                rows={3}
+                                                value={formData.clinicalHistory?.habits || ''}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'habits', e.target.value)}
+                                                placeholder="Descreva hábitos alimentares, atividade física, sono, etc."
                                             />
                                         </div>
                                         <div>
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sintomas</label>
                                             <textarea
                                                 className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                                rows={2}
-                                                defaultValue={formData.clinicalHistory?.symptoms || ''}
+                                                rows={3}
+                                                value={formData.clinicalHistory?.symptoms || ''}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'symptoms', e.target.value)}
+                                                placeholder="Descreva queixas principais, dores, desconfortos, etc."
                                             />
                                         </div>
                                     </>
@@ -1367,15 +1440,32 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             </div>
                                         </div>
                                         <div>
-                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Medicamentos em Uso</span>
-                                            <ul className={`mt-1 list-disc list-inside text-sm font-medium ${isManagerMode ? 'text-gray-100' : 'text-emerald-900'}`}>
-                                                {(patient.clinicalHistory?.medications && patient.clinicalHistory.medications.length > 0) ? patient.clinicalHistory.medications.map(m => <li key={m}>{m}</li>) : <li className={`list-none italic ${isManagerMode ? 'text-gray-500' : 'text-emerald-600'}`}>Nenhum</li>}
-                                            </ul>
+                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Alergias</span>
+                                            <div className="mt-1 flex flex-wrap gap-2">
+                                                {(patient.clinicalHistory?.allergies && patient.clinicalHistory.allergies.length > 0) ? patient.clinicalHistory.allergies.map(a => (
+                                                    <span key={a} className={`px-2 py-1 rounded text-sm font-medium border ${isManagerMode ? 'bg-amber-900 text-amber-300 border-amber-700' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>{a}</span>
+                                                )) : <span className={`${isManagerMode ? 'text-gray-500' : 'text-emerald-600'} text-sm italic`}>Nenhuma alergia registrada</span>}
+                                            </div>
                                         </div>
                                         <div>
-                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Hábitos & Sintomas</span>
-                                            <p className={`text-sm mt-1 p-2 rounded border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>{patient.clinicalHistory?.habits || '...'}</p>
-                                            <p className={`text-sm mt-2 p-2 rounded border italic ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>"{patient.clinicalHistory?.symptoms || '...'}"</p>
+                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Medicamentos em Uso</span>
+                                            <ul className={`mt-1 list-disc list-inside text-sm font-medium ${isManagerMode ? 'text-gray-100' : 'text-emerald-900'}`}>
+                                                {(patient.clinicalHistory?.medications && patient.clinicalHistory.medications.length > 0) ? patient.clinicalHistory.medications.map(m => <li key={m}>{m}</li>) : <li className={`list-none italic ${isManagerMode ? 'text-gray-500' : 'text-emerald-600'}`}>Nenhum medicamento registrado</li>}
+                                            </ul>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Hábitos</span>
+                                                <p className={`text-sm mt-1 p-3 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
+                                                    {patient.clinicalHistory?.habits || 'Nenhum hábito registrado'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Sintomas</span>
+                                                <p className={`text-sm mt-1 p-3 rounded-lg border italic ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
+                                                    "{patient.clinicalHistory?.symptoms || 'Nenhum sintoma registrado'}"
+                                                </p>
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -1933,12 +2023,12 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método / Condição</th>
                                         <th className={`px-6 py-3 text-right text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Valor Líquido</th>
                                         <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</th>
-                                        <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Recibo</th>
+                                        <th className={`px-6 py-3 text-center text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className={`${isManagerMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-emerald-200'}`}>
                                     {financialTransactions.length === 0 ? (
-                                        <tr><td colSpan={5} className={`px-6 py-10 text-center italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>Nenhuma movimentação registrada.</td></tr>
+                                        <tr><td colSpan={6} className={`px-6 py-10 text-center italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>Nenhuma movimentação registrada.</td></tr>
                                     ) : (
                                         financialTransactions.map(t => (
                                             <tr key={t.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'} transition-colors`}>
@@ -1962,27 +2052,51 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     R$ {t.amount.toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${STATUS_LABELS[t.status].color}`}>
-                                                        {STATUS_LABELS[t.status].label}
+                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${STATUS_LABELS[t.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                                                        {STATUS_LABELS[t.status]?.label || t.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    {t.status === 'PAGO' ? (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleGenerateReceipt(t); }}
-                                                            disabled={isGeneratingReceipt}
-                                                            title="Gerar Recibo"
-                                                            className={`p-1.5 rounded-lg transition-colors inline-flex items-center justify-center ${isManagerMode ? 'hover:bg-indigo-900/50 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
-                                                        >
-                                                            {isGeneratingReceipt && snapshotForReceipt?.id === t.id ? (
-                                                                <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
-                                                            ) : (
-                                                                <Icons.FileText />
-                                                            )}
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-gray-300 opacity-30">—</span>
-                                                    )}
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        {/* Botão Marcar como Pago (apenas PENDENTE/AGUARDANDO) */}
+                                                        {(t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO') && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(t); }}
+                                                                title="Confirmar recebimento e marcar como Pago"
+                                                                className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-95 whitespace-nowrap"
+                                                            >
+                                                                ✓ Receber
+                                                            </button>
+                                                        )}
+                                                        {/* Botões de recibo (apenas PAGO) */}
+                                                        {t.status === 'PAGO' && (
+                                                            <>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleGenerateReceipt(t); }}
+                                                                    disabled={isGeneratingReceipt}
+                                                                    title="Baixar Recibo PDF"
+                                                                    className={`p-1.5 rounded-lg transition-colors inline-flex items-center justify-center ${isManagerMode ? 'hover:bg-indigo-900/50 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                                                >
+                                                                    {isGeneratingReceipt && snapshotForReceipt?.id === t.id ? (
+                                                                        <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
+                                                                    ) : (
+                                                                        <Icons.FileText className="w-4 h-4" />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleSendReceiptViaWhatsApp(t); }}
+                                                                    title="Enviar comprovante de pagamento via WhatsApp"
+                                                                    className="p-1.5 rounded-lg transition-colors inline-flex items-center justify-center text-green-600 hover:bg-green-100"
+                                                                >
+                                                                    <Icons.Smartphone className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {/* Status sem ação disponível */}
+                                                        {t.status !== 'PAGO' && t.status !== 'PENDENTE' && t.status !== 'AGUARDANDO_AUTORIZACAO' && (
+                                                            <span className="text-gray-300 opacity-30">—</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))

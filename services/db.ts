@@ -1219,6 +1219,35 @@ class DatabaseService {
         console.log(`[DB] Transação adicionada com sucesso para ${patientId}: R$${data.amount}`);
         return newTrans;
     }
+    async updateTransaction(user: User, patientId: string, transactionId: string, updates: Partial<FinancialTransaction>) {
+        const pIdx = this.patients.findIndex(p => p.id === patientId);
+        if (pIdx === -1) throw new Error("Paciente não encontrado");
+
+        const patient = this.patients[pIdx];
+        if (!patient.financial?.transactions) throw new Error("Nenhuma transação encontrada");
+
+        const tIdx = patient.financial.transactions.findIndex(t => t.id === transactionId);
+        if (tIdx === -1) throw new Error("Transação não encontrada");
+
+        const updatedTransactions = [...patient.financial.transactions];
+        updatedTransactions[tIdx] = { ...updatedTransactions[tIdx], ...updates };
+
+        this.patients[pIdx] = {
+            ...patient,
+            financial: {
+                ...patient.financial,
+                transactions: updatedTransactions
+            }
+        };
+
+        if (updates.status) {
+            this.logPatientEvent(patientId, 'PAYMENT_RECORDED', { transactionId, newStatus: updates.status }, `Status de pagamento alterado para ${updates.status}`, user);
+        }
+
+        await this.saveToStorage();
+        return updatedTransactions[tIdx];
+    }
+
     async addTimelineEvent(user: User, patientId: string, data: any) { /* ... impl ... */ }
     async deleteTimelineEvent(user: User, patientId: string, eventId: string) { /* ... impl ... */ }
     async saveClinicalNote(user: User, patientId: string, content: string) {
