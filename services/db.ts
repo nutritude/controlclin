@@ -1112,10 +1112,20 @@ class DatabaseService {
             // Immutable update: create a new object and update the array reference
             const updatedPatient = {
                 ...this.patients[idx],
-                ...data,
-                // Ensure nested objects are handled properly
-                clinicalSummary: data.clinicalSummary || this.patients[idx].clinicalSummary,
-                anthropometry: data.anthropometry || this.patients[idx].anthropometry
+                ...data, // Shallow merge of all top-level keys
+                // Deep merge specific objects to prevent wiping fields during Partial update
+                clinicalSummary: {
+                    ...(this.patients[idx].clinicalSummary || {}),
+                    ...(data.clinicalSummary || {})
+                },
+                clinicalHistory: {
+                    ...(this.patients[idx].clinicalHistory || {}),
+                    ...(data.clinicalHistory || {})
+                },
+                anthropometry: {
+                    ...(this.patients[idx].anthropometry || {}),
+                    ...(data.anthropometry || {})
+                }
             };
 
             this.patients[idx] = updatedPatient;
