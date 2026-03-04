@@ -1073,64 +1073,71 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     return (
         <div className={`space-y-6 ${isManagerMode ? 'text-gray-100' : 'text-slate-800'}`}>
             {/* Header Fixo do Paciente */}
-            <div className={`${isManagerMode ? 'bg-gray-800 shadow-lg ring-gray-700 border-indigo-700' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 relative ring-1`}>
-                {/* Header Actions */}
-                <div className="flex justify-end gap-2 mb-4 md:absolute md:top-4 md:right-4">
-                    {!isPatientMode && (
-                        <>
-                            <button
-                                onClick={async () => {
-                                    const now = new Date().toISOString();
-                                    await db.updatePatient(user, patient.id, { appLiberadoEm: now });
-                                    setPatient(prev => { if (!prev) return prev; return { ...prev, appLiberadoEm: now } });
-                                    const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
-                                    window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
-                                }}
-                                className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-900/50' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/30'}`}
-                                title="Liberar Acesso ao App (WhatsApp)"
-                            >
-                                <Icons.Smartphone className="w-4 h-4" />
-                                <span>Liberar App</span>
-                            </button>
-                            <button
-                                onClick={() => setIsEditModalOpen(true)}
-                                className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'}`} title="Editar Pessoais"
-                            >
-                                <Icons.Settings className="w-5 h-5" />
-                            </button>
-                        </>
-                    )}
-                    {isAdmin && (
-                        <button
-                            onClick={handleDelete}
-                            className={`p-2 rounded transition-colors ${isManagerMode ? 'text-gray-300 hover:text-red-400 hover:bg-red-900' : 'text-emerald-700 hover:text-red-600 hover:bg-red-50'}`} title="Excluir Paciente"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                    )}
-                </div>
+            <div className={`${isManagerMode ? 'bg-gray-800 shadow-lg ring-gray-700 border-indigo-700' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 ring-1`}>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-start gap-4">
-                        <div className={`h-16 w-16 rounded-full flex items-center justify-center text-2xl font-bold border ${isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-emerald-100 text-emerald-500 border-emerald-200'}`}>
+                {/* LINHA 1: Avatar + Nome + Botões de Ação */}
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                    {/* Identidade do Paciente */}
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className={`h-16 w-16 flex-shrink-0 rounded-full flex items-center justify-center text-2xl font-bold border ${isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-emerald-100 text-emerald-500 border-emerald-200'}`}>
                             {patient.name.charAt(0)}
                         </div>
-                        <div>
-                            <h1 className={`text-2xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{patient.name}</h1>
-                            <div className="flex gap-2 mt-1">
+                        <div className="min-w-0">
+                            <h1 className={`text-xl font-bold leading-tight truncate ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{patient.name}</h1>
+                            <div className="flex flex-wrap gap-2 mt-1.5">
                                 <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-emerald-100 text-emerald-600'}`}>{patient.gender}</span>
                                 <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-indigo-900 text-indigo-300' : 'bg-emerald-100 text-emerald-800'}`}>Nasc: {patient.birthDate}</span>
                                 {patient.cpf && <span className={`text-xs px-2 py-0.5 rounded border font-mono ${isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>CPF: {patient.cpf}</span>}
                             </div>
                         </div>
                     </div>
-                    <div className={`text-sm md:text-right space-y-1 pr-12 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
-                        <p><strong>Email:</strong> {patient.email}</p>
-                        <p><strong>Tel:</strong> {patient.phone}</p>
-                        <p><strong>Endereço:</strong> {patient.address || 'Não informado'}</p>
+
+                    {/* Botões de Ação — alinhados à direita na mesma linha */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {!isPatientMode && (
+                            <>
+                                <button
+                                    onClick={async () => {
+                                        const now = new Date().toISOString();
+                                        await db.updatePatient(user, patient.id, { appLiberadoEm: now });
+                                        setPatient(prev => { if (!prev) return prev; return { ...prev, appLiberadoEm: now } });
+                                        const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
+                                        window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
+                                    }}
+                                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow transition-all active:scale-95 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                                    title="Liberar Acesso ao App (WhatsApp)"
+                                >
+                                    <Icons.Smartphone className="w-4 h-4" />
+                                    <span>Liberar App</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsEditModalOpen(true)}
+                                    className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-gray-300 border-gray-600 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 border-emerald-200 hover:text-emerald-900 hover:bg-emerald-50'}`}
+                                    title="Editar Dados Pessoais"
+                                >
+                                    <Icons.Settings className="w-5 h-5" />
+                                </button>
+                            </>
+                        )}
+                        {isAdmin && (
+                            <button
+                                onClick={handleDelete}
+                                className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-gray-300 border-gray-600 hover:text-red-400 hover:bg-red-900 hover:border-red-800' : 'text-slate-400 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200'}`}
+                                title="Excluir Paciente"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
+                </div>
+
+                {/* LINHA 2: Dados de Contato */}
+                <div className={`mt-4 pt-4 border-t flex flex-wrap gap-x-6 gap-y-1 text-sm ${isManagerMode ? 'border-gray-700 text-gray-300' : 'border-slate-100 text-emerald-700'}`}>
+                    <p><strong>Email:</strong> {patient.email}</p>
+                    <p><strong>Tel:</strong> {patient.phone}</p>
+                    <p><strong>Endereço:</strong> {patient.address || 'Não informado'}</p>
                 </div>
             </div>
 
