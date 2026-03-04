@@ -2291,6 +2291,39 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sexo</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div>
                                 </div>
                                 <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} /></div>
+
+                                {/* Acesso ao Portal */}
+                                <div className={`pt-3 mt-1 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'}`}>
+                                    <p className={`text-xs font-black uppercase tracking-wider mb-3 flex items-center gap-2 ${isManagerMode ? 'text-indigo-400' : 'text-emerald-700'}`}>
+                                        <Icons.Smartphone className="w-4 h-4" /> Acesso ao Portal do Paciente
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Usuário (login)</label>
+                                            <input
+                                                type="text"
+                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                value={formData.username || formData.email || ''}
+                                                onChange={e => setFormData({ ...formData, username: e.target.value })}
+                                                placeholder="Ex: email do paciente"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Senha de Acesso</label>
+                                            <input
+                                                type="text"
+                                                className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                value={formData.password || ''}
+                                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                                placeholder="Defina a senha"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className={`text-[10px] mt-1.5 ${isManagerMode ? 'text-gray-500' : 'text-slate-400'}`}>
+                                        Envie o login ao paciente clicando em <strong>Liberar App</strong> após salvar.
+                                    </p>
+                                </div>
+
                                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
                                     <button type="button" onClick={() => setIsEditModalOpen(false)} className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Cancelar</button>
                                     <button type="submit" className={`px-6 py-2 text-white rounded-md font-medium shadow-sm ${isManagerMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>Salvar</button>

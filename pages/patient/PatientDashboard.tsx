@@ -1,7 +1,8 @@
 
-import React, { useState, useRef } from 'react';
-import { Patient, Clinic } from '../../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Patient, Clinic, Prescription, ExamRequest } from '../../types';
 import { Icons } from '../../constants';
+import { db } from '../../services/db';
 
 interface PatientDashboardProps {
     patient: Patient;
@@ -9,30 +10,41 @@ interface PatientDashboardProps {
     onLogout: () => void;
 }
 
+type Tab = 'home' | 'plan' | 'progress' | 'prescricao' | 'exames' | 'profile';
+
 export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, clinic, onLogout }) => {
-    const [activeTab, setActiveTab] = useState<'home' | 'plan' | 'progress' | 'profile'>('home');
+    const [activeTab, setActiveTab] = useState<Tab>('home');
     const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
     const [waterIntake, setWaterIntake] = useState(0);
     const [mealsCompleted, setMealsCompleted] = useState<string[]>([]);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [prescricoes, setPrescricoes] = useState<Prescription[]>([]);
+    const [pedidosExame, setPedidosExame] = useState<ExamRequest[]>([]);
     const planExportRef = useRef<HTMLDivElement>(null);
+    const prescricaoRef = useRef<HTMLDivElement>(null);
+    const pedidoRef = useRef<HTMLDivElement>(null);
 
-    // Registro do histórico mais recente (mesma fonte que a aba Antropometria do profissional)
+    useEffect(() => {
+        db.getPrescriptions(patient.id).then(setPrescricoes);
+        db.getExamRequests(patient.id).then(setPedidosExame);
+    }, [patient.id]);
+
+    // Registro mais recente do histórico (mesma fonte da aba Antropometria)
     const lastAnthro = patient.anthropometryHistory && patient.anthropometryHistory.length > 0
         ? [...patient.anthropometryHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
         : null;
 
-    // % Gordura: prioridade → histórico mais recente → registro atual → '--'
     const displayBodyFat: string = (() => {
-        const fromHistory = lastAnthro?.bodyFatPercentage;
-        const fromCurrent = patient.anthropometry?.bodyFatPercentage;
-        const val = fromHistory ?? fromCurrent;
+        const val = lastAnthro?.bodyFatPercentage ?? patient.anthropometry?.bodyFatPercentage;
         return (val !== undefined && val !== null && val > 0) ? `${val}%` : '--';
     })();
 
     const activePlan = patient.nutritionalPlans
         ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
         : patient.nutritionalPlan || null;
+
+    // Prescrições finalizadas (não rascunho)
+    const prescricoesFinalizadas = prescricoes.filter(p => p.status === 'FINALIZADA');
 
     function calculateAge(birthDate: string) {
         if (!birthDate) return 0;
@@ -44,107 +56,76 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         return age;
     }
 
-    const handleDownloadPlan = async () => {
-        if (!planExportRef.current || isGeneratingPdf) return;
+    const generatePdf = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
+        if (!ref.current || isGeneratingPdf) return;
         setIsGeneratingPdf(true);
         try {
             const html2pdf = (window as any).html2pdf;
             if (!html2pdf) { alert('Erro ao carregar gerador de PDF.'); return; }
-            const opt = {
-                margin: 10,
-                filename: `Plano_Alimentar_${patient.name.split(' ')[0]}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
+            await html2pdf().set({
+                margin: 10, filename,
+                image: { type: 'jpeg', quality: 0.97 },
                 html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            await html2pdf().set(opt).from(planExportRef.current).save();
-        } catch (e) {
-            alert('Erro ao gerar PDF.');
-        } finally {
-            setIsGeneratingPdf(false);
-        }
+            }).from(ref.current).save();
+        } catch (e) { alert('Erro ao gerar PDF.'); }
+        finally { setIsGeneratingPdf(false); }
     };
 
-    // ── TABS ────────────────────────────────────────────────
+    // ── TABS ─────────────────────────────────────────────────────────
 
     const renderHome = () => (
         <div className="space-y-8 animate-fadeIn">
-            {/* Boas-vindas */}
-            <div className={`rounded-[32px] p-6 bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden`}>
+            <div className="rounded-[32px] p-6 bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-400 rounded-full -mr-24 -mt-24 opacity-20 blur-3xl pointer-events-none" />
                 <p className="text-emerald-100 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">Área do Paciente</p>
                 <h1 className="text-2xl font-black tracking-tight">{patient.name.split(' ')[0]} 👋</h1>
                 <p className="text-emerald-100 text-sm mt-1 opacity-80">{clinic.name}</p>
             </div>
 
-            {/* Quick Info */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-100">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-                        <Icons.TrendingUp className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3"><Icons.TrendingUp className="w-4 h-4" /></div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Peso Atual</p>
                     <p className="text-xl font-black text-slate-800">{lastAnthro?.weight ?? patient.anthropometry?.weight ?? '--'} <span className="text-xs font-medium text-slate-500">kg</span></p>
                 </div>
                 <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-100">
-                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-3">
-                        <Icons.Activity className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-3"><Icons.Activity className="w-4 h-4" /></div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">% Gordura</p>
                     <p className="text-xl font-black text-slate-800">{displayBodyFat}</p>
                 </div>
             </div>
 
-            {/* Check-in rápido */}
             <section>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-black text-slate-800">Seu Dia</h2>
-                    <span className="text-[10px] font-black bg-orange-100 text-orange-700 px-2 py-1 rounded-full uppercase">Check-in</span>
+                    <h2 className="text-lg font-black text-slate-800">Acesso Rápido</h2>
                 </div>
-                <button
-                    onClick={() => setIsCheckInModalOpen(true)}
-                    className="w-full bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group"
-                >
-                    <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Icons.CheckCircle className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="font-bold text-slate-800 truncate">Registrar Aderência</p>
-                        <p className="text-xs text-slate-500 truncate">Como foram suas refeições hoje?</p>
-                    </div>
-                    <div className="ml-auto p-2 bg-slate-50 text-slate-400 rounded-xl group-hover:text-emerald-600">
-                        <Icons.ChevronRight className="w-5 h-5" />
-                    </div>
-                </button>
-            </section>
-
-            {/* Plano Ativo */}
-            <section>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-black text-slate-800">Plano Ativo</h2>
-                    <button onClick={() => setActiveTab('plan')} className="text-[10px] font-black text-emerald-600 uppercase hover:underline">Ver Tudo</button>
+                <div className="space-y-3">
+                    <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group">
+                        <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"><Icons.CheckCircle className="w-5 h-5" /></div>
+                        <div className="min-w-0"><p className="font-bold text-slate-800">Registrar Check-in</p><p className="text-xs text-slate-500">Aderência do dia</p></div>
+                        <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
+                    </button>
+                    <button onClick={() => setActiveTab('plan')} className="w-full bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group">
+                        <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"><Icons.Utensils className="w-5 h-5" /></div>
+                        <div className="min-w-0"><p className="font-bold text-slate-800">Plano Alimentar</p><p className="text-xs text-slate-500">{activePlan ? activePlan.strategyName || 'Ver dieta' : 'Nenhum ativo'}</p></div>
+                        <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
+                    </button>
+                    {prescricoesFinalizadas.length > 0 && (
+                        <button onClick={() => setActiveTab('prescricao')} className="w-full bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group">
+                            <div className="w-11 h-11 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"><Icons.FileText className="w-5 h-5" /></div>
+                            <div className="min-w-0"><p className="font-bold text-slate-800">Prescrições</p><p className="text-xs text-slate-500">{prescricoesFinalizadas.length} prescrição(ões)</p></div>
+                            <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
+                        </button>
+                    )}
+                    {pedidosExame.length > 0 && (
+                        <button onClick={() => setActiveTab('exames')} className="w-full bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group">
+                            <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"><Icons.Beaker className="w-5 h-5" /></div>
+                            <div className="min-w-0"><p className="font-bold text-slate-800">Pedido de Exames</p><p className="text-xs text-slate-500">{pedidosExame.length} solicitação(ões)</p></div>
+                            <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
+                        </button>
+                    )}
                 </div>
-                {activePlan ? (
-                    <div className="bg-emerald-600 p-6 rounded-[32px] shadow-xl shadow-emerald-600/20 text-white relative overflow-hidden">
-                        <div className="relative z-10">
-                            <Icons.Utensils className="w-8 h-8 opacity-40 mb-3" />
-                            <p className="font-black text-xl mb-1">{activePlan.strategyName || 'Estratégia Nutricional'}</p>
-                            <p className="text-xs text-emerald-100 opacity-80 mb-5">{activePlan.title || 'Plano personalizado'}</p>
-                            <button
-                                onClick={() => setActiveTab('plan')}
-                                className="bg-white text-emerald-600 text-xs font-black px-6 py-3 rounded-2xl shadow-lg border-none active:scale-95 transition-all"
-                            >
-                                ABRIR DIETA
-                            </button>
-                        </div>
-                        <Icons.Utensils className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 rotate-12" />
-                    </div>
-                ) : (
-                    <div className="bg-slate-100 p-8 rounded-[32px] border-2 border-dashed border-slate-200 text-center">
-                        <p className="text-slate-500 text-sm font-bold">Nenhum plano ativo.</p>
-                        <p className="text-[10px] text-slate-400 uppercase mt-1">Fale com seu nutricionista</p>
-                    </div>
-                )}
             </section>
         </div>
     );
@@ -154,32 +135,23 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Plano Alimentar</h1>
                 {activePlan && (
-                    <button
-                        onClick={handleDownloadPlan}
-                        disabled={isGeneratingPdf}
-                        className="p-3 bg-white text-emerald-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-emerald-50 transition-all flex items-center gap-2 disabled:opacity-50"
-                    >
+                    <button onClick={() => generatePdf(planExportRef, `Plano_${patient.name.split(' ')[0]}.pdf`)} disabled={isGeneratingPdf}
+                        className="p-3 bg-white text-emerald-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-emerald-50 transition-all flex items-center gap-2 disabled:opacity-50">
                         <Icons.Download className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase">{isGeneratingPdf ? 'Gerando...' : 'PDF'}</span>
                     </button>
                 )}
             </div>
-
             {activePlan ? (
                 <>
                     <div className="space-y-4">
                         {activePlan.meals.map((meal, idx) => (
                             <div key={idx} className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden">
                                 <div className="p-5 flex items-center gap-4 border-b border-slate-50">
-                                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-black text-xs uppercase flex-shrink-0">
-                                        {meal.time || '--'}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-800">{meal.name}</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{meal.items.length} itens</p>
-                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-black text-xs flex-shrink-0">{meal.time || '--'}</div>
+                                    <div><h3 className="font-black text-slate-800">{meal.name}</h3><p className="text-[10px] font-bold text-slate-400 uppercase">{meal.items.length} itens</p></div>
                                 </div>
-                                <div className="p-5 space-y-3 bg-slate-50/30">
+                                <div className="p-5 space-y-3">
                                     {meal.items.map((item, iIdx) => (
                                         <div key={iIdx} className="flex items-start gap-3">
                                             <div className="w-2 h-2 rounded-full bg-emerald-400 mt-2 flex-shrink-0" />
@@ -188,9 +160,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                                                 <p className="text-xs text-slate-500">{item.quantity}{item.unit} • {item.calculatedCalories ?? '--'} kcal</p>
                                                 {item.substitutes && item.substitutes.length > 0 && (
                                                     <div className="mt-1 flex flex-wrap gap-1">
-                                                        {item.substitutes.map((s, si) => (
-                                                            <span key={si} className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-400 rounded-md font-bold uppercase">Ou: {s.name}</span>
-                                                        ))}
+                                                        {item.substitutes.map((s, si) => <span key={si} className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-400 rounded-md font-bold">Ou: {s.name}</span>)}
                                                     </div>
                                                 )}
                                             </div>
@@ -200,52 +170,36 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                             </div>
                         ))}
                     </div>
-
-                    {/* Elemento oculto para export PDF */}
                     <div className="hidden">
                         <div ref={planExportRef} className="p-10 font-sans text-slate-800 bg-white">
                             <div className="border-b-2 border-emerald-600 pb-6 mb-8 flex justify-between items-end">
-                                <div>
-                                    <h1 className="text-3xl font-black text-emerald-800 uppercase tracking-tighter">Plano Alimentar</h1>
-                                    <p className="text-sm font-bold text-slate-500">{patient.name}</p>
-                                </div>
-                                <div className="text-right">
-                                    <h2 className="text-xl font-bold text-emerald-600">{clinic.name}</h2>
-                                    <p className="text-xs text-slate-400">Gerado em {new Date().toLocaleDateString('pt-BR')}</p>
-                                </div>
+                                <div><h1 className="text-3xl font-black text-emerald-800 uppercase">Plano Alimentar</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
+                                <div className="text-right"><h2 className="text-xl font-bold text-emerald-600">{clinic.name}</h2><p className="text-xs text-slate-400">Gerado em {new Date().toLocaleDateString('pt-BR')}</p></div>
                             </div>
-                            <div className="space-y-8">
-                                {activePlan.meals.map((meal, idx) => (
-                                    <div key={idx}>
-                                        <div className="flex items-center gap-4 mb-3">
-                                            <div className="bg-emerald-600 text-white px-4 py-1.5 rounded-full font-black text-sm">{meal.time || '--:--'}</div>
-                                            <h3 className="text-xl font-black text-slate-800 uppercase">{meal.name}</h3>
-                                        </div>
-                                        <div className="ml-4 space-y-2">
-                                            {meal.items.map((item, iIdx) => (
-                                                <div key={iIdx} className="border-l-2 border-slate-200 pl-4">
-                                                    <p className="font-bold text-slate-900">{item.name}</p>
-                                                    <p className="text-sm text-slate-500">{item.quantity}{item.unit}</p>
-                                                </div>
-                                            ))}
-                                        </div>
+                            {activePlan.meals.map((meal, idx) => (
+                                <div key={idx} className="mb-8 break-inside-avoid">
+                                    <div className="flex items-center gap-3 mb-3"><span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-black">{meal.time || '--'}</span><h3 className="text-xl font-black text-slate-800 uppercase">{meal.name}</h3></div>
+                                    <div className="ml-4 space-y-2">
+                                        {meal.items.map((item, iIdx) => (
+                                            <div key={iIdx} className="border-l-2 border-slate-200 pl-4">
+                                                <p className="font-bold">{item.name} — {item.quantity}{item.unit}</p>
+                                                {item.substitutes && item.substitutes.length > 0 && <p className="text-xs text-slate-400 italic">Substituições: {item.substitutes.map(s => s.name).join(', ')}</p>}
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                             <div className="mt-16 pt-8 border-t border-slate-100 text-center text-xs text-slate-400">
                                 <p className="font-black uppercase tracking-widest">ControlClin — Portal do Paciente</p>
-                                <p>Documento gerado para uso exclusivo de {patient.name}</p>
+                                <p>Documento de uso exclusivo de {patient.name}</p>
                             </div>
                         </div>
                     </div>
                 </>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300">
-                        <Icons.Utensils className="w-10 h-10" />
-                    </div>
-                    <p className="text-slate-500 font-bold">Nenhum plano alimentar encontrado.</p>
-                    <p className="text-xs text-slate-400">Fale com seu nutricionista.</p>
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300"><Icons.Utensils className="w-10 h-10" /></div>
+                    <p className="text-slate-500 font-bold">Nenhum plano alimentar ativo.</p>
                 </div>
             )}
         </div>
@@ -254,10 +208,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const renderProgress = () => (
         <div className="space-y-8 animate-fadeIn">
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Minha Evolução</h1>
-
-            {/* Medidas Principais */}
             <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
-                <h3 className="font-black text-slate-800 mb-4">Medidas Registradas</h3>
+                <h3 className="font-black text-slate-800 mb-4">Medidas Atuais</h3>
                 <div className="grid grid-cols-2 gap-3">
                     {[
                         { label: 'Peso', value: lastAnthro?.weight ?? patient.anthropometry?.weight, unit: 'kg' },
@@ -274,23 +226,180 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                     ))}
                 </div>
             </div>
-
-            {/* Histórico de avaliações */}
             {patient.anthropometryHistory && patient.anthropometryHistory.length > 1 && (
                 <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
                     <h3 className="font-black text-slate-800 mb-4">Histórico de Peso</h3>
-                    <div className="space-y-3">
-                        {[...patient.anthropometryHistory]
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .slice(0, 6)
-                            .map((h, i) => (
-                                <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
-                                    <span className="text-xs text-slate-500">{new Date(h.date).toLocaleDateString('pt-BR')}</span>
+                    <div className="space-y-2">
+                        {[...patient.anthropometryHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8).map((h, i) => (
+                            <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                                <span className="text-xs text-slate-500">{new Date(h.date).toLocaleDateString('pt-BR')}</span>
+                                <div className="flex gap-3 text-right">
                                     <span className="font-black text-slate-800">{h.weight} kg</span>
+                                    {h.bodyFatPercentage && <span className="text-xs text-orange-500 font-bold">{h.bodyFatPercentage}% GC</span>}
                                 </div>
-                            ))}
+                            </div>
+                        ))}
                     </div>
                 </div>
+            )}
+        </div>
+    );
+
+    // ── PRESCRIÇÃO ───────────────────────────────────────────────────
+    const renderPrescricao = () => (
+        <div className="space-y-6 animate-fadeIn">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Minhas Prescrições</h1>
+            {prescricoesFinalizadas.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300"><Icons.FileText className="w-10 h-10" /></div>
+                    <p className="text-slate-500 font-bold">Nenhuma prescrição disponível.</p>
+                </div>
+            ) : (
+                prescricoesFinalizadas.map((rx, rxIdx) => (
+                    <div key={rx.id} className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden">
+                        {/* Cabeçalho */}
+                        <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+                            <div>
+                                <p className="font-black text-slate-800">{new Date(rx.date).toLocaleDateString('pt-BR')}</p>
+                                <p className="text-xs text-slate-500">Dr(a). {rx.authorName}</p>
+                            </div>
+                            <button
+                                onClick={() => generatePdf(prescricaoRef, `Prescricao_${patient.name.split(' ')[0]}_${rxIdx + 1}.pdf`)}
+                                disabled={isGeneratingPdf}
+                                className="p-2 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-100 transition-all flex items-center gap-1.5 text-xs font-black disabled:opacity-50"
+                            >
+                                <Icons.Download className="w-4 h-4" /> PDF
+                            </button>
+                        </div>
+                        {/* Itens */}
+                        <div className="p-5 space-y-3">
+                            {rx.items.map((item, i) => (
+                                <div key={i} className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100/80">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                        <p className="font-black text-slate-800">{item.name}</p>
+                                        <span className="text-[9px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{item.type}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1 text-xs text-slate-600">
+                                        {item.dose && <p><span className="font-bold">Dose:</span> {item.dose} {item.unit}</p>}
+                                        {item.form && <p><span className="font-bold">Forma:</span> {item.form}</p>}
+                                        {item.frequency && <p><span className="font-bold">Frequência:</span> {item.frequency}</p>}
+                                        {item.durationDays && <p><span className="font-bold">Duração:</span> {item.durationDays} dias</p>}
+                                    </div>
+                                    {item.instructions && <p className="text-xs text-slate-500 mt-2 italic border-t border-purple-100 pt-2">{item.instructions}</p>}
+                                </div>
+                            ))}
+                            {rx.observations && (
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="text-xs font-bold text-slate-500 uppercase mb-1">Observações</p>
+                                    <p className="text-sm text-slate-700">{rx.observations}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Template oculto para PDF */}
+                        {rxIdx === 0 && (
+                            <div className="hidden">
+                                <div ref={prescricaoRef} className="p-10 font-sans text-slate-800 bg-white">
+                                    <div className="border-b-2 border-purple-600 pb-6 mb-8 flex justify-between items-end">
+                                        <div><h1 className="text-3xl font-black text-purple-800 uppercase">Prescrição</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
+                                        <div className="text-right"><h2 className="text-xl font-bold text-purple-600">{clinic.name}</h2><p className="text-xs text-slate-400">Data: {new Date(rx.date).toLocaleDateString('pt-BR')}</p><p className="text-xs text-slate-400">Profissional: {rx.authorName}</p></div>
+                                    </div>
+                                    {rx.items.map((item, i) => (
+                                        <div key={i} className="mb-6 pb-6 border-b border-slate-100 last:border-0">
+                                            <p className="font-black text-slate-900 text-lg">{i + 1}. {item.name}</p>
+                                            <p className="text-sm text-slate-600 mt-1">{item.dose} {item.unit} — {item.form} — {item.frequency}{item.durationDays ? ` — ${item.durationDays} dias` : ''}</p>
+                                            {item.instructions && <p className="text-sm text-slate-500 italic mt-1">{item.instructions}</p>}
+                                        </div>
+                                    ))}
+                                    {rx.observations && <div className="mt-6 p-4 bg-slate-50 rounded-2xl"><p className="font-bold text-slate-700 mb-1">Observações:</p><p className="text-slate-600">{rx.observations}</p></div>}
+                                    <div className="mt-20 pt-10 border-t text-center text-xs text-slate-400">
+                                        <p className="font-black uppercase tracking-widest">ControlClin — Portal do Paciente</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))
+            )}
+        </div>
+    );
+
+    // ── PEDIDOS DE EXAME ─────────────────────────────────────────────
+    const renderExames = () => (
+        <div className="space-y-6 animate-fadeIn">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Pedidos de Exames</h1>
+            {pedidosExame.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300"><Icons.Beaker className="w-10 h-10" /></div>
+                    <p className="text-slate-500 font-bold">Nenhum pedido de exame.</p>
+                </div>
+            ) : (
+                pedidosExame.map((pedido, pedIdx) => (
+                    <div key={pedido.id} className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+                            <div>
+                                <p className="font-black text-slate-800">{new Date(pedido.date).toLocaleDateString('pt-BR')}</p>
+                                <p className="text-xs text-slate-500">Dr(a). {pedido.authorName} — {pedido.authorRegistration}</p>
+                            </div>
+                            <button
+                                onClick={() => generatePdf(pedidoRef, `Pedido_Exame_${patient.name.split(' ')[0]}_${pedIdx + 1}.pdf`)}
+                                disabled={isGeneratingPdf}
+                                className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all flex items-center gap-1.5 text-xs font-black disabled:opacity-50"
+                            >
+                                <Icons.Download className="w-4 h-4" /> PDF
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-3">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Exames Solicitados</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {pedido.exams.map((ex, i) => (
+                                        <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100">{ex}</span>
+                                    ))}
+                                </div>
+                            </div>
+                            {pedido.clinicalIndication && (
+                                <div className="p-4 bg-slate-50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Indicação Clínica</p>
+                                    <p className="text-sm text-slate-700">{pedido.clinicalIndication}</p>
+                                </div>
+                            )}
+                            {pedido.fastingRequired && (
+                                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-100 flex items-center gap-2">
+                                    <span className="text-amber-600 text-lg">⚠️</span>
+                                    <p className="text-xs font-bold text-amber-700">Jejum de {pedido.fastingHours}h necessário</p>
+                                </div>
+                            )}
+                            {pedido.complementaryInfo && (
+                                <p className="text-xs text-slate-500 italic px-2">{pedido.complementaryInfo}</p>
+                            )}
+                        </div>
+
+                        {/* Template oculto para PDF */}
+                        {pedIdx === 0 && (
+                            <div className="hidden">
+                                <div ref={pedidoRef} className="p-10 font-sans text-slate-800 bg-white">
+                                    <div className="border-b-2 border-blue-600 pb-6 mb-8 flex justify-between items-end">
+                                        <div><h1 className="text-3xl font-black text-blue-800 uppercase">Pedido de Exames</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
+                                        <div className="text-right"><h2 className="text-xl font-bold text-blue-600">{clinic.name}</h2><p className="text-xs text-slate-400">Data: {new Date(pedido.date).toLocaleDateString('pt-BR')}</p><p className="text-xs text-slate-400">{pedido.authorName} — {pedido.authorRegistration}</p></div>
+                                    </div>
+                                    <div className="mb-8">
+                                        <h3 className="font-black text-slate-700 mb-4 uppercase text-sm tracking-wide">Exames Solicitados</h3>
+                                        <div className="space-y-2">
+                                            {pedido.exams.map((ex, i) => <p key={i} className="text-slate-800">• {ex}</p>)}
+                                        </div>
+                                    </div>
+                                    {pedido.clinicalIndication && <div className="mb-6 p-4 bg-slate-50 rounded-2xl"><p className="font-bold text-slate-700 mb-1">Indicação Clínica:</p><p>{pedido.clinicalIndication}</p></div>}
+                                    {pedido.fastingRequired && <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-200"><p className="font-bold text-amber-700">⚠️ Jejum obrigatório: {pedido.fastingHours} horas</p></div>}
+                                    {pedido.complementaryInfo && <div className="mb-6 p-4 bg-slate-50 rounded-2xl"><p className="font-bold text-slate-700 mb-1">Informações Complementares:</p><p className="italic">{pedido.complementaryInfo}</p></div>}
+                                    <div className="mt-24 pt-10 border-t text-center text-xs text-slate-400">
+                                        <p className="font-black uppercase tracking-widest">ControlClin — Portal do Paciente</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))
             )}
         </div>
     );
@@ -298,107 +407,85 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const renderProfile = () => (
         <div className="space-y-6 animate-fadeIn">
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Meu Perfil</h1>
-
             <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full bg-emerald-100 border-4 border-emerald-50 text-emerald-600 flex items-center justify-center text-4xl font-black mb-4">
-                    {patient.name.charAt(0)}
-                </div>
+                <div className="w-24 h-24 rounded-full bg-emerald-100 border-4 border-emerald-50 text-emerald-600 flex items-center justify-center text-4xl font-black mb-4">{patient.name.charAt(0)}</div>
                 <h2 className="text-xl font-black text-slate-800 text-center">{patient.name}</h2>
                 <p className="text-sm text-slate-500 mb-5">{patient.email}</p>
                 <div className="flex gap-2 flex-wrap justify-center">
-                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-wider">{patient.gender}</span>
-                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-wider">{calculateAge(patient.birthDate)} anos</span>
-                    {patient.estadoCivil && <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-wider">{patient.estadoCivil}</span>}
+                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase">{patient.gender}</span>
+                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase">{calculateAge(patient.birthDate)} anos</span>
+                    {patient.estadoCivil && <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase">{patient.estadoCivil}</span>}
                 </div>
             </div>
-
-            <div className="space-y-3">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-2">Clínica</h3>
-                <div className="bg-white rounded-[28px] border border-slate-100 overflow-hidden shadow-sm">
-                    <div className="p-5 flex items-center gap-3 border-b border-slate-50">
-                        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><Icons.Home className="w-4 h-4" /></div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">Unidade</p>
-                            <p className="text-sm font-black text-slate-700">{clinic.name}</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={onLogout}
-                        className="w-full p-5 flex items-center gap-3 text-red-500 hover:bg-red-50 transition-all"
-                    >
-                        <div className="p-2 bg-red-100 text-red-600 rounded-xl"><Icons.Logout className="w-4 h-4" /></div>
-                        <span className="text-sm font-black uppercase tracking-tighter">Sair da Conta</span>
-                        <Icons.ChevronRight className="w-4 h-4 ml-auto" />
-                    </button>
+            <div className="bg-white rounded-[28px] border border-slate-100 overflow-hidden shadow-sm">
+                <div className="p-5 flex items-center gap-3 border-b border-slate-50">
+                    <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><Icons.Home className="w-4 h-4" /></div>
+                    <div><p className="text-[10px] font-bold text-slate-400 uppercase">Clínica</p><p className="text-sm font-black text-slate-700">{clinic.name}</p></div>
                 </div>
+                <button onClick={onLogout} className="w-full p-5 flex items-center gap-3 text-red-500 hover:bg-red-50 transition-all">
+                    <div className="p-2 bg-red-100 text-red-600 rounded-xl"><Icons.Logout className="w-4 h-4" /></div>
+                    <span className="text-sm font-black uppercase tracking-tighter">Sair da Conta</span>
+                    <Icons.ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
             </div>
-
             <p className="text-center text-[10px] text-slate-300 font-bold uppercase tracking-[4px] pt-4">ControlClin v1.0.5</p>
         </div>
     );
 
-    // ── RENDER ────────────────────────────────────────────────
+    // ── NAV ──────────────────────────────────────────────────────────
 
-    const NAV_ITEMS = [
+    const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
         { id: 'home', label: 'Início', icon: <Icons.Home className="w-5 h-5" /> },
         { id: 'plan', label: 'Dieta', icon: <Icons.Utensils className="w-5 h-5" /> },
-        { id: 'progress', label: 'Evolução', icon: <Icons.TrendingUp className="w-5 h-5" /> },
+        { id: 'prescricao', label: 'Rx', icon: <Icons.FileText className="w-5 h-5" /> },
+        { id: 'exames', label: 'Exames', icon: <Icons.Beaker className="w-5 h-5" /> },
         { id: 'profile', label: 'Perfil', icon: <Icons.User className="w-5 h-5" /> },
-    ] as const;
+    ];
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-32 overflow-x-hidden">
-            {/* Header */}
+        <div className="min-h-screen bg-slate-50 font-sans pb-36 overflow-x-hidden">
             <header className="bg-emerald-600 text-white pt-12 pb-8 px-6 rounded-b-[48px] shadow-2xl shadow-emerald-500/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400 rounded-full -mr-32 -mt-32 opacity-20 blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex justify-between items-start">
                     <div>
                         <p className="text-emerald-100 text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Portal do Paciente</p>
-                        <h1 className="text-3xl font-black tracking-tight drop-shadow-sm">{patient.name.split(' ')[0]}</h1>
+                        <h1 className="text-3xl font-black tracking-tight">{patient.name.split(' ')[0]}</h1>
                     </div>
-                    <div className="flex gap-2">
-                        <button className="p-3 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all">
-                            <Icons.Bell className="w-5 h-5" />
-                        </button>
-                        <button onClick={onLogout} className="p-3 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all" title="Sair">
-                            <Icons.Logout className="w-5 h-5" />
-                        </button>
-                    </div>
+                    <button onClick={onLogout} className="p-3 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all" title="Sair">
+                        <Icons.Logout className="w-5 h-5" />
+                    </button>
                 </div>
             </header>
 
-            {/* Content */}
             <main className="px-6 pt-6 max-w-lg mx-auto">
                 {activeTab === 'home' && renderHome()}
                 {activeTab === 'plan' && renderPlan()}
                 {activeTab === 'progress' && renderProgress()}
+                {activeTab === 'prescricao' && renderPrescricao()}
+                {activeTab === 'exames' && renderExames()}
                 {activeTab === 'profile' && renderProfile()}
             </main>
 
             {/* Bottom Nav */}
-            <div className="fixed bottom-0 left-0 right-0 p-5 z-50 pointer-events-none">
-                <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-8 py-4 flex justify-between items-center max-w-md mx-auto w-full rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] pointer-events-auto">
+            <div className="fixed bottom-0 left-0 right-0 p-4 z-50 pointer-events-none">
+                <nav className="bg-slate-900/92 backdrop-blur-2xl border border-white/10 px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] pointer-events-auto">
                     {NAV_ITEMS.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === item.id ? 'text-emerald-400 scale-110' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
+                        <button key={item.id} onClick={() => setActiveTab(item.id)}
+                            className={`flex flex-col items-center gap-1 px-2 transition-all rounded-2xl py-1 ${activeTab === item.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
                             {item.icon}
-                            <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
                         </button>
                     ))}
                 </nav>
             </div>
 
-            {/* Modal Check-in */}
+            {/* Check-in Modal */}
             {isCheckInModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center">
                     <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsCheckInModalOpen(false)} />
                     <div className="bg-white w-full max-w-md rounded-t-[40px] p-8 pb-14 relative animate-slideUp shadow-2xl">
                         <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
                         <h2 className="text-2xl font-black text-slate-800 mb-6">Como foi seu dia?</h2>
-
                         <div className="space-y-6">
                             <section>
                                 <p className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Refeições Realizadas</p>
@@ -407,24 +494,16 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                                         const mealId = `${activePlan?.id}-${idx}`;
                                         const done = mealsCompleted.includes(mealId);
                                         return (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setMealsCompleted(done ? mealsCompleted.filter(i => i !== mealId) : [...mealsCompleted, mealId])}
-                                                className={`w-full p-4 rounded-[28px] border-2 transition-all flex items-center gap-3 ${done ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
-                                            >
-                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${done ? 'bg-white text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
-                                                    {done ? '✓' : idx + 1}
-                                                </div>
+                                            <button key={idx} onClick={() => setMealsCompleted(done ? mealsCompleted.filter(i => i !== mealId) : [...mealsCompleted, mealId])}
+                                                className={`w-full p-4 rounded-[28px] border-2 transition-all flex items-center gap-3 ${done ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${done ? 'bg-white text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>{done ? '✓' : idx + 1}</div>
                                                 <span className="font-black text-[11px] uppercase truncate">{meal.name}</span>
                                             </button>
                                         );
                                     })}
-                                    {(!activePlan?.meals || activePlan.meals.length === 0) && (
-                                        <p className="text-slate-400 text-sm text-center py-4">Nenhuma refeição no plano ativo.</p>
-                                    )}
+                                    {(!activePlan?.meals || activePlan.meals.length === 0) && <p className="text-slate-400 text-sm text-center py-4">Nenhuma refeição no plano ativo.</p>}
                                 </div>
                             </section>
-
                             <section>
                                 <div className="flex justify-between items-end mb-4">
                                     <p className="text-xs font-black text-slate-800 uppercase tracking-widest">Consumo de Água</p>
@@ -432,31 +511,21 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                                 </div>
                                 <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-[32px] border border-slate-100">
                                     <button onClick={() => setWaterIntake(Math.max(0, waterIntake - 0.25))} className="w-14 h-14 rounded-2xl bg-white shadow-sm text-slate-800 font-black text-2xl active:scale-90 transition-all">-</button>
-                                    <div className="flex-1 px-2">
-                                        <div className="h-4 bg-white rounded-full overflow-hidden shadow-inner p-1">
-                                            <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (waterIntake / 3) * 100)}%` }} />
-                                        </div>
-                                    </div>
+                                    <div className="flex-1 px-2"><div className="h-4 bg-white rounded-full overflow-hidden shadow-inner p-1"><div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (waterIntake / 3) * 100)}%` }} /></div></div>
                                     <button onClick={() => setWaterIntake(waterIntake + 0.25)} className="w-14 h-14 rounded-2xl bg-white shadow-sm text-blue-600 font-black text-2xl active:scale-90 transition-all">+</button>
                                 </div>
                             </section>
-
-                            <button
-                                onClick={() => { setIsCheckInModalOpen(false); }}
-                                className="w-full py-5 bg-slate-900 text-white font-black rounded-[32px] shadow-2xl transition-all hover:bg-slate-800 active:scale-95 text-sm tracking-[0.2em]"
-                            >
-                                FINALIZAR CHECK-IN
-                            </button>
+                            <button onClick={() => setIsCheckInModalOpen(false)} className="w-full py-5 bg-slate-900 text-white font-black rounded-[32px] shadow-2xl transition-all hover:bg-slate-800 active:scale-95 text-sm tracking-[0.2em]">FINALIZAR CHECK-IN</button>
                         </div>
                     </div>
                 </div>
             )}
 
             <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-                .animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
-                .animate-slideUp { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+                @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+                .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+                .animate-slideUp { animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
             `}</style>
         </div>
     );
