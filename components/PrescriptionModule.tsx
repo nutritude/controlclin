@@ -290,12 +290,12 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
     };
 
     // --- STYLE HELPERS ---
-    const cardBg = isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
-    const inputCls = `w-full p-2 border rounded text-sm focus:ring-2 focus:outline-none ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-emerald-400'}`;
-    const labelCls = `block text-xs font-bold uppercase tracking-wider mb-1 ${isManagerMode ? 'text-gray-400' : 'text-gray-600'}`;
-    const btnPrimary = isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700';
-    const btnSecondary = isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
-    const accentText = isManagerMode ? 'text-indigo-400' : 'text-emerald-600';
+    const cardBg = isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-gray-200';
+    const inputCls = `w-full p-2 border rounded text-sm focus:ring-2 focus:outline-none ${isManagerMode ? 'bg-white border-blue-200 text-slate-800 focus:ring-blue-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-emerald-400'}`;
+    const labelCls = `block text-xs font-bold uppercase tracking-wider mb-1 ${isManagerMode ? 'text-blue-700' : 'text-gray-600'}`;
+    const btnPrimary = isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700';
+    const btnSecondary = isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
+    const accentText = isManagerMode ? 'text-blue-600' : 'text-emerald-600';
 
     // ─── RENDER: LIST MODE ──────────────────────────────────────────────
     if (!activePrescription) {
@@ -307,8 +307,8 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
-                        <h2 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>Prescrição Clínica</h2>
-                        <p className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Prescrições de suplementos, vitaminas e fórmulas.</p>
+                        <h2 className={`text-lg font-bold ${isManagerMode ? 'text-slate-800' : 'text-gray-900'}`}>Prescrição Clínica</h2>
+                        <p className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>Prescrições de suplementos, vitaminas e fórmulas.</p>
                     </div>
                     <button onClick={handleNewPrescription} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm ${btnPrimary}`}>
                         <Icons.Plus className="w-5 h-5" /> Nova Prescrição
@@ -320,9 +320,9 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                     <div className={`p-8 text-center text-sm ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>Carregando...</div>
                 ) : prescriptions.length === 0 ? (
                     <div className={`${cardBg} border rounded-xl p-12 text-center`}>
-                        <Icons.FileText className={`w-12 h-12 mx-auto mb-3 opacity-20 ${isManagerMode ? 'text-white' : 'text-black'}`} />
-                        <h3 className={`font-bold text-sm ${isManagerMode ? 'text-gray-300' : 'text-gray-700'}`}>Nenhuma prescrição</h3>
-                        <p className={`text-xs mt-1 ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>Clique em "Nova Prescrição" para começar.</p>
+                        <Icons.FileText className={`w-12 h-12 mx-auto mb-3 opacity-20 ${isManagerMode ? 'text-blue-600' : 'text-black'}`} />
+                        <h3 className={`font-bold text-sm ${isManagerMode ? 'text-slate-700' : 'text-gray-700'}`}>Nenhuma prescrição</h3>
+                        <p className={`text-xs mt-1 ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Clique em "Nova Prescrição" para começar.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -333,14 +333,14 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                                         <span className={`text-xs font-bold px-2 py-1 flex items-center gap-1 rounded-full ${rx.status === 'FINALIZADA' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-yellow-100 text-yellow-700 border border-yellow-200'}`}>
                                             {rx.status === 'FINALIZADA' ? 'Finalizada' : 'Rascunho'}
                                         </span>
-                                        <span className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-gray-800'}`}>
+                                        <span className={`text-sm font-bold ${isManagerMode ? 'text-slate-800' : 'text-gray-800'}`}>
                                             {new Date(rx.date).toLocaleDateString('pt-BR')}
                                         </span>
-                                        <span className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
                                             {rx.items.length} {rx.items.length === 1 ? 'item' : 'itens'} • {rx.authorName}
                                         </span>
                                     </div>
-                                    <div className={`mt-1 text-xs ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    <div className={`mt-1 text-xs ${isManagerMode ? 'text-slate-400 font-medium' : 'text-gray-400'}`}>
                                         {rx.items.slice(0, 3).map(i => `${i.name} (${FORM_LABELS[i.form]})`).join(', ')}
                                         {rx.items.length > 3 && ` +${rx.items.length - 3} mais`}
                                     </div>
@@ -380,10 +380,10 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                             ← Voltar
                         </button>
                         <div>
-                            <h2 className={`text-sm flex items-center gap-1 font-bold ${isManagerMode ? 'text-white' : 'text-gray-900'}`}>
+                            <h2 className={`text-sm flex items-center gap-1 font-bold ${isManagerMode ? 'text-slate-800' : 'text-gray-900'}`}>
                                 {activePrescription.status === 'RASCUNHO' ? 'Rascunho' : 'Finalizada'}
                             </h2>
-                            <p className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <p className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
                                 {new Date(activePrescription.date).toLocaleDateString('pt-BR')} • {activePrescription.authorName}
                             </p>
                         </div>
@@ -410,14 +410,14 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
             {/* Preview Mode */}
             {showPreview ? (
                 <div className={`${cardBg} border rounded-xl overflow-hidden`}>
-                    <div className={`p-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                        <h3 className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-gray-800'}`}>Preview de Texto Copiável</h3>
+                    <div className={`p-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
+                        <h3 className={`text-sm font-bold ${isManagerMode ? 'text-blue-900' : 'text-gray-800'}`}>Preview de Texto Copiável</h3>
                         <button onClick={(e) => handleCopy(previewText, 'previewText', e)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 ${btnSecondary}`}>
                             {copiedId === 'previewText' ? 'Copiado!' : 'Copiar Texto'}
                         </button>
                     </div>
-                    <div className={`p-6 ${isManagerMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <pre className={`whitespace-pre-wrap font-sans text-sm leading-relaxed ${isManagerMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                    <div className={`p-6 ${isManagerMode ? 'bg-white' : 'bg-white'}`}>
+                        <pre className={`whitespace-pre-wrap font-sans text-sm leading-relaxed ${isManagerMode ? 'text-slate-700' : 'text-gray-800'}`}>
                             {previewText || 'Nenhum item para exibir.'}
                         </pre>
                     </div>
@@ -429,12 +429,12 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                     {activePrescription.items.map((item, idx) => (
                         <div key={item.id} className={`${cardBg} border rounded-xl overflow-hidden`}>
                             {/* Item Header */}
-                            <div className={`px-4 py-3 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                            <div className={`px-4 py-3 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50/50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isManagerMode ? 'bg-indigo-900 text-indigo-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isManagerMode ? 'bg-blue-600 text-white shadow-sm' : 'bg-emerald-100 text-emerald-700'}`}>
                                         #{idx + 1}
                                     </span>
-                                    <span className={`text-sm font-bold ${isManagerMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    <span className={`text-sm font-bold ${isManagerMode ? 'text-slate-800' : 'text-gray-800'}`}>
                                         {item.name || 'Novo Item'}
                                     </span>
                                 </div>
@@ -515,11 +515,11 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                                         </button>
                                     </div>
                                     {item.timings.length === 0 ? (
-                                        <p className={`text-xs italic ${isManagerMode ? 'text-gray-500' : 'text-gray-400'}`}>Nenhum horário definido (opcional).</p>
+                                        <p className={`text-xs italic ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>Nenhum horário definido (opcional).</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {item.timings.map((timing, tIdx) => (
-                                                <div key={tIdx} className={`flex items-center gap-2 p-2 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                                                <div key={tIdx} className={`flex items-center gap-2 p-2 rounded-lg border ${isManagerMode ? 'bg-blue-50/30 border-blue-100 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
                                                     <select value={timing.type} onChange={e => updateTiming(item.id, tIdx, { type: e.target.value as PrescriptionTimingType })} className={`${inputCls} flex-1`}>
                                                         {Object.entries(TIMING_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                                                     </select>
@@ -530,7 +530,7 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                                                                 {MEAL_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                                                             </select>
                                                             <input type="number" min={0} placeholder="min" value={timing.minutes ?? 30} onChange={e => updateTiming(item.id, tIdx, { minutes: parseInt(e.target.value) || 0 })} className={`${inputCls} w-20`} />
-                                                            <span className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-gray-500'}`}>min</span>
+                                                            <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>min</span>
                                                         </>
                                                     )}
 
@@ -547,9 +547,9 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
 
                                 {/* Live Preview of this item */}
                                 {item.name && item.dose && (
-                                    <div className={`p-3 rounded-lg border-l-4 ${isManagerMode ? 'bg-gray-700 border-indigo-500' : 'bg-emerald-50 border-emerald-500'}`}>
-                                        <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isManagerMode ? 'text-indigo-400' : 'text-emerald-700'}`}>Preview do Item</p>
-                                        <p className={`text-sm whitespace-pre-wrap ${isManagerMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    <div className={`p-3 rounded-lg border-l-4 ${isManagerMode ? 'bg-blue-50 border-blue-500 shadow-sm' : 'bg-emerald-50 border-emerald-500'}`}>
+                                        <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Preview do Item</p>
+                                        <p className={`text-sm whitespace-pre-wrap ${isManagerMode ? 'text-slate-800' : 'text-gray-800'}`}>
                                             {PrescriptionService.generateItemText(item)}
                                         </p>
                                     </div>
@@ -559,8 +559,8 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
                     ))}
 
                     {/* Add Item Button */}
-                    <button onClick={addItem} className={`w-full py-3 rounded-xl border-2 border-dashed text-sm font-bold flex items-center justify-center gap-2 transition-colors ${isManagerMode ? 'border-gray-600 text-gray-400 hover:border-indigo-500 hover:text-indigo-400' : 'border-gray-300 text-gray-500 hover:border-emerald-400 hover:text-emerald-600'}`}>
-                        <Icons.Plus className="w-4 h-4" /> Adicionar Item
+                    <button onClick={addItem} className={`w-full py-4 rounded-xl border-2 border-dashed text-sm font-bold flex items-center justify-center gap-2 transition-colors ${isManagerMode ? 'border-blue-200 text-blue-400 hover:border-blue-500 hover:text-blue-600 bg-blue-50/10' : 'border-gray-300 text-gray-500 hover:border-emerald-400 hover:text-emerald-600'}`}>
+                        <Icons.Plus className="w-5 h-5" /> Adicionar Item
                     </button>
 
                     {/* Observations */}

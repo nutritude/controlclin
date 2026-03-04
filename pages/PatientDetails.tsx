@@ -125,7 +125,7 @@ const SimpleLineChart = ({ data, dataKey, color, label, isManagerMode }: { data:
     // BUG FIX: Filter out invalid data points to prevent chart from crashing
     const validData = data.filter(d => d && typeof d[dataKey] === 'number' && isFinite(d[dataKey]));
 
-    if (!validData || validData.length < 2) return <div className={`h-40 flex items-center justify-center text-sm ${isManagerMode ? 'text-gray-400 bg-gray-700 border-gray-600' : 'text-slate-400 bg-emerald-50 border-emerald-200'} rounded border`}>Dados insuficientes para gráfico</div>;
+    if (!validData || validData.length < 2) return <div className={`h-40 flex items-center justify-center text-sm ${isManagerMode ? 'text-slate-400 bg-blue-50 border-blue-100' : 'text-slate-400 bg-emerald-50 border-emerald-200'} rounded border`}>Dados insuficientes para gráfico</div>;
 
     const values = validData.map(d => d[dataKey]);
     const min = Math.min(...values);
@@ -167,7 +167,7 @@ const SimpleLineChart = ({ data, dataKey, color, label, isManagerMode }: { data:
                     );
                 })}
             </svg>
-            <p className={`text-center text-xs mt-2 font-semibold uppercase tracking-wider ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>{label} ao longo do tempo</p>
+            <p className={`text-center text-xs mt-2 font-semibold uppercase tracking-wider ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>{label} ao longo do tempo</p>
         </div>
     );
 };
@@ -1159,23 +1159,23 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const nextVisitString = getNextVisit();
 
     return (
-        <div className={`space-y-6 ${isManagerMode ? 'text-gray-100' : 'text-slate-800'}`}>
+        <div className={`space-y-6 ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>
             {/* Header Fixo do Paciente */}
-            <div className={`${isManagerMode ? 'bg-gray-800 shadow-lg ring-gray-700 border-indigo-700' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 ring-1`}>
+            <div className={`${isManagerMode ? 'bg-white shadow-sm ring-blue-100 border-blue-500' : 'bg-white shadow-sm ring-slate-200 border-emerald-500'} rounded-xl p-6 border-l-4 ring-1`}>
 
                 {/* LINHA 1: Avatar + Nome + Botões de Ação */}
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                     {/* Identidade do Paciente */}
                     <div className="flex items-start gap-4 flex-1 min-w-0">
-                        <div className={`h-16 w-16 flex-shrink-0 rounded-full flex items-center justify-center text-2xl font-bold border ${isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-emerald-100 text-emerald-500 border-emerald-200'}`}>
+                        <div className={`h-16 w-16 flex-shrink-0 rounded-full flex items-center justify-center text-2xl font-bold border ${isManagerMode ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-emerald-100 text-emerald-500 border-emerald-200'}`}>
                             {patient.name.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                            <h1 className={`text-xl font-bold leading-tight truncate ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{patient.name}</h1>
-                            <div className="flex flex-wrap gap-2 mt-1.5">
-                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-emerald-100 text-emerald-600'}`}>{patient.gender}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-indigo-900 text-indigo-300' : 'bg-emerald-100 text-emerald-800'}`}>Nasc: {patient.birthDate}</span>
-                                {patient.cpf && <span className={`text-xs px-2 py-0.5 rounded border font-mono ${isManagerMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>CPF: {patient.cpf}</span>}
+                            <h1 className={`text-xl font-bold leading-tight truncate ${isManagerMode ? 'text-slate-800' : 'text-emerald-900'}`}>{patient.name}</h1>
+                            <div className="flex gap-2 items-center mt-1">
+                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-blue-50 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>{patient.gender}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${isManagerMode ? 'bg-blue-50 text-blue-700' : 'bg-emerald-100 text-emerald-800'}`}>Nasc: {patient.birthDate}</span>
+                                {patient.cpf && <span className={`text-xs px-2 py-0.5 rounded border font-mono ${isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>CPF: {patient.cpf}</span>}
                             </div>
                         </div>
                     </div>
@@ -1192,7 +1192,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
                                         window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
                                     }}
-                                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow transition-all active:scale-95 ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                                     title="Liberar Acesso ao App (WhatsApp)"
                                 >
                                     <Icons.Smartphone className="w-4 h-4" />
@@ -1200,18 +1200,17 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 </button>
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-gray-300 border-gray-600 hover:text-indigo-400 hover:bg-gray-700' : 'text-emerald-700 border-emerald-200 hover:text-emerald-900 hover:bg-emerald-50'}`}
-                                    title="Editar Dados Pessoais"
-                                >
-                                    <Icons.Settings className="w-5 h-5" />
+                                    className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-blue-700 border-blue-200 hover:text-blue-900 hover:bg-blue-50' : 'text-emerald-700 border-emerald-200 hover:text-emerald-900 hover:bg-emerald-50'}`}
+                                    title="Editar Informações Básicas"
+                                >                                  <Icons.Settings className="w-5 h-5" />
                                 </button>
                             </>
                         )}
                         {isAdmin && (
                             <button
                                 onClick={handleDelete}
-                                className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-gray-300 border-gray-600 hover:text-red-400 hover:bg-red-900 hover:border-red-800' : 'text-slate-400 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200'}`}
-                                title="Excluir Paciente"
+                                className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-slate-400 border-blue-100 hover:text-red-600 hover:bg-red-50 hover:border-red-200' : 'text-slate-400 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200'}`}
+                                title="Excluir Prontuário"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -1222,7 +1221,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 </div>
 
                 {/* LINHA 2: Dados de Contato */}
-                <div className={`mt-4 pt-4 border-t flex flex-wrap gap-x-6 gap-y-1 text-sm ${isManagerMode ? 'border-gray-700 text-gray-300' : 'border-slate-100 text-emerald-700'}`}>
+                <div className={`mt-4 pt-4 border-t flex flex-wrap gap-x-6 gap-y-1 text-sm ${isManagerMode ? 'border-blue-100 text-slate-700' : 'border-slate-100 text-emerald-700'}`}>
                     <p><strong>Email:</strong> {patient.email}</p>
                     <p><strong>Tel:</strong> {patient.phone}</p>
                     <p><strong>Endereço:</strong> {patient.address || 'Não informado'}</p>
@@ -1230,30 +1229,30 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             </div>
 
             {/* --- NOVO MÓDULO: TOPO CLÍNICO DO PACIENTE --- */}
-            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-emerald-50 border-emerald-200'} rounded-xl p-5 shadow-sm relative`}>
+            <div className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-emerald-50 border-emerald-200'} rounded-xl p-5 shadow-sm relative`}>
                 <div className="flex justify-between items-start mb-3">
-                    <h3 className={`text-sm font-bold uppercase tracking-wide flex items-center gap-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
+                    <h3 className={`text-sm font-bold uppercase tracking-wide flex items-center gap-2 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>
                         <span className="text-lg">🩺</span> Resumo Clínico
                     </h3>
                     {canEditClinical && !isEditingClinicalHeader && (
-                        <button onClick={() => setIsEditingClinicalHeader(true)} className={`text-xs hover:underline font-bold transition-colors ${isManagerMode ? 'text-indigo-400 hover:text-indigo-200' : 'text-emerald-600 hover:text-emerald-800'}`}>Editar Resumo</button>
+                        <button onClick={() => setIsEditingClinicalHeader(true)} className={`text-xs hover:underline font-bold transition-colors ${isManagerMode ? 'text-blue-600 hover:text-blue-800' : 'text-emerald-600 hover:text-emerald-800'}`}>Editar Resumo</button>
                     )}
                 </div>
 
                 {isEditingClinicalHeader ? (
                     <div className="space-y-4 animate-fadeIn">
                         <div>
-                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Objetivo Clínico Principal</label>
+                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Objetivo Clínico Principal</label>
                             <input
                                 type="text"
-                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 focus:border-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-blue-500 focus:border-blue-500 shadow-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                 value={clinicalGoal}
                                 onChange={(e) => setClinicalGoal(e.target.value)}
                                 placeholder="Ex: Controle de Diabetes e Perda de Peso"
                             />
                         </div>
                         <div>
-                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Diagnósticos Ativos (Tags)</label>
+                            <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Diagnósticos Ativos (Tags)</label>
                             <div className="flex flex-wrap gap-2 mt-2 mb-2">
                                 {activeDiagnoses.map((diag, idx) => (
                                     <span key={idx} className={`px-2 py-1 rounded text-xs flex items-center gap-1 border ${isManagerMode ? 'bg-red-900 text-red-300 border-red-700' : 'bg-red-100 text-red-800 border-red-200'}`}>
@@ -1265,57 +1264,57 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    className={`flex-1 border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
-                                    placeholder="Adicionar diagnóstico..."
+                                    placeholder="Novo diagnóstico (ex: Diabetes Tipo 2)..."
+                                    className={`flex-1 border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                     value={newDiagnosis}
-                                    onChange={(e) => setNewDiagnosis(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddDiagnosis()}
+                                    onChange={e => setNewDiagnosis(e.target.value)}
+                                    onKeyPress={e => e.key === 'Enter' && handleAddDiagnosis()}
                                 />
-                                <button onClick={handleAddDiagnosis} className={`px-3 py-1 rounded text-xs font-bold ${isManagerMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-emerald-200 hover:bg-emerald-300 text-emerald-700'}`}>Add</button>
+                                <button onClick={handleAddDiagnosis} className={`px-3 py-1 rounded text-xs font-bold ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-emerald-200 hover:bg-emerald-300 text-emerald-700'}`}>Add</button>
                             </div>
                         </div>
-                        <div className={`flex justify-end gap-2 pt-2 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-200'}`}>
-                            <button onClick={() => setIsEditingClinicalHeader(false)} className={`text-xs px-3 py-1 rounded font-medium ${isManagerMode ? 'text-gray-300 hover:bg-gray-700' : 'text-emerald-700 hover:bg-emerald-200'}`}>Cancelar</button>
-                            <button onClick={handleSaveClinicalHeader} className={`text-xs px-3 py-1 rounded hover:bg-emerald-700 font-bold shadow-sm ${isManagerMode ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}>Salvar Resumo</button>
+                        <div className={`flex justify-end gap-2 pt-2 border-t ${isManagerMode ? 'border-blue-100' : 'border-emerald-200'}`}>
+                            <button onClick={() => setIsEditingClinicalHeader(false)} className={`text-xs px-3 py-1 rounded font-medium ${isManagerMode ? 'text-blue-700 hover:bg-blue-50' : 'text-emerald-700 hover:bg-emerald-200'}`}>Cancelar</button>
+                            <button onClick={handleSaveClinicalHeader} className={`text-xs px-3 py-1 rounded hover:bg-emerald-700 font-bold shadow-sm ${isManagerMode ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>Salvar Resumo</button>
                         </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                        <div className={`md:col-span-1 pr-4 ${isManagerMode ? 'border-gray-700' : 'border-emerald-200'} md:border-r`}>
-                            <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Idade</p>
-                            <p className={`text-xl font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{calculateAge(patient.birthDate)} anos</p>
+                        <div className={`md:col-span-1 pr-4 ${isManagerMode ? 'border-blue-100' : 'border-emerald-200'} md:border-r`}>
+                            <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Idade</p>
+                            <p className={`text-xl font-bold ${isManagerMode ? 'text-slate-800' : 'text-emerald-900'}`}>{calculateAge(patient.birthDate)} anos</p>
 
                             <div className="mt-4 grid grid-cols-2 gap-2">
                                 <div>
-                                    <p className={`text-[10px] uppercase font-bold ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Última Visita</p>
-                                    <p className={`text-xs font-semibold ${isManagerMode ? 'text-gray-200' : 'text-emerald-900'}`}>{getLastVisit()}</p>
+                                    <p className={`text-[10px] uppercase font-bold ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Última Visita</p>
+                                    <p className={`text-xs font-semibold ${isManagerMode ? 'text-slate-700' : 'text-emerald-900'}`}>{getLastVisit()}</p>
                                 </div>
                                 <div>
-                                    <p className={`text-[10px] uppercase font-bold ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Próxima</p>
+                                    <p className={`text-[10px] uppercase font-bold ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Próxima</p>
                                     {nextVisitString === 'Não agendado' ? (
                                         <button
                                             onClick={() => setIsApptModalOpen(true)}
-                                            className={`text-[10px] font-bold px-2 py-1 rounded border transition-colors ${isManagerMode ? 'text-indigo-300 hover:text-indigo-100 bg-indigo-900 border-indigo-700' : 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 bg-emerald-100 border-emerald-100'}`}
+                                            className={`text-[10px] font-bold px-2 py-1 rounded border transition-colors ${isManagerMode ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50 bg-blue-100 border-blue-100' : 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 bg-emerald-100 border-emerald-100'}`}
                                         >
                                             AGENDAR?
                                         </button>
                                     ) : (
-                                        <p className={`text-xs font-bold ${isManagerMode ? 'text-indigo-400' : 'text-emerald-600'}`}>{nextVisitString}</p>
+                                        <p className={`text-xs font-bold ${isManagerMode ? 'text-blue-600' : 'text-emerald-600'}`}>{nextVisitString}</p>
                                     )}
                                 </div>
                             </div>
                         </div>
                         <div className="md:col-span-3 pl-0 md:pl-4">
                             <div className="mb-4">
-                                <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Objetivo Principal</p>
-                                <div className={`${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-200 text-emerald-900'} p-3 rounded border shadow-sm`}>
-                                    <p className="font-medium italic">
-                                        {patient.clinicalSummary?.clinicalGoal || <span className={`${isManagerMode ? 'text-gray-500' : 'text-emerald-600'} not-italic`}>Não definido.</span>}
+                                <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Objetivo Principal</p>
+                                <div className={`${isManagerMode ? 'bg-blue-50/50 border-blue-100 text-slate-800' : 'bg-white border-emerald-200 text-emerald-900'} p-3 rounded border shadow-sm`}>
+                                    <p className="text-sm font-medium leading-relaxed italic">
+                                        {patient.clinicalSummary?.clinicalGoal || <span className={`${isManagerMode ? 'text-blue-400' : 'text-emerald-600'} not-italic`}>Não definido.</span>}
                                     </p>
                                 </div>
                             </div>
                             <div>
-                                <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Diagnósticos Ativos</p>
+                                <p className={`text-xs uppercase font-bold mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Diagnósticos Ativos</p>
                                 <div className="flex flex-wrap gap-2">
                                     {patient.clinicalSummary?.activeDiagnoses && patient.clinicalSummary.activeDiagnoses.length > 0 ? (
                                         patient.clinicalSummary.activeDiagnoses.map((d, i) => (
@@ -1324,7 +1323,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             </span>
                                         ))
                                     ) : (
-                                        <span className={`${isManagerMode ? 'text-gray-500' : 'text-emerald-600'} text-xs italic`}>Nenhum diagnóstico ativo registrado.</span>
+                                        <span className={`${isManagerMode ? 'text-blue-600' : 'text-emerald-600'} text-xs italic`}>Nenhum diagnóstico ativo registrado.</span>
                                     )}
                                 </div>
                             </div>
@@ -1335,7 +1334,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             </div>
 
             {/* Tabs Navigation */}
-            <div className={`${isManagerMode ? 'border-gray-700' : 'border-gray-200'} border-b overflow-x-auto no-scrollbar`}>
+            <div className={`${isManagerMode ? 'border-blue-100' : 'border-gray-200'} border-b overflow-x-auto no-scrollbar`}>
                 <nav className="-mb-px flex space-x-4 md:space-x-8 min-w-max px-2">
                     {[
                         { id: 'HISTORY', label: 'Histórico & Evolução' },
@@ -1350,8 +1349,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as Tab); setIsEditingTab(false); }}
                             className={`whitespace-nowrap py-4 px-1 border-b-2 font-black uppercase tracking-widest text-[10px] md:text-xs transition-all ${activeTab === tab.id
-                                ? (isManagerMode ? 'border-indigo-500 text-indigo-400' : 'border-emerald-600 text-emerald-700')
-                                : (isManagerMode ? 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-600' : 'border-transparent text-emerald-500/60 hover:text-emerald-800 hover:border-emerald-300')
+                                ? (isManagerMode ? 'border-blue-600 text-blue-700' : 'border-emerald-600 text-emerald-700')
+                                : (isManagerMode ? 'border-transparent text-slate-400 hover:text-blue-600 hover:border-blue-200' : 'border-transparent text-emerald-500/60 hover:text-emerald-800 hover:border-emerald-300')
                                 }`}
                         >
                             {tab.label}
@@ -1369,12 +1368,12 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         {isEditingTab ? (
                             <div className="flex gap-2">
                                 <button onClick={() => { setIsEditingTab(false); setEditingAnthroDate(null); if (patient) setFormData(patient); }} className={`px-3 py-1 font-bold rounded hover:bg-gray-50 text-sm shadow-sm ${isManagerMode ? 'bg-gray-700 border border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border border-gray-300 text-gray-700'}`}>Cancelar</button>
-                                <button onClick={handleSaveTab} className={`text-sm px-4 py-1 rounded shadow-sm font-bold ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>Salvar Alterações</button>
+                                <button onClick={handleSaveTab} className={`text-sm px-4 py-1 rounded shadow-sm font-bold ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>Salvar Alterações</button>
                             </div>
                         ) : (
                             <div className="flex gap-2">
                                 {activeTab === 'ANTHRO' && (
-                                    <button onClick={handleNewAnthro} className={`text-sm flex items-center gap-1 px-4 py-2 rounded font-bold shadow-sm ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                                    <button onClick={handleNewAnthro} className={`text-sm flex items-center gap-1 px-4 py-2 rounded font-bold shadow-sm ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
                                         <Icons.Plus className="w-4 h-4" /> Nova Avaliação
                                     </button>
                                 )}
@@ -1392,7 +1391,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 {activeTab === 'HISTORY' && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Esquerda: Anamnese */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
                             <h3 className={`text-lg font-bold mb-4 border-b pb-2 ${isManagerMode ? 'text-white border-gray-700' : 'text-emerald-900 border-emerald-100'}`}>Anamnese</h3>
                             <div className="space-y-5">
                                 {isEditingTab ? (
@@ -1411,7 +1410,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Alergias</label>
                                             <input
                                                 type="text"
-                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 value={(formData.clinicalHistory?.allergies || []).join(', ')}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'allergies', e.target.value.split(',').map(s => s.trim()))}
                                                 placeholder="Ex: Amendoim, Lactose, Dipirona..."
@@ -1421,7 +1420,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Medicamentos</label>
                                             <input
                                                 type="text"
-                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 value={(formData.clinicalHistory?.medications || []).join(', ')}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'medications', e.target.value.split(',').map(s => s.trim()))}
                                                 placeholder="Ex: Metformina, Losartana..."
@@ -1430,7 +1429,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <div>
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Hábitos</label>
                                             <textarea
-                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 rows={3}
                                                 value={formData.clinicalHistory?.habits || ''}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'habits', e.target.value)}
@@ -1440,7 +1439,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <div>
                                             <label className={`block text-xs font-bold uppercase ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sintomas</label>
                                             <textarea
-                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`w-full border rounded p-2 text-sm mt-1 focus:ring-emerald-500 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 rows={3}
                                                 value={formData.clinicalHistory?.symptoms || ''}
                                                 onChange={(e) => updateNestedData('clinicalHistory', 'symptoms', e.target.value)}
@@ -1451,36 +1450,36 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 ) : (
                                     <>
                                         <div>
-                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Patologias</span>
+                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Patologias</span>
                                             <div className="mt-1 flex flex-wrap gap-2">
                                                 {(patient.clinicalHistory?.pathologies && patient.clinicalHistory.pathologies.length > 0) ? patient.clinicalHistory.pathologies.map(p => (
                                                     <span key={p} className={`px-2 py-1 rounded text-sm font-medium border ${isManagerMode ? 'bg-red-900 text-red-300 border-red-700' : 'bg-red-50 text-red-800 border-red-100'}`}>{p}</span>
-                                                )) : <span className={`${isManagerMode ? 'text-gray-500' : 'text-emerald-600'} text-sm italic`}>Nenhuma registrada</span>}
+                                                )) : <span className={`${isManagerMode ? 'text-blue-600' : 'text-emerald-600'} text-sm italic`}>Nenhuma registrada</span>}
                                             </div>
                                         </div>
                                         <div>
-                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Alergias</span>
+                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Alergias</span>
                                             <div className="mt-1 flex flex-wrap gap-2">
                                                 {(patient.clinicalHistory?.allergies && patient.clinicalHistory.allergies.length > 0) ? patient.clinicalHistory.allergies.map(a => (
                                                     <span key={a} className={`px-2 py-1 rounded text-sm font-medium border ${isManagerMode ? 'bg-amber-900 text-amber-300 border-amber-700' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>{a}</span>
-                                                )) : <span className={`${isManagerMode ? 'text-gray-500' : 'text-emerald-600'} text-sm italic`}>Nenhuma alergia registrada</span>}
+                                                )) : <span className={`${isManagerMode ? 'text-blue-600' : 'text-emerald-600'} text-sm italic`}>Nenhuma alergia registrada</span>}
                                             </div>
                                         </div>
                                         <div>
-                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Medicamentos em Uso</span>
+                                            <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Medicamentos em Uso</span>
                                             <ul className={`mt-1 list-disc list-inside text-sm font-medium ${isManagerMode ? 'text-gray-100' : 'text-emerald-900'}`}>
-                                                {(patient.clinicalHistory?.medications && patient.clinicalHistory.medications.length > 0) ? patient.clinicalHistory.medications.map(m => <li key={m}>{m}</li>) : <li className={`list-none italic ${isManagerMode ? 'text-gray-500' : 'text-emerald-600'}`}>Nenhum medicamento registrado</li>}
+                                                {(patient.clinicalHistory?.medications && patient.clinicalHistory.medications.length > 0) ? patient.clinicalHistory.medications.map(m => <li key={m}>{m}</li>) : <li className={`list-none italic ${isManagerMode ? 'text-blue-600' : 'text-emerald-600'}`}>Nenhum medicamento registrado</li>}
                                             </ul>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
                                             <div>
-                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Hábitos</span>
+                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Hábitos</span>
                                                 <p className={`text-sm mt-1 p-3 rounded-lg border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
                                                     {patient.clinicalHistory?.habits || 'Nenhum hábito registrado'}
                                                 </p>
                                             </div>
                                             <div>
-                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Sintomas</span>
+                                                <span className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Sintomas</span>
                                                 <p className={`text-sm mt-1 p-3 rounded-lg border italic ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-900'}`}>
                                                     "{patient.clinicalHistory?.symptoms || 'Nenhum sintoma registrado'}"
                                                 </p>
@@ -1492,7 +1491,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         </div>
 
                         {/* Direita: Timeline Editável */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
                             <div className={`flex justify-between items-center mb-4 border-b pb-2 ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'}`}>
                                 <h3 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Timeline de Evolução</h3>
                                 <button
@@ -1514,7 +1513,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <li key={event.id} className="relative pb-8 group">
                                                     {/* Line */}
                                                     {idx !== patient.timelineEvents!.length - 1 && (
-                                                        <span className={`absolute top-4 left-4 -ml-px h-full w-0.5 ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-200'}`} aria-hidden="true"></span>
+                                                        <span className={`absolute top-4 left-4 -ml-px h-full w-0.5 ${isManagerMode ? 'bg-blue-100' : 'bg-emerald-200'}`} aria-hidden="true"></span>
                                                     )}
                                                     <div className="relative flex space-x-3">
                                                         <div>
@@ -1527,7 +1526,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                                 <p className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{event.title}</p>
                                                                 {event.description && <p className={`text-sm mt-1 p-2 rounded border ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-emerald-50 border-emerald-100 text-emerald-800'}`}>{event.description}</p>}
                                                             </div>
-                                                            <div className={`text-right text-sm whitespace-nowrap flex flex-col items-end ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>
+                                                            <div className={`text-right text-sm whitespace-nowrap flex flex-col items-end ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>
                                                                 <time className={`font-semibold ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>{new Date(event.date).toLocaleDateString()}</time>
                                                                 <button
                                                                     onClick={() => handleDeleteTimelineEvent(event.id)}
@@ -1566,12 +1565,12 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             <h3 className={`text-lg font-medium mb-2 flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
                                 <span className="text-2xl">📝</span> Nova Anotação Clínica
                             </h3>
-                            <p className={`text-xs mb-4 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>
+                            <p className={`text-xs mb-4 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>
                                 Descreva o estado do paciente de forma simples e use a IA para converter em termos técnicos médicos.
                             </p>
 
                             <textarea
-                                className={`w-full border rounded-md p-3 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
+                                className={`w-full border rounded-md p-3 text-sm focus:ring-2 focus:border-transparent ${isManagerMode ? 'bg-white border-blue-200 text-slate-800 focus:ring-blue-500' : 'bg-white border-emerald-300 text-emerald-900 focus:ring-emerald-500'}`}
                                 rows={4}
                                 placeholder="Ex: Paciente chegou com muita dor de barriga e enjoo..."
                                 value={noteContent}
@@ -1620,7 +1619,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <li key={note.id} className={`p-6 ${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'}`}>
                                             <div className="flex justify-between mb-2">
                                                 <span className={`text-sm font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{note.authorName}</span>
-                                                <span className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>{new Date(note.date).toLocaleString()}</span>
+                                                <span className={`text-xs ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>{new Date(note.date).toLocaleString()}</span>
                                             </div>
                                             <p className={`text-sm whitespace-pre-wrap ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>{note.content}</p>
                                         </li>
@@ -1649,7 +1648,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             {/* Coluna de Inputs */}
                             <div className="xl:col-span-2 space-y-4">
                                 {/* Medidas Básicas */}
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Medidas Básicas</h3>
                                         <div className="flex items-center gap-4">
@@ -1690,28 +1689,28 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-xs font-medium">Peso (kg)</label>
-                                            <input type="number" step="0.1" disabled={!isEditingTab} value={formData.anthropometry?.weight || ''} onChange={e => updateAnthroData('weight', e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
+                                            <input type="number" step="0.1" disabled={!isEditingTab} value={formData.anthropometry?.weight || ''} onChange={e => updateAnthroData('weight', e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium">Altura (m)</label>
-                                            <input type="number" step="0.01" disabled={!isEditingTab} value={formData.anthropometry?.height || ''} onChange={e => updateAnthroData('height', e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
+                                            <input type="number" step="0.01" disabled={!isEditingTab} value={formData.anthropometry?.height || ''} onChange={e => updateAnthroData('height', e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
                                         </div>
                                     </div>
                                 </div>
                                 {/* Circunferências */}
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
                                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Circunferências (cm)</h3>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {[{ id: 'circNeck', label: 'Pescoço' }, { id: 'circChest', label: 'Tórax' }, { id: 'circWaist', label: 'Cintura' }, { id: 'circAbdomen', label: 'Abdômen' }, { id: 'circHip', label: 'Quadril' }, { id: 'circArmContracted', label: 'Braço Contraído' }, { id: 'circThigh', label: 'Coxa' }, { id: 'circCalf', label: 'Panturrilha' }].map(item => (
                                             <div key={item.id}>
                                                 <label className="text-xs font-medium">{item.label}</label>
-                                                <input type="number" step="0.1" disabled={!isEditingTab} value={formData.anthropometry?.[item.id as keyof Anthropometry] || ''} onChange={e => updateAnthroData(item.id as keyof Anthropometry, e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
+                                                <input type="number" step="0.1" disabled={!isEditingTab} value={formData.anthropometry?.[item.id as keyof Anthropometry] || ''} onChange={e => updateAnthroData(item.id as keyof Anthropometry, e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                                 {/* Dobras Cutâneas */}
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
                                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
                                         Dobras Cutâneas (mm) - {SKINFOLD_PROTOCOLS[formData.anthropometry?.skinfoldProtocol || 'JacksonPollock7']?.label || 'Protocolo 7 Dobras'}
                                     </h3>
@@ -1746,7 +1745,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     </div>
                                 )}
 
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border relative overflow-hidden`}>
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border relative overflow-hidden`}>
                                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Mapa de Calor Corporal</h3>
                                     <div className="flex justify-center py-2">
                                         <svg viewBox="0 0 100 200" className="h-48 w-auto">
@@ -1779,7 +1778,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     </div>
                                 </div>
 
-                                <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
                                     <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Resultados da Composição Corporal</h3>
                                     <div className="space-y-3">
                                         <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-indigo-900 border-indigo-700' : 'bg-emerald-100 border-emerald-200'}`}>
@@ -1814,7 +1813,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         </div>
 
                         {/* 4. Análise Inteligente e Ações (Movido para largura total para melhor harmonia) */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
                             <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'} flex items-center gap-2`}>
                                 <Icons.Brain /> Análise Inteligente e Ações Estratégicas
                             </h3>
@@ -1888,7 +1887,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         </div>
 
                         {/* --- NOVO: TIMELINE DE AVALIAÇÕES ANTROPOMÉTRICAS --- */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-6 border`}>
                             <h3 className={`text-sm font-bold uppercase tracking-wider mb-6 flex items-center gap-2 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>
                                 <Icons.History /> Histórico de Avaliações (Timeline de Evolução)
                             </h3>
@@ -1939,18 +1938,18 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     <div className="space-y-6">
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Valor Total Pago (LTV)</p>
+                            <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Valor Total Pago (LTV)</p>
                                 <p className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-emerald-400' : 'text-emerald-600'}`}>R$ {totalPaid.toFixed(2)}</p>
                             </div>
-                            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Pendente / A Receber</p>
+                            <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Pendente / A Receber</p>
                                 <p className={`text-3xl font-bold mt-2 ${totalPending > 0 ? 'text-red-500' : (isManagerMode ? 'text-gray-400' : 'text-emerald-600')}`}>
                                     R$ {totalPending.toFixed(2)}
                                 </p>
                             </div>
-                            <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
-                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Modelo de Contratação</p>
+                            <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} p-6 rounded-xl shadow-sm border`}>
+                                <p className={`text-xs font-bold uppercase tracking-wide ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Modelo de Contratação</p>
                                 <div className="flex justify-between items-center mt-3">
                                     <span className={`px-3 py-1 rounded-full text-sm font-bold ${patient.financial?.mode === 'CONVENIO' ? (isManagerMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-800') : (isManagerMode ? 'bg-blue-900 text-blue-300' : 'bg-emerald-100 text-emerald-800')}`}>
                                         {patient.financial?.mode === 'CONVENIO' ? 'Convênio (TISS)' : 'Particular'}
@@ -1971,7 +1970,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div>
                                         <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Modo de Atendimento</label>
                                         <select
-                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                            className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                             value={formData.financial?.mode}
                                             onChange={e => updateNestedData('financial', 'mode', e.target.value)}
                                         >
@@ -2005,38 +2004,38 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <>
                                             <div>
                                                 <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Operadora</label>
-                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insuranceName} onChange={e => updateNestedData('financial', 'insuranceName', e.target.value)} placeholder="Ex: Unimed" />
+                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insuranceName} onChange={e => updateNestedData('financial', 'insuranceName', e.target.value)} placeholder="Ex: Unimed" />
                                             </div>
                                             <div>
                                                 <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Plano</label>
-                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insurancePlan} onChange={e => updateNestedData('financial', 'insurancePlan', e.target.value)} placeholder="Ex: Top Nacional" />
+                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insurancePlan} onChange={e => updateNestedData('financial', 'insurancePlan', e.target.value)} placeholder="Ex: Top Nacional" />
                                             </div>
                                             <div>
                                                 <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Carteirinha</label>
-                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insuranceCardNumber} onChange={e => updateNestedData('financial', 'insuranceCardNumber', e.target.value)} />
+                                                <input type="text" className={`mt-1 block w-full border rounded p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} defaultValue={formData.financial?.insuranceCardNumber} onChange={e => updateNestedData('financial', 'insuranceCardNumber', e.target.value)} />
                                             </div>
                                         </>
                                     )}
                                 </div>
                                 <div className={`mt-4 flex justify-end gap-2 pt-2 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-200'}`}>
                                     <button onClick={() => setIsEditingTab(false)} className={`px-3 py-1 rounded text-sm font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border rounded text-sm text-gray-700 font-bold hover:bg-gray-50'}`}>Cancelar</button>
-                                    <button onClick={handleSaveTab} className={`px-3 py-1 rounded text-sm ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>Salvar Configuração</button>
+                                    <button onClick={handleSaveTab} className={`px-3 py-1 rounded text-sm ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>Salvar Configuração</button>
                                 </div>
                             </div>
                         )}
 
                         {/* Transaction Ledger */}
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-emerald-200'} shadow-sm rounded-xl overflow-hidden border`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl overflow-hidden border`}>
                             <div className={`px-6 py-4 border-b flex justify-between items-center ${isManagerMode ? 'bg-gray-700 bg-gray-700' : 'border-emerald-200 bg-emerald-50'}`}>
                                 <h3 className={`text-lg font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Extrato de Lançamentos</h3>
-                                <button onClick={handleOpenTransactionModal} className={`text-sm px-4 py-2 rounded-lg shadow-sm font-bold ${isManagerMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                                <button onClick={handleOpenTransactionModal} className={`text-sm px-4 py-2 rounded-lg shadow-sm font-bold ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
                                     + Nova Transação
                                 </button>
                             </div>
 
                             <table className={`min-w-full divide-y text-sm ${isManagerMode ? 'divide-gray-700' : 'divide-emerald-200'}`}>
                                 <thead>
-                                    <tr className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'}`}>
+                                    <tr className={`${isManagerMode ? 'bg-blue-50/50' : 'bg-emerald-50'}`}>
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data</th>
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Descrição</th>
                                         <th className={`px-6 py-3 text-left text-xs font-bold uppercase tracking-wider ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método / Condição</th>
@@ -2054,7 +2053,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <td className={`px-6 py-4 whitespace-nowrap font-medium ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>{new Date(t.date).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4">
                                                     <div className={`font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{t.description}</div>
-                                                    {t.authorizationCode && <div className={`text-xs ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Auth: {t.authorizationCode}</div>}
+                                                    {t.authorizationCode && <div className={`text-xs ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Auth: {t.authorizationCode}</div>}
                                                     {t.discountPercent && t.discountPercent > 0 ? (
                                                         <div className={`${isManagerMode ? 'text-emerald-400' : 'text-emerald-600'} text-[10px] font-bold`}>Desconto: {t.discountPercent}%</div>
                                                     ) : null}
@@ -2064,7 +2063,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     {t.installments ? (
                                                         <span className={`px-2 py-0.5 rounded font-bold text-xs ${isManagerMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>{t.installments}</span>
                                                     ) : (
-                                                        <span className={`px-2 py-0.5 rounded text-xs ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-emerald-100 text-emerald-600'}`}>À Vista</span>
+                                                        <span className={`px-2 py-0.5 rounded text-xs ${isManagerMode ? 'bg-blue-50 text-blue-700' : 'bg-emerald-100 text-emerald-600'}`}>À Vista</span>
                                                     )}
                                                 </td>
                                                 <td className={`px-6 py-4 whitespace-nowrap text-right font-bold text-base ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
@@ -2315,25 +2314,25 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
                                 {/* Date & Time */}
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} rounded p-1`}>
+                                    <div className={`${isManagerMode ? 'bg-blue-50' : 'bg-emerald-50'} rounded p-1`}>
                                         <input
                                             type="date"
                                             required
-                                            className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-white text-emerald-900'}`}
+                                            className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-emerald-900'}`}
                                             value={apptForm.date}
                                             onChange={e => { setApptForm({ ...apptForm, date: e.target.value }); setApptError(null); }}
                                             onBlur={handleDateBlur}
                                         />
                                     </div>
                                     <div className="flex gap-2">
-                                        <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} rounded p-1 flex-1`}>
+                                        <div className={`${isManagerMode ? 'bg-blue-50' : 'bg-emerald-50'} rounded p-1 flex-1`}>
                                             <input type="time" required
-                                                className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-white text-emerald-900'}`}
+                                                className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-emerald-900'}`}
                                                 value={apptForm.startTime} onChange={handleStartTimeChange} />
                                         </div>
-                                        <div className={`${isManagerMode ? 'bg-gray-700' : 'bg-emerald-50'} rounded p-1 flex-1`}>
+                                        <div className={`${isManagerMode ? 'bg-blue-50' : 'bg-emerald-50'} rounded p-1 flex-1`}>
                                             <input type="time" required
-                                                className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-white text-emerald-900'}`}
+                                                className={`w-full border-0 focus:ring-0 rounded p-1 text-sm text-center font-bold ${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-emerald-900'}`}
                                                 value={apptForm.endTime} onChange={e => setApptForm({ ...apptForm, endTime: e.target.value })} />
                                         </div>
                                     </div>
@@ -2342,7 +2341,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 {/* Professional */}
                                 <div>
                                     <select
-                                        className={`w-full border-0 rounded p-2 text-sm font-medium ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-emerald-50 text-emerald-900'}`}
+                                        className={`w-full border-0 rounded p-2 text-sm font-medium ${isManagerMode ? 'bg-blue-50 text-slate-800' : 'bg-emerald-50 text-emerald-900'}`}
                                         value={apptForm.professionalId} onChange={e => setApptForm({ ...apptForm, professionalId: e.target.value })}>
                                         {professionals.map(p => <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>)}
                                     </select>
@@ -2352,7 +2351,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <select
-                                            className={`w-full border-0 rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-emerald-50 text-emerald-900'}`}
+                                            className={`w-full border-0 rounded p-2 text-sm ${isManagerMode ? 'bg-blue-50 text-slate-800' : 'bg-emerald-50 text-emerald-900'}`}
                                             value={apptForm.type} onChange={e => setApptForm({ ...apptForm, type: e.target.value })}>
                                             <option value="ROTINA">Rotina</option>
                                             <option value="AVALIACAO">Avaliação</option>
@@ -2361,7 +2360,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     </div>
                                     <div>
                                         <select
-                                            className={`w-full border-0 rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 text-gray-100' : 'bg-emerald-50 text-emerald-900'}`}
+                                            className={`w-full border-0 rounded p-2 text-sm ${isManagerMode ? 'bg-blue-50 text-slate-800' : 'bg-emerald-50 text-emerald-900'}`}
                                             value={apptForm.status} onChange={e => setApptForm({ ...apptForm, status: e.target.value as AppointmentStatus })}>
                                             <option value="AGENDADO">Agendado</option>
                                             <option value="CONFIRMADO">Confirmado</option>
@@ -2436,24 +2435,24 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         <div className={`${isManagerMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto`}>
                             <h2 className={`text-lg font-bold mb-4 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Editar Dados Pessoais</h2>
                             <form onSubmit={handleSaveBasicInfo} className="space-y-4">
-                                <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Nome Completo</label><input type="text" required className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
+                                <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Nome Completo</label><input type="text" required className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>CPF</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.cpf || ''} onChange={e => setFormData({ ...formData, cpf: e.target.value })} placeholder="000.000.000-00" /></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Telefone</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} /></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>CPF</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.cpf || ''} onChange={e => setFormData({ ...formData, cpf: e.target.value })} placeholder="000.000.000-00" /></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Telefone</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.estadoCivil || ''} onChange={e => setFormData({ ...formData, estadoCivil: e.target.value })}><option value="">Selecione...</option><option value="Solteiro(a)">Solteiro(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viúvo(a)">Viúvo(a)</option><option value="União Estável">União Estável</option></select></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label><input type="number" min="1" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.pessoasEmCasa || ''} onChange={e => setFormData({ ...formData, pessoasEmCasa: parseInt(e.target.value as string, 10) })} /></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.estadoCivil || ''} onChange={e => setFormData({ ...formData, estadoCivil: e.target.value })}><option value="">Selecione...</option><option value="Solteiro(a)">Solteiro(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viúvo(a)">Viúvo(a)</option><option value="União Estável">União Estável</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label><input type="number" min="1" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.pessoasEmCasa || ''} onChange={e => setFormData({ ...formData, pessoasEmCasa: parseInt(e.target.value as string, 10) })} /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>E-mail</label><input type="email" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} /></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.status || 'ATIVO'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>E-mail</label><input type="email" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} /></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.status || 'ATIVO'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data de Nascimento</label><input type="date" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.birthDate || ''} onChange={e => setFormData({ ...formData, birthDate: e.target.value })} /></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sexo</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data de Nascimento</label><input type="date" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.birthDate || ''} onChange={e => setFormData({ ...formData, birthDate: e.target.value })} /></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sexo</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div>
                                 </div>
-                                <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} /></div>
+                                <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} /></div>
 
                                 {/* Acesso ao Portal */}
                                 <div className={`pt-3 mt-1 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-100'}`}>
@@ -2465,7 +2464,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Usuário (login)</label>
                                             <input
                                                 type="text"
-                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 value={formData.username || formData.email || ''}
                                                 onChange={e => setFormData({ ...formData, username: e.target.value })}
                                                 placeholder="Ex: email do paciente"
@@ -2475,7 +2474,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Senha de Acesso</label>
                                             <input
                                                 type="text"
-                                                className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`}
+                                                className={`mt-1 block w-full border rounded-md p-2 font-mono ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`}
                                                 value={formData.password || ''}
                                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder="Defina a senha"
@@ -2506,11 +2505,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             <div className="space-y-4">
                                 <div>
                                     <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data</label>
-                                    <input type="date" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={timelineDate} onChange={(e) => setTimelineDate(e.target.value)} />
+                                    <input type="date" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={timelineDate} onChange={(e) => setTimelineDate(e.target.value)} />
                                 </div>
                                 <div>
                                     <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Tipo de Evento</label>
-                                    <select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={timelineType} onChange={(e) => setTimelineType(e.target.value as TimelineEventType)}>
+                                    <select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={timelineType} onChange={(e) => setTimelineType(e.target.value as TimelineEventType)}>
                                         {Object.entries(TIMELINE_TYPES).map(([key, val]) => (
                                             <option key={key} value={key}>{val.label}</option>
                                         ))}
@@ -2518,7 +2517,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 </div>
                                 <div>
                                     <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Descrição (Opcional)</label>
-                                    <textarea className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} rows={3} value={timelineDesc} onChange={(e) => setTimelineDesc(e.target.value)}></textarea>
+                                    <textarea className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} rows={3} value={timelineDesc} onChange={(e) => setTimelineDesc(e.target.value)}></textarea>
                                 </div>
                                 <div className="flex justify-end gap-3 mt-4">
                                     <button onClick={() => setIsTimelineModalOpen(false)} className={`px-4 py-2 border rounded-md font-bold shadow-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Cancelar</button>
@@ -2543,19 +2542,19 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                 {/* Description */}
                                 <div>
-                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Descrição</label>
-                                    <input type="text" className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} placeholder="Ex: Consulta Psiquiatria" value={transDesc} onChange={e => setTransDesc(e.target.value)} />
+                                    <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Descrição</label>
+                                    <input type="text" className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} placeholder="Ex: Consulta Psiquiatria" value={transDesc} onChange={e => setTransDesc(e.target.value)} />
                                 </div>
 
                                 {/* Values Row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Valor Original (R$)</label>
+                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Valor Original (R$)</label>
                                         <input type="number" min="0" step="0.01" className={`w-full border rounded p-2 text-sm font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transOriginalAmount} onChange={e => setTransOriginalAmount(parseFloat(e.target.value))} />
                                     </div>
                                     <div>
-                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Desconto (%)</label>
-                                        <input type="number" min="0" max="100" className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transDiscountPercent} onChange={e => setTransDiscountPercent(parseFloat(e.target.value))} />
+                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Desconto (%)</label>
+                                        <input type="number" min="0" max="100" className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transDiscountPercent} onChange={e => setTransDiscountPercent(parseFloat(e.target.value))} />
                                     </div>
                                 </div>
 
@@ -2576,13 +2575,13 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     {transPaymentForm === 'PARCELADO' && (
                                         <div className="grid grid-cols-2 gap-4 animate-fadeIn">
                                             <div>
-                                                <label className={`block text-xs font-medium mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Nº Parcelas</label>
+                                                <label className={`block text-xs font-medium mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Nº Parcelas</label>
                                                 <select className={`w-full border rounded p-1.5 text-sm ${isManagerMode ? 'bg-gray-600 border-gray-500 text-gray-100' : 'bg-white border-emerald-300'}`} value={transInstallments} onChange={e => setTransInstallments(parseInt(e.target.value))}>
                                                     {[2, 3, 4, 5, 6, 10, 12].map(n => <option key={n} value={n}>{n}x</option>)}
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className={`block text-xs font-medium mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Juros Totais (%)</label>
+                                                <label className={`block text-xs font-medium mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Juros Totais (%)</label>
                                                 <input type="number" min="0" className={`w-full border rounded p-1.5 text-sm ${isManagerMode ? 'bg-gray-600 border-gray-500 text-gray-100' : 'bg-white border-emerald-300'}`} value={transInterestPercent} onChange={e => setTransInterestPercent(parseFloat(e.target.value))} />
                                             </div>
                                         </div>
@@ -2592,14 +2591,14 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 {/* Method & Status */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Método</label>
-                                        <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transMethod} onChange={e => setTransMethod(e.target.value as PaymentMethod)}>
+                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Método</label>
+                                        <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transMethod} onChange={e => setTransMethod(e.target.value as PaymentMethod)}>
                                             {Object.entries(PAYMENT_METHODS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-gray-400' : 'text-emerald-700'}`}>Status</label>
-                                        <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transStatus} onChange={e => setTransStatus(e.target.value as FinancialStatus)}>
+                                        <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Status</label>
+                                        <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transStatus} onChange={e => setTransStatus(e.target.value as FinancialStatus)}>
                                             {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                                         </select>
                                     </div>

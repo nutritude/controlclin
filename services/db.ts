@@ -1995,12 +1995,12 @@ class DatabaseService {
     }
 
     async getReportData(id: string, start: string, end: string, pid?: string) {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
+        const startDate = new Date(start + (start.includes('T') ? '' : 'T00:00:00'));
+        const endDate = new Date(end + (end.includes('T') ? '' : 'T23:59:59'));
 
         return this.appointments.filter(a => {
             if (a.clinicId !== id) return false;
-            if (pid && a.professionalId !== pid) return false;
+            if (pid && pid !== 'all' && a.professionalId !== pid) return false;
             const apptDate = new Date(a.startTime);
             return apptDate >= startDate && apptDate <= endDate;
         }).map(a => {
@@ -2133,8 +2133,11 @@ class DatabaseService {
             const confirmedAmount = txs.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0);
             const pendingAmount = txs.filter(t => t.status === 'PENDENTE').reduce((acc, t) => acc + t.amount, 0);
 
-            const realizedAppts = appts.filter(a => a.status === 'COMPLETED' || a.status === 'CONFIRMED' || a.status === 'REALIZADO');
-            const missedAppts = appts.filter(a => a.status === 'MISSED' || a.status === 'CANCELED' || a.status === 'FALTA');
+            const isRealized = (s: any) => s === AppointmentStatus.COMPLETED || s === 'COMPLETED' || s === AppointmentStatus.CONFIRMED || s === 'CONFIRMED' || s === 'REALIZADO';
+            const isMissed = (s: any) => s === AppointmentStatus.MISSED || s === 'FALTA' || s === 'MISSED' || s === AppointmentStatus.CANCELED || s === 'CANCELED';
+
+            const realizedAppts = appts.filter(a => isRealized(a.status));
+            const missedAppts = appts.filter(a => isMissed(a.status));
 
             const ticketMedio = realizedAppts.length > 0 ? (gross / realizedAppts.length) : 0;
             const lostRevenue = missedAppts.length * ticketMedio;
@@ -2171,8 +2174,8 @@ class DatabaseService {
     }
 
     async getAttendanceReportData(id: string, start: string, end: string, pid?: string) {
-        const startCurrent = new Date(start);
-        const endCurrent = new Date(end);
+        const startCurrent = new Date(start + (start.includes('T') ? '' : 'T00:00:00'));
+        const endCurrent = new Date(end + (end.includes('T') ? '' : 'T23:59:59'));
         const durationMs = endCurrent.getTime() - startCurrent.getTime();
 
         // Dynamic previous period for comparison
@@ -2185,11 +2188,13 @@ class DatabaseService {
         const apptsPrev = await this.getReportData(id, startPrevStr, endPrevStr, pid);
 
         const total = apptsCurrent.length;
-        const missed = apptsCurrent.filter(a => a.status === AppointmentStatus.MISSED || a.status === AppointmentStatus.CANCELED).length;
+        const isMissed = (s: any) => s === AppointmentStatus.MISSED || s === 'FALTA' || s === 'MISSED' || s === AppointmentStatus.CANCELED || s === 'CANCELED';
+
+        const missed = apptsCurrent.filter(a => isMissed(a.status)).length;
         const noShowRate = total > 0 ? Math.round((missed / total) * 100) : 0;
 
         const totalPrev = apptsPrev.length;
-        const missedPrev = apptsPrev.filter(a => a.status === AppointmentStatus.MISSED || a.status === AppointmentStatus.CANCELED).length;
+        const missedPrev = apptsPrev.filter(a => isMissed(a.status)).length;
         const noShowRatePrev = totalPrev > 0 ? Math.round((missedPrev / totalPrev) * 100) : 0;
 
         const variation = noShowRatePrev === 0 ? 0 : Math.round(((noShowRate - noShowRatePrev) / noShowRatePrev) * 100);
@@ -2209,7 +2214,7 @@ class DatabaseService {
 
         // Identify "Chronic" no-showers
         const patientNoShowCount: Record<string, number> = {};
-        apptsCurrent.filter(a => a.status === AppointmentStatus.MISSED).forEach(a => {
+        apptsCurrent.filter(a => isMissed(a.status)).forEach(a => {
             patientNoShowCount[a.patientId] = (patientNoShowCount[a.patientId] || 0) + 1;
         });
 

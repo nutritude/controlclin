@@ -17,10 +17,10 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
       ? isManagerMode
-        ? 'bg-indigo-700 text-white font-black shadow-lg transform scale-[1.02]'
+        ? 'bg-blue-600 text-white font-black shadow-lg shadow-blue-500/30 transform scale-[1.02]'
         : 'bg-emerald-700 text-white font-black shadow-lg transform scale-[1.02]'
       : isManagerMode
-        ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+        ? 'text-blue-100 hover:text-white hover:bg-white/10'
         : 'text-emerald-100 hover:text-white hover:bg-emerald-700/60 font-medium'
     }`;
 
@@ -31,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   );
 
   return (
-    <div className={`flex h-screen overflow-hidden ${isManagerMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
+    <div className={`flex h-screen overflow-hidden ${isManagerMode ? 'bg-slate-50' : 'bg-slate-50'}`}>
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
@@ -45,11 +45,11 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <aside className={`
         fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-300 ease-in-out 2xl:relative 2xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${isManagerMode ? 'bg-gray-800' : 'bg-emerald-800'} 
+        ${isManagerMode ? 'bg-[#0f172a]' : 'bg-emerald-800'} 
         text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden max-w-[85vw]
       `}>
         {/* BRANDING HEADER */}
-        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
+        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-white/10' : 'border-emerald-700/50'} flex-none flex flex-col items-center text-center`}>
           <div className="mb-2 w-full flex justify-center">
             {clinic.logoUrl ? (
               <img
@@ -67,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
           <h1 className="text-sm md:text-base font-black uppercase tracking-tight text-white w-full break-words leading-tight">
             {clinic.name}
           </h1>
-          <p className={`text-[9px] mt-1 uppercase tracking-widest font-bold truncate w-full ${isManagerMode ? 'text-gray-400' : 'text-emerald-300'}`}>
+          <p className={`text-[9px] mt-1 uppercase tracking-widest font-bold truncate w-full ${isManagerMode ? 'text-blue-300/60' : 'text-emerald-300'}`}>
             {clinic.slug}.saas.com
           </p>
         </div>
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
           {isManagerMode && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
             <>
               <div className="pt-4 pb-2">
-                <p className={`px-4 text-[10px] font-semibold uppercase tracking-wider ${isManagerMode ? 'text-gray-500' : 'text-emerald-400'}`}>Gestão</p>
+                <p className={`px-4 text-[10px] font-semibold uppercase tracking-wider ${isManagerMode ? 'text-blue-400' : 'text-emerald-400'}`}>Gestão</p>
               </div>
               <NavLink to="/professionals" className={navItemClass} onClick={() => setIsMobileMenuOpen(false)}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,19 +121,19 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
           )}
         </nav>
 
-        <div className={`p-4 border-t ${isManagerMode ? 'border-gray-700' : 'border-emerald-700/50'} flex-none bg-black/10`}>
+        <div className={`p-4 border-t ${isManagerMode ? 'border-white/10' : 'border-emerald-700/50'} flex-none bg-black/10`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isManagerMode ? 'bg-gray-700' : 'bg-emerald-700'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-700'}`}>
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0 text-left">
               <p className="text-sm font-medium text-white truncate">{user.name}</p>
-              <p className={`text-[10px] truncate w-full uppercase font-bold ${isManagerMode ? 'text-gray-400' : 'text-emerald-300'}`}>{user.role.replace('_', ' ')}</p>
+              <p className={`text-[10px] truncate w-full uppercase font-bold ${isManagerMode ? 'text-blue-300' : 'text-emerald-300'}`}>{user.role.replace('_', ' ')}</p>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${isManagerMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-emerald-300 hover:text-white hover:bg-emerald-700'}`}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${isManagerMode ? 'text-blue-200 hover:text-white hover:bg-white/10' : 'text-emerald-300 hover:text-white hover:bg-emerald-700'}`}
           >
             <Icons.Logout />
             Sair
@@ -142,10 +142,10 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       </aside>
 
       {/* Main Content Wrapper */}
-      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isManagerMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isManagerMode ? 'bg-slate-50' : 'bg-slate-50'}`}>
 
         {/* Top Header */}
-        <header className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'} border-b px-4 2xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
+        <header className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-slate-200'} border-b px-4 2xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -158,7 +158,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className={`text-xs md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-white' : 'text-slate-800'} uppercase`}>
+                <h2 className={`text-xs md:text-xl font-black tracking-tight truncate ${isManagerMode ? 'text-slate-800' : 'text-slate-800'} uppercase`}>
                   {isManagerMode ? 'Portal da Clínica (Gestão)' : 'Portal da Clínica'}
                 </h2>
               </div>

@@ -1222,7 +1222,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
                     {/* AI ANALYSIS RESULT SECTION (NEW) */}
                     {analysisResult && (
-                        <div className={`${isManagerMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-100'} shadow-md rounded-xl p-6 border animate-slideIn`}>
+                        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-indigo-100'} shadow-md rounded-xl p-6 border animate-slideIn`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className={`text-lg font-bold flex items-center gap-2 ${isManagerMode ? 'text-blue-700' : 'text-indigo-700'}`}>
                                     <Icons.Brain /> Análise Inteligente do Plano
@@ -1638,7 +1638,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             {/* SUBSTITUTES MODAL (Centered for better UX) */}
             {showSubstitutesDrawer && (
                 <div className="fixed inset-0 z-50 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center p-4">
-                    <div className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl flex flex-col animate-scaleUp ${isManagerMode ? 'bg-gray-800 text-gray-100 border border-gray-700' : 'bg-white text-gray-900'}`} style={{ maxHeight: '85vh' }}>
+                    <div className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl flex flex-col animate-scaleUp ${isManagerMode ? 'bg-white text-slate-800 border border-blue-100' : 'bg-white text-gray-900'}`} style={{ maxHeight: '85vh' }}>
                         <div className="flex justify-between items-center mb-4">
                             <div>
                                 <h3 className="font-bold text-lg">Substituições Sugeridas</h3>

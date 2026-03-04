@@ -26,10 +26,10 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
   const ProgressBar: React.FC<ProgressBarProps> = ({ value, label, color, isManagerMode }) => (
     <div className="mb-3">
       <div className="flex justify-between text-xs mb-1">
-        <span className={`font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-800'}`}>{label}</span>
-        <span className={`${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>{value} pac.</span>
+        <span className={`font-medium ${isManagerMode ? 'text-slate-600' : 'text-emerald-800'}`}>{label}</span>
+        <span className={`${isManagerMode ? 'text-slate-400' : 'text-emerald-600'}`}>{value} pac.</span>
       </div>
-      <div className={`w-full rounded-full h-2.5 ${isManagerMode ? 'bg-gray-700/50' : 'bg-emerald-100/50'} border border-gray-200/10`}>
+      <div className={`w-full rounded-full h-2.5 ${isManagerMode ? 'bg-blue-50' : 'bg-emerald-100/50'} border border-gray-100`}>
         <div className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${color.includes('bg-') ? color : `bg-${color}-500`}`} style={{ width: `${Math.min(value * 10, 100)}%` }}></div>
       </div>
     </div>
@@ -40,51 +40,51 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Financeiro */}
-        <div className="bg-gray-800 border-gray-700 rounded-xl shadow-sm border p-6 flex flex-col justify-between">
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
-            <p className="text-sm font-medium uppercase tracking-wider text-gray-400">Receita Total (LTV)</p>
-            <h3 className="text-3xl font-bold mt-2 text-white">R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
+            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Receita Total (LTV)</p>
+            <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-green-300 bg-green-900/50 border border-green-700 px-2 py-0.5 rounded-md font-medium">Ticket Médio: R$ {stats.ticketMedio.toFixed(0)}</span>
+            <span className={`${isManagerMode ? 'text-blue-700 bg-blue-50 border-blue-200' : 'text-green-300 bg-green-900/50 border-green-700'} px-2 py-0.5 rounded-md font-medium border`}>Ticket Médio: R$ {stats.ticketMedio.toFixed(0)}</span>
           </div>
         </div>
 
         {/* Pacientes */}
-        <div className="bg-gray-800 border-gray-700 rounded-xl shadow-sm border p-6 flex flex-col justify-between">
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
-            <p className="text-sm font-medium uppercase tracking-wider text-gray-400">Base de Pacientes</p>
-            <h3 className="text-3xl font-bold mt-2 text-white">{stats.activePatients} <span className="text-base font-normal text-gray-400">ativos</span></h3>
+            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Base de Pacientes</p>
+            <h3 className={`text-3xl font-bold mt-2 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>{stats.activePatients} <span className={`text-base font-normal ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>ativos</span></h3>
           </div>
-          <div className="mt-4 text-sm text-gray-500">
+          <div className={`mt-4 text-sm ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
             Total de agendamentos: {stats.appointmentsCount}
           </div>
         </div>
 
         {/* Operacional */}
-        <div className="bg-gray-800 border-gray-700 rounded-xl shadow-sm border p-6 flex flex-col justify-between">
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md`}>
           <div>
-            <p className="text-sm font-medium uppercase tracking-wider text-gray-400">Taxa de Faltas</p>
-            <h3 className={`text-3xl font-bold mt-2 ${stats.noShowRate > 15 ? 'text-red-500' : 'text-green-400'}`}>
+            <p className={`text-sm font-medium uppercase tracking-wider ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Taxa de Faltas</p>
+            <h3 className={`text-3xl font-bold mt-2 ${stats.noShowRate > 15 ? 'text-red-500' : (isManagerMode ? 'text-blue-600' : 'text-green-400')}`}>
               {stats.noShowRate}%
             </h3>
           </div>
-          <div className="mt-4 text-xs text-gray-400">
+          <div className={`mt-4 text-xs ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>
             Índice de absenteísmo global
           </div>
         </div>
 
         {/* Demográfico Rápido */}
-        <div className="bg-gray-800 border-gray-700 rounded-xl shadow-sm border p-6">
-          <p className="text-sm font-medium uppercase tracking-wider mb-3 text-gray-400">Perfil de Gênero</p>
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} rounded-xl shadow-sm border p-6 transition-all hover:shadow-md`}>
+          <p className={`text-sm font-medium uppercase tracking-wider mb-3 ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Perfil de Gênero</p>
           <div className="flex items-center gap-4">
-            <div className="flex-1 text-center p-2 rounded bg-gray-700">
-              <span className="block text-xl font-bold text-blue-400">{stats.genderDistribution.Masculino}</span>
-              <span className="text-xs text-gray-400">Homens</span>
+            <div className={`flex-1 text-center p-2 rounded ${isManagerMode ? 'bg-blue-50' : 'bg-gray-700'}`}>
+              <span className="block text-xl font-bold text-blue-500">{stats.genderDistribution.Masculino}</span>
+              <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Homens</span>
             </div>
-            <div className="flex-1 text-center p-2 rounded bg-gray-700">
-              <span className="block text-xl font-bold text-pink-400">{stats.genderDistribution.Feminino}</span>
-              <span className="text-xs text-gray-400">Mulheres</span>
+            <div className={`flex-1 text-center p-2 rounded ${isManagerMode ? 'bg-pink-50' : 'bg-gray-700'}`}>
+              <span className="block text-xl font-bold text-pink-500">{stats.genderDistribution.Feminino}</span>
+              <span className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>Mulheres</span>
             </div>
           </div>
         </div>
@@ -93,8 +93,8 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
       {/* CHARTS & LISTS ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Top Pathologies (Epidemiologia) */}
-        <div className="bg-gray-800 border-gray-700 shadow-sm rounded-xl border p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold mb-6 text-white">Top Patologias (Perfil Epidemiológico)</h3>
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 lg:col-span-2`}>
+          <h3 className={`text-lg font-bold mb-6 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Top Patologias (Perfil Epidemiológico)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               {stats.topPathologies.map((p: any, idx: number) => (
@@ -110,38 +110,38 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
             </div>
 
             {/* AI INSIGHTS BOX */}
-            <div className="bg-indigo-900/80 border-indigo-700 text-gray-100 rounded-lg p-5 text-sm flex flex-col justify-between border">
+            <div className={`rounded-lg p-5 text-sm flex flex-col justify-between border ${isManagerMode ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-200' : 'bg-indigo-900/80 border-indigo-700 text-gray-100'}`}>
               <div>
-                <div className="flex items-center gap-2 mb-2 font-bold uppercase tracking-wide text-xs text-purple-400">
+                <div className={`flex items-center gap-2 mb-2 font-bold uppercase tracking-wide text-xs ${isManagerMode ? 'text-blue-100' : 'text-purple-400'}`}>
                   <Icons.Brain /> IA Manager
                 </div>
-                <h4 className="font-bold mb-2 text-white">Insight Clínico:</h4>
+                <h4 className={`font-bold mb-2 ${isManagerMode ? 'text-white' : 'text-white'}`}>Insight Clínico:</h4>
                 <p className="italic">"{aiInsights?.insight || 'Analisando dados...'}"</p>
               </div>
-              <div className="mt-4 pt-4 border-t border-indigo-700">
-                <span className="block font-bold mb-1 text-white">Ação Sugerida:</span>
-                <p className="text-purple-300 font-medium">{aiInsights?.action || 'Aguarde...'}</p>
+              <div className={`mt-4 pt-4 border-t ${isManagerMode ? 'border-blue-400/50' : 'border-indigo-700'}`}>
+                <span className={`block font-bold mb-1 ${isManagerMode ? 'text-white' : 'text-white'}`}>Ação Sugerida:</span>
+                <p className={`${isManagerMode ? 'text-blue-50' : 'text-purple-300'} font-medium`}>{aiInsights?.action || 'Aguarde...'}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Next Appointments (Operational View) */}
-        <div className="bg-gray-800 border-gray-700 shadow-sm rounded-xl border p-6 flex flex-col h-full">
-          <h3 className="text-lg font-bold mb-4 text-white">Agenda Imediata</h3>
+        <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-gray-800 border-gray-700'} shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
+          <h3 className={`text-lg font-bold mb-4 ${isManagerMode ? 'text-slate-800' : 'text-white'}`}>Agenda Imediata</h3>
           <div className="space-y-4 flex-1">
             {nextAppointments.length === 0 ? (
-              <p className="text-center py-4 text-gray-400">Agenda livre nos próximos dias.</p>
+              <p className={`text-center py-4 ${isManagerMode ? 'text-slate-400' : 'text-gray-400'}`}>Agenda livre nos próximos dias.</p>
             ) : (
               nextAppointments.map((app: Appointment) => (
-                <div key={app.id} className="flex items-start gap-3 pb-3 border-b border-gray-700 last:border-0 last:pb-0">
-                  <div className={`w-2 h-12 rounded-full ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : 'bg-gray-600'}`}></div>
+                <div key={app.id} className={`flex items-start gap-3 pb-3 border-b ${isManagerMode ? 'border-blue-50' : 'border-gray-700'} last:border-0 last:pb-0`}>
+                  <div className={`w-2 h-12 rounded-full ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : (isManagerMode ? 'bg-blue-100' : 'bg-gray-600')}`}></div>
                   <div>
-                    <p className="font-bold text-white text-sm">{app.patientName}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className={`font-bold ${isManagerMode ? 'text-slate-800' : 'text-white'} text-sm`}>{app.patientName}</p>
+                    <p className={`text-xs ${isManagerMode ? 'text-slate-500' : 'text-gray-400'}`}>
                       {new Date(app.startTime).toLocaleDateString()} às {new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <span className="text-blue-300 bg-blue-900/50 px-1.5 rounded mt-1 inline-block text-xs font-medium uppercase tracking-tight">{app.type}</span>
+                    <span className={`${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-blue-900/50 text-blue-300'} px-1.5 rounded mt-1 inline-block text-xs font-medium uppercase tracking-tight border`}>{app.type}</span>
                   </div>
                 </div>
               ))
@@ -149,7 +149,7 @@ const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isMan
           </div>
           <button
             onClick={() => navigate('/agenda')}
-            className="w-full mt-4 text-sm text-center py-2 rounded-lg font-medium transition-colors duration-200 bg-gray-700 text-gray-300 hover:bg-gray-600 active:scale-95"
+            className={`w-full mt-4 text-sm text-center py-2 rounded-lg font-medium transition-colors duration-200 ${isManagerMode ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'} active:scale-95`}
           >
             Ver agenda completa
           </button>
@@ -488,12 +488,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>{title}</h1>
-          <p className={`mt-1 text-sm md:text-base ${isManagerMode ? 'text-gray-300' : 'text-slate-600'}`}>{subtitle}</p>
+          <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight text-slate-800`}>{title}</h1>
+          <p className={`mt-1 text-sm md:text-base ${isManagerMode ? 'text-slate-600' : 'text-slate-600'}`}>{subtitle}</p>
         </div>
         <div className="text-left md:text-right bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg w-full md:w-auto">
           <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-black">Última atualização</span>
-          <span className={`text-sm font-black ${isManagerMode ? 'text-gray-200' : 'text-slate-700'}`}>{new Date().toLocaleTimeString()}</span>
+          <span className={`text-sm font-black text-slate-700`}>{new Date().toLocaleTimeString()}</span>
         </div>
       </div>
 

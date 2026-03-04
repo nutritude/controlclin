@@ -396,28 +396,28 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 .form-step-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
             `}} />
 
-            <div className={`${isManagerMode ? 'bg-gray-800' : 'bg-white'} border border-slate-200 shadow-sm rounded-2xl overflow-hidden`}>
+            <div className={`${isManagerMode ? 'bg-white' : 'bg-white'} border ${isManagerMode ? 'border-blue-100 shadow-sm' : 'border-slate-200'} rounded-2xl overflow-hidden`}>
                 {/* Header Section */}
                 <div className="p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
                     <div>
-                        <h3 className={`text-xl font-black flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>
-                            <Icons.Activity className="w-6 h-6 text-emerald-500" />
-                            Prontuário Laborarial Inteligente
+                        <h3 className={`text-xl font-black flex items-center gap-2 ${isManagerMode ? 'text-slate-800' : 'text-emerald-900'}`}>
+                            <Icons.Activity className={`w-6 h-6 ${isManagerMode ? 'text-blue-500' : 'text-emerald-500'}`} />
+                            Prontuário Labororial Inteligente
                         </h3>
                         <p className="text-xs text-slate-500 font-medium italic">Base de conhecimento clínico v2.5 - Bioquímica & Onco</p>
                     </div>
 
                     <div className="flex gap-2">
-                        <div className="bg-slate-200/50 p-1 rounded-lg flex mr-4">
-                            <button onClick={() => setViewMode('LIST')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'LIST' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Lista</button>
-                            <button onClick={() => setViewMode('EVOLUTION')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'EVOLUTION' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Evolução</button>
-                            <button onClick={() => setViewMode('REQUESTS')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'REQUESTS' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}>Solicitações</button>
+                        <div className={`p-1 rounded-lg flex mr-4 ${isManagerMode ? 'bg-blue-50' : 'bg-slate-200/50'}`}>
+                            <button onClick={() => setViewMode('LIST')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'LIST' ? (isManagerMode ? 'bg-white shadow text-blue-700' : 'bg-white shadow text-emerald-700') : (isManagerMode ? 'text-blue-400' : 'text-slate-500')}`}>Lista</button>
+                            <button onClick={() => setViewMode('EVOLUTION')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'EVOLUTION' ? (isManagerMode ? 'bg-white shadow text-blue-700' : 'bg-white shadow text-emerald-700') : (isManagerMode ? 'text-blue-400' : 'text-slate-500')}`}>Evolução</button>
+                            <button onClick={() => setViewMode('REQUESTS')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all ${viewMode === 'REQUESTS' ? (isManagerMode ? 'bg-white shadow text-blue-700' : 'bg-white shadow text-emerald-700') : (isManagerMode ? 'text-blue-400' : 'text-slate-500')}`}>Solicitações</button>
                         </div>
-                        <button onClick={() => setIsAddingManual(true)} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2">
+                        <button onClick={() => setIsAddingManual(true)} className={`${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-800 hover:bg-slate-900'} text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2`}>
                             <span>+</span> Nutri-Lançamento
                         </button>
                         <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.png,.jpg" onChange={handleFileUpload} />
-                        <button onClick={() => fileInputRef.current?.click()} disabled={isExtracting} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2">
+                        <button onClick={() => fileInputRef.current?.click()} disabled={isExtracting} className={`${isManagerMode ? 'bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-2`}>
                             <span>📂</span> {isExtracting ? 'Processando...' : 'Anexar PDF'}
                         </button>
                     </div>

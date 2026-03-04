@@ -89,15 +89,15 @@ export const MipanModule: React.FC<MipanModuleProps> = ({ patient, user, db, isM
     };
 
     return (
-        <div className={`mt-8 ${isManagerMode ? 'bg-gray-800' : 'bg-white'} border border-slate-200 shadow-sm rounded-2xl overflow-hidden`}>
+        <div className={`mt-8 ${isManagerMode ? 'bg-white' : 'bg-white'} border ${isManagerMode ? 'border-blue-100' : 'border-slate-200'} shadow-sm rounded-2xl overflow-hidden`}>
             {/* Header */}
             <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                 <div>
-                    <h3 className={`text-xl font-black flex items-center gap-2 ${isManagerMode ? 'text-white' : 'text-slate-900'}`}>
-                        <Icons.UserCheck className="w-6 h-6 text-indigo-500" />
+                    <h3 className={`text-xl font-black flex items-center gap-2 ${isManagerMode ? 'text-slate-800' : 'text-slate-900'}`}>
+                        <Icons.UserCheck className={`w-6 h-6 ${isManagerMode ? 'text-blue-500' : 'text-indigo-500'}`} />
                         Perfil Psicocomportamental MIPAN-20
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Modelo Integrado Aplicado à Nutrição</p>
+                    <p className={`text-[10px] ${isManagerMode ? 'text-blue-700' : 'text-slate-500'} font-bold uppercase tracking-widest mt-1`}>Modelo Integrado Aplicado à Nutrição</p>
                 </div>
                 {!isCreating && (
                     <button
@@ -241,9 +241,9 @@ export const MipanModule: React.FC<MipanModuleProps> = ({ patient, user, db, isM
                                     </div>
                                 ))}
 
-                                <div className="p-5 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/20 rounded-full -mr-12 -mt-12 blur-2xl"></div>
-                                    <h6 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-3 flex items-center gap-2">
+                                <div className={`p-5 rounded-3xl shadow-xl relative overflow-hidden group ${isManagerMode ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'}`}>
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                                    <h6 className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${isManagerMode ? 'text-blue-100' : 'text-indigo-400'}`}>
                                         <Icons.Zap className="w-3 h-3" /> Recomendação Estratégica
                                     </h6>
                                     <p className="text-xs font-medium leading-relaxed italic opacity-90">"{selectedAssessment?.insights.recommendation}"</p>
