@@ -43,6 +43,17 @@ const Patients: React.FC<PatientsProps> = ({ user, clinic, isManagerMode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinic.id, isProfessionalUser, user.professionalId, isManagerMode]); // Add professionalUser and professionalId as dependencies
 
+  // --- REAL-TIME SYNC LISTENER ---
+  useEffect(() => {
+    const handleRemoteSync = () => {
+      console.log('[Patients] ☁️ Sincronização em tempo real detectada. Atualizando lista...');
+      fetchPatients();
+    };
+
+    window.addEventListener('db-remote-sync', handleRemoteSync);
+    return () => window.removeEventListener('db-remote-sync', handleRemoteSync);
+  }, []); // Only register once on mount
+
   const fetchPatients = async () => {
     setLoading(true);
     const profIdFilter = isProfessionalUser ? user.professionalId : undefined;

@@ -10,7 +10,7 @@ import {
     ExamRequest, MipanAssessment, Prescription, PrescriptionItem, AdherenceCheckIn
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
-import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 // --- CONFIGURATION CONSTANTS (Single Source of Truth) ---
@@ -257,6 +257,8 @@ class DatabaseService {
     private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
+    private remoteSyncUnsubscribe: (() => void) | null = null;
+    private isUpdatingFromRemote: boolean = false; // Guard to prevent infinite loops during sync
 
     constructor() {
         const meta = (import.meta as any);
@@ -400,62 +402,57 @@ class DatabaseService {
         const targetClinicId = clinicId || this.activeClinicId || this.clinics[0]?.id || 'global_v1';
         this.activeClinicId = targetClinicId;
 
-        try {
-            console.log(`[DB] 🔄 Carregando dados da clínica ${targetClinicId} do Firebase...`);
-            const snap = await getDoc(doc(firestore, "clinics", targetClinicId, "data", "main"));
+        // --- NEW: REAL-TIME SYNC LISTENER (ONSNAPSHOT) ---
+        // Clean up previous listener if switching clinics
+        if (this.remoteSyncUnsubscribe) {
+            this.remoteSyncUnsubscribe();
+            this.remoteSyncUnsubscribe = null;
+        }
 
-            // Fallback to legacy path if new path doesn't exist yet
-            let data = snap.exists() ? snap.data() : null;
-            if (!data) {
-                const legacySnap = await getDoc(doc(firestore, "system_data", "global_v1"));
-                if (legacySnap.exists()) {
-                    data = legacySnap.data();
-                    console.log("[DB] ⚠️ Usando dados do caminho legado (migration needed).");
-                }
-            }
+        console.log(`[DB] 📡 Ativando sincronização em tempo real para: ${targetClinicId}`);
+        const docRef = doc(firestore, "clinics", targetClinicId, "data", "main");
 
-            if (data) {
+        // Subscribe to real-time updates
+        this.remoteSyncUnsubscribe = onSnapshot(docRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
                 const localModified = (this as any)._localLastModified || 0;
 
-                if (localModified > remoteModified) {
-                    // PROTECTION: Only overwrite cloud if we have actual data in local storage
-                    // that is not just the initial seeded state. 
-                    const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
-                    const hasRealData = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
-                    const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealData || isMockData;
+                // Sync protection: Only update if Remote is definitely newer, 
+                // OR if it's our first real cloud hit and we only have mock data locally.
+                const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
+                const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
+                const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
 
-                    if (!isJustSeeded) {
-                        console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
-                        this.saveToRemote(targetClinicId).catch(console.error);
-                        return;
-                    } else {
-                        console.log("[DB] 🔄 Fresh/Mock local storage detected. Prioritizing Cloud data over local state.");
-                        // Continue to load from remote below
-                    }
+                if (remoteModified > localModified || isJustSeeded) {
+                    this.isUpdatingFromRemote = true; // Block loop
+                    console.log(`[DB] ☁️ Atualização remota recebida (${this.patients.length} -> ${data.patients?.length || 0} pacientes).`);
+
+                    this.clinics = data.clinics || [];
+                    this.users = data.users || [];
+                    this.professionals = data.professionals || [];
+                    this.patients = data.patients || [];
+                    this.appointments = data.appointments || [];
+                    this.exams = data.exams || [];
+                    this.alerts = data.alerts || [];
+                    this.patientEvents = data.patientEvents || [];
+                    this.examRequests = data.examRequests || [];
+                    this.mipanAssessments = data.mipanAssessments || [];
+                    this.prescriptions = data.prescriptions || [];
+
+                    (this as any)._localLastModified = remoteModified;
+                    this.ensureDemoIntegrity();
+                    this.saveToStorage(false); // Update LocalStorage WITHOUT pushing back to remote immediately
+                    this.isUpdatingFromRemote = false; // Unlock
+
+                    // Trigger UI refresh (dispatch event)
+                    window.dispatchEvent(new CustomEvent('db-remote-sync'));
                 }
-
-                this.clinics = data.clinics || [];
-                this.users = data.users || [];
-                this.professionals = data.professionals || [];
-                this.patients = data.patients || [];
-                this.appointments = data.appointments || [];
-                this.exams = data.exams || [];
-                this.alerts = data.alerts || [];
-                this.patientEvents = data.patientEvents || [];
-                this.examRequests = data.examRequests || [];
-                this.mipanAssessments = data.mipanAssessments || [];
-                this.prescriptions = data.prescriptions || [];
-
-                (this as any)._localLastModified = remoteModified;
-                this.ensureDemoIntegrity();
-                console.log(`[DB] ✅ Firebase carregado: ${this.patients.length} pacientes.`);
-            } else {
-                console.warn(`[DB] ⚠️ Nenhum dado encontrado para a clínica ${targetClinicId} no Firebase.`);
             }
-        } catch (err) {
-            console.error('[DB] ❌ loadFromRemote() falhou:', err);
-        }
+        }, (err) => {
+            console.error('[DB] ❌ Erro no listener remoto:', err);
+        });
     }
 
     /**
@@ -463,6 +460,8 @@ class DatabaseService {
      * Now returns a promise for operations that need to guarantee remote persistence.
      */
     public async saveToStorage(syncRemote = true) {
+        if (this.isUpdatingFromRemote) return; // Never save back if we are currently receiving from cloud
+
         (this as any)._localLastModified = Date.now();
 
         const dataToStore = {

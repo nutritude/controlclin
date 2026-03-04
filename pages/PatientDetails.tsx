@@ -313,6 +313,21 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, clinic.id, isProfessionalUser, user?.professionalId, isPatientMode]); // Added professionalUser and professionalId
 
+    // --- REAL-TIME SYNC LISTENER ---
+    useEffect(() => {
+        const handleRemoteSync = () => {
+            // Only update if NOT currently editing a tab (to prevent wiping user's unsaved input)
+            if (!isEditingTab && !isEditingClinicalHeader && !isEditModalOpen && id) {
+                console.log('[PatientDetails] ☁️ Sincronização em tempo real detectada. Atualizando prontuário...');
+                fetchData(id);
+                if (id) fetchAppointments(id);
+            }
+        };
+
+        window.addEventListener('db-remote-sync', handleRemoteSync);
+        return () => window.removeEventListener('db-remote-sync', handleRemoteSync);
+    }, [isEditingTab, isEditingClinicalHeader, isEditModalOpen, id]);
+
     // --- FINANCIAL CALCULATION EFFECT ---
     useEffect(() => {
         if (!isTransModalOpen) return;
