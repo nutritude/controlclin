@@ -421,14 +421,16 @@ class DatabaseService {
                 if (localModified > remoteModified) {
                     // PROTECTION: Only overwrite cloud if we have actual data in local storage
                     // that is not just the initial seeded state. 
-                    const isJustSeeded = this.patients.length <= 4 && this.appointments.length === 0;
+                    const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
+                    const hasRealData = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
+                    const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealData || isMockData;
 
                     if (!isJustSeeded) {
                         console.warn(`[DB] 🛑 Dados remotos ignorados. LocalStorage é mais recente que Firebase. (Local: ${localModified} > Remote: ${remoteModified})`);
                         this.saveToRemote(targetClinicId).catch(console.error);
                         return;
                     } else {
-                        console.log("[DB] 🔄 Fresh local storage detected. Prioritizing Cloud data over default seeded data.");
+                        console.log("[DB] 🔄 Fresh/Mock local storage detected. Prioritizing Cloud data over local state.");
                         // Continue to load from remote below
                     }
                 }
