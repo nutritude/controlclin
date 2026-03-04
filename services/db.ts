@@ -531,14 +531,16 @@ class DatabaseService {
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
                 const localModified = (this as any)._localLastModified || 0;
 
-                // CRITICAL RECOVERY OVERRIDE: 
-                // We recently performed a master database repair. 
-                // Many clients have a broken local storage (e.g. they think they are not admins because they cached old data).
-                // We MUST force download the remote state, ignoring `localModified` to break them out of bad local cache.
-                if (true) {
-                    console.log(`[DB] 🔽 Baixando atualização remota (FORCED RECOVERY)...`);
+                if (remoteModified > localModified) {
+                    console.log(`[DB] 🔽 Baixando atualização remota (Versão mais nova)...`);
                     this.applyRemoteData(data);
                     this.saveToStorage(false, remoteModified);
+                } else if (localModified === 0) {
+                    console.log(`[DB] 🔽 Baixando carga inicial...`);
+                    this.applyRemoteData(data);
+                    this.saveToStorage(false, remoteModified);
+                } else {
+                    console.log(`[DB] ✅ Local já sincronizado ou mais recente.`);
                 }
             } else {
                 console.warn(`[DB] ⚠️ Clínica ${targetClinicId} sem dados na nuvem.`);
