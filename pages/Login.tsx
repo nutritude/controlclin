@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '../services/db';
 import { User, Clinic, Role } from '../types';
@@ -52,7 +50,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const images: HTMLImageElement[] = [];
     let loaded = 0;
 
-    // Novo padrão de nome de arquivo fornecido pelo usuário
     const fileNamePrefix = 'Usar_a_imagem_enviada_como_referncia_visual_princi_d6af91336a_';
 
     for (let i = 0; i < TOTAL_FRAMES; i++) {
@@ -88,20 +85,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     const frame = frames[currentFrameRef.current];
     if (frame && frame.complete && frame.naturalWidth > 0) {
-      // Logic for "COVER" (Full Screen end-to-end)
       const imgRatio = frame.naturalWidth / frame.naturalHeight;
       const canvasRatio = canvas.width / canvas.height;
 
       let drawWidth, drawHeight, drawX, drawY;
 
       if (canvasRatio > imgRatio) {
-        // Canvas is wider than image aspect ratio
         drawWidth = canvas.width;
         drawHeight = canvas.width / imgRatio;
         drawX = 0;
         drawY = (canvas.height - drawHeight) / 2;
       } else {
-        // Canvas is taller than image aspect ratio
         drawHeight = canvas.height;
         drawWidth = canvas.height * imgRatio;
         drawX = (canvas.width - drawWidth) / 2;
@@ -121,7 +115,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Resize canvas to window
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -137,7 +130,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [animReady, drawFrame]);
-
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,335 +186,126 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const [quickEmail, setQuickEmail] = useState('');
 
-  const accentColor = loginMode === 'ADMIN' ? 'blue' : 'emerald';
-
   const renderLanding = () => (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center bg-white text-slate-800 font-sans selection:bg-emerald-500/20">
       {/* Hero Section */}
-      <section className="w-full max-w-7xl px-6 pt-32 pb-20 flex flex-col lg:flex-row items-center gap-16 min-h-[80vh]">
-        <div className="flex-1 space-y-8 text-center lg:text-left z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
-            <Icons.Star size={12} />
-            Lançamento ControlClin NEXT
+      <section className="relative w-full pt-40 pb-32 px-4 md:px-6 overflow-hidden bg-emerald-50/30 border-b border-emerald-100/50">
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-emerald-200 bg-white shadow-sm mb-8 hover:scale-105 transition-transform">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-emerald-800 uppercase">Gestão de Alta Performance</span>
           </div>
-          <h1 className="text-6xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter drop-shadow-2xl">
-            A Inteligência que sua <span className="bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">Clínica</span> merece.
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight text-slate-900 mb-8 max-w-5xl">
+            Dobre a Produtividade da sua Clínica com <span className="italic text-emerald-500">Inteligência</span>.
           </h1>
-          <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
-            Gestão 360°, Prontuário Inteligente e Analytics Avançado em uma plataforma única.
-            Desenvolvido para profissionais que buscam excelência e alta performance.
+          <p className="text-lg md:text-2xl text-slate-500 font-medium leading-relaxed max-w-3xl mb-12">
+            O único sistema desenhado para focar no que realmente importa: <span className="text-slate-900 font-bold">Crescimento e Lucratividade</span> através de automação clínica de ponta.
           </p>
-          <div className="flex flex-col sm:flex-row items-stretch justify-center lg:justify-start gap-4 pt-6 max-w-xl mx-auto lg:mx-0">
-            <div className="flex-1 flex bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
-              <input
-                type="email"
-                value={quickEmail}
-                onChange={(e) => setQuickEmail(e.target.value)}
-                placeholder="Seu e-mail profissional"
-                className="flex-1 bg-transparent px-5 text-white font-medium focus:outline-none placeholder:text-slate-600"
-              />
-              <button
-                onClick={() => {
-                  setRegData({ ...regData, email: quickEmail });
-                  setView('REGISTER');
-                }}
-                className="px-8 py-4 bg-white text-slate-950 rounded-[14px] font-black text-sm hover:bg-slate-100 transition-all active:scale-95 whitespace-nowrap"
-              >
-                Começar Trial
-              </button>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center lg:text-left pl-2">
-            ✓ 14 dias grátis  ·  ✓ Sem cartão  ·  ✓ Setup em 30s
-          </p>
-        </div>
-
-        {/* Hero Card / Dashboard Screenshot */}
-        <div className="flex-1 relative w-full aspect-[4/3] max-w-2xl bg-slate-900/60 rounded-[40px] border border-white/10 overflow-hidden shadow-[0_0_100px_rgba(79,70,229,0.15)] group animate-float">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-emerald-500/10" />
-
-          {/* Main Screenshot Container */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <img
-              src="/screenshots/dashboard_main.png"
-              alt="Dashboard ControlClin"
-              className="w-[90%] h-[90%] object-cover rounded-2xl shadow-2xl transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.classList.add('flex-col');
-              }}
-            />
-            {/* Fallback Display if image missing */}
-            <div className="hidden group-[.flex-col]:flex flex-col items-center justify-center p-12 text-center">
-              <div className="p-6 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-6 group-hover:scale-110 transition-transform duration-500">
-                <Icons.Monitor size={48} />
-              </div>
-              <p className="text-2xl font-black text-white tracking-tight mb-2 opacity-50 uppercase">Inteligência de Dados</p>
-              <p className="text-sm text-slate-500 font-medium max-w-xs leading-relaxed italic">
-                (Aguardando: dashboard_main.png - Screenshot 4 Analytics)
-              </p>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl justify-center mb-16">
+            <button onClick={() => setView('REGISTER')} className="px-10 py-5 rounded-full text-lg font-black text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.5)] transition-all transform hover:-translate-y-1">
+              Experimente Grátis Agora
+            </button>
+            <button onClick={() => setView('LOGIN')} className="px-10 py-5 rounded-full text-lg font-black text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+              Acessar Minha Conta
+            </button>
           </div>
 
-          <div className="absolute top-8 left-8 right-8 flex items-center justify-between z-20">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/40" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/40" />
-              <div className="w-3 h-3 rounded-full bg-green-500/40" />
-            </div>
-            <div className="px-4 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 text-[10px] text-white/40 font-bold tracking-widest uppercase">
-              v1.0.4 Next Gen
-            </div>
-          </div>
-
-          <div className="absolute bottom-10 left-10 right-10 p-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-all translate-y-8 group-hover:translate-y-0 duration-500 z-30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white">
-                <Icons.Zap />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-black text-white uppercase tracking-wider leading-none mb-1">Performance Extrema</p>
-                <p className="text-xs text-slate-400 font-bold">Relatórios 4x mais rápidos que o mercado.</p>
-              </div>
+          <div className="w-full max-w-7xl relative group">
+            <div className="bg-white rounded-[2.5rem] p-2 md:p-4 shadow-[0_40px_80px_-15px_rgba(16,185,129,0.12)] border border-emerald-100 relative overflow-hidden flex flex-col items-center">
+              <img src="/screenshots/dashboard_main.png" alt="Dashboard Principal" className="w-full h-auto rounded-[1.5rem] border border-slate-100 shadow-sm transition-transform duration-700 hover:scale-[1.01]" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trust & Metrics */}
-      <section className="w-full max-w-7xl px-6 py-12 flex flex-wrap justify-center gap-8 lg:gap-24 opacity-60">
-        <div className="flex items-center gap-3 text-white border-r border-white/10 pr-12 last:border-0">
-          <span className="text-3xl font-black text-indigo-400">+1.5k</span>
-          <span className="text-xs font-bold leading-tight">Profissionais<br />Ativos</span>
-        </div>
-        <div className="flex items-center gap-3 text-white border-r border-white/10 pr-12 last:border-0">
-          <span className="text-3xl font-black text-emerald-400">20M</span>
-          <span className="text-xs font-bold leading-tight">Dados<br />Processados</span>
-        </div>
-        <div className="flex items-center gap-3 text-white border-r border-white/10 pr-12 last:border-0">
-          <span className="text-3xl font-black text-purple-400">4.9/5</span>
-          <span className="text-xs font-bold leading-tight">Satisfação<br />do Cliente</span>
-        </div>
-      </section>
-
-      {/* DETAILED FEATURES SECTIONS */}
-
-      {/* 1. MODO GESTOR */}
-      <section className="w-full max-w-7xl px-6 py-32 flex flex-col lg:flex-row items-center gap-20">
-        <div className="flex-1 order-2 lg:order-1 relative group">
-          <div className="absolute -inset-4 bg-blue-500/20 rounded-[40px] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-          <div className="relative aspect-video bg-slate-900 rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
-            <img
-              src="/screenshots/gestor_mode.png"
-              alt="Modo Gestor"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-slate-900/50"><div class="p-6 bg-blue-500/10 rounded-3xl text-blue-400 mb-4"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg></div><p class="font-black uppercase tracking-widest text-[10px]">Aguardando: gestor_mode.png - Screenshot 5 Alertas</p></div>`;
-              }}
-            />
+      {/* MODO GESTOR (Giant print) */}
+      <section className="w-full py-32 px-4 md:px-6 bg-slate-50 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto flex flex-col items-center gap-12 text-center">
+          <div className="max-w-3xl">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 leading-tight">Gestão Financeira <br /><span className="text-emerald-500 italic">Invisível e Poderosa</span></h2>
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">Automatize cobranças, controle fluxo de caixa e receba relatórios de lucratividade em tempo real. Pare de perder dinheiro com desorganização.</p>
           </div>
-        </div>
-        <div className="flex-1 order-1 lg:order-2 space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-[10px] font-black uppercase tracking-widest">
-            <Icons.AlertTriangle size={12} />
-            Monitoramento Ativo
-          </div>
-          <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight">Alertas Clínicos <span className="text-blue-500">Inteligentes</span></h2>
-          <p className="text-lg text-slate-400 leading-relaxed font-medium">
-            Nunca perca um paciente de vista. O sistema detecta automaticamente exames críticos sem retorno, inatividade prolongada e riscos iminentes.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-            {[
-              { title: 'Alta, Média e Baixa Prioridade', desc: 'Triagem automática e inteligente por grau de urgência.' },
-              { title: 'Ação com 1 Clique', desc: 'WhatsApp, notificação ou resolução direta da tela.' },
-              { title: 'Histórico de Alertas', desc: 'Rastreabilidade de todas as pendências e ações tomadas.' },
-              { title: 'Análise por IA', desc: 'IA identifica padrões e sugere ações preventivas.' }
-            ].map((item, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase tracking-widest">
-                  <Icons.Check size={14} />
-                  {item.title}
-                </div>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 2. AGENDA CLÍNICA */}
-      <section className="w-full max-w-7xl px-6 py-32 flex flex-col lg:flex-row items-center gap-20">
-        <div className="flex-1 space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-            <Icons.Calendar size={12} />
-            Gestão de Horários
-          </div>
-          <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight text-right lg:text-left">Agenda <span className="text-emerald-500">Multi-profissional</span></h2>
-          <p className="text-lg text-slate-400 leading-relaxed font-medium text-right lg:text-left">
-            Organize todos os profissionais da clínica em uma única visualização. Filtre por especialista, tipo de consulta e veja sua semana em segundos.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-            {[
-              { title: 'Filtro por Profissional', desc: 'Veja a agenda de cada especialista de forma isolada.' },
-              { title: 'Visão Dia, Semana, Mês', desc: 'Múltiplas visualizações para planejamento ágil.' },
-              { title: 'Status de Consulta', desc: 'AVA, ROT, e outros tipos com cores personalizadas.' },
-              { title: 'Novo Agendamento Rápido', desc: 'Crie consultas em segundos diretamente na agenda.' }
-            ].map((item, idx) => (
-              <div key={idx} className="space-y-2 text-right lg:text-left">
-                <div className="flex items-center justify-end lg:justify-start gap-2 text-emerald-400 font-black text-xs uppercase tracking-widest">
-                  <Icons.Check size={14} />
-                  {item.title}
-                </div>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex-1 relative group">
-          <div className="absolute -inset-4 bg-emerald-500/20 rounded-[40px] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-          <div className="relative aspect-video bg-slate-900 rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
-            <img
-              src="/screenshots/professional_mode.png"
-              alt="Modo Profissional"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-slate-900/50"><div class="p-6 bg-emerald-500/10 rounded-3xl text-emerald-400 mb-4"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div><p class="font-black uppercase tracking-widest text-[10px]">Aguardando: professional_mode.png - Screenshot 2 Agenda</p></div>`;
-              }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. PORTAL DO PACIENTE (Multiusuário) */}
-      <section className="w-full max-w-7xl px-6 py-32 flex flex-col lg:flex-row items-center gap-20">
-        {/* Mobile Frame Container */}
-        <div className="relative w-full max-w-[320px] mx-auto aspect-[9/19.5] bg-slate-900 rounded-[3rem] border-8 border-slate-800 overflow-hidden shadow-2xl ring-1 ring-white/10">
-          <img
-            src="/screenshots/patient_portal.png"
-            alt="Portal do Paciente"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-slate-900/50"><div class="p-6 bg-purple-500/10 rounded-3xl text-purple-400 mb-4"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></div><p class="font-black uppercase tracking-widest text-[10px] text-center px-4">Aguardando: patient_portal.png - Screenshot 3 App</p></div>`;
-            }}
-          />
-        </div>
-        <div className="flex-1 space-y-8">
-          <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-purple-600/20">
-            <Icons.Smartphone size={32} />
-          </div>
-          <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight">Portal do <span className="text-purple-500">Paciente</span></h2>
-          <p className="text-lg text-slate-400 leading-relaxed font-medium">
-            Fidelize seus pacientes com uma experiência mobile premium. Planos alimentares, lembretes de hidratação e chat em um só app.
-          </p>
-          <ul className="space-y-4 pt-4">
-            {[
-              'Acesso 24/7 a prescrições e orientações',
-              'Check-in de adesão ao plano nutricional',
-              'Download de PDFs e Exames em um clique',
-              'Comunicação direta e segura'
-            ].map((text, idx) => (
-              <li key={idx} className="flex items-center gap-3 text-white font-bold">
-                <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400">
-                  <Icons.Check size={14} />
-                </div>
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* 4. RELATÓRIO INDIVIDUAL & BI */}
-      <section className="w-full max-w-7xl px-6 py-32 flex flex-col lg:flex-row items-center gap-20">
-        <div className="flex-1 space-y-8">
-          <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-orange-600/20">
-            <Icons.TrendingUp size={32} />
-          </div>
-          <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight">Relatórios <span className="text-orange-500">Individuais</span></h2>
-          <p className="text-lg text-slate-400 leading-relaxed font-medium">
-            Histórico completo de evolução de cada paciente. Gráficos interativos de composição corporal, assinatura antropométrica e cruzamento de marcadores.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-            {[
-              { title: 'Comparativo Inicial vs. Atual', desc: 'Variação percentual automática em todos os índices.' },
-              { title: 'Assinatura Antropométrica', desc: 'Radar comparativo (Marco Zero vs. Atual).' },
-              { title: 'Dinâmica de Composição', desc: 'Evolução visual de Massa Gorda vs. Massa Magra.' },
-              { title: 'Auditoria Clínica por IA', desc: 'Resumo automático gerado por inteligência artificial.' }
-            ].map((item, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center gap-2 text-orange-400 font-black text-xs uppercase tracking-widest">
-                  <Icons.Check size={14} />
-                  {item.title}
-                </div>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex-1 relative group">
-          <div className="absolute -inset-4 bg-orange-500/20 rounded-[40px] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-          <div className="relative aspect-video bg-slate-900 rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
-            <img
-              src="/screenshots/relatorio_ind.png"
-              alt="Relatório Individual"
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Lead Capture CTA Section */}
-      <section className="w-full max-w-5xl px-6 py-32 text-center space-y-16">
-        <h2 className="text-5xl lg:text-6xl font-black text-white tracking-widest uppercase">
-          Pronto para o <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">próximo nível</span>?
-        </h2>
-        <div className="relative group p-[2px] rounded-[48px] bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 overflow-hidden">
-          <div className="bg-slate-900/90 backdrop-blur-3xl rounded-[46px] p-10 lg:p-24 space-y-12 flex flex-col items-center">
-            <p className="text-2xl text-slate-300 font-medium max-w-xl">Junte-se a centenas de clínicas que transformaram sua gestão.</p>
-            <div className="w-full max-w-lg flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:bg-white/[0.08] transition-all">
-                  <Icons.Database className="text-indigo-400 mb-2" />
-                  <p className="text-sm font-black text-white uppercase tracking-widest">Migração Grátis</p>
-                  <p className="text-[10px] text-slate-500 font-bold">Importamos seus dados de outros softwares.</p>
-                </div>
-                <div className="p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:bg-white/[0.08] transition-all">
-                  <Icons.Smartphone className="text-emerald-400 mb-2" />
-                  <p className="text-sm font-black text-white uppercase tracking-widest">Mobile First</p>
-                  <p className="text-[10px] text-slate-500 font-bold">Tudo na palma da sua mão em qualquer lugar.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setView('REGISTER')}
-                className="w-full h-20 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl rounded-3xl shadow-2xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
-              >
-                Criar minha conta grátis
-              </button>
+          <div className="w-full relative group">
+            <div className="bg-white rounded-[2rem] p-2 md:p-4 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 relative">
+              <img src="/screenshots/gestor_mode.png" alt="Modo Gestor" className="w-full h-auto rounded-[1.5rem] border border-slate-50 transition-transform duration-700 hover:scale-[1.01]" />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AGENDA CLÍNICA (Giant print) */}
+      <section className="w-full py-32 px-4 md:px-6 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto flex flex-col items-center gap-12 text-center">
+          <div className="max-w-3xl">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 leading-tight">Agenda Multi-profissional <br /><span className="text-emerald-500 italic">Inteligente</span></h2>
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">Organize todos os profissionais da clínica em uma única visualização ágil. Triagem e controle impecáveis.</p>
+          </div>
+          <div className="w-full relative group">
+            <div className="bg-white rounded-[2rem] p-2 md:p-4 shadow-[0_30px_60px_-15px_rgba(16,185,129,0.05)] border border-slate-100 relative">
+              <img src="/screenshots/professional_mode.png" alt="Agenda Clínica" className="w-full h-auto rounded-[1.5rem] border border-slate-50 transition-transform duration-700 hover:scale-[1.01]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PORTAL DO PACIENTE & RELATORIOS */}
+      <section className="w-full py-32 px-4 md:px-6 bg-slate-50 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20">
+          <div className="flex flex-col items-center text-center space-y-8">
+            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex flex-col items-center justify-center text-emerald-600 mb-4 shadow-sm">
+              <Icons.Smartphone size={32} />
+            </div>
+            <h2 className="text-4xl font-black text-slate-900 leading-tight">Portal do <span className="text-emerald-500">Paciente</span></h2>
+            <p className="text-lg text-slate-600 max-w-sm">Fidelize seus pacientes com uma experiência mobile premium.</p>
+            <div className="relative w-full max-w-[360px] border-[12px] border-slate-900 rounded-[3rem] shadow-2xl overflow-hidden bg-white mx-auto mt-8">
+              <img src="/screenshots/patient_portal.png" alt="Portal Paciente" className="w-full h-auto block" />
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center text-center space-y-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex flex-col items-center justify-center text-blue-600 mb-4 shadow-sm">
+              <Icons.TrendingUp size={32} />
+            </div>
+            <h2 className="text-4xl font-black text-slate-900 leading-tight">Relatórios <span className="text-blue-500">Individuais</span></h2>
+            <p className="text-lg text-slate-600 max-w-sm">Histórico completo de evolução. Assinatura antropométrica interativa e inteligente.</p>
+            <div className="w-full relative bg-white shadow-2xl rounded-[2rem] border border-slate-100 p-2 mt-8 max-w-[600px] mx-auto">
+              <img src="/screenshots/relatorio_ind.png" alt="Relatório" className="w-full h-auto rounded-[1.5rem]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Lead Capture */}
+      <section className="w-full py-40 px-4 md:px-6 bg-white relative">
+        <div className="absolute top-0 left-0 w-full h-full bg-slate-50 opacity-50 -z-10"></div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-5xl md:text-7xl font-black text-slate-900 mb-10">Transforme sua clínica em um <span className="text-emerald-500">negócio de elite</span>.</h2>
+          <p className="text-xl text-slate-500 mb-14 font-medium max-w-2xl mx-auto">Pare de gastar tempo com tarefas manuais e foque no crescimento estratégico da sua marca.</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <button onClick={() => setView('REGISTER')} className="px-14 py-6 rounded-full text-xl font-black text-white bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_20px_40px_-15px_rgba(16,185,129,0.5)] hover:scale-105 transition-all">
+              Começar Teste Grátis
+            </button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="w-full py-12 px-6 border-t border-white/5 flex flex-col items-center gap-6 opacity-40">
-        <h2 className="text-xl font-black text-white tracking-widest uppercase">ControlClin</h2>
-        <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-white">
-          <a href="#">Termos</a>
-          <a href="#">Privacidade</a>
-          <a href="#">Contato</a>
+      <footer className="w-full py-16 px-6 bg-slate-50 border-t border-slate-200 flex flex-col items-center gap-6">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Control<span className="text-emerald-500">Clin</span></h2>
+        <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <a href="#" className="hover:text-emerald-500 transition-colors">Termos</a>
+          <a href="#" className="hover:text-emerald-500 transition-colors">Privacidade</a>
+          <a href="#" className="hover:text-emerald-500 transition-colors">Contato</a>
         </div>
-        <p className="text-[10px] text-white/50 uppercase font-bold tracking-[0.2em]">
-          © 2026 ControlClin — Intelligent Health Architecture
+        <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-4">
+          © 2026 ControlClin Sistemas de Gestão. Software de Alta Performance.
         </p>
       </footer>
     </div>
   );
 
   const renderRegister = () => (
-    <div className="relative w-full max-w-xl animate-fadeIn" style={{ zIndex: 10 }}>
+    <div className="relative w-full max-w-xl animate-fadeIn mt-24 mb-12 px-4" style={{ zIndex: 10 }}>
       <div className="bg-white/95 backdrop-blur-3xl border border-white/50 rounded-[40px] overflow-hidden shadow-2xl p-10 space-y-8">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Comece sua Jornada</h2>
@@ -537,7 +320,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               type="text"
               value={regData.name}
               onChange={e => setRegData({ ...regData, name: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
               placeholder="Ex: Dr. João Silva"
             />
           </div>
@@ -548,7 +331,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               type="email"
               value={regData.email}
               onChange={e => setRegData({ ...regData, email: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
               placeholder="joao@clinica.com"
             />
           </div>
@@ -559,7 +342,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               type="tel"
               value={regData.phone}
               onChange={e => setRegData({ ...regData, phone: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -572,10 +355,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="button"
                   onClick={() => setRegData({ ...regData, planId: p as PlanType })}
                   className={`p-6 rounded-3xl border-2 transition-all text-left ${regData.planId === p
-                    ? 'border-indigo-600 bg-indigo-50'
+                    ? 'border-emerald-600 bg-emerald-50'
                     : 'border-slate-100 bg-slate-50 hover:border-slate-300'}`}
                 >
-                  <p className={`font-black text-lg ${regData.planId === p ? 'text-indigo-600' : 'text-slate-800'}`}>{p === 'ESSENTIAL' ? 'Essencial' : 'Pro'}</p>
+                  <p className={`font-black text-lg ${regData.planId === p ? 'text-emerald-600' : 'text-slate-800'}`}>{p === 'ESSENTIAL' ? 'Essencial' : 'Pro'}</p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                     {p === 'ESSENTIAL' ? 'R$ 147/mês' : 'R$ 197/mês'}
                   </p>
@@ -590,7 +373,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               disabled={regStatus === 'loading'}
               type="submit"
-              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
+              className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
             >
               {regStatus === 'loading' ? 'Provisionando...' : 'Criar minha Clínica agora'}
             </button>
@@ -610,7 +393,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   );
 
   const renderSuccess = () => (
-    <div className="relative w-full max-w-lg text-center p-12 bg-white/95 backdrop-blur-3xl rounded-[40px] shadow-2xl space-y-8 animate-fadeIn" style={{ zIndex: 10 }}>
+    <div className="relative w-full max-w-lg text-center p-12 bg-white/95 backdrop-blur-3xl rounded-[40px] shadow-2xl space-y-8 animate-fadeIn mt-24 mb-12 px-4" style={{ zIndex: 10 }}>
       <div className="mx-auto w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
         <Icons.CheckCircle size={48} />
       </div>
@@ -619,12 +402,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <p className="text-slate-600 font-medium">Provisionamos sua clínica com sucesso. Verifique seu e-mail para os dados de acesso iniciais.</p>
       </div>
       <div className="p-6 bg-slate-50 rounded-[28px] border border-slate-100 flex items-center gap-4 text-left">
-        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-indigo-500">
+        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-emerald-500">
           <Icons.Lock size={24} />
         </div>
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-slate-800">Senha Padrão Temporal</p>
-          <p className="text-xl font-mono text-indigo-600 font-black">123</p>
+          <p className="text-xl font-mono text-emerald-600 font-black">123</p>
         </div>
       </div>
       <button
@@ -637,8 +420,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   );
 
   const renderLogin = () => (
-    <div className="relative w-full max-w-lg mb-20 md:mb-0" style={{ zIndex: 10 }}>
-      {/* Brand Header */}
+    <div className="relative w-full max-w-lg mt-24 mb-24 animate-fadeIn px-4" style={{ zIndex: 10 }}>
       <div className="text-center mb-8">
         <button
           onClick={() => setView('LANDING')}
@@ -648,10 +430,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </button>
       </div>
 
-      {/* Glass Card */}
       <div className="bg-white/85 backdrop-blur-3xl border border-white/50 rounded-[40px] overflow-hidden shadow-2xl shadow-black/30 animate-scaleIn">
 
-        {/* Mode Tabs */}
         <div className="flex border-b border-slate-200/50">
           <button
             type="button"
@@ -707,7 +487,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white/50 text-slate-800 focus:outline-none focus:border-slate-400 text-sm shadow-sm" placeholder="••••••••" />
             </div>
 
-            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : loginMode === 'ADMIN' ? 'bg-indigo-600 shadow-blue-500/30' : 'bg-emerald-600 shadow-emerald-500/30'}`}>
+            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : loginMode === 'ADMIN' ? 'bg-blue-600 shadow-blue-500/30' : 'bg-emerald-600 shadow-emerald-500/30'}`}>
               {isSubmitting ? 'Autenticando...' : `Entrar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`}
             </button>
 
@@ -721,27 +501,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   );
 
   return (
-    <div className={`min-h-screen w-full relative ${view === 'LANDING' ? 'overflow-y-auto' : 'overflow-hidden flex items-center justify-center'} transition-all duration-700`}>
+    <div className={`min-h-screen w-full relative ${view === 'LANDING' ? 'bg-white overflow-y-auto' : 'bg-slate-950 overflow-y-auto lg:overflow-hidden'} transition-colors duration-700`}>
 
-      {/* === ANIMATED BACKGROUND === */}
-      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full" style={{ zIndex: 0 }} />
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-[2px]" style={{ zIndex: 1 }} />
+      {/* Background Animated Canvas (only visible when outside landing) */}
+      <div className={`fixed inset-0 transition-opacity duration-1000 ${view === 'LANDING' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} style={{ zIndex: 0 }}>
+        <canvas ref={canvasRef} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" />
+      </div>
 
       {/* Header / Nav */}
-      <header className="fixed top-0 left-0 right-0 h-20 px-6 lg:px-12 flex items-center justify-between z-50 bg-slate-950/30 backdrop-blur-xl border-b border-white/5">
-        <button onClick={() => setView('LANDING')} className="text-2xl font-black text-white tracking-tighter">
-          Control<span className="text-indigo-500">Clin</span>
+      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/90 border-b border-slate-200' : 'bg-slate-950/30 border-b border-white/5'}`}>
+        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter ${view === 'LANDING' ? 'text-slate-900' : 'text-white'}`}>
+          Control<span className="text-emerald-500">Clin</span>
         </button>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <button
             onClick={() => setView('LOGIN')}
-            className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-black transition-all"
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
           >
             Entrar
           </button>
           <button
             onClick={() => setView('REGISTER')}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black shadow-lg shadow-indigo-600/20 transition-all"
+            className="px-4 md:px-6 py-2 md:py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all"
           >
             Teste Grátis
           </button>
@@ -749,7 +531,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       </header>
 
       {/* Main Content Area */}
-      <div className="relative w-full min-h-screen pt-20 flex flex-col items-center" style={{ zIndex: 10 }}>
+      <div className="relative w-full min-h-screen flex flex-col items-center justify-center pt-20" style={{ zIndex: 10 }}>
         {view === 'LANDING' && renderLanding()}
         {view === 'LOGIN' && renderLogin()}
         {view === 'REGISTER' && renderRegister()}
@@ -758,8 +540,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       {/* Floating Bottom Nav para Paciente */}
       {view === 'LANDING' && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-          <a href="/#/patient/login" className="px-6 py-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl">
+        <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-[320px] mx-auto flex justify-center">
+          <a href="/#/patient/login" className="w-full justify-center px-6 py-4 bg-slate-900/90 backdrop-blur-2xl border border-slate-700/50 rounded-full text-slate-300 hover:text-white hover:bg-black transition-all text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 md:gap-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
             <Icons.User size={16} />
             Acesso ao Portal do Paciente
           </a>

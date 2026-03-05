@@ -21,9 +21,13 @@ async function check() {
     }
     const data = snap.data();
     console.log("=== USERS ===");
-    data.users.forEach(u => console.log(`${u.email} - Role: ${u.role} - ID: ${u.id} - name: ${u.name}`));
+    data.users.forEach(u => console.log(JSON.stringify(u)));
     console.log("=== PROFESSIONALS ===");
-    data.professionals.forEach(p => console.log(`${p.email} - ID: ${p.id} - name: ${p.name}`));
-    console.log("Patients count:", data.patients.length);
+    data.professionals.forEach(p => console.log(JSON.stringify(p)));
+    console.log("=== APPOINTMENTS ===");
+    (data.appointments || []).forEach(a => console.log(`Date: ${a.startTime} - Patient: ${a.patientId} - ProfID: ${a.professionalId}`));
+    console.log("=== PATIENTS ===");
+    data.patients.forEach(p => console.log(`${p.name} - ID: ${p.id} - ProfID: ${p.professionalId} - ClinicID: ${p.clinicId}`));
+    console.log("Total Patients count:", data.patients.length);
 }
 check().catch(console.error);
