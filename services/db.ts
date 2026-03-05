@@ -64,7 +64,7 @@ const DEFAULT_USERS: User[] = [
     { id: 'u-matheus', clinicId: 'c1', name: 'Dr. Matheus', email: 'matheus@control.com', role: Role.CLINIC_ADMIN, professionalId: 'p-matheus', password: '123' },
 ];
 const DEFAULT_PROFESSIONALS: Professional[] = [
-    { id: 'p3', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Dermatologia', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
+    { id: 'p3', clinicId: 'c1', userId: 'u-rangel', name: 'Dr. Rangel', email: 'rangel@control.com', phone: '', specialty: 'Gestão/Dermato', registrationNumber: 'CRM', color: 'bg-blue-200', isActive: true },
     { id: 'p2', clinicId: 'c1', userId: 'u-marcella', name: 'Dra. Marcella', email: 'marcella@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-green-200', isActive: true },
     { id: 'p-debora', clinicId: 'c1', userId: 'u-debora', name: 'Dra. Debora', email: 'debora@control.com', phone: '', specialty: 'Nutrição', registrationNumber: 'CRN', color: 'bg-purple-200', isActive: true },
     { id: 'p-matheus', clinicId: 'c1', userId: 'u-matheus', name: 'Dr. Matheus', email: 'matheus@control.com', phone: '', specialty: 'Médico', registrationNumber: 'CRM', color: 'bg-indigo-200', isActive: true },
@@ -573,7 +573,9 @@ class DatabaseService {
                     this.saveToStorage(false, remoteModified);
 
                     this.isUpdatingFromRemote = false; // Unlock
-                    window.dispatchEvent(new CustomEvent('db-remote-sync'));
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('db-remote-sync'));
+                    }
                 }
             }
         }, (err) => {

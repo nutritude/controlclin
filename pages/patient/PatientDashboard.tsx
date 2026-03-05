@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Patient, Clinic, Prescription, ExamRequest } from '../../types';
 import { Icons } from '../../constants';
 import { db } from '../../services/db';
-import { AIChatService } from '../../services/ai/aiChatService';
+import { IndividualPatientReportView } from '../../components/IndividualReportView';
+import { IndividualReportSnapshot } from '../../types';
 
 interface PatientDashboardProps {
     patient: Patient;
@@ -11,7 +12,7 @@ interface PatientDashboardProps {
     onLogout: () => void;
 }
 
-type Tab = 'home' | 'plan' | 'progress' | 'prescricao' | 'exames' | 'profile' | 'aiChat';
+type Tab = 'home' | 'plan' | 'progress' | 'prescricao' | 'exames' | 'profile';
 
 export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, clinic, onLogout }) => {
     const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -25,24 +26,26 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const prescricaoRef = useRef<HTMLDivElement>(null);
     const pedidoRef = useRef<HTMLDivElement>(null);
 
-    // AI Chat State
-    const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'model', text: string }[]>([]);
-    const [userQuestion, setUserQuestion] = useState('');
-    const [isAskingAI, setIsAskingAI] = useState(false);
-    const chatEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    // Report State
+    const [individualReportData, setIndividualReportData] = useState<IndividualReportSnapshot | null>(null);
+    const [isLoadingReport, setIsLoadingReport] = useState(false);
 
-    useEffect(() => {
-        if (activeTab === 'aiChat') scrollToBottom();
-    }, [chatMessages, activeTab]);
 
     useEffect(() => {
         db.getPrescriptions(patient.id).then(setPrescricoes);
         db.getExamRequests(patient.id).then(setPedidosExame);
     }, [patient.id]);
+
+    useEffect(() => {
+        if (activeTab === 'progress' && !individualReportData) {
+            setIsLoadingReport(true);
+            // We use the patient's own ID and their assigned professional ID to satisfy DB security locks
+            db.buildIndividualReportDataset(patient.id, patient.professionalId)
+                .then(setIndividualReportData)
+                .finally(() => setIsLoadingReport(false));
+        }
+    }, [activeTab, patient.id, patient.professionalId, individualReportData]);
 
     // Registro mais recente do histórico (mesma fonte da aba Antropometria)
     const lastAnthro = patient.anthropometryHistory && patient.anthropometryHistory.length > 0
@@ -145,11 +148,6 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                         <div className="min-w-0"><p className="font-bold text-slate-800">Minha Evolução</p><p className="text-xs text-slate-500">Peso, IMC e Medidas</p></div>
                         <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
                     </button>
-                    <button onClick={() => setActiveTab('aiChat')} className="w-full bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-all text-left group">
-                        <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"><Icons.MessageCircle className="w-5 h-5" /></div>
-                        <div className="min-w-0"><p className="font-bold text-slate-800">Tira Dúvidas IA</p><p className="text-xs text-slate-500">Pergunte sobre sua dieta</p></div>
-                        <Icons.ChevronRight className="w-5 h-5 ml-auto text-slate-400" />
-                    </button>
                 </div>
             </section>
         </div>
@@ -232,38 +230,43 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
 
     const renderProgress = () => (
         <div className="space-y-8 animate-fadeIn">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Minha Evolução</h1>
-            <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
-                <h3 className="font-black text-slate-800 mb-4">Medidas Atuais</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {[
-                        { label: 'Peso', value: lastAnthro?.weight ?? patient.anthropometry?.weight, unit: 'kg' },
-                        { label: 'IMC', value: lastAnthro?.bmi ?? patient.anthropometry?.bmi, unit: '' },
-                        { label: 'Cintura', value: patient.anthropometry?.circWaist, unit: 'cm' },
-                        { label: 'Quadril', value: patient.anthropometry?.circHip, unit: 'cm' },
-                        { label: 'Altura', value: patient.anthropometry?.height, unit: 'cm' },
-                        { label: '% Gordura', value: displayBodyFat, unit: '' },
-                    ].map(({ label, value, unit }) => (
-                        <div key={label} className="p-4 bg-slate-50 rounded-2xl">
-                            <p className="text-[10px] font-black text-slate-400 uppercase">{label}</p>
-                            <p className="font-black text-slate-800 text-lg">{value ?? '--'}<span className="text-xs font-medium text-slate-500 ml-1">{unit}</span></p>
-                        </div>
-                    ))}
+            <header className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Evolução & Métricas</h1>
+                    <p className="text-xs text-slate-500 font-medium">Relatório detalhado do seu progresso clínico</p>
                 </div>
-            </div>
-            {patient.anthropometryHistory && patient.anthropometryHistory.length > 1 && (
-                <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
-                    <h3 className="font-black text-slate-800 mb-4">Histórico de Peso</h3>
-                    <div className="space-y-2">
-                        {[...patient.anthropometryHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8).map((h, i) => (
-                            <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
-                                <span className="text-xs text-slate-500">{new Date(h.date).toLocaleDateString('pt-BR')}</span>
-                                <div className="flex gap-3 text-right">
-                                    <span className="font-black text-slate-800">{h.weight} kg</span>
-                                    {h.bodyFatPercentage && <span className="text-xs text-orange-500 font-bold">{h.bodyFatPercentage}% GC</span>}
-                                </div>
-                            </div>
-                        ))}
+                {individualReportData && (
+                    <button
+                        onClick={() => generatePdf(null as any, `Relatorio-Evolucao-${patient.name.replace(/\s+/g, '-')}.pdf`)}
+                        className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition-all active:scale-95"
+                        title="Exportar PDF"
+                    >
+                        <Icons.Download className="w-5 h-5" />
+                    </button>
+                )}
+            </header>
+
+            {isLoadingReport && !individualReportData ? (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                    <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Compilando suas métricas...</p>
+                </div>
+            ) : individualReportData ? (
+                <div className="pb-12">
+                    <IndividualPatientReportView
+                        data={individualReportData}
+                        isManagerMode={false}
+                        isPdf={false}
+                    />
+                </div>
+            ) : (
+                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 text-center space-y-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto">
+                        <Icons.TrendingUp className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <p className="font-black text-slate-800">Nenhum dado de evolução ainda.</p>
+                        <p className="text-xs text-slate-400 mt-1">Seus dados aparecerão aqui após sua primeira avaliação física.</p>
                     </div>
                 </div>
             )}
@@ -457,86 +460,6 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         </div>
     );
 
-    const handleSendMessage = async () => {
-        if (!userQuestion.trim() || isAskingAI) return;
-        const msg = userQuestion.trim();
-        setUserQuestion('');
-        setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
-        setIsAskingAI(true);
-
-        try {
-            const response = await AIChatService.askQuestion(msg, chatMessages, patient, activePlan);
-            setChatMessages(prev => [...prev, { role: 'model', text: response }]);
-        } catch (error) {
-            setChatMessages(prev => [...prev, { role: 'model', text: "Erro ao processar sua pergunta. Tente novamente." }]);
-        } finally {
-            setIsAskingAI(false);
-        }
-    };
-
-    const renderAiChat = () => (
-        <div className="flex flex-col h-[70vh] animate-fadeIn">
-            <header className="mb-4">
-                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Tira Dúvidas IA</h1>
-                <p className="text-xs text-slate-500 font-medium">Nutrição Integrativa e suporte ao paciente</p>
-            </header>
-
-            <div className="flex-1 overflow-y-auto space-y-4 p-2 bg-slate-50/50 rounded-3xl mb-4 scroll-smooth">
-                {chatMessages.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-500">
-                            <Icons.MessageCircle className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <p className="font-bold text-slate-800">Olá! Eu sou sua assistente de IA.</p>
-                            <p className="text-xs text-slate-500 px-4">Tire dúvidas sobre seu plano, exames ou nutrição integrativa em geral.</p>
-                        </div>
-                    </div>
-                )}
-                {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] p-4 rounded-3xl text-sm ${msg.role === 'user'
-                            ? 'bg-indigo-600 text-white rounded-tr-none'
-                            : 'bg-white text-slate-700 border border-slate-100 shadow-sm rounded-tl-none'
-                            }`}>
-                            {msg.text}
-                        </div>
-                    </div>
-                ))}
-                {isAskingAI && (
-                    <div className="flex justify-start">
-                        <div className="bg-white p-4 rounded-3xl rounded-tl-none border border-slate-100 shadow-sm">
-                            <div className="flex gap-1">
-                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" />
-                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]" />
-                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.4s]" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-                <div ref={chatEndRef} />
-            </div>
-
-            <div className="relative">
-                <input
-                    type="text"
-                    value={userQuestion}
-                    onChange={(e) => setUserQuestion(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Sua dúvida aqui..."
-                    className="w-full bg-white p-6 pr-16 rounded-[28px] shadow-xl border border-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                />
-                <button
-                    onClick={handleSendMessage}
-                    disabled={!userQuestion.trim() || isAskingAI}
-                    className="absolute right-3 top-3 w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 transition-all disabled:opacity-50 active:scale-95"
-                >
-                    <Icons.ChevronRight className="w-5 h-5" />
-                </button>
-            </div>
-            <p className="text-[9px] text-center text-slate-400 mt-4 px-6 uppercase font-black tracking-widest">IA treinada em Nutrição Integrativa e seu Contexto Clínico</p>
-        </div>
-    );
 
     // ── NAV ──────────────────────────────────────────────────────────
 
@@ -545,7 +468,6 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         { id: 'plan', label: 'Dieta', icon: <Icons.Utensils className="w-5 h-5" /> },
         { id: 'progress', label: 'Evolução', icon: <Icons.TrendingUp className="w-5 h-5" /> },
         { id: 'prescricao', label: 'Rx', icon: <Icons.FileText className="w-5 h-5" /> },
-        { id: 'aiChat', label: 'IA Chat', icon: <Icons.MessageCircle className="w-5 h-5" /> },
         { id: 'profile', label: 'Perfil', icon: <Icons.User className="w-5 h-5" /> },
     ];
 
@@ -571,7 +493,6 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                 {activeTab === 'prescricao' && renderPrescricao()}
                 {activeTab === 'exames' && renderExames()}
                 {activeTab === 'profile' && renderProfile()}
-                {activeTab === 'aiChat' && renderAiChat()}
             </main>
 
             {/* Bottom Nav */}

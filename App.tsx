@@ -155,6 +155,7 @@ function App() {
   // --- Real-time Session Sync ---
   useEffect(() => {
     const handleRemoteSync = async () => {
+      // Professional Sync
       if (user && clinic) {
         console.log('[System] ☁️ DB Sync detected. Refreshing session user...');
         const allUsers = await serviceDb.getUsers(clinic.id);
@@ -164,10 +165,21 @@ function App() {
           localStorage.setItem('app_user', JSON.stringify(freshUser));
         }
       }
+
+      // Patient Sync
+      if (patient && patientClinic) {
+        console.log('[System] ☁️ DB Sync detected. Refreshing patient session...');
+        const allPatients = await serviceDb.getPatients(patientClinic.id);
+        const freshPatient = allPatients.find(p => p.id === patient.id);
+        if (freshPatient) {
+          setPatient(freshPatient);
+          localStorage.setItem('app_patient', JSON.stringify(freshPatient));
+        }
+      }
     };
     window.addEventListener('db-remote-sync', handleRemoteSync);
     return () => window.removeEventListener('db-remote-sync', handleRemoteSync);
-  }, [user, clinic]);
+  }, [user, clinic, patient, patientClinic]);
 
   const handleLogin = (u: User, c: Clinic, mode: 'ADMIN' | 'PROFESSIONAL') => {
     setUser(u);
