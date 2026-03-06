@@ -23,8 +23,8 @@ const EXAM_OPTIONS = [
     "Hemograma Completo", "Glicose em Jejum", "Hemoglobina Glicada (HbA1c)", "Insulina",
     "Perfil Lipídico (Colesterol Total, LDL, HDL, Triglicérides)", "Ureia e Creatinina",
     "TGO e TGP (Transaminases)", "Gama-GT", "Ácido Úrico", "Proteína C-Reativa (PCR)",
-    "Hormônio Tireoestimulante (TSH)", "T4 Livre", "Vitamina D (25-hidroxivitamina D)",
-    "Vitamina B12", "Ferritina", "Ferro Sérico", "Cálcio", "Magnésio",
+    "TSH (Hormônio Tireoestimulante)", "T4 Livre", "T3 Livre", "T4 Total", "T3 Total", "Anti-TPO", "Anti-Tireoglobulina",
+    "Vitamina D (25-hidroxivitamina D)", "Vitamina B12", "Ferritina", "Ferro Sérico", "Cálcio", "Magnésio",
     "Zinco", "Albúmina", "Cortisol Sanguíneo", "Testosterona Total e Livre",
     "Eshteriol", "Progesterona", "Urina Tipo 1 (EAS)", "Exame Parasitológico de Fezes"
 ];
@@ -113,6 +113,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         'HEPATICO': ['AST (TGO)', 'ALT (TGP)', 'Gama-GT (GGT)', 'Bilirrubina Total'],
         'RENAL': ['Creatinina', 'Ureia', 'Ácido Úrico', 'Fósforo', 'Potássio'],
         'GLICEMIA': ['Glicose em Jejum', 'Hemoglobina Glicada (HbA1c)', 'Insulina em Jejum'],
+        'TIREOIDE': ['TSH', 'T4 Livre', 'T3 Livre', 'T4 Total', 'T3 Total', 'Anti-TPO', 'Anti-Tireoglobuína'],
         'ELETRÓLITOS': ['Sódio', 'Potássio', 'Cálcio Total', 'Magnésio', 'Cloretos']
     };
 

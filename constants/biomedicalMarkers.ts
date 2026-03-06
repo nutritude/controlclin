@@ -752,6 +752,84 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             normal: "Metabolismo tireoidiano estável."
         }
     },
+    T3_TOTAL: {
+        name: "T3 Total",
+        aliases: ["Triiodotironina Total"],
+        unit: "ng/dL",
+        minDesejavel: 80,
+        maxDesejavel: 200,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipotireoidismo ou conversão lenta.", sugestao: "Avaliar Selênio e Zinco." },
+            alto: { risco: "Hipertireoidismo.", sugestao: "Avaliar sinais clínicos de agitação." },
+            normal: "Nível total adequado."
+        }
+    },
+    T3_LIVRE: {
+        name: "T3 Livre",
+        aliases: ["FT3", "Triiodotironina Livre"],
+        unit: "pg/mL",
+        minDesejavel: 2.0,
+        maxDesejavel: 4.4,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipotireoidismo subclínico ou baixa conversão.", sugestao: "Melhorar saúde hepática e micronutrientes." },
+            alto: { risco: "Tireotoxicose.", sugestao: "Monitoramento endócrino." },
+            normal: "Forma ativa do hormônio em equilíbrio."
+        }
+    },
+    T4_TOTAL: {
+        name: "T4 Total",
+        aliases: ["Tiroxina Total"],
+        unit: "ug/dL",
+        minDesejavel: 4.5,
+        maxDesejavel: 12.0,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipotireoidismo central ou primário.", sugestao: "Avaliar TSH." },
+            alto: { risco: "Hipertireoidismo.", sugestao: "Avaliar causas de tireoidite." },
+            normal: "Produção glandular adequada."
+        }
+    },
+    T4_LIVRE: {
+        name: "T4 Livre",
+        aliases: ["FT4", "Tiroxina Livre"],
+        unit: "ng/dL",
+        minDesejavel: 0.9,
+        maxDesejavel: 1.7,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipotireoidismo.", sugestao: "Dosagem de reposição pode ser necessária." },
+            alto: { risco: "Hipertireoidismo.", sugestao: "Investigar doença de Graves." },
+            normal: "Disponibilidade hormonal adequada."
+        }
+    },
+    ANTI_TPO: {
+        name: "Anti-TPO",
+        aliases: ["Anticorpos Anti-Peroxidase Tireoidiana"],
+        unit: "UI/mL",
+        minDesejavel: 0,
+        maxDesejavel: 34,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Normal (Negativo).", sugestao: "Ausência de autoimunidade tireoidiana." },
+            alto: { risco: "Tireoidite de Hashimoto.", sugestao: "Dieta anti-inflamatória e controle de glúten." },
+            normal: "Sem reação autoimune detectada."
+        }
+    },
+    ANTI_TIREOGLOBULINA: {
+        name: "Anti-Tireoglobuína",
+        aliases: ["Anti-TG"],
+        unit: "UI/mL",
+        minDesejavel: 0,
+        maxDesejavel: 115,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Normal (Negativo).", sugestao: "N/A" },
+            alto: { risco: "Marcador de autoimunidade tireoidiana.", sugestao: "Correlacionar com Anti-TPO e Ultrassom." },
+            normal: "Normal."
+        }
+    },
 
     // --- MARCADORES TUMORAIS ---
     AFP: {
