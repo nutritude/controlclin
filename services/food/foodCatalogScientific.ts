@@ -52,12 +52,15 @@ const catalogStatus = {
 
 /**
  * Inicializa o catálogo a partir dos registros do MASTER CSV.
- * Sobrescreve qualquer estado anterior.
  *
  * @param records - Array de FoodRecord parseados pelo catalogLoader
+ * @param append - Se true, não limpa o estado anterior (útil para múltiplos arquivos)
  */
-function initMasterCatalog(records: FoodRecord[]): void {
-    foodsByUID.clear();
+function initMasterCatalog(records: FoodRecord[], append = false): void {
+    if (!append) {
+        foodsByUID.clear();
+        synonymIndex.clear();
+    }
 
     for (const record of records) {
         if (!record.uid || !record.nome) continue;
@@ -207,14 +210,37 @@ function searchByName(query: string, limit = 20): FoodRecord[] {
     const q = query.toLowerCase().trim();
     if (!q) return [];
 
-    const results = new Map<string, FoodRecord>(); // uid → record (evita duplicatas)
+    const results = new Map<string, FoodRecord>(); // uid → record (evita duplicatas de ID)
+    const fingerprints = new Set<string>(); // "nome_norm|kcal|p|c|g" → evita alimentos idênticos
+
+    /** 
+     * Gera uma string única para identificar alimentos nutricionalmente idênticos 
+     * e com nomes similares.
+     */
+    const getFingerprint = (rec: FoodRecord): string => {
+        const name = rec.nome.toLowerCase().trim().replace(/\s+/g, '');
+        const k = Math.round(rec.kcal);
+        const p = Math.round(rec.proteina_g || 0);
+        const c = Math.round(rec.carboidratos_g || 0);
+        const f = Math.round(rec.lipidios_g || 0);
+        return `${name}|${k}|${p}|${c}|${f}`;
+    };
+
+    const addIfUnique = (rec: FoodRecord): boolean => {
+        const fp = getFingerprint(rec);
+        if (fingerprints.has(fp)) return false;
+
+        fingerprints.add(fp);
+        results.set(rec.uid, rec);
+        return true;
+    };
 
     // 1. Match exato no índice de sinônimos
     const exactUID = synonymIndex.get(q);
     if (exactUID) {
         const exactRecord = foodsByUID.get(exactUID);
         if (exactRecord) {
-            results.set(exactUID, exactRecord);
+            addIfUnique(exactRecord);
         }
     }
 
@@ -227,7 +253,7 @@ function searchByName(query: string, limit = 20): FoodRecord[] {
         if (results.size >= limit) break;
         if (results.has(uid)) continue;
         if (record.nome.toLowerCase().includes(q)) {
-            results.set(uid, record);
+            addIfUnique(record);
         }
     }
 
@@ -241,7 +267,7 @@ function searchByName(query: string, limit = 20): FoodRecord[] {
         if (results.has(uid)) continue;
         if (termo.includes(q)) {
             const record = foodsByUID.get(uid);
-            if (record) results.set(uid, record);
+            if (record) addIfUnique(record);
         }
     }
 

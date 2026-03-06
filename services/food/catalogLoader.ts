@@ -193,6 +193,108 @@ export function parseMasterCSV(csvContent: string): {
 }
 
 
+// ─── PASSO 1.1: Parser da Tabela IBGE (tabela_ibge_final.csv) ────────────────
+
+/**
+ * Parseia o conteúdo da Tabela IBGE Final.
+ * Esta tabela possui um formato de cabeçalho duplo e nomes de colunas extensos.
+ */
+export function parseIBGECSV(csvContent: string): {
+    records: FoodRecord[];
+    result: CatalogLoadResult;
+} {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const records: FoodRecord[] = [];
+
+    const rawLines = csvContent.split('\n').filter(l => l.trim() !== '');
+    if (rawLines.length < 2) {
+        return {
+            records: [],
+            result: { success: false, recordCount: 0, errors: ['Arquivo IBGE vazio.'], warnings },
+        };
+    }
+
+    // Detectar se a primeira linha é "Unnamed" (artefato de exportação)
+    let headerLineIdx = 0;
+    if (rawLines[0].includes('Unnamed: 0')) {
+        headerLineIdx = 1;
+    }
+
+    const headers = parseCSVLine(rawLines[headerLineIdx]).map(h => h.trim().toLowerCase());
+
+    const idx = {
+        codAlimento: colIndex(headers, 'código do alimento'),
+        descAlimento: colIndex(headers, 'descrição do alimento'),
+        codPreparo: colIndex(headers, 'código da preparação'),
+        descPreparo: colIndex(headers, 'descrição da preparação'),
+        kcal: colIndex(headers, 'energia (kcal)'),
+        proteina: colIndex(headers, 'proteína (g)'),
+        carboidratos: colIndex(headers, 'carboidrato (g)'),
+        lipidios: colIndex(headers, 'lipídeos totais (g)'),
+        fibra: colIndex(headers, 'fibra alimentar total (g)'),
+        sodio: colIndex(headers, 'sódio (mg)'),
+        calcio: colIndex(headers, 'cálcio (mg)'),
+        ferro: colIndex(headers, 'ferro (mg)'),
+        potassio: colIndex(headers, 'potássio (mg)'),
+        vitamina_c: colIndex(headers, 'vitamina c (mg)'),
+    };
+
+    // Validar colunas mínimas
+    if (idx.codAlimento === -1 || idx.descAlimento === -1 || idx.kcal === -1) {
+        return {
+            records: [],
+            result: { success: false, recordCount: 0, errors: ['Colunas essenciais não encontradas no CSV IBGE.'], warnings }
+        };
+    }
+
+    for (let i = headerLineIdx + 1; i < rawLines.length; i++) {
+        const cells = parseCSVLine(rawLines[i]);
+
+        const codAli = cells[idx.codAlimento]?.trim();
+        const descAli = cells[idx.descAlimento]?.trim();
+        if (!codAli || !descAli) continue;
+
+        const codPrep = idx.codPreparo !== -1 ? cells[idx.codPreparo]?.trim() : '99';
+        const descPrep = idx.descPreparo !== -1 ? cells[idx.descPreparo]?.trim() : '';
+
+        // UID único: IBGE-COD_ALIMENTO-COD_PREPARO
+        const uid = `IBGE-${codAli}-${codPrep}`;
+
+        // Nome: Descrição + Preparo (se relevante)
+        let nome = descAli;
+        if (descPrep && descPrep.toUpperCase() !== 'NAO SE APLICA' && descPrep.toUpperCase() !== 'NÃO SE APLICA') {
+            nome += ` (${descPrep})`;
+        }
+
+        const record: FoodRecord = {
+            uid,
+            nome,
+            kcal: toNumber(cells[idx.kcal]) ?? 0,
+            proteina_g: toNumber(cells[idx.proteina]),
+            carboidratos_g: toNumber(cells[idx.carboidratos]),
+            lipidios_g: toNumber(cells[idx.lipidios]),
+            fibra_alimentar_g: toNumber(cells[idx.fibra]),
+            sodio_mg: toNumber(cells[idx.sodio]),
+            calcio_mg: toNumber(cells[idx.calcio]),
+            ferro_mg: toNumber(cells[idx.ferro]),
+            potassio_mg: toNumber(cells[idx.potassio]),
+            vitamina_c_mg: toNumber(cells[idx.vitamina_c]),
+            fonte: 'IBGE',
+            prio: 1, // Prioridade alta por ser fonte oficial nacional
+        };
+
+        records.push(record);
+    }
+
+    return {
+        records,
+        result: { success: true, recordCount: records.length, errors, warnings }
+    };
+}
+
+
+
 // ─── PASSO 2: Parser do dicionário de sinônimos ───────────────────────────────
 
 /**

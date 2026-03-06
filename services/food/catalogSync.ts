@@ -4,11 +4,11 @@
  * Carrega o catálogo MASTER + Suplementos ao iniciar a aplicação.
  */
 
-import { parseMasterCSV } from './catalogLoader';
+import { parseMasterCSV, parseIBGECSV } from './catalogLoader';
 import { ScientificCatalog } from './foodCatalogScientific';
 
 const LOCAL_STORAGE_VERSION_KEY = 'CONTROLCLIN_FOOD_DB_VERSION';
-const CURRENT_APP_VERSION = '1.1.0'; // bump para forçar recarga incluindo suplementos
+const CURRENT_APP_VERSION = '1.1.1'; // bump para forçar recarga incluindo IBGE e desduplicação
 
 let _isSynced = false;
 
@@ -45,6 +45,18 @@ export const CatalogSync = {
         console.log(`[CatalogSync] SUPLEMENTOS carregados: ${supplRecords.length} registros.`);
       } else {
         console.warn('[CatalogSync] Suplementos CSV não encontrado (opcional).');
+      }
+
+      // 3. Carregar Tabela IBGE (tabela_ibge_final.csv)
+      const ibgeRes = await fetch('/data/tabela_ibge_final.csv');
+      if (ibgeRes.ok) {
+        const ibgeCSV = await ibgeRes.text();
+        const { records: ibgeRecords } = parseIBGECSV(ibgeCSV);
+        // Adiciona ao catálogo (append: true)
+        ScientificCatalog.initMasterCatalog(ibgeRecords, true);
+        console.log(`[CatalogSync] IBGE carregado: ${ibgeRecords.length} registros.`);
+      } else {
+        console.warn('[CatalogSync] Tabela IBGE não encontrada (tabela_ibge_final.csv).');
       }
 
       localStorage.setItem(LOCAL_STORAGE_VERSION_KEY, CURRENT_APP_VERSION);

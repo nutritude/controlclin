@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MealItem } from '../types';
 import { FoodService, FoodItemCanonical } from '../services/food/foodCatalog';
+import { SubstitutionService } from '../services/food/substitutions';
 
 interface EditFoodModalProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
     const [customPortionValue, setCustomPortionValue] = useState('');
     const [foodData, setFoodData] = useState<FoodItemCanonical | null>(null);
     const [customName, setCustomName] = useState(item.customName || item.name);
+    const [autoUpdateSubstitutes, setAutoUpdateSubstitutes] = useState(true);
 
     useEffect(() => {
         if (isOpen && item) {
@@ -87,11 +89,32 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
     const handleConfirm = () => {
         const totals = calculateTotals();
+
+        // Se profissional optou por ajuste automático dos substitutos
+        let updatedSubstitutes = item.substitutes || [];
+        if (autoUpdateSubstitutes && totals && item.substitutes && item.substitutes.length > 0) {
+            updatedSubstitutes = item.substitutes.map(sub => {
+                const subFood = FoodService.getById(sub.foodId);
+                if (subFood) {
+                    const equivalent = SubstitutionService.getEquivalentItem(subFood, totals.kcal);
+                    if (equivalent) {
+                        return {
+                            ...sub,
+                            ...equivalent,
+                            substitutes: sub.substitutes // preserva aninhamento se houver
+                        };
+                    }
+                }
+                return sub;
+            });
+        }
+
         if (!totals) {
             onConfirm({
                 ...item,
                 quantity: quantityMultiplier,
-                customName: customName
+                customName: customName,
+                substitutes: updatedSubstitutes
             });
         } else {
             const unitLabel = selectedPortionIndex === -1
@@ -107,7 +130,8 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
                 calculatedCarbs: totals.carbs,
                 calculatedFat: totals.fat,
                 snapshot: totals.snapshot,
-                customName: customName
+                customName: customName,
+                substitutes: updatedSubstitutes
             });
         }
         onClose();
@@ -183,6 +207,23 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
                                 <div><div className="text-[10px] text-gray-400">C</div><div className="font-bold text-green-600">{preview.carbs}</div></div>
                                 <div><div className="text-[10px] text-gray-400">G</div><div className="font-bold text-yellow-600">{preview.fat}</div></div>
                             </div>
+                        </div>
+                    )}
+
+                    {item.substitutes && item.substitutes.length > 0 && (
+                        <div className={`p-3 rounded-lg border border-indigo-100 bg-indigo-50/50`}>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={autoUpdateSubstitutes}
+                                    onChange={e => setAutoUpdateSubstitutes(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-black text-indigo-700 uppercase">Ajustar substitutos automaticamente</span>
+                                    <span className="text-[10px] text-indigo-600/70">As quantidades de todas as opções (OU) serão recalculadas para bater a nova caloria ({preview?.kcal} kcal).</span>
+                                </div>
+                            </label>
                         </div>
                     )}
                 </div>

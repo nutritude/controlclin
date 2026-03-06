@@ -101,5 +101,65 @@ export const SubstitutionService = {
       const diffB = Math.abs(b.food.nutrientsPer100g.kcal - densityOrig);
       return diffA - diffB;
     }).slice(0, 15);
+  },
+
+  /**
+   * Calcula a quantidade equivalente de um alimento para atingir um alvo calórico.
+   */
+  getEquivalentItem: (food: FoodItemCanonical, targetKcal: number): any => {
+    const density = food.nutrientsPer100g.kcal;
+    if (density <= 0) return null;
+
+    const targetGrams = (targetKcal / density) * 100;
+
+    let bestPortionIdx = 0;
+    let bestQuantity = 1;
+    let minDiff = Infinity;
+
+    // Tentar encontrar a melhor combinação de porção/quantidade
+    food.portions.forEach((p, pIdx) => {
+      // Testar multiplicadores comuns
+      [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5].forEach(q => {
+        const currentGrams = p.grams * q;
+        const diff = Math.abs(currentGrams - targetGrams);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestPortionIdx = pIdx;
+          bestQuantity = q;
+        }
+      });
+    });
+
+    const weightFromPortion = food.portions[bestPortionIdx].grams * bestQuantity;
+    const diffPct = (Math.abs(weightFromPortion - targetGrams) / targetGrams) * 100;
+
+    // Se a diferença for maior que 10%, usamos peso manual para ser preciso conforme pedido
+    const isManual = diffPct > 10;
+    const finalQuantity = isManual ? 1 : bestQuantity;
+    const finalUnit = isManual ? `${Math.round(targetGrams)}g` : food.portions[bestPortionIdx].label;
+
+    // Recalcular totais para o novo peso
+    const finalGrams = isManual ? targetGrams : weightFromPortion;
+    const ratio = finalGrams / 100;
+    const nut = food.nutrientsPer100g;
+
+    return {
+      foodId: food.id,
+      name: food.namePt,
+      quantity: finalQuantity,
+      unit: finalUnit,
+      calculatedCalories: Math.round(nut.kcal * ratio),
+      calculatedProtein: parseFloat((nut.protein_g * ratio).toFixed(1)),
+      calculatedCarbs: parseFloat((nut.carb_g * ratio).toFixed(1)),
+      calculatedFat: parseFloat((nut.fat_g * ratio).toFixed(1)),
+      snapshot: {
+        fiber: (nut.fiber_g || 0) * ratio,
+        sodium: (nut.sodium_mg || 0) * ratio,
+        calcium: (nut.calcium_mg || 0) * ratio,
+        iron: (nut.iron_mg || 0) * ratio,
+        potassium: (nut.potassium_mg || 0) * ratio,
+        vitaminC: (nut.vitaminC_mg || 0) * ratio
+      }
+    };
   }
 };

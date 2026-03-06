@@ -5,6 +5,7 @@ import { Icons } from '../../constants';
 import { db } from '../../services/db';
 import { IndividualPatientReportView } from '../../components/IndividualReportView';
 import { IndividualReportSnapshot } from '../../types';
+import { PwaInstallBanner } from '../../components/patient/PwaInstallBanner';
 
 interface PatientDashboardProps {
     patient: Patient;
@@ -93,8 +94,10 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     // ── TABS ─────────────────────────────────────────────────────────
 
     const renderHome = () => (
-        <div className="space-y-8 animate-fadeIn">
-            <div className="rounded-[32px] p-6 bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+        <div className="space-y-6 animate-fadeIn pb-4">
+            <PwaInstallBanner />
+
+            <div className="mx-6 rounded-[32px] p-6 bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-400 rounded-full -mr-24 -mt-24 opacity-20 blur-3xl pointer-events-none" />
                 <p className="text-emerald-100 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">Área do Paciente</p>
                 <h1 className="text-2xl font-black tracking-tight">{patient.name.split(' ')[0]} 👋</h1>
