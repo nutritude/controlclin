@@ -264,17 +264,42 @@ class DatabaseService {
     private isUpdatingFromRemote: boolean = false; // Guard to prevent infinite loops during sync
 
     private applyRemoteData(data: any) {
+        // Blindly overwrite non-critical arrays (metadata, lookups)
         this.clinics = data.clinics || [];
-        this.users = data.users || [];
-        this.professionals = data.professionals || [];
-        this.patients = data.patients || [];
-        this.appointments = data.appointments || [];
-        this.exams = data.exams || [];
         this.alerts = data.alerts || [];
-        this.patientEvents = data.patientEvents || [];
-        this.examRequests = data.examRequests || [];
-        this.mipanAssessments = data.mipanAssessments || [];
-        this.prescriptions = data.prescriptions || [];
+
+        // --- SMART ARRAY MERGE (Local Wins on Deletions/Recent Updates) ---
+        const smartMerge = (localArr: any[], remoteArr: any[]) => {
+            if (!remoteArr) return localArr;
+            const remoteMap = new Map(remoteArr.map(x => [x.id, x]));
+
+            // For items in both, if local is newer or deleted, it stays as is
+            return localArr.map(localItem => {
+                const remoteItem = remoteMap.get(localItem.id);
+                if (!remoteItem) return localItem; // Not on server yet
+
+                const isDeleted = !!localItem.isDeleted || !!remoteItem.isDeleted;
+                const localUpdated = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
+                const remoteUpdated = remoteItem.updatedAt ? new Date(remoteItem.updatedAt).getTime() : 0;
+
+                if (isDeleted) return { ...remoteItem, ...localItem, isDeleted: true };
+                if (localUpdated >= remoteUpdated) return localItem;
+                return remoteItem;
+            }).concat(
+                // Add items that are ONLY on server
+                remoteArr.filter(r => !localArr.some(l => l.id === r.id))
+            );
+        };
+
+        this.users = smartMerge(this.users, data.users);
+        this.professionals = smartMerge(this.professionals, data.professionals);
+        this.patients = smartMerge(this.patients, data.patients);
+        this.appointments = smartMerge(this.appointments, data.appointments);
+        this.exams = smartMerge(this.exams, data.exams);
+        this.patientEvents = smartMerge(this.patientEvents, data.patientEvents);
+        this.examRequests = smartMerge(this.examRequests, data.examRequests);
+        this.mipanAssessments = smartMerge(this.mipanAssessments, data.mipanAssessments);
+        this.prescriptions = smartMerge(this.prescriptions, data.prescriptions);
 
         // Update modified flag based on remote
         const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
@@ -454,24 +479,46 @@ class DatabaseService {
                     }
                 });
 
-                // 2. Fusão de Arrays Genéricos (Agendamentos, Eventos, Exames)
-                const mergeArray = (localArr: any[], remoteArr: any[]) => {
+                // 2. Fusão de Arrays Genéricos (Agendamentos, Eventos, Exames, Solicitações)
+                const mergeArraySmart = (localArr: any[], remoteArr: any[]) => {
                     if (!remoteArr) return localArr;
-                    const localIds = new Set(localArr.map(x => x.id));
-                    remoteArr.forEach(r => {
-                        if (!localIds.has(r.id)) localArr.push(r);
+
+                    // Create a map of IDs for O(1) lookups
+                    const localMap = new Map();
+                    localArr.forEach(item => localMap.set(item.id, item));
+
+                    const remoteItemsToConsider = remoteArr.filter(r => !localMap.has(r.id));
+                    const result = [...localArr];
+
+                    remoteItemsToConsider.forEach(remoteItem => {
+                        // Se o item remoto não existe localmente, adicionamos
+                        result.push(remoteItem);
                     });
-                    return localArr;
+
+                    // Para itens que existem em ambos, garantimos que se um lado deletou, o resultado final é deletado
+                    // E se ambos estão ativos, pegamos o local (pois acabamos de modificar ele)
+                    return result.map(item => {
+                        const remoteItem = remoteArr.find(r => r.id === item.id);
+                        if (remoteItem) {
+                            // União de Deletados: Se qualquer um marcou como deletado, prevalece o deletado
+                            const isDeleted = !!item.isDeleted || !!remoteItem.isDeleted;
+
+                            // Se o local for mais novo ou igual por createdAt (nossa única referência fixa), ficamos com ele
+                            // mas trazendo o flag de delete se vier do remoto também.
+                            return { ...remoteItem, ...item, isDeleted };
+                        }
+                        return item;
+                    });
                 };
 
-                this.appointments = mergeArray(this.appointments, remote.appointments);
-                this.patientEvents = mergeArray(this.patientEvents, remote.patientEvents);
-                this.exams = mergeArray(this.exams, remote.exams);
-                this.examRequests = mergeArray(this.examRequests, remote.examRequests);
-                this.prescriptions = mergeArray(this.prescriptions, remote.prescriptions);
-                this.mipanAssessments = mergeArray(this.mipanAssessments, remote.mipanAssessments);
-                this.professionals = mergeArray(this.professionals, remote.professionals);
-                this.users = mergeArray(this.users, remote.users);
+                this.appointments = mergeArraySmart(this.appointments, remote.appointments);
+                this.patientEvents = mergeArraySmart(this.patientEvents, remote.patientEvents);
+                this.exams = mergeArraySmart(this.exams, remote.exams);
+                this.examRequests = mergeArraySmart(this.examRequests, remote.examRequests);
+                this.prescriptions = mergeArraySmart(this.prescriptions, remote.prescriptions);
+                this.mipanAssessments = mergeArraySmart(this.mipanAssessments, remote.mipanAssessments);
+                this.professionals = mergeArraySmart(this.professionals, remote.professionals);
+                this.users = mergeArraySmart(this.users, remote.users);
             }
             // --- FIM DA PROTEÇÃO ---
 
@@ -1213,11 +1260,12 @@ class DatabaseService {
     }
     /**
      * getPatients: Central hub for patient retrieval.
-     * GUARANTEES ROLE PRIVACY.
+     * GUARANTEES ROLE PRIVACY and SOFT DELETE FILTER.
      */
     async getPatients(clinicId: string, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
         const filtered = this.patients.filter(p => {
-            // Must belong to the clinic
+            // Must belong to the clinic and NOT be deleted
+            if (p.isDeleted) return false;
             if (p.clinicId !== clinicId) return false;
 
             // If a professionalId is provided, we STRICTLY filter.
@@ -1241,7 +1289,7 @@ class DatabaseService {
         return filtered;
     }
     async getPatientById(id: string) {
-        return this.patients.find(p => p.id === id) || null;
+        return this.patients.find(p => p.id === id && !p.isDeleted) || null;
     }
     async createPatient(user: User, data: any) {
         const p: Patient = {
@@ -1265,6 +1313,7 @@ class DatabaseService {
             const updatedPatient = {
                 ...this.patients[idx],
                 ...data, // Shallow merge of all top-level keys
+                updatedAt: new Date().toISOString(),
                 // Deep merge specific objects to prevent wiping fields during Partial update
                 clinicalSummary: {
                     ...(this.patients[idx].clinicalSummary || {}),
@@ -1292,7 +1341,14 @@ class DatabaseService {
         }
         throw new Error("Paciente não encontrado");
     }
-    async deletePatient(user: User, id: string) { this.patients = this.patients.filter(p => p.id !== id); this.saveToStorage(); }
+    async deletePatient(user: User, id: string) {
+        const p = this.patients.find(p => p.id === id);
+        if (p) {
+            p.isDeleted = true;
+            p.updatedAt = new Date().toISOString();
+            await this.saveToStorage();
+        }
+    }
     async getAppointments(clinicId: string, start: Date, end: Date, professionalId?: string, forceMode: 'ADMIN' | 'PROFESSIONAL' = 'PROFESSIONAL') {
         const filtered = this.appointments.filter(a => {
             if (a.clinicId !== clinicId) return false;
@@ -1521,7 +1577,9 @@ class DatabaseService {
             fastingRequired: requestData.fastingRequired,
             fastingHours: requestData.fastingHours,
             medications: requestData.medications,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            isDeleted: false,
+            updatedAt: new Date().toISOString()
         };
 
         this.examRequests.push(newRequest);
@@ -1534,6 +1592,7 @@ class DatabaseService {
         const req = this.examRequests.find(r => r.id === requestId);
         if (req) {
             req.isDeleted = true;
+            req.updatedAt = new Date().toISOString();
             await this.saveToStorage();
         }
     }
@@ -1541,7 +1600,11 @@ class DatabaseService {
     async updateExamRequest(requestId: string, updates: Partial<ExamRequest>) {
         const idx = this.examRequests.findIndex(r => r.id === requestId);
         if (idx > -1) {
-            this.examRequests[idx] = { ...this.examRequests[idx], ...updates };
+            this.examRequests[idx] = {
+                ...this.examRequests[idx],
+                ...updates,
+                updatedAt: new Date().toISOString()
+            };
             await this.saveToStorage();
             return this.examRequests[idx];
         }

@@ -583,6 +583,8 @@ export interface Patient {
   // Login do Paciente
   username?: string;
   password?: string;
+  isDeleted?: boolean; // Suporte a exclusão lógica
+  updatedAt?: string;  // Timestamp para sincronização segura
 
   // Dados Adicionais
   estadoCivil?: string;
@@ -776,6 +778,7 @@ export interface ExamRequest {
   fastingHours?: number;
   medications?: string;
   createdAt: string;
+  updatedAt?: string;   // Timestamp para sincronização segura
   isDeleted?: boolean; // Suporte a exclusão lógica
 }
 

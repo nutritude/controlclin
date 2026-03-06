@@ -489,7 +489,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
     const handleDelete = async () => {
         if (!patient) return;
-        if (confirm(`Tem certeza que deseja excluir o paciente ${patient.name}? Esta ação é irreversível.`)) {
+        if (confirm(`DESEJA REMOVER O PRONTUÁRIO?\n\nO paciente "${patient.name}" será removido da sua lista ativa.\nEsta ação liberará o prontuário da visão atual e de relatórios futuros.`)) {
             try {
                 await db.deletePatient(user, patient.id);
                 alert('Paciente excluído com sucesso.');
@@ -1228,7 +1228,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 </button>
                             </>
                         )}
-                        {isAdmin && (
+                        {!isPatientMode && (
                             <button
                                 onClick={handleDelete}
                                 className={`p-2 rounded-lg border transition-colors ${isManagerMode ? 'text-slate-400 border-blue-100 hover:text-red-600 hover:bg-red-50 hover:border-red-200' : 'text-slate-400 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200'}`}
