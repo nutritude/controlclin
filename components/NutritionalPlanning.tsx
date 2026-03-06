@@ -373,15 +373,20 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         pregnancyTrimestre, amputations, caloricGoalAdjustment, targetKcal
     ]);
 
-    // Auto-set TDEE for Drafts if calc valid
+    // Auto-set TDEE para novos rascunhos E auto-sincroniza quando parâmetros mudam
     useEffect(() => {
-        if (isDrafting && !currentPlanId && calculatedResults.isValid && targetKcal === 0) {
-            setTargetKcal(calculatedResults.kcalTarget || calculatedResults.tdee);
-            // Auto set macro distro suggestion
-            setProteinGrams(Math.round(calculationInputs.weight * 2));
-            setFatGrams(Math.round(calculationInputs.weight * 1));
+        if (calculatedResults.isValid && calculatedResults.kcalTarget > 0) {
+            if (isDrafting && !currentPlanId && targetKcal === 0) {
+                // Novo rascunho: define automaticamente pela primeira vez
+                setTargetKcal(calculatedResults.kcalTarget);
+                setProteinGrams(Math.round(calculationInputs.weight * 2));
+                setFatGrams(Math.round(calculationInputs.weight * 1));
+            } else if (currentPlanId) {
+                // Plano existente: sincroniza ao alterar parâmetros de cálculo
+                setTargetKcal(calculatedResults.kcalTarget);
+            }
         }
-    }, [calculatedResults.tdee, isDrafting, currentPlanId]);
+    }, [calculatedResults.kcalTarget, calcFormula, calcActivityFactor, calcInjuryFactor, caloricGoalAdjustment, amputations]);
 
     // --- REAL-TIME TOTALS (MEMOIZED) ---
     const dailyTotals: DailyNutrientTotals = useMemo(() => {
@@ -1385,7 +1390,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             const mealTotal = NutrientCalc.calculateDailyTotals([meal]);
                             return (
                                 <div key={meal.id} className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-hidden`}>
-                                    <div className={`p-3 border-b flex justify-between items-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
+                                    <div className={`p-3 border-b flex justify-between items-center sticky top-0 z-10 rounded-t-xl ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
                                         <div className="flex items-center gap-3">
                                             {/* Actions Menu */}
                                             <div className="flex flex-col gap-0.5 mr-1">
