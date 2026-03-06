@@ -155,11 +155,12 @@ export const WhatsAppService = {
         const appUrl = clinicSlug ? `${base}/${clinicSlug}` : base;
 
         return (
-            `Olá ${firstName}! 📱 Seu acesso ao aplicativo da clínica já está liberado!\n\n` +
+            `Olá ${firstName}! 📲 Seu acesso ao aplicativo da clínica já está liberado!\n\n` +
             `Acesse pelo link: ${appUrl}\n\n` +
             `Seus dados de acesso:\n` +
-            `✉️ Email: ${email}\n` +
+            `🔑 Email: ${email}\n` +
             `🔑 Senha: *${pass}*\n\n` +
+            `💡 *Dica:* Ao abrir o link, você pode tocar em "Adicionar à Tela de Início" para ter nosso App direto no seu celular como um aplicativo real!\n\n` +
             `Qualquer dúvida para acessar, é só me chamar! 😊`
         );
     }

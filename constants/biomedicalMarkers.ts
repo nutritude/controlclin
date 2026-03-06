@@ -467,6 +467,149 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             normal: "Coagulação equilibrada."
         }
     },
+    HEMATOCRITO: {
+        name: "Hematócrito",
+        aliases: ["HT", "HCT"],
+        unit: "%",
+        minDesejavel: 36,
+        maxDesejavel: 50,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Anemia ou hemodiluição.", sugestao: "Avaliar junto com hemoglobina." },
+            alto: { risco: "Policitemia ou desidratação.", sugestao: "HIDRATAÇÃO ADEQUADA." },
+            normal: "Proporção de células vermelhas normal."
+        }
+    },
+    VCM: {
+        name: "VCM",
+        aliases: ["Volume Corpuscular Médio"],
+        unit: "fL",
+        minDesejavel: 80,
+        maxDesejavel: 100,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Anemia Microcítica (Ferropriva/Talassemia).", sugestao: "Investigar estoques de ferro." },
+            alto: { risco: "Anemia Macrocítica (B12/Folato).", sugestao: "Investigar B12 e Ácido Fólico." },
+            normal: "Tamanho das hemácias normal."
+        }
+    },
+    HCM: {
+        name: "HCM",
+        aliases: ["Hemoglobina Corpuscular Média"],
+        unit: "pg",
+        minDesejavel: 26,
+        maxDesejavel: 34,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Hipocromia (Anemia ferropriva).", sugestao: "Avaliar suplementação de ferro." },
+            alto: { risco: "Hipercromia.", sugestao: "Investigar causas de macrocitose." },
+            normal: "Teor de hemoglobina por hemácia normal."
+        }
+    },
+    CHCM: {
+        name: "CHCM",
+        aliases: ["Concentração de Hemoglobina Corpuscular Média"],
+        unit: "g/dL",
+        minDesejavel: 31,
+        maxDesejavel: 36,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Hipocromia acentuada.", sugestao: "Avaliar severidade da anemia." },
+            alto: { risco: "Esferocitose ou artefatos.", sugestao: "Avaliar lâmina." },
+            normal: "Concentração normal."
+        }
+    },
+    RDW: {
+        name: "RDW",
+        aliases: ["Amplitude de Distribuição de Hemácias"],
+        unit: "%",
+        minDesejavel: 11.5,
+        maxDesejavel: 14.5,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Pouca variação no tamanho (normal).", sugestao: "N/A" },
+            alto: { risco: "Anisocitose (Variação de tamanho).", sugestao: "Pode indicar início de anemia ferropriva." },
+            normal: "Uniformidade no tamanho das hemácias."
+        }
+    },
+    SEGMENTADOS: {
+        name: "Neutrófilos Segmentados",
+        aliases: ["Segmentados", "Neutrófilos"],
+        unit: "%",
+        minDesejavel: 45,
+        maxDesejavel: 70,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Neutropenia (Risco de infecções).", sugestao: "Monitorar imunidade." },
+            alto: { risco: "Infecções bacterianas ou inflamação aguda.", sugestao: "Afastar processos infecciosos." },
+            normal: "Defesa bacteriana normal."
+        }
+    },
+    LINFOCITOS: {
+        name: "Linfócitos",
+        aliases: ["LYM"],
+        unit: "%",
+        minDesejavel: 20,
+        maxDesejavel: 45,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Linfocitopenia (Imunodeficiência/Stress).", sugestao: "Avaliar cortisol e estado imunológico." },
+            alto: { risco: "Infecções virais ou processos crônicos.", sugestao: "Investigar viroses recentes." },
+            normal: "Imunidade adaptativa normal."
+        }
+    },
+    MONOCITOS: {
+        name: "Monócitos",
+        aliases: ["MON"],
+        unit: "%",
+        minDesejavel: 2,
+        maxDesejavel: 10,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Baixa relevância.", sugestao: "N/A" },
+            alto: { risco: "Monocitose (Inflamação crônica ou final de infecção).", sugestao: "Aguardar recuperação tecidual." },
+            normal: "Fagocitose normal."
+        }
+    },
+    EOSINOFILOS: {
+        name: "Eosinófilos",
+        aliases: ["EOS"],
+        unit: "%",
+        minDesejavel: 1,
+        maxDesejavel: 4,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Eosinopenia (Stress agudo).", sugestao: "Avaliar carga de treino/stress." },
+            alto: { risco: "Alergias ou Parasitoses.", sugestao: "Vermífugos ou controle de alérgenos." },
+            normal: "Nível basal normal."
+        }
+    },
+    BASOFILOS: {
+        name: "Basófilos",
+        aliases: ["BAS"],
+        unit: "%",
+        minDesejavel: 0,
+        maxDesejavel: 1,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Processos alérgicos crônicos ou hipersensibilidade.", sugestao: "Avaliar inflamação sitêmica." },
+            normal: "Normal."
+        }
+    },
+    HEMOGRAMA_COMPLETO: {
+        name: "Hemograma Completo",
+        aliases: ["CBC", "Hemograma"],
+        unit: "Painel",
+        minDesejavel: 0,
+        maxDesejavel: 0,
+        tipo: 'HEMATOLOGICO',
+        interpretacao: {
+            baixo: { risco: "Analise os marcadores individuais.", sugestao: "Verificar Hb e Leuco." },
+            alto: { risco: "Analise os marcadores individuais.", sugestao: "Verificar Leuco e Plaq." },
+            normal: "Hemograma dentro da normalidade."
+        }
+    },
     RNI: {
         name: "RNI (Coagulação)",
         aliases: ["INR", "Protrombina"],

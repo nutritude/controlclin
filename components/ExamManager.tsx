@@ -108,6 +108,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
     }, [exams]);
 
     const QUICK_PANELS = {
+        'HEMOGRAMA': ['Hemoglobina', 'Leucócitos', 'Plaquetas', 'Hematócrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Neutrófilos Segmentados', 'Linfócitos', 'Monócitos', 'Eosinófilos', 'Basófilos'],
         'LIBIDICO': ['Colesterol Total', 'HDL (Bom Colesterol)', 'LDL (Mau Colesterol)', 'Triglicerídeos'],
         'HEPATICO': ['AST (TGO)', 'ALT (TGP)', 'Gama-GT (GGT)', 'Bilirrubina Total'],
         'RENAL': ['Creatinina', 'Ureia', 'Ácido Úrico', 'Fósforo', 'Potássio'],
@@ -917,29 +918,58 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                 )}
 
                                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                                    {/* Painel de Marcadores */}
-                                                    <div className="lg:col-span-7">
-                                                        <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 border-b pb-2">Marcadores Quantitativos</h5>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                            {exam.markers?.map(m => (
-                                                                <div key={m.id} className={`p-4 rounded-2xl border transition-all ${m.interpretation === 'CRITICO' ? 'bg-rose-50 border-critical' : (m.interpretation !== 'NORMAL' ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-transparent hover:bg-white hover:border-indigo-100 shadow-sm hover:shadow-md')}`}>
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <p className="text-[11px] font-black text-slate-800 truncate w-32">{m.name}</p>
-                                                                        {renderInterpretationBadge(m.interpretation)}
-                                                                    </div>
-                                                                    <div className="flex items-baseline gap-1">
-                                                                        <span className={`text-2xl font-black ${m.interpretation === 'CRITICO' ? 'text-rose-600' : (m.interpretation !== 'NORMAL' ? 'text-amber-600' : 'text-slate-900')}`}>{m.value}</span>
-                                                                        <span className="text-[9px] text-slate-400 font-bold uppercase">{m.unit}</span>
-                                                                    </div>
-                                                                    <div className="mt-2 text-[9px]">
-                                                                        <p className="text-slate-400 font-medium">Ref: {m.reference.label}</p>
-                                                                        {m.biomedicalData && (
-                                                                            <p className={`mt-1 font-bold ${m.interpretation === 'CRITICO' ? 'text-rose-500' : 'text-slate-500'}`}>{m.biomedicalData.risco}</p>
-                                                                        )}
+                                                    {/* Painel de Marcadores Agrupados */}
+                                                    <div className="lg:col-span-7 space-y-8">
+                                                        {(() => {
+                                                            const groups: Record<string, ExamMarker[]> = {};
+                                                            exam.markers?.forEach(m => {
+                                                                // Obter o tipo do marcador do dicionário global se não estiver no marcador
+                                                                const meta = Object.values(BIOMEDICAL_MARKERS).find(x => x.name === m.name);
+                                                                const category = meta?.tipo || 'BIOQUIMICO';
+                                                                if (!groups[category]) groups[category] = [];
+                                                                groups[category].push(m);
+                                                            });
+
+                                                            const categoryLabels: Record<string, string> = {
+                                                                'HEMATOLOGICO': 'Série Hematológica (Hemograma)',
+                                                                'BIOQUIMICO': 'Bioquímica Clínica',
+                                                                'HORMONAL': 'Perfil Hormonal',
+                                                                'MARCADOR_TUMORAL': 'Oncologia / Marcadores Tumoriais',
+                                                                'COAGULACAO': 'Coagulação',
+                                                                'GASOMETRIA': 'Gasometria',
+                                                                'TOXICOLOGICO': 'Toxicologia'
+                                                            };
+
+                                                            return Object.entries(groups).map(([cat, markers]) => (
+                                                                <div key={cat} className={`${cat === 'HEMATOLOGICO' ? 'bg-indigo-50/30 p-4 rounded-3xl border border-indigo-100' : ''}`}>
+                                                                    <h5 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${cat === 'HEMATOLOGICO' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                                                        {cat === 'HEMATOLOGICO' && <span className="text-sm">🩸</span>}
+                                                                        {categoryLabels[cat] || cat}
+                                                                        <span className="h-[1px] flex-1 bg-current opacity-10"></span>
+                                                                    </h5>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                        {markers.map(m => (
+                                                                            <div key={m.id} className={`p-4 rounded-2xl border transition-all ${m.interpretation === 'CRITICO' ? 'bg-rose-50 border-critical' : (m.interpretation !== 'NORMAL' ? 'bg-amber-50 border-amber-100' : 'bg-white border-slate-100 shadow-sm hover:shadow-md')}`}>
+                                                                                <div className="flex justify-between items-start mb-1">
+                                                                                    <p className="text-[11px] font-black text-slate-800 truncate w-32">{m.name}</p>
+                                                                                    {renderInterpretationBadge(m.interpretation)}
+                                                                                </div>
+                                                                                <div className="flex items-baseline gap-1">
+                                                                                    <span className={`text-2xl font-black ${m.interpretation === 'CRITICO' ? 'text-rose-600' : (m.interpretation !== 'NORMAL' ? 'text-amber-600' : 'text-slate-900')}`}>{m.value}</span>
+                                                                                    <span className="text-[9px] text-slate-400 font-bold uppercase">{m.unit}</span>
+                                                                                </div>
+                                                                                <div className="mt-2 text-[9px]">
+                                                                                    <p className="text-slate-400 font-medium">Ref: {m.reference.label}</p>
+                                                                                    {m.biomedicalData && (
+                                                                                        <p className={`mt-1 font-bold ${m.interpretation === 'CRITICO' ? 'text-rose-500' : 'text-slate-500'}`}>{m.biomedicalData.risco}</p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
                                                                 </div>
-                                                            ))}
-                                                        </div>
+                                                            ));
+                                                        })()}
                                                     </div>
 
                                                     {/* Painel Lateral (Graficos e IA) */}
