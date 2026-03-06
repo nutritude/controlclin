@@ -22,11 +22,12 @@ interface ExamManagerProps {
 const EXAM_OPTIONS = [
     "Hemograma Completo", "Glicose em Jejum", "Hemoglobina Glicada (HbA1c)", "Insulina",
     "Perfil Lipídico (Colesterol Total, LDL, HDL, Triglicérides)", "Ureia e Creatinina",
-    "TGO e TGP (Transaminases)", "Gama-GT", "Ácido Úrico", "Proteína C-Reativa (PCR)",
+    "TGO e TGP (Transaminases)", "Gama-GT", "Ácido Úrico", "Proteína C-Reativa (PCR) Ultra",
     "TSH (Hormônio Tireoestimulante)", "T4 Livre", "T3 Livre", "T4 Total", "T3 Total", "Anti-TPO", "Anti-Tireoglobulina",
-    "Vitamina D (25-hidroxivitamina D)", "Vitamina B12", "Ferritina", "Ferro Sérico", "Cálcio", "Magnésio",
-    "Zinco", "Albúmina", "Cortisol Sanguíneo", "Testosterona Total e Livre",
-    "Eshteriol", "Progesterona", "Urina Tipo 1 (EAS)", "Exame Parasitológico de Fezes"
+    "Testosterona Total", "Testosterona Livre", "Estradiol", "Progesterona", "Prolactina", "LH", "FSH", "SHBG", "DHT",
+    "Vitamina D (25-OH)", "Vitamina B12", "Ácido Fólico", "Ferritina", "Ferro Sérico", "Zinco", "Selênio",
+    "Homocisteína", "VHS (Velocidade de Hemossedimentação)", "Fibrinogênio", "Albúmina",
+    "Urina Tipo 1 (EAS)", "Exame Parasitológico de Fezes"
 ];
 
 export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpdate, isManagerMode, db, user }) => {
@@ -113,7 +114,10 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         'HEPATICO': ['AST (TGO)', 'ALT (TGP)', 'Gama-GT (GGT)', 'Bilirrubina Total'],
         'RENAL': ['Creatinina', 'Ureia', 'Ácido Úrico', 'Fósforo', 'Potássio'],
         'GLICEMIA': ['Glicose em Jejum', 'Hemoglobina Glicada (HbA1c)', 'Insulina em Jejum'],
-        'TIREOIDE': ['TSH', 'T4 Livre', 'T3 Livre', 'T4 Total', 'T3 Total', 'Anti-TPO', 'Anti-Tireoglobuína'],
+        'TIREOIDE': ['TSH', 'T4 Livre', 'T3 Livre', 'T4 Total', 'T3 Total', 'Anti-TPO', 'Anti-Tireoglobulina'],
+        'HORMONAL': ['Testosterona Total', 'Testosterona Livre', 'Estradiol (E2)', 'Progesterona', 'Prolactina', 'LH', 'FSH', 'SHBG', 'Di-hidrotestosterona (DHT)'],
+        'VITAMINAS/MIN': ['Vitamina D (25-OH)', 'Vitamina B12', 'Ácido Fólico (B9)', 'Ferritina', 'Ferro Sérico', 'Zinco', 'Selênio'],
+        'INFLAMAÇÃO': ['PCR Ultra-sensível', 'Homocisteína', 'VHS (1ª hora)', 'Fibrinogênio'],
         'ELETRÓLITOS': ['Sódio', 'Potássio', 'Cálcio Total', 'Magnésio', 'Cloretos']
     };
 

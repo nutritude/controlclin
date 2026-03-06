@@ -739,6 +739,240 @@ export const BIOMEDICAL_MARKERS: Record<string, MarkerReference> = {
             normal: "Estado nutricional proteico adequado."
         }
     },
+    FERRITINA: {
+        name: "Ferritina",
+        aliases: ["FER"],
+        unit: "ng/mL",
+        minDesejavel: 30,
+        maxDesejavel: 200,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Anemia Ferropriva (estoque baixo).", sugestao: "Reposição de ferro e Vit C." },
+            alto: { risco: "Inflamação ou excesso de ferro.", sugestao: "Avaliar PCR e saturação de transferrina." },
+            normal: "Estoques de ferro adequados."
+        }
+    },
+    FERRO_SERICO: {
+        name: "Ferro Sérico",
+        aliases: ["Ferro"],
+        unit: "ug/dL",
+        minDesejavel: 60,
+        maxDesejavel: 160,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Ferropenia.", sugestao: "Aumentar ingestão de carnes e vegetais escuros." },
+            alto: { risco: "Hemocromatose ou excesso de suplementação.", sugestao: "Monitorar ingestão." },
+            normal: "Nível circulante normal."
+        }
+    },
+    ZINCO: {
+        name: "Zinco",
+        aliases: ["Zn"],
+        unit: "ug/dL",
+        minDesejavel: 70,
+        maxDesejavel: 120,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Baixa imunidade e queda de cabelo.", sugestao: "Suplementar Quelado ou sementes de abóbora." },
+            alto: { risco: "Inibição da absorção de cobre.", sugestao: "Monitorar suplementação longa." },
+            normal: "Nível mineral saudável."
+        }
+    },
+    SELENIO: {
+        name: "Selênio",
+        aliases: ["Se"],
+        unit: "ug/L",
+        minDesejavel: 80,
+        maxDesejavel: 160,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Disfunção tireoidiana.", sugestao: "Consumir 2 castanhas-do-pará por dia." },
+            alto: { risco: "Selenose (toxicidade).", sugestao: "Ajustar suplementação." },
+            normal: "Apoio antioxidante normal."
+        }
+    },
+    ACIDO_FOLICO: {
+        name: "Ácido Fólico (B9)",
+        aliases: ["Folato"],
+        unit: "ng/mL",
+        minDesejavel: 4.6,
+        maxDesejavel: 18.7,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Anemia megaloblástica.", sugestao: "Metilfolato e folhas verdes." },
+            alto: { risco: "Suplementação excessiva.", sugestao: "Ajustar dose." },
+            normal: "Divisão celular protegida."
+        }
+    },
+    PCR_ULTRASENSIVEL: {
+        name: "PCR Ultra-sensível",
+        aliases: ["PCR", "C-Reactive Protein"],
+        unit: "mg/L",
+        minDesejavel: 0,
+        maxDesejavel: 1.0,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Baixo risco inflamatório.", sugestao: "Fator protetivo." },
+            alto: { risco: "Inflamação sistêmica ou risco cardiovascular.", sugestao: "Acima de 3.0: Risco aumentado. Acima de 10.0: Infecção aguda." },
+            normal: "Ausência de inflamação sistêmica significativa."
+        }
+    },
+    HOMOCISTEINA: {
+        name: "Homocisteína",
+        aliases: ["HCY"],
+        unit: "umol/L",
+        minDesejavel: 5,
+        maxDesejavel: 10,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Sem relevância clínica clara.", sugestao: "N/A" },
+            alto: { risco: "Risco Cardiovascular e de Trombose.", sugestao: "Suplementar Complexo B (B6, B9, B12)." },
+            normal: "Saúde endotelial protegida."
+        }
+    },
+    VHS: {
+        name: "VHS (1ª hora)",
+        aliases: ["Velocidade de Hemossedimentação"],
+        unit: "mm",
+        minDesejavel: 0,
+        maxDesejavel: 20,
+        tipo: 'BIOQUIMICO',
+        interpretacao: {
+            baixo: { risco: "Normal.", sugestao: "N/A" },
+            alto: { risco: "Inflamação ou infecção inespecífica.", sugestao: "Investigar foco inflamatório." },
+            normal: "Velocidade normal."
+        }
+    },
+    FIBRINOGENIO: {
+        name: "Fibrinogênio",
+        aliases: ["FIB"],
+        unit: "mg/dL",
+        minDesejavel: 200,
+        maxDesejavel: 400,
+        tipo: 'COAGULACAO',
+        interpretacao: {
+            baixo: { risco: "Risco hemorrágico.", sugestao: "Avaliar coagulação." },
+            alto: { risco: "Inflamação aguda ou risco de trombose.", sugestao: "Avaliar PCR." },
+            normal: "Normal."
+        }
+    },
+    LH: {
+        name: "LH",
+        aliases: ["Hormônio Luteinizante"],
+        unit: "mUI/mL",
+        minDesejavel: 1.5,
+        maxDesejavel: 12.0,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipogonadismo hipogonadotrófico.", sugestao: "Avaliar eixo HPT." },
+            alto: { risco: "Falência gonadal ou Climatério.", sugestao: "Investigar SOP ou Menopausa." },
+            normal: "Comando hormonal equilibrado."
+        }
+    },
+    FSH: {
+        name: "FSH",
+        aliases: ["Hormônio Folículo-Estimulante"],
+        unit: "mUI/mL",
+        minDesejavel: 1.5,
+        maxDesejavel: 12.0,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Disfunção hipofisária.", sugestao: "Avaliar libido e fertilidade." },
+            alto: { risco: "Insuciência ovariana ou testicular.", sugestao: "Investigar reserva ovariana." },
+            normal: "Estimulação gonadal normal."
+        }
+    },
+    ESTRADIOL: {
+        name: "Estradiol (E2)",
+        aliases: ["Estrógeno", "E2"],
+        unit: "pg/mL",
+        minDesejavel: 20,
+        maxDesejavel: 150,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Ressecamento e risco de osteoporose.", sugestao: "Avaliar TRH em mulheres." },
+            alto: { risco: "Dominância Estrogênica.", sugestao: "Investigar ginecomastia em homens ou pólipos em mulheres." },
+            normal: "Ciclo hormonal preservado."
+        }
+    },
+    PROGESTERONA: {
+        name: "Progesterona",
+        aliases: ["PROG"],
+        unit: "ng/mL",
+        minDesejavel: 0.5,
+        maxDesejavel: 20,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Dificuldade de manutenção de gravidez ou ansiedade.", sugestao: "Avaliar fase lútea." },
+            alto: { risco: "Sem relevância clínica (exceto gravidez).", sugestao: "N/A" },
+            normal: "Fase do ciclo adequada."
+        }
+    },
+    PROLACTINA: {
+        name: "Prolactina",
+        aliases: ["PRL"],
+        unit: "ng/mL",
+        minDesejavel: 4,
+        maxDesejavel: 23,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Raro clínica.", sugestao: "N/A" },
+            alto: { risco: "Hiperprolactinemia (Estresse ou Prolactinoma).", sugestao: "Evitar estímulos mamários antes do exame e controlar stress." },
+            normal: "Normal."
+        }
+    },
+    TESTOSTERONA_TOTAL: {
+        name: "Testosterona Total",
+        aliases: ["Testo", "T Total"],
+        unit: "ng/dL",
+        minDesejavel: 300,
+        maxDesejavel: 900,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Hipogonadismo / Perda de libido e massa magra.", sugestao: "Higiene do sono, treinamento resistido e Ashwagandha." },
+            alto: { risco: "Suplementação exógena ou tumor raro.", sugestao: "Ajustar dose se em reposição." },
+            normal: "Vitalidade e vigor preservados."
+        }
+    },
+    TESTOSTERONA_LIVRE: {
+        name: "Testosterona Livre",
+        aliases: ["T Livre"],
+        unit: "pg/mL",
+        minDesejavel: 5,
+        maxDesejavel: 25,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Baixa disponibilidade biológica.", sugestao: "Avaliar SHBG alto." },
+            alto: { risco: "Livre circulante alta.", sugestao: "Risco de oleosidade e acne." },
+            normal: "Biodisponibilidade adequada."
+        }
+    },
+    SHBG: {
+        name: "SHBG",
+        aliases: ["Globulina Ligadora de Hormônios Sexuais"],
+        unit: "nmol/L",
+        minDesejavel: 15,
+        maxDesejavel: 60,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Muito hormônio livre (risco androgênico).", sugestao: "Avaliar Resistência Insulínica." },
+            alto: { risco: "Pouco hormônio livre (baixa libido).", sugestao: "Investigar excesso de fibras ou estrogênio." },
+            normal: "Transporte hormonal normal."
+        }
+    },
+    DHT: {
+        name: "Di-hidrotestosterona (DHT)",
+        aliases: ["DHT"],
+        unit: "pg/mL",
+        minDesejavel: 250,
+        maxDesejavel: 990,
+        tipo: 'HORMONAL',
+        interpretacao: {
+            baixo: { risco: "Baixa libido masculina.", sugestao: "Cuidado com bloqueadores de 5-alpha-redutase." },
+            alto: { risco: "Queda de cabelo e acne.", sugestao: "Saw Palmetto ou Finasterida sob orientação." },
+            normal: "Normal."
+        }
+    },
     TSH: {
         name: "TSH",
         aliases: ["Tireoestimulante"],
