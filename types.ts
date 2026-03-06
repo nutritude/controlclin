@@ -662,6 +662,7 @@ export interface Exam {
   aiAnalysis?: string; // Legacy string
   analysisResult?: ExamAnalysisResult; // New Structured Analysis
   healthScore?: number; // 0-100
+  isDeleted?: boolean; // Suporte a exclusão lógica
 }
 
 export interface AuditLog {
@@ -775,6 +776,7 @@ export interface ExamRequest {
   fastingHours?: number;
   medications?: string;
   createdAt: string;
+  isDeleted?: boolean; // Suporte a exclusão lógica
 }
 
 export interface MipanAssessment {

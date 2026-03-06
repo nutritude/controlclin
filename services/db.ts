@@ -745,7 +745,7 @@ class DatabaseService {
         });
 
         // 3. Exams
-        const exams = this.exams.filter(e => e.patientId === patientId);
+        const exams = this.exams.filter(e => e.patientId === patientId && !e.isDeleted);
         exams.forEach(e => {
             events.push({
                 id: `bkf-exam-${e.id}`,
@@ -864,7 +864,7 @@ class DatabaseService {
         const totalPaid = transactions.filter(t => t.status === 'PAGO').reduce((acc, t) => acc + t.amount, 0);
         const totalPending = transactions.filter(t => t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO').reduce((acc, t) => acc + t.amount, 0);
         // 7. Exams
-        const exams = this.exams.filter(e => e.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const exams = this.exams.filter(e => e.patientId === patientId && !e.isDeleted).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         // 8. MIPAN / Nutritional Plan Backup
         const nutritionalPlan = patient.nutritionalPlan || (patient.nutritionalPlans && patient.nutritionalPlans.length > 0 ? patient.nutritionalPlans[0] : null);
@@ -904,7 +904,7 @@ class DatabaseService {
                 anamnesisSummary: anamnesisSummary,
                 notes: patient.clinicalNotes || []
             },
-            exams: this.exams.filter(e => e.patientId === patientId),
+            exams: this.exams.filter(e => e.patientId === patientId && !e.isDeleted),
             nutritional: {
                 activePlanTitle: activePlan ? activePlan.title || 'Plano Atual' : null,
                 targets: activePlan ? {
@@ -1435,7 +1435,7 @@ class DatabaseService {
         this.saveToStorage();
         return newNote;
     }
-    async getExams(clinicId: string, patientId: string) { return this.exams.filter(e => e.patientId === patientId); }
+    async getExams(clinicId: string, patientId: string) { return this.exams.filter(e => e.patientId === patientId && !e.isDeleted); }
     async uploadExam(user: User, patientId: string, meta: any) {
         /* ... impl ... */
         this.logPatientEvent(patientId, 'EXAM_UPLOADED', { name: meta.fileName }, 'Novo exame anexado', user);
@@ -1490,13 +1490,18 @@ class DatabaseService {
     }
 
     async deleteExam(examId: string) {
-        this.exams = this.exams.filter(e => e.id !== examId);
-        await this.saveToStorage();
+        const exam = this.exams.find(e => e.id === examId);
+        if (exam) {
+            exam.isDeleted = true;
+            await this.saveToStorage();
+        }
     }
 
     // --- SOLICITAÇÃO DE EXAMES ---
     async getExamRequests(patientId: string) {
-        return this.examRequests.filter(r => r.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return this.examRequests
+            .filter(r => r.patientId === patientId && !r.isDeleted)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
 
     async saveExamRequest(user: User, patientId: string, requestData: Partial<ExamRequest>) {
@@ -1526,8 +1531,21 @@ class DatabaseService {
     }
 
     async deleteExamRequest(requestId: string) {
-        this.examRequests = this.examRequests.filter(r => r.id !== requestId);
-        await this.saveToStorage();
+        const req = this.examRequests.find(r => r.id === requestId);
+        if (req) {
+            req.isDeleted = true;
+            await this.saveToStorage();
+        }
+    }
+
+    async updateExamRequest(requestId: string, updates: Partial<ExamRequest>) {
+        const idx = this.examRequests.findIndex(r => r.id === requestId);
+        if (idx > -1) {
+            this.examRequests[idx] = { ...this.examRequests[idx], ...updates };
+            await this.saveToStorage();
+            return this.examRequests[idx];
+        }
+        return null;
     }
 
     // --- NUTRITIONAL PLANNING PERSISTENCE (UPDATED FOR MULTI-PLAN) ---
@@ -2484,7 +2502,7 @@ class DatabaseService {
             }
 
             // 3. Logic for EXAM_ATTENTION (Exam uploaded in last 15 days, no appt since)
-            const patientExams = this.exams.filter(e => e.patientId === patient.id);
+            const patientExams = this.exams.filter(e => e.patientId === patient.id && !e.isDeleted);
             if (patientExams.length > 0) {
                 const newestExam = patientExams.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
                 const examDate = new Date(newestExam.date);

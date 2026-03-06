@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Exam, ExamMarker, Patient, User, ExamAnalysisResult } from '../types';
+import { Exam, ExamMarker, Patient, User, ExamAnalysisResult, ExamRequest } from '../types';
 import { Icons } from '../constants';
 import { LaboratService } from '../services/laboratService';
 import { AIExamService } from '../services/ai/aiExamService';
@@ -46,6 +46,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
     // Request states
     const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+    const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
     const [requestExams, setRequestExams] = useState<string[]>([]);
     const [requestIndication, setRequestIndication] = useState('');
     const [requestComplementary, setRequestComplementary] = useState('');
@@ -295,7 +296,7 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         }
 
         try {
-            await db.saveExamRequest(user, patient.id, {
+            const requestData = {
                 exams: requestExams,
                 clinicalIndication: requestIndication,
                 complementaryInfo: requestComplementary,
@@ -303,8 +304,16 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                 fastingHours: requestFastingHours,
                 medications: requestMedications,
                 date: new Date().toISOString().split('T')[0]
-            });
+            };
+
+            if (editingRequestId) {
+                await db.updateExamRequest(editingRequestId, requestData);
+            } else {
+                await db.saveExamRequest(user, patient.id, requestData);
+            }
+
             setIsCreatingRequest(false);
+            setEditingRequestId(null);
             setRequestExams([]);
             setRequestIndication('');
             setRequestComplementary('');
@@ -315,6 +324,17 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
         } catch (err) {
             console.error("Error saving request:", err);
         }
+    };
+
+    const handleEditRequest = (req: ExamRequest) => {
+        setEditingRequestId(req.id);
+        setRequestExams(req.exams);
+        setRequestIndication(req.clinicalIndication || '');
+        setRequestComplementary(req.complementaryInfo || '');
+        setRequestFasting(req.fastingRequired || false);
+        setRequestFastingHours(req.fastingHours || 8);
+        setRequestMedications(req.medications || '');
+        setIsCreatingRequest(true);
     };
 
     const handlePrintRequest = async (request: any) => {
@@ -686,21 +706,28 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                     ) : viewMode === 'REQUESTS' ? (
                         <div className="space-y-6 animate-fadeIn">
                             <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                                <div>
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                        Solicitações de Exames
-                                    </h4>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Gestão de pedidos laboratoriais</p>
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                                        <span className="text-2xl">📑</span>
+                                        {isCreatingRequest ? (editingRequestId ? 'Editar Solicitação' : 'Nova Solicitação') : 'Solicitações de Exames'}
+                                    </h3>
+                                    {!isCreatingRequest && (
+                                        <button
+                                            onClick={() => {
+                                                setEditingRequestId(null);
+                                                setRequestExams([]);
+                                                setRequestIndication('');
+                                                setRequestComplementary('');
+                                                setRequestFasting(false);
+                                                setRequestMedications('');
+                                                setIsCreatingRequest(true);
+                                            }}
+                                            className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 transition-all active:scale-95 flex items-center gap-2"
+                                        >
+                                            <span>+</span> Gerar Nova
+                                        </button>
+                                    )}
                                 </div>
-                                {!isCreatingRequest && (
-                                    <button
-                                        onClick={() => setIsCreatingRequest(true)}
-                                        className="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
-                                    >
-                                        Nova Solicitação
-                                    </button>
-                                )}
                             </div>
 
                             {isCreatingRequest ? (
@@ -840,6 +867,12 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleEditRequest(req)}
+                                                        className="px-4 py-2.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest"
+                                                    >
+                                                        Editar
+                                                    </button>
                                                     <button
                                                         onClick={() => handlePrintRequest(req)}
                                                         className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-colors flex items-center gap-2"
