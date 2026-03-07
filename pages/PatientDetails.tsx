@@ -1819,6 +1819,117 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         Estes dados são essenciais para a conduta clínica personalizada além do IMC.
                                     </p>
                                 </div>
+
+                                {/* EXIBIÇÃO ENRIQUECIDA DO PROTOCOLO PICA (MOVido PARA CÁ) */}
+                                {anthropometryResults.picaDiagnosis && (
+                                    <div className={`${isManagerMode ? 'bg-gray-800 border-indigo-500' : 'bg-indigo-50/30 border-indigo-100 shadow-sm'} rounded-xl p-5 border relative overflow-hidden`}>
+                                        <div className="absolute top-0 right-0 p-3 opacity-10">
+                                            <span className="text-4xl">🔬</span>
+                                        </div>
+
+                                        <h3 className={`text-xs font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2 ${isManagerMode ? 'text-indigo-300' : 'text-indigo-900'}`}>
+                                            <span className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-lg">📋</span>
+                                            Protocolo PICA (Diagnóstico Clínico)
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            {/* Informações de Diagnóstico */}
+                                            <div className="space-y-4">
+                                                <div className={`p-4 rounded-2xl bg-white border ${isManagerMode ? 'border-indigo-400/30' : 'border-indigo-100'} shadow-sm`}>
+                                                    <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">Diagnóstico Conclusivo</div>
+                                                    <div className="text-sm font-black text-indigo-950 leading-tight underline decoration-emerald-500 decoration-4 underline-offset-4">
+                                                        {anthropometryResults.picaDiagnosis}
+                                                    </div>
+                                                </div>
+
+                                                <div className="px-1">
+                                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Síntese do Perfil</div>
+                                                    <p className="text-xs font-medium text-slate-700 leading-snug italic">
+                                                        "{anthropometryResults.picaSynthesis}"
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Conduta e Ações */}
+                                            <div className="space-y-4">
+                                                <div className={`p-4 rounded-2xl ${isManagerMode ? 'bg-indigo-900/40 border-indigo-500/30' : 'bg-white border-emerald-100'} border shadow-sm`}>
+                                                    <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Conduta Prioritária</div>
+                                                    <p className="text-[11px] font-black text-emerald-900 leading-tight uppercase">
+                                                        {anthropometryResults.picaConduct}
+                                                    </p>
+                                                </div>
+
+                                                {anthropometryResults.picaAlerts && anthropometryResults.picaAlerts.length > 0 && (
+                                                    <div className="space-y-1.5">
+                                                        {anthropometryResults.picaAlerts.map((alert, idx) => (
+                                                            <div key={idx} className="flex items-start gap-2 p-2 rounded-xl bg-red-50 border border-red-100 text-[10px] font-bold text-red-700 leading-tight">
+                                                                <span className="mt-0.5">⚠️</span> {alert}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* ANÁLISE GRÁFICA DOS 4 EIXOS */}
+                                        <div className={`pt-5 border-t ${isManagerMode ? 'border-indigo-500/20' : 'border-indigo-100'}`}>
+                                            <h4 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center justify-center gap-2 ${isManagerMode ? 'text-indigo-400' : 'text-slate-400'}`}>
+                                                Análise Multidimensional dos 4 Eixos
+                                            </h4>
+
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {/* Eixo 1: Adiposidade */}
+                                                <div className="text-center">
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase mb-2">E1: Adiposidade</div>
+                                                    <div className="relative h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+                                                        <div
+                                                            className={`absolute top-0 left-0 h-full transition-all duration-1000 ${anthropometryResults.bodyFatPercentage > 35 ? 'bg-red-500' : (anthropometryResults.bodyFatPercentage > 25 ? 'bg-amber-500' : 'bg-emerald-500')}`}
+                                                            style={{ width: `${Math.min(100, (anthropometryResults.bodyFatPercentage / 50) * 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-700">{anthropometryResults.bodyFatPercentage > 0 ? `${anthropometryResults.bodyFatPercentage}%` : '--'}</span>
+                                                </div>
+
+                                                {/* Eixo 2: Distribuição (RCE) */}
+                                                <div className="text-center">
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase mb-2">E2: Distribuição</div>
+                                                    <div className="relative h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+                                                        <div
+                                                            className={`absolute top-0 left-0 h-full transition-all duration-1000 ${anthropometryResults.waistToHeightRatio >= 0.6 ? 'bg-red-600' : (anthropometryResults.waistToHeightRatio >= 0.5 ? 'bg-amber-500' : 'bg-emerald-500')}`}
+                                                            style={{ width: `${Math.min(100, (anthropometryResults.waistToHeightRatio / 0.8) * 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-700">RCE: {anthropometryResults.waistToHeightRatio || '--'}</span>
+                                                </div>
+
+                                                {/* Eixo 3: Músculo */}
+                                                <div className="text-center">
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase mb-2">E3: Status Muscular</div>
+                                                    <div className="flex justify-center mb-2">
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${formData.anthropometry?.functionalStatus === 'Reduzido' ? 'bg-red-100 text-red-700' : (formData.anthropometry?.functionalStatus === 'Limítrofe' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')}`}>
+                                                            {formData.anthropometry?.functionalStatus === 'Reduzido' ? 'BAIXA MM' : (formData.anthropometry?.functionalStatus === 'Limítrofe' ? 'LIMITRÓFE' : 'INTEGRA')}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-500">{formData.anthropometry?.functionalStatus || 'N/A'}</span>
+                                                </div>
+
+                                                {/* Eixo 4: Gravidade Clínica */}
+                                                <div className="text-center">
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase mb-2">E4: Gravidade Clínica</div>
+                                                    <div className="flex justify-center gap-1 mb-2">
+                                                        {['G0', 'G1', 'G2', 'G3'].map(g => (
+                                                            <div
+                                                                key={g}
+                                                                className={`h-2.5 w-4 rounded-sm border ${formData.anthropometry?.clinicalGravity === g ? (g === 'G0' ? 'bg-emerald-500 border-emerald-600' : (g === 'G1' ? 'bg-blue-400 border-blue-500' : (g === 'G2' ? 'bg-amber-500 border-amber-600' : 'bg-red-600 border-red-700'))) : 'bg-slate-100 border-slate-200'}`}
+                                                            ></div>
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-700">ESC: {formData.anthropometry?.clinicalGravity || 'G0'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             {/* Coluna de Resultados e Ações */}
                             <div className="space-y-4">
@@ -1897,37 +2008,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">CMB (Musc. Braço)</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.cmb > 0 ? `${anthropometryResults.cmb} cm` : '--'}</div></div>
                                         </div>
 
-                                        {/* EXIBIÇÃO PROTOCOLO PICA */}
-                                        <div className={`mt-4 p-4 rounded-xl border-2 ${isManagerMode ? 'bg-gray-800 border-indigo-500' : 'bg-indigo-50 border-indigo-200 shadow-sm'}`}>
-                                            <h4 className={`text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isManagerMode ? 'text-indigo-300' : 'text-indigo-800'}`}>
-                                                <span className="text-lg">📋</span> Protocolo PICA (Diagnóstico Clínico)
-                                            </h4>
-                                            <div className={`mb-3 p-2 rounded bg-white/60 border border-indigo-100`}>
-                                                <div className="text-[10px] font-bold text-gray-500 uppercase">Diagnóstico:</div>
-                                                <div className="text-sm font-black text-indigo-900">{anthropometryResults.picaDiagnosis}</div>
-                                            </div>
 
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <div className="text-[10px] font-bold text-gray-500 uppercase">Síntese do Perfil:</div>
-                                                    <p className="text-xs font-medium text-slate-800 leading-tight italic">"{anthropometryResults.picaSynthesis}"</p>
-                                                </div>
-                                                <div>
-                                                    <div className="text-[10px] font-bold text-gray-500 uppercase">Conduta Prioritária:</div>
-                                                    <p className="text-xs font-black text-emerald-800 leading-tight">{anthropometryResults.picaConduct}</p>
-                                                </div>
-                                            </div>
-
-                                            {anthropometryResults.picaAlerts && anthropometryResults.picaAlerts.length > 0 && (
-                                                <div className="mt-4 space-y-1">
-                                                    {anthropometryResults.picaAlerts.map((alert, idx) => (
-                                                        <div key={idx} className="flex items-center gap-1.5 p-1.5 rounded bg-red-50 border border-red-100 text-[10px] font-bold text-red-700">
-                                                            <span>⚠️</span> {alert}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
 
                                         {/* SUCCESS CARD ACTION - Use Link for cleaner behavior */}
                                         <Link
