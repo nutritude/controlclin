@@ -7,6 +7,7 @@ import {
 import { PrescriptionService } from '../services/prescriptionService';
 import { db } from '../services/db';
 import { Icons } from '../constants';
+import PDFHeader from './PDFHeader';
 
 // --- LABEL MAPS ---
 const TYPE_LABELS: Record<PrescriptionItemType, string> = {
@@ -580,25 +581,13 @@ export const PrescriptionModule: React.FC<PrescriptionModuleProps> = ({ patient,
             {/* VISTA DE IMPRESSÃO - PDF TEMPLATE (Hidden from normal view) */}
             <div style={{ display: 'none' }}>
                 <div ref={printRef} className="bg-white text-black p-12 font-sans" style={{ width: '794px', minHeight: '1123px', boxSizing: 'border-box' }}>
-                    {/* Header: Clinic Info */}
-                    <div className="flex justify-between items-center border-b-[3px] border-emerald-700 pb-6 mb-8">
-                        <div>
-                            <h1 className="text-3xl font-bold text-emerald-800 uppercase tracking-widest leading-tight">{clinic.name}</h1>
-                            <p className="text-sm text-gray-600 mt-2">{clinic.address || 'Endereço não informado'}</p>
-                            <div className="flex gap-4 mt-1 text-sm text-gray-600">
-                                {clinic.phone && <span>Tel: {clinic.phone}</span>}
-                                {clinic.website && <span>{clinic.website}</span>}
-                            </div>
-                        </div>
-                        {clinic.logoUrl && (
-                            <img src={clinic.logoUrl} alt="Logo da Clínica" className="h-24 object-contain" />
-                        )}
-                    </div>
+                    <PDFHeader
+                        clinic={clinic}
+                        patient={patient}
+                        user={user}
+                        title="Receituário Clínico"
+                    />
 
-                    {/* Title */}
-                    <h2 className="text-2xl font-bold text-center uppercase tracking-[0.2em] text-emerald-700 mb-8 border-y border-emerald-100 py-3 bg-emerald-50">
-                        Receituário Clínico
-                    </h2>
 
                     {/* Patient Context */}
                     <div className="grid grid-cols-2 gap-6 text-sm mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">

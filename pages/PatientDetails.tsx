@@ -5,6 +5,7 @@ import { User, Clinic, Patient, Exam, Role, AnthropometryRecord, TimelineEventTy
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { db } from '../services/db';
 import { AIAnthroAnalysisService } from '../services/aiAnthroAnalysis';
+import { PicaProtocolService } from '../services/picaProtocolService';
 import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning';
@@ -602,6 +603,12 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     boneMass: anthro.boneMass,
                     cmb: anthro.cmb,
                     waistToHipRatio: anthro.waistToHipRatio,
+                    waistToHeightRatio: anthro.waistToHeightRatio,
+                    clinicalGravity: anthro.clinicalGravity,
+                    functionalStatus: anthro.functionalStatus,
+                    picaDiagnosis: anthro.picaDiagnosis,
+                    picaSynthesis: anthro.picaSynthesis,
+                    picaConduct: anthro.picaConduct,
                 };
 
                 // Update history conditionally (edit vs new)
@@ -644,7 +651,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
     const updateAnthroData = (field: keyof Anthropometry, value: any) => {
         let finalValue = value;
-        if (['skinfoldProtocol', 'procedureDate', 'anthroAiAnalysis'].includes(field as string)) {
+        if (['skinfoldProtocol', 'procedureDate', 'anthroAiAnalysis', 'clinicalGravity', 'functionalStatus'].includes(field as string)) {
             finalValue = value;
         } else {
             finalValue = value === '' ? undefined : (typeof value === 'string' ? parseFloat(value) : value);
@@ -769,6 +776,17 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             cmb = anthro.circArmRelaxed - (Math.PI * (anthro.skinfoldTriceps / 10));
         }
 
+        // 5. Relação Cintura/Estatura (RCE) - PICA
+        const waistToHeightRatio = (circWaist && height) ? parseFloat((circWaist / (height * 100)).toFixed(2)) : 0;
+
+        // 6. Protocolo PICA
+        const pica = PicaProtocolService.calculate({
+            ...anthro,
+            bmi,
+            bodyFatPercentage: finalBf,
+            waistToHeightRatio
+        }, gender, age);
+
         return {
             bmi,
             bodyFatPercentage: finalBf,
@@ -777,7 +795,13 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             residualMass: parseFloat(residualMass.toFixed(2)),
             boneMass: parseFloat(boneMass.toFixed(2)),
             cmb: parseFloat(cmb.toFixed(2)),
-            waistToHipRatio
+            waistToHipRatio,
+            waistToHeightRatio,
+            picaDiagnosis: pica.diagnosis,
+            picaSynthesis: pica.synthesis,
+            picaConduct: pica.conduct,
+            picaAlerts: pica.alerts,
+            picaClassId: pica.classId
         };
     }, [formData.anthropometry, patient, calculateAge]);
 
@@ -1758,6 +1782,43 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         * Campos não exibidos ficam salvos em background e não interferem nos cálculos deste protocolo.
                                     </div>
                                 </div>
+
+                                {/* NOVO: Campos Adicionais PICA */}
+                                <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
+                                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Classificação Clínica (Protocolo PICA)</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-medium">Escore de Gravidade Clínica (Eixo 4)</label>
+                                            <select
+                                                disabled={!isEditingTab}
+                                                value={formData.anthropometry?.clinicalGravity || 'G0'}
+                                                onChange={e => updateAnthroData('clinicalGravity' as any, e.target.value)}
+                                                className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'}`}
+                                            >
+                                                <option value="G0">G0: Sem comorbidade ou limitação</option>
+                                                <option value="G1">G1: Risco inicial / exames alterados leves</option>
+                                                <option value="G2">G2: Comorbidade instalada (HAS, DM2, etc.)</option>
+                                                <option value="G3">G3: Repercussão funcional ou orgânica grave</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium">Status da Massa Magra (Eixo 3)</label>
+                                            <select
+                                                disabled={!isEditingTab}
+                                                value={formData.anthropometry?.functionalStatus || 'Preservado'}
+                                                onChange={e => updateAnthroData('functionalStatus' as any, e.target.value)}
+                                                className={`w-full mt-1 p-2 border rounded text-sm font-bold ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'}`}
+                                            >
+                                                <option value="Preservado">Preservada: Sem perda de função/massa</option>
+                                                <option value="Limítrofe">Limítrofe: Sinais iniciais de redução</option>
+                                                <option value="Reduzido">Reduzida: Sarcopenia / Perda importante</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-[10px] text-gray-500 italic">
+                                        Estes dados são essenciais para a conduta clínica personalizada além do IMC.
+                                    </p>
+                                </div>
                             </div>
                             {/* Coluna de Resultados e Ações */}
                             <div className="space-y-4">
@@ -1822,9 +1883,50 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className="text-xs font-bold">Relação Cintura/Quadril (RCQ)</div>
                                             <div className={`text-2xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.waistToHipRatio > 0 ? anthropometryResults.waistToHipRatio : '--'}</div>
                                         </div>
+                                        <div className={`p-3 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}>
+                                            <div className="text-xs font-bold">Relação Cintura/Estatura (RCE)</div>
+                                            <div className={`text-2xl font-bold ${anthropometryResults.waistToHeightRatio >= 0.6 ? 'text-red-600' : (anthropometryResults.waistToHeightRatio >= 0.5 ? 'text-amber-600' : (isManagerMode ? 'text-blue-900' : 'text-emerald-900'))}`}>
+                                                {anthropometryResults.waistToHeightRatio > 0 ? anthropometryResults.waistToHeightRatio : '--'}
+                                            </div>
+                                            <div className="text-[10px] mt-1 font-bold opacity-70">
+                                                {anthropometryResults.waistToHeightRatio >= 0.6 ? 'ALTO RISCO' : (anthropometryResults.waistToHeightRatio >= 0.5 ? 'ALERTA' : 'NORMAL')}
+                                            </div>
+                                        </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Residual</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.residualMass > 0 ? `${anthropometryResults.residualMass} kg` : '--'}</div></div>
                                             <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">CMB (Musc. Braço)</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.cmb > 0 ? `${anthropometryResults.cmb} cm` : '--'}</div></div>
+                                        </div>
+
+                                        {/* EXIBIÇÃO PROTOCOLO PICA */}
+                                        <div className={`mt-4 p-4 rounded-xl border-2 ${isManagerMode ? 'bg-gray-800 border-indigo-500' : 'bg-indigo-50 border-indigo-200 shadow-sm'}`}>
+                                            <h4 className={`text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isManagerMode ? 'text-indigo-300' : 'text-indigo-800'}`}>
+                                                <span className="text-lg">📋</span> Protocolo PICA (Diagnóstico Clínico)
+                                            </h4>
+                                            <div className={`mb-3 p-2 rounded bg-white/60 border border-indigo-100`}>
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase">Diagnóstico:</div>
+                                                <div className="text-sm font-black text-indigo-900">{anthropometryResults.picaDiagnosis}</div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <div className="text-[10px] font-bold text-gray-500 uppercase">Síntese do Perfil:</div>
+                                                    <p className="text-xs font-medium text-slate-800 leading-tight italic">"{anthropometryResults.picaSynthesis}"</p>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[10px] font-bold text-gray-500 uppercase">Conduta Prioritária:</div>
+                                                    <p className="text-xs font-black text-emerald-800 leading-tight">{anthropometryResults.picaConduct}</p>
+                                                </div>
+                                            </div>
+
+                                            {anthropometryResults.picaAlerts && anthropometryResults.picaAlerts.length > 0 && (
+                                                <div className="mt-4 space-y-1">
+                                                    {anthropometryResults.picaAlerts.map((alert, idx) => (
+                                                        <div key={idx} className="flex items-center gap-1.5 p-1.5 rounded bg-red-50 border border-red-100 text-[10px] font-bold text-red-700">
+                                                            <span>⚠️</span> {alert}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* SUCCESS CARD ACTION - Use Link for cleaner behavior */}

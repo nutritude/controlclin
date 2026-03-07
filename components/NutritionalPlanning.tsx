@@ -13,6 +13,7 @@ import { AIAdherenceService, AdherenceAnalysis } from '../services/ai/aiAdherenc
 import { EnergyExpenditureService, AMPUTATION_MEMBERS } from '../services/nutrition/energyExpenditure';
 import AddFoodModal from './AddFoodModal';
 import EditFoodModal from './EditFoodModal';
+import PDFHeader from './PDFHeader';
 
 // --- HELPERS GLOBAIS ---
 
@@ -1832,39 +1833,15 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         <div className="flex flex-col h-full">
                             {/* CABEÇALHO PROFISSIONAL */}
                             {/* CABEÇALHO ALINHADO À ESQUERDA */}
-                            <div className="flex flex-col items-start text-left border-b-2 border-emerald-600 pb-6 mb-8 w-full">
-                                {snapshotForPdf.clinic.logoUrl && (
-                                    <img src={snapshotForPdf.clinic.logoUrl} alt="Logo" className="h-16 mb-4 object-contain" />
-                                )}
-
-                                <div className="mb-4">
-                                    <h2 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter leading-none">{snapshotForPdf.clinic.name}</h2>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">
-                                        {snapshotForPdf.clinic.address}
-                                    </p>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                        {snapshotForPdf.clinic.city ? `${snapshotForPdf.clinic.city} ` : ''}
-                                        {snapshotForPdf.clinic.phone ? ` • Tel: ${snapshotForPdf.clinic.phone}` : ''}
-                                    </p>
-                                </div>
-
-                                <div className="mb-6">
-                                    <p className="text-[11px] font-bold text-slate-800 uppercase leading-none">
-                                        {snapshotForPdf.responsibleProfessional?.name || user.name} - {snapshotForPdf.responsibleProfessional?.specialty || 'Nutricionista'} - {snapshotForPdf.responsibleProfessional?.registrationNumber || ''}
-                                    </p>
-                                </div>
-
-                                <div className="w-full pt-4 border-t border-slate-100 flex flex-col gap-2">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest whitespace-nowrap">Paciente:</span>
-                                        <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{snapshotForPdf.patient.name}</p>
-                                    </div>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest whitespace-nowrap">Objetivo:</span>
-                                        <p className="text-sm font-bold text-slate-600 italic leading-none">{snapshotForPdf.patient.objective}</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <PDFHeader
+                                clinic={snapshotForPdf.clinic}
+                                patient={snapshotForPdf.patient}
+                                responsibleProfessional={snapshotForPdf.responsibleProfessional}
+                                user={user}
+                                title="Plano Alimentar"
+                                showObjective={true}
+                                patientObjective={snapshotForPdf.patient.objective}
+                            />
 
                             {/* RESUMO DE METAS */}
                             <div className="grid grid-cols-4 gap-4 mb-8 bg-slate-50/80 p-5 rounded-xl border border-slate-200">

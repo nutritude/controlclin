@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Exam, ExamMarker, Patient, User, ExamAnalysisResult, ExamRequest } from '../types';
 import { Icons } from '../constants';
+import PDFHeader from './PDFHeader';
 import { LaboratService } from '../services/laboratService';
 import { AIExamService } from '../services/ai/aiExamService';
 import { BIOMEDICAL_MARKERS, QUALITATIVE_FINDINGS } from '../constants/biomedicalMarkers';
@@ -1075,17 +1076,13 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
 const ExamRequestPrintView = ({ patient, request, user, clinic }: { patient: Patient, request: any, user: User, clinic: any }) => {
     return (
-        <div className="bg-white text-black p-[20mm] font-serif w-[210mm] min-h-[297mm]">
-            <div className="flex justify-between items-center border-b-2 border-slate-900 pb-8 mb-12">
-                <div className="flex-1">
-                    <h1 className="text-2xl font-black uppercase tracking-widest text-slate-900 leading-none mb-2">Solicitação de Exames</h1>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{clinic?.name || 'ControlClin Premium'}</p>
-                </div>
-                <div className="text-right flex-1">
-                    <p className="text-sm font-black text-slate-800 uppercase tracking-tighter mb-1">{user.name}</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">{clinic?.registrationNumber || ''}</p>
-                </div>
-            </div>
+        <div className="bg-white text-black p-[20mm] font-sans w-[210mm] min-h-[297mm]">
+            <PDFHeader
+                clinic={clinic}
+                patient={patient}
+                user={user}
+                title="Solicitação de Exames"
+            />
 
             <div className="mb-12 bg-slate-50 p-6 rounded-xl border border-slate-100 flex justify-between items-center">
                 <div>

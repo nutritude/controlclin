@@ -1,9 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Patient, Clinic, Prescription, ExamRequest } from '../../types';
 import { Icons } from '../../constants';
 import { db } from '../../services/db';
 import { IndividualPatientReportView } from '../../components/IndividualReportView';
+import PDFHeader from '../../components/PDFHeader';
 import { IndividualReportSnapshot } from '../../types';
 import { PwaInstallBanner } from '../../components/patient/PwaInstallBanner';
 
@@ -198,10 +198,13 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                     </div>
                     <div className="hidden">
                         <div ref={planExportRef} className="p-10 font-sans text-slate-800 bg-white">
-                            <div className="border-b-2 border-emerald-600 pb-6 mb-8 flex justify-between items-end">
-                                <div><h1 className="text-3xl font-black text-emerald-800 uppercase">Plano Alimentar</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
-                                <div className="text-right"><h2 className="text-xl font-bold text-emerald-600">{clinic.name}</h2><p className="text-xs text-slate-400">Gerado em {new Date().toLocaleDateString('pt-BR')}</p></div>
-                            </div>
+                            <PDFHeader
+                                clinic={clinic}
+                                patient={patient}
+                                title="Plano Alimentar"
+                                showObjective={true}
+                                patientObjective={activePlan.strategyName || patient.clinicalSummary?.clinicalGoal}
+                            />
                             {activePlan.meals.map((meal, idx) => (
                                 <div key={idx} className="mb-8 break-inside-avoid">
                                     <div className="flex items-center gap-3 mb-3"><span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-black">{meal.time || '--'}</span><h3 className="text-xl font-black text-slate-800 uppercase">{meal.name}</h3></div>
@@ -259,7 +262,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                     <IndividualPatientReportView
                         data={individualReportData}
                         isManagerMode={false}
-                        isPdf={false}
+                        isPdf={isGeneratingPdf}
+                        clinic={clinic}
                     />
                 </div>
             ) : (
@@ -331,10 +335,12 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                         {rxIdx === 0 && (
                             <div className="hidden">
                                 <div ref={prescricaoRef} className="p-10 font-sans text-slate-800 bg-white">
-                                    <div className="border-b-2 border-purple-600 pb-6 mb-8 flex justify-between items-end">
-                                        <div><h1 className="text-3xl font-black text-purple-800 uppercase">Prescrição</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
-                                        <div className="text-right"><h2 className="text-xl font-bold text-purple-600">{clinic.name}</h2><p className="text-xs text-slate-400">Data: {new Date(rx.date).toLocaleDateString('pt-BR')}</p><p className="text-xs text-slate-400">Profissional: {rx.authorName}</p></div>
-                                    </div>
+                                    <PDFHeader
+                                        clinic={clinic}
+                                        patient={patient}
+                                        title="Receituário Clínico"
+                                        subtitle={`Profissional: ${rx.authorName}`}
+                                    />
                                     {rx.items.map((item, i) => (
                                         <div key={i} className="mb-6 pb-6 border-b border-slate-100 last:border-0">
                                             <p className="font-black text-slate-900 text-lg">{i + 1}. {item.name}</p>
@@ -410,10 +416,12 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                         {pedIdx === 0 && (
                             <div className="hidden">
                                 <div ref={pedidoRef} className="p-10 font-sans text-slate-800 bg-white">
-                                    <div className="border-b-2 border-blue-600 pb-6 mb-8 flex justify-between items-end">
-                                        <div><h1 className="text-3xl font-black text-blue-800 uppercase">Pedido de Exames</h1><p className="text-sm text-slate-500">{patient.name}</p></div>
-                                        <div className="text-right"><h2 className="text-xl font-bold text-blue-600">{clinic.name}</h2><p className="text-xs text-slate-400">Data: {new Date(pedido.date).toLocaleDateString('pt-BR')}</p><p className="text-xs text-slate-400">{pedido.authorName} — {pedido.authorRegistration}</p></div>
-                                    </div>
+                                    <PDFHeader
+                                        clinic={clinic}
+                                        patient={patient}
+                                        title="Solicitação de Exames"
+                                        subtitle={`Data: ${new Date(pedido.date).toLocaleDateString('pt-BR')} | Profissional: ${pedido.authorName}`}
+                                    />
                                     <div className="mb-8">
                                         <h3 className="font-black text-slate-700 mb-4 uppercase text-sm tracking-wide">Exames Solicitados</h3>
                                         <div className="space-y-2">

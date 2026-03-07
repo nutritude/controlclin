@@ -1,5 +1,6 @@
 import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for deterministic totals
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { PicaProtocolService } from './picaProtocolService';
 
 import {
     User, Clinic, Professional, Patient, Appointment,
@@ -1954,7 +1955,11 @@ class DatabaseService {
                     bodyFatPct,
                     fatMassKg,
                     leanMassKg,
-                    whr
+                    whr,
+                    whtr: (anthro.circWaist && heightM) ? parseFloat((anthro.circWaist / (heightM * 100)).toFixed(2)) : 0,
+                    picaDiagnosis: PicaProtocolService.calculate({ ...anthro, bmi, bodyFatPercentage: bodyFatPct } as any, patient.gender, age).diagnosis,
+                    picaSynthesis: PicaProtocolService.calculate({ ...anthro, bmi, bodyFatPercentage: bodyFatPct } as any, patient.gender, age).synthesis,
+                    picaConduct: PicaProtocolService.calculate({ ...anthro, bmi, bodyFatPercentage: bodyFatPct } as any, patient.gender, age).conduct
                 }
             },
             clinical: {

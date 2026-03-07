@@ -64,8 +64,19 @@ function buildPrompt(snapshot: AnthroSnapshot): string {
     - Gordura Corporal Est.: ${snapshot.anthro.bodyComp.bodyFatPct || '?'}%
     - Massa Magra Est.: ${snapshot.anthro.bodyComp.leanMassKg || '?'}kg
     - RCQ: ${snapshot.anthro.bodyComp.whr || '?'}
+    - Relação Cintura-Estatura (RCE): ${snapshot.anthro.bodyComp.whtr || '?'}
     - Circunferência Cintura: ${snapshot.anthro.circumferencesCm.waist || '?'} cm
     - Circunferência Abdominal: ${snapshot.anthro.circumferencesCm.abdomen || '?'} cm
+
+    PROTOCOLO PICA (DIAGNÓSTICO PRÉ-CLASSIFICADO):
+    - Diagnóstico: ${snapshot.anthro.bodyComp.picaDiagnosis || 'Não calculado'}
+    - Conduta Sugerida: ${snapshot.anthro.bodyComp.picaConduct || 'Não calculada'}
+    - Síntese: ${snapshot.anthro.bodyComp.picaSynthesis || ''}
+
+    REGRAS DE OURO PARA O TEXTO:
+    - Use o diagnóstico PICA como âncora para sua análise científica.
+    - O diagnóstico PICA é a base clínica; use sua IA para explicar os "porquês" fisiológicos desse diagnóstico e dar profundidade às ações recomendadas.
+
 
     JSON OUTPUT SCHEMA (RETORNE APENAS O JSON):
     {

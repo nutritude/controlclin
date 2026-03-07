@@ -4,8 +4,9 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
     ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
-import { IndividualReportSnapshot } from '../types';
-import { Icons } from '../constants.tsx';
+import { IndividualReportSnapshot, Clinic, User } from '../types';
+import { Icons } from '../constants';
+import PDFHeader from './PDFHeader';
 
 // --- HELPERS ---
 const calculateAge = (birthDate: string) => {
@@ -358,14 +359,18 @@ export const IndividualPatientReportView = ({
     onAnalyze,
     analyzing,
     aiSummary,
-    isPdf
+    isPdf,
+    clinic,
+    user
 }: {
     data: IndividualReportSnapshot,
     isManagerMode: boolean,
     onAnalyze?: () => void,
     analyzing?: boolean,
     aiSummary?: string | null,
-    isPdf: boolean
+    isPdf: boolean,
+    clinic?: Clinic,
+    user?: User
 }) => {
     const { patient, metrics, anthropometry, clinical, exams, nutritional, financial, timeline, metadata } = data;
 
@@ -377,15 +382,25 @@ export const IndividualPatientReportView = ({
             </div>
 
             {/* Header */}
-            <div className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                <div className="h-14 w-14 rounded-xl flex items-center justify-center text-2xl font-black bg-slate-50 text-emerald-600 border border-slate-100 shadow-inner">
-                    {patient.name.charAt(0)}
+            {isPdf && clinic ? (
+                <PDFHeader
+                    clinic={clinic}
+                    user={user}
+                    patient={patient}
+                    title="Relatório de Evolução"
+                    showObjective={true}
+                />
+            ) : (
+                <div className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <div className="h-14 w-14 rounded-xl flex items-center justify-center text-2xl font-black bg-slate-50 text-emerald-600 border border-slate-100 shadow-inner">
+                        {patient.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{patient.name}</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{patient.gender}, {calculateAge(patient.birthDate)} anos</p>
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{patient.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{patient.gender}, {calculateAge(patient.birthDate)} anos</p>
-                </div>
-            </div>
+            )}
 
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -451,6 +466,41 @@ export const IndividualPatientReportView = ({
                 <div className="mt-8 pt-8 border-t border-dashed border-slate-200 text-center">
                     <GoalThermometer currentBF={anthropometry.history[anthropometry.history.length - 1]?.bodyFatPercentage || 0} targetBF={0} isPdf={isPdf} />
                 </div>
+
+                {/* NOVO: Bloco PICA no Relatório */}
+                {anthropometry.history.length > 0 && anthropometry.history[anthropometry.history.length - 1].picaDiagnosis && (
+                    <div className={`mt-8 p-6 rounded-3xl border-2 ${isPdf ? 'bg-gray-50 border-gray-200' : 'bg-indigo-50/50 border-indigo-100 shadow-inner'}`}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="text-xl">📋</span>
+                            <h4 className={`text-xs font-black uppercase tracking-[0.2em] ${isPdf ? 'text-gray-700' : 'text-indigo-900'}`}>Protocolo PICA (Diagnóstico Clínico Integrado)</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Diagnóstico Principal</p>
+                                    <p className="text-sm font-black text-slate-900 leading-tight underline decoration-emerald-500 decoration-2 underline-offset-4">
+                                        {anthropometry.history[anthropometry.history.length - 1].picaDiagnosis}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Síntese do Perfil</p>
+                                    <p className="text-xs font-medium text-slate-700 italic leading-snug">
+                                        "{anthropometry.history[anthropometry.history.length - 1].picaSynthesis}"
+                                    </p>
+                                </div>
+                            </div>
+                            <div className={`p-4 rounded-2xl ${isPdf ? 'bg-white border-gray-100' : 'bg-white/80 border-indigo-50 border font-black'} shadow-sm`}>
+                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Conduta Prioritária</p>
+                                <p className="text-xs font-black text-emerald-900 leading-relaxed uppercase">
+                                    {anthropometry.history[anthropometry.history.length - 1].picaConduct}
+                                </p>
+                            </div>
+                        </div>
+                        <p className="mt-4 text-[9px] text-slate-400 font-bold italic">
+                            * O Protocolo PICA integra IMC, adiposidade, massa magra e repercussão clínica para além do peso isolado.
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Timeline History */}

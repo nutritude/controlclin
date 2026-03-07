@@ -101,9 +101,15 @@ export interface AnthropometryRecord extends Partial<Omit<Anthropometry, 'weight
   bodyFatPercentage?: number;
   fatMass?: number;
   leanMass?: number;
-  residualMass?: number; // NOVO
-  boneMass?: number;     // NOVO
-  cmb?: number;          // NOVO: Circunferência Muscular do Braço
+  residualMass?: number;
+  boneMass?: number;
+  cmb?: number;
+  waistToHeightRatio?: number;
+  clinicalGravity?: 'G0' | 'G1' | 'G2' | 'G3';
+  functionalStatus?: 'Preservado' | 'Limítrofe' | 'Reduzido';
+  picaDiagnosis?: string;
+  picaSynthesis?: string;
+  picaConduct?: string;
 }
 
 export interface Anthropometry {
@@ -151,7 +157,13 @@ export interface Anthropometry {
   residualMass?: number; // NOVO: Massa Residual (kg)
   boneMass?: number;     // NOVO: Massa Óssea (kg)
   waistToHipRatio?: number; // RCQ
+  waistToHeightRatio?: number; // RCE (Novo PICA)
   cmb?: number; // NOVO: Circunferência Muscular do Braço (cm)
+  clinicalGravity?: 'G0' | 'G1' | 'G2' | 'G3'; // Novo PICA
+  functionalStatus?: 'Preservado' | 'Limítrofe' | 'Reduzido'; // Novo PICA
+  picaDiagnosis?: string;
+  picaSynthesis?: string;
+  picaConduct?: string;
 
   // Análise e Notas
   notes?: string;
@@ -180,6 +192,10 @@ export interface AnthroSnapshot {
       fatMassKg: number;
       leanMassKg: number;
       whr: number; // Waist-Hip Ratio
+      whtr?: number; // Waist-Height Ratio (Novo)
+      picaDiagnosis?: string;
+      picaSynthesis?: string;
+      picaConduct?: string;
     };
   };
   clinical: {

@@ -8,6 +8,7 @@ import { User, Clinic, Role, Patient, AppointmentStatus, IndividualReportSnapsho
 import { db } from '../services/db';
 import { AIClinicalSummaryService } from '../services/aiClinicalSummary';
 import { Icons } from '../constants';
+import PDFHeader from '../components/PDFHeader';
 
 interface ReportsProps {
     user: User;
@@ -610,6 +611,19 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                     </div>
 
                     <div ref={reportContentRef} className="print-area">
+                        {generatingPdf && (
+                            <PDFHeader
+                                clinic={clinic}
+                                user={user}
+                                title={reportType === 'OPERATIONAL' ? 'Relatório Operacional' :
+                                    reportType === 'FINANCIAL' ? 'Relatório Financeiro' :
+                                        reportType === 'ATTENDANCE' ? 'Relatório de Presença' :
+                                            'Relatório de Evolução do Paciente'}
+                                subtitle={reportType !== 'INDIVIDUAL' ? `Período: ${new Date(startDate + 'T12:00:00').toLocaleDateString()} a ${new Date(endDate + 'T12:00:00').toLocaleDateString()}` : undefined}
+                                patient={reportType === 'INDIVIDUAL' ? individualReportData?.patient : undefined}
+                                showObjective={reportType === 'INDIVIDUAL'}
+                            />
+                        )}
                         {/* --- OPERATIONAL REPORT --- */}
                         {reportType === 'OPERATIONAL' && reportData && (
                             <div className="space-y-6">
@@ -1006,6 +1020,8 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                 analyzing={analyzing}
                                 aiSummary={individualPatientSummary}
                                 isPdf={generatingPdf} // Pass PDF state
+                                clinic={clinic}
+                                user={user}
                             />
                         )}
                     </div>
@@ -1589,7 +1605,7 @@ const MeasurementsComparisonTable = ({ history, isPdf }: { history: any[], isPdf
 };
 
 // --- NEW COMPONENT: INDIVIDUAL PATIENT REPORT VIEW (SUPER PRONTUÁRIO) ---
-const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing, aiSummary, isPdf }: { data: IndividualReportSnapshot, isManagerMode: boolean, onAnalyze: () => void, analyzing: boolean, aiSummary: string | null, isPdf: boolean }) => {
+const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing, aiSummary, isPdf, clinic, user }: { data: IndividualReportSnapshot, isManagerMode: boolean, onAnalyze: () => void, analyzing: boolean, aiSummary: string | null, isPdf: boolean, clinic: Clinic, user: User }) => {
     const { patient, metrics, anthropometry, clinical, exams, nutritional, financial, timeline, metadata } = data;
 
     return (
@@ -1599,20 +1615,22 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 Report Gen: {new Date(metadata.generatedAt).toLocaleString()} | Ver: {metadata.dataVersion} | Source: {metadata.source}
             </div>
 
-            {/* 1. Header & ID - SIZED DOWN */}
-            <div className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                <div className="h-14 w-14 rounded-xl flex items-center justify-center text-2xl font-black bg-slate-50 text-emerald-600 border border-slate-100 shadow-inner">
-                    {patient.name.charAt(0)}
-                </div>
-                <div className="flex-1">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{patient.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
-                    <div className="flex gap-4 mt-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100"><Icons.Mail className="w-3 h-3 text-indigo-400" /> {patient.email}</span>
-                        <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-md border border-emerald-100"><Icons.Phone className="w-3 h-3 text-emerald-500" /> {patient.phone}</span>
+            {/* 1. Header & ID - SIZED DOWN (ONLY SHOW ON SCREEN) */}
+            {!isPdf && (
+                <div className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <div className="h-14 w-14 rounded-xl flex items-center justify-center text-2xl font-black bg-slate-50 text-emerald-600 border border-slate-100 shadow-inner">
+                        {patient.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{patient.name}</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{patient.gender}, {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} anos</p>
+                        <div className="flex gap-4 mt-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100"><Icons.Mail className="w-3 h-3 text-indigo-400" /> {patient.email}</span>
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-md border border-emerald-100"><Icons.Phone className="w-3 h-3 text-emerald-500" /> {patient.phone}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* 2. KPI Cards - SIZED DOWN AND OPTIMIZED */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
