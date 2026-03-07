@@ -12,6 +12,7 @@ import { ExamManager } from '../components/ExamManager';
 import { MipanModule } from '../components/MipanModule';
 import { CidAutocomplete } from '../components/CidAutocomplete';
 import { PrescriptionModule } from '../components/PrescriptionModule';
+import PDFHeader from '../components/PDFHeader';
 
 interface PatientDetailsProps {
     user: User;
@@ -715,13 +716,15 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                     } else if (protocol === 'DurninWomersley') {
                         let c = 0, m = 0;
                         if (gender === 'Masculino') {
-                            if (age < 20) { c = 1.1620; m = 0.0630; }
+                            if (age < 17) { c = 1.1533; m = 0.0643; }
+                            else if (age < 20) { c = 1.1620; m = 0.0630; }
                             else if (age < 30) { c = 1.1631; m = 0.0632; }
                             else if (age < 40) { c = 1.1422; m = 0.0544; }
-                            else if (age < 50) { c = 1.1620; m = 0.0700; } // FIXED CONSTANT
+                            else if (age < 50) { c = 1.1620; m = 0.0700; }
                             else { c = 1.1715; m = 0.0779; }
                         } else {
-                            if (age < 20) { c = 1.1549; m = 0.0678; }
+                            if (age < 17) { c = 1.1369; m = 0.0598; }
+                            else if (age < 20) { c = 1.1549; m = 0.0678; }
                             else if (age < 30) { c = 1.1599; m = 0.0717; }
                             else if (age < 40) { c = 1.1423; m = 0.0632; }
                             else if (age < 50) { c = 1.1333; m = 0.0612; }
@@ -757,7 +760,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
 
         // 4. Advanced Indicators (New)
         // Residual Mass (Wurch - Generic used if not provided)
-        let residualMass = anthro.residualMass || (gender === 'Masculino' ? weight * 0.24 : weight * 0.209);
+        let residualMass = anthro.residualMass || (gender === 'Masculino' ? weight * 0.241 : weight * 0.209);
         // Bone Mass (Von Dobeln/Rocha style - simplified for now or provided)
         let boneMass = anthro.boneMass || (gender === 'Masculino' ? weight * 0.15 : weight * 0.12);
         // CMB (Circunferência Muscular do Braço)
@@ -2178,17 +2181,14 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             {/* Hidden PDF Report Structure (REVISED with Snapshot) */}
             <div style={{ position: 'fixed', left: 0, top: 0, width: '210mm', opacity: 0, pointerEvents: 'none', zIndex: -1000 }}>
                 <div ref={pdfReportRef} className="bg-white text-black font-sans text-[10px] p-[15mm]">
-                    <header className="flex justify-between items-start pb-4 border-b-2 border-gray-200">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-800">{patient.name}</h1>
-                            <p className="text-gray-600">Relatório de Avaliação Antropométrica</p>
-                            <p className="text-xs text-gray-500 mt-1">Data: {new Date().toLocaleDateString()} | Avaliador: {user.name}</p>
-                        </div>
-                        <div className="text-right">
-                            {clinic.logoUrl && <img src={clinic.logoUrl} alt="Logo" crossOrigin="anonymous" className="max-h-16 w-auto ml-auto mb-2" />}
-                            <p className="font-bold text-gray-700">{clinic.name}</p>
-                        </div>
-                    </header>
+                    <PDFHeader
+                        clinic={clinic}
+                        patient={patient}
+                        responsibleProfessional={professionals.find(p => p.id === patient.professionalId)}
+                        user={user}
+                        title="Relatório de Avaliação Antropométrica"
+                        subtitle={`Data: ${new Date().toLocaleDateString()} | Avaliador: ${user.name}`}
+                    />
 
                     <main className="mt-6">
                         <section>
@@ -2661,21 +2661,13 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 <Icons.Activity />
                             </div>
 
-                            {/* Header */}
-                            <div className="flex justify-between items-start mb-10 border-b-2 border-emerald-100 pb-8">
-                                <div className="space-y-1">
-                                    <h1 className="text-3xl font-black text-emerald-700 tracking-tight uppercase">{clinic.name}</h1>
-                                    <p className="text-sm font-bold text-gray-500">{clinic.address || 'Endereço da Clínica'}</p>
-                                    <p className="text-sm font-medium text-gray-500">{clinic.city} - {clinic.state} | {clinic.phone}</p>
-                                    {clinic.cnpj && <p className="text-xs font-mono text-gray-400">CNPJ: {clinic.cnpj}</p>}
-                                </div>
-                                <div className="text-right">
-                                    <div className="inline-block bg-emerald-600 text-white px-6 py-2 rounded-lg font-black text-xl mb-2">
-                                        R$ {snapshotForReceipt.amount.toFixed(2)}
-                                    </div>
-                                    <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Recibo de Pagamento</p>
-                                </div>
-                            </div>
+                            <PDFHeader
+                                clinic={clinic}
+                                patient={patient}
+                                responsibleProfessional={professionals.find(p => p.id === patient.professionalId)}
+                                user={user}
+                                title={`RECIBO DE PAGAMENTO - R$ ${snapshotForReceipt.amount.toFixed(2)}`}
+                            />
 
                             {/* Body */}
                             <div className="space-y-8 py-4">
