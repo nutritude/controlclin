@@ -93,7 +93,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       setAiInsights(insights);
       setLoading(false);
     };
+
     loadData();
+
+    // Listen for remote sync events to refresh UI when background sync completes
+    window.addEventListener('db-remote-sync', loadData);
+    return () => window.removeEventListener('db-remote-sync', loadData);
   }, [clinic.id, user.professionalId, isManagerMode]);
 
   // Handle Search

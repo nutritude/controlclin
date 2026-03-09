@@ -162,9 +162,10 @@ const DEFAULT_PATIENTS: Patient[] = [
             { id: 'ad-1', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4'], waterIntakeLiters: 2.5 },
             { id: 'ad-2', date: '2026-03-02T10:00:00Z', day: '2026-03-02', status: 'PARCIAL', mealsAdhered: ['m-1', 'm-2'], notes: 'Fui a um aniversário no jantar.', waterIntakeLiters: 1.8 }
         ],
+        updatedAt: '2024-01-01T00:00:00Z',
         professionalId: 'p3'
     },
-    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', password: '123', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', professionalId: 'p3' },
+    { id: 'pt2', clinicId: 'c1', name: 'Mariana Souza', email: 'mari@email.com', password: '123', phone: '222', birthDate: '2001-08-15', gender: 'Feminino', status: 'ATIVO', updatedAt: '2024-01-01T00:00:00Z', professionalId: 'p3' },
     {
         id: 'pt_meire',
         clinicId: 'c1',
@@ -241,6 +242,7 @@ const DEFAULT_PATIENTS: Patient[] = [
             { id: 'ad-m1', date: '2026-02-28T10:00:00Z', day: '2026-02-28', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 3.0 },
             { id: 'ad-m2', date: '2026-03-01T10:00:00Z', day: '2026-03-01', status: 'TOTAL', mealsAdhered: ['m-1', 'm-2', 'm-3', 'm-4', 'm-5'], waterIntakeLiters: 2.8 }
         ],
+        updatedAt: '2024-01-01T00:00:00Z',
         professionalId: 'p3'
     }
 ];
@@ -301,6 +303,8 @@ class DatabaseService {
         this.examRequests = smartMerge(this.examRequests, data.examRequests);
         this.mipanAssessments = smartMerge(this.mipanAssessments, data.mipanAssessments);
         this.prescriptions = smartMerge(this.prescriptions, data.prescriptions);
+
+        console.log(`[DB] Sync Result: ${this.patients.length} patients, ${this.appointments.length} apps.`);
 
         // Update modified flag based on remote
         const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
@@ -437,6 +441,20 @@ class DatabaseService {
                     } else {
                         // Paciente já existe no local -> FUNDIR DADOS CRÍTICOS
                         const localP = localPatientsMap.get(remoteP.id);
+
+                        const remoteUpdated = remoteP.updatedAt ? new Date(remoteP.updatedAt).getTime() : 0;
+                        const localUpdated = localP.updatedAt ? new Date(localP.updatedAt).getTime() : 0;
+
+                        // Se o remoto é estritamente mais novo, atualizamos campos base (Nascimento, Nome, Telefone)
+                        if (remoteUpdated > localUpdated) {
+                            localP.name = remoteP.name;
+                            localP.birthDate = remoteP.birthDate;
+                            localP.email = remoteP.email;
+                            localP.phone = remoteP.phone;
+                            localP.gender = remoteP.gender;
+                            localP.status = remoteP.status;
+                            localP.updatedAt = remoteP.updatedAt;
+                        }
 
                         // Merge de Antropometria: Preservar histórico de ambos os lados
                         const remoteHistory = remoteP.anthropometryHistory || [];
@@ -1298,6 +1316,7 @@ class DatabaseService {
             clinicId: user.clinicId,
             ...data,
             nutritionalPlans: [],
+            updatedAt: new Date().toISOString(),
             professionalId: user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN ? (data.professionalId || user.professionalId) : user.professionalId
         };
         this.patients.push(p);
@@ -1396,9 +1415,15 @@ class DatabaseService {
         });
     }
     async createAppointment(user: User, data: any) {
-        const a = { id: `apt-${Date.now()}`, ...data }; this.appointments.push(a);
+        const a = {
+            id: `apt-${Date.now()}`,
+            updatedAt: new Date().toISOString(),
+            ...data
+        };
+        this.appointments.push(a);
         this.logPatientEvent(data.patientId, 'APPOINTMENT_STATUS', { status: data.status }, `Agendamento criado: ${data.type}`, user);
-        this.saveToStorage(); return a;
+        this.saveToStorage();
+        return a;
     }
     async updateAppointment(user: User, id: string, data: any) {
         const idx = this.appointments.findIndex(a => a.id === id); if (idx > -1) {
@@ -1514,7 +1539,8 @@ class DatabaseService {
             markers: examData.markers || [],
             healthScore: examData.healthScore,
             fileUrl: examData.fileUrl,
-            clinicalHypothesis: examData.clinicalHypothesis || ''
+            clinicalHypothesis: examData.clinicalHypothesis || '',
+            updatedAt: new Date().toISOString()
         };
 
         this.exams.push(newExam);
