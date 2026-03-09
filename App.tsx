@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
-/* Force Vercel Rebuild - v2.1.0 - Responsive Fix Applied */
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+/* Force Vercel Rebuild - v3.0.0 - Performance Optimization: Lazy Loading & Background CSV Loading */
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { User, Clinic, Role, Patient } from './types';
-import Login from './pages/Login';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-// Fix: Changed to a named import to match the component's export and fix the "no default export" error.
-import { Agenda } from './pages/Agenda';
-import { Patients } from './pages/Patients';
-import { PatientDetails } from './pages/PatientDetails';
-import { Settings } from './pages/Settings';
-import { Reports } from './pages/Reports';
-import { Professionals } from './pages/Professionals';
-import { ClinicalAlerts } from './pages/ClinicalAlerts'; // Keep named import
-import { SuccessCard } from './pages/SuccessCard';
-import { DebugLog } from './pages/DebugLog'; // Import new DebugLog component
-import { PatientLogin } from './pages/patient/PatientLogin';
-import { PatientDashboard } from './pages/patient/PatientDashboard';
-import { SaaSLogin } from './pages/saas/SaaSLogin';
-import SaaSDashboard from './pages/saas/SaaSDashboard';
+
+// Lazy load pages for performance (Code Splitting)
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Agenda = lazy(() => import('./pages/Agenda').then(m => ({ default: m.Agenda })));
+const Patients = lazy(() => import('./pages/Patients').then(m => ({ default: m.Patients })));
+const PatientDetails = lazy(() => import('./pages/PatientDetails').then(m => ({ default: m.PatientDetails })));
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
+const Professionals = lazy(() => import('./pages/Professionals').then(m => ({ default: m.Professionals })));
+const ClinicalAlerts = lazy(() => import('./pages/ClinicalAlerts').then(m => ({ default: m.ClinicalAlerts })));
+const SuccessCard = lazy(() => import('./pages/SuccessCard').then(m => ({ default: m.SuccessCard })));
+const DebugLog = lazy(() => import('./pages/DebugLog').then(m => ({ default: m.DebugLog })));
+const PatientLogin = lazy(() => import('./pages/patient/PatientLogin').then(m => ({ default: m.PatientLogin })));
+const PatientDashboard = lazy(() => import('./pages/patient/PatientDashboard').then(m => ({ default: m.PatientDashboard })));
+const SaaSLogin = lazy(() => import('./pages/saas/SaaSLogin').then(m => ({ default: m.SaaSLogin })));
+const SaaSDashboard = lazy(() => import('./pages/saas/SaaSDashboard'));
 import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/food/catalogLoader';
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
 import { db as serviceDb } from './services/db';
@@ -131,33 +132,39 @@ function App() {
         } catch (e) { }
       }
 
-      // 2. Catalog load
-      try {
-        const masterRes = await fetch('./data/MASTER_ALIMENTOS_UID_DEDUP_PTBR.csv');
-        if (masterRes.ok) {
-          const text = await masterRes.text();
-          const { records } = parseMasterCSV(text);
-          ScientificCatalog.initMasterCatalog(records);
-        }
+      // 2. Catalog load - MOVIDO PARA BACKGROUND: Não bloqueia o carregamento inicial da UI
+      const loadCatalog = async () => {
+        try {
+          const masterRes = await fetch('./data/MASTER_ALIMENTOS_UID_DEDUP_PTBR.csv');
+          if (masterRes.ok) {
+            const text = await masterRes.text();
+            const { records } = parseMasterCSV(text);
+            ScientificCatalog.initMasterCatalog(records);
+          }
 
-        const synonymRes = await fetch('./data/DICIONARIO_SINONIMOS_ALIMENTOS_UID.csv');
-        if (synonymRes.ok) {
-          const text = await synonymRes.text();
-          const { entries } = parseSynonymCSV(text);
-          ScientificCatalog.initSynonymIndex(entries);
-        }
+          const synonymRes = await fetch('./data/DICIONARIO_SINONIMOS_ALIMENTOS_UID.csv');
+          if (synonymRes.ok) {
+            const text = await synonymRes.text();
+            const { entries } = parseSynonymCSV(text);
+            ScientificCatalog.initSynonymIndex(entries);
+          }
 
-        const nutrientRes = await fetch('./data/DICIONARIO_NUTRIENTES_PADRONIZADOS.csv');
-        if (nutrientRes.ok) {
-          const text = await nutrientRes.text();
-          const { defs } = parseNutrientCSV(text);
-          ScientificCatalog.initNutrientDictionary(defs);
+          const nutrientRes = await fetch('./data/DICIONARIO_NUTRIENTES_PADRONIZADOS.csv');
+          if (nutrientRes.ok) {
+            const text = await nutrientRes.text();
+            const { defs } = parseNutrientCSV(text);
+            ScientificCatalog.initNutrientDictionary(defs);
+          }
+        } catch (err) {
+          console.error('[App] Failed to load scientific catalog:', err);
         }
-      } catch (err) {
-        console.error('[App] Failed to load scientific catalog:', err);
-      } finally {
-        setLoading(false);
-      }
+      };
+
+      // Dispara o carregamento do catálogo em background sem await
+      loadCatalog();
+
+      // Conclui o loading da UI assim que a sessão for verificada e o DB remoto estiver pronto
+      setLoading(false);
     };
 
     loadData();
@@ -236,35 +243,44 @@ function App() {
     (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN)
   );
 
+  const LoadingFallback = () => (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-sm">
+      <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4" />
+      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Carregando Módulo...</p>
+    </div>
+  );
+
   return (
     <Router>
-      <Routes>
-        {/* Admin/Professional Routes */}
-        <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Admin/Professional Routes */}
+          <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
 
-        <Route path="/" element={user && clinic ? <Layout user={user} clinic={clinic!} onLogout={handleLogout} isManagerMode={isManagerMode} /> : <Navigate to={patient ? "/patient" : "/login"} />} >
-          <Route index element={<Dashboard user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="agenda" element={<Agenda user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="patients" element={<Patients user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="patients/:id" element={<PatientDetails user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="alerts" element={<ClinicalAlerts user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-          <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
-        </Route>
+          <Route path="/" element={user && clinic ? <Layout user={user} clinic={clinic!} onLogout={handleLogout} isManagerMode={isManagerMode} /> : <Navigate to={patient ? "/patient" : "/login"} />} >
+            <Route index element={<Dashboard user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="agenda" element={<Agenda user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="patients" element={<Patients user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="patients/:id" element={<PatientDetails user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="alerts" element={<ClinicalAlerts user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+          </Route>
 
-        {/* Patient Portal Routes */}
-        <Route path="/patient/login" element={!patient ? <PatientLogin onLogin={handlePatientLogin} /> : <Navigate to="/patient" />} />
-        <Route path="/patient" element={patient && patientClinic ? <PatientDashboard patient={patient} clinic={patientClinic} onLogout={handlePatientLogout} /> : <Navigate to="/patient/login" />} />
+          {/* Patient Portal Routes */}
+          <Route path="/patient/login" element={!patient ? <PatientLogin onLogin={handlePatientLogin} /> : <Navigate to="/patient" />} />
+          <Route path="/patient" element={patient && patientClinic ? <PatientDashboard patient={patient} clinic={patientClinic} onLogout={handlePatientLogout} /> : <Navigate to="/patient/login" />} />
 
-        {/* Public/Clean Routes outside Layout */}
-        <Route path="/success-card/:id" element={<SuccessCard user={user || undefined} clinic={clinic || undefined} />} />
+          {/* Public/Clean Routes outside Layout */}
+          <Route path="/success-card/:id" element={<SuccessCard user={user || undefined} clinic={clinic || undefined} />} />
 
-        {/* SaaS Backoffice Routes */}
-        <Route path="/saas/login" element={<SaaSLogin />} />
-        <Route path="/saas/dashboard" element={<SaaSDashboard />} />
-      </Routes>
+          {/* SaaS Backoffice Routes */}
+          <Route path="/saas/login" element={<SaaSLogin />} />
+          <Route path="/saas/dashboard" element={<SaaSDashboard />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
