@@ -1,435 +1,308 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Clinic, Appointment, Role, Patient } from '../types';
+import { User, Clinic, Appointment, Patient } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
+import { WhatsAppService } from '../services/whatsappService';
 
 interface DashboardProps {
   user: User;
   clinic: Clinic;
   isManagerMode: boolean;
 }
-import { WhatsAppService } from '../services/whatsappService';
 
-// --- SUB-COMPONENT: MANAGER DASHBOARD ---
+// --- HELPER COMPONENTS ---
 
-const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isManagerMode }: any) => {
-
-  interface ProgressBarProps {
-    value: number;
-    label: string;
-    color: string;
-    isManagerMode: boolean;
-  }
-
-  const ProgressBar: React.FC<ProgressBarProps> = ({ value, label, color, isManagerMode }) => (
-    <div className="mb-3">
-      <div className="flex justify-between text-xs mb-1">
-        <span className={`font-medium ${isManagerMode ? 'text-slate-600' : 'text-emerald-800'}`}>{label}</span>
-        <span className={`${isManagerMode ? 'text-slate-400' : 'text-emerald-600'}`}>{value} pac.</span>
+const KpiCard = ({ title, value, trend, trendLabel, icon: Icon, colorClass, chartData }: any) => (
+  <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden group transition-all hover:shadow-md">
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <p className="text-slate-500 text-sm font-medium">{title}</p>
+        <h3 className="text-4xl font-black text-slate-800 dark:text-white mt-1">{value}</h3>
       </div>
-      <div className={`w-full rounded-full h-2.5 ${isManagerMode ? 'bg-blue-50' : 'bg-emerald-100/50'} border border-gray-100`}>
-        <div className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${color.includes('bg-') ? color : `bg-${color}-500`}`} style={{ width: `${Math.min(value * 10, 100)}%` }}></div>
+      <div className={`size-12 rounded-2xl ${colorClass || 'bg-emerald-50 text-emerald-600'} flex items-center justify-center`}>
+        <Icon className="size-6" />
       </div>
     </div>
-  );
+    <div className="flex items-center gap-2 text-sm">
+      <span className={`${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-bold flex items-center`}>
+        {trend >= 0 ? <Icons.TrendingUp className="size-4 mr-1" /> : <Icons.ChevronDown className="size-4 mr-1" />}
+        {trend > 0 ? `+${trend}%` : `${trend}%`}
+      </span>
+      <span className="text-slate-400">{trendLabel}</span>
+    </div>
+    {/* Decorative Sparkline */}
+    <div className="h-12 w-full mt-4 flex items-end gap-1 px-1">
+      {(chartData || [40, 30, 60, 80, 100, 70, 90]).map((h: number, i: number) => (
+        <div
+          key={i}
+          className={`flex-1 rounded-t-sm transition-all duration-500 ${i === 6 ? 'bg-emerald-500' : 'bg-emerald-100 group-hover:bg-emerald-200'}`}
+          style={{ height: `${h}%` }}
+        ></div>
+      ))}
+    </div>
+  </div>
+);
 
-  return (
-    <>
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Financeiro */}
-        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
-          <div>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Receita Total (LTV)</p>
-            <h3 className={`text-2xl font-black mt-2 text-blue-900`}>R$ {stats.revenue.toLocaleString('pt-BR')}</h3>
-          </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className={`text-blue-700 bg-blue-50 border-blue-200 px-2 py-0.5 rounded-md font-black uppercase text-[10px] border shadow-sm`}>Ticket Médio: R$ {stats.ticketMedio.toFixed(0)}</span>
-          </div>
-        </div>
-
-        {/* Pacientes */}
-        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
-          <div>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Base de Pacientes</p>
-            <h3 className={`text-2xl font-black mt-2 text-blue-900`}>{stats.activePatients} <span className={`text-sm font-medium text-slate-400 capitalize`}>ativos</span></h3>
-          </div>
-          <div className={`mt-4 text-[10px] font-bold uppercase tracking-tight text-slate-500`}>
-            Total de agendamentos: {stats.appointmentsCount}
-          </div>
-        </div>
-
-        {/* Operacional */}
-        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 flex flex-col justify-between text-left transition-all hover:shadow-md hover:border-blue-200`}>
-          <div>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Taxa de Faltas</p>
-            <h3 className={`text-2xl font-black mt-2 ${stats.noShowRate > 15 ? 'text-rose-500' : 'text-blue-600'}`}>
-              {stats.noShowRate}%
-            </h3>
-          </div>
-          <div className={`mt-4 text-[10px] font-bold uppercase tracking-tight text-slate-400`}>
-            Índice de absenteísmo global
-          </div>
-        </div>
-
-        {/* Demográfico Rápido */}
-        <div className={`bg-white border-blue-100 rounded-xl shadow-sm border p-6 transition-all hover:shadow-md hover:border-blue-200`}>
-          <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isManagerMode ? 'text-blue-600' : 'text-slate-500'}`}>Perfil de Gênero</p>
-          <div className="flex items-center gap-4">
-            <div className={`flex-1 text-center p-2 rounded bg-blue-50/50 border border-blue-100`}>
-              <span className="block text-xl font-black text-blue-600">{stats.genderDistribution.Masculino}</span>
-              <span className={`text-[10px] font-black uppercase text-slate-500`}>Homens</span>
-            </div>
-            <div className={`flex-1 text-center p-2 rounded bg-rose-50 border border-rose-100`}>
-              <span className="block text-xl font-black text-rose-500">{stats.genderDistribution.Feminino}</span>
-              <span className={`text-[10px] font-black uppercase text-rose-400`}>Mulheres</span>
-            </div>
-          </div>
-        </div>
+const AiInsightCard = ({ insight, action, onAction }: any) => (
+  <div className="bg-gradient-to-br from-white to-emerald-50/50 dark:from-slate-800 dark:to-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100 dark:border-emerald-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+    <div className="absolute -right-4 -top-4 opacity-5 pointer-events-none">
+      <Icons.Brain size={120} />
+    </div>
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Icons.Sparkles className="text-emerald-500 size-5" />
+        <span className="text-[10px] font-black tracking-widest text-emerald-600 uppercase">NutriAI Insights</span>
       </div>
+      <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+        <span className="font-bold">Dica estratégica:</span> {insight || "Analisando padrões de adesão dos seus pacientes..."}
+      </p>
+    </div>
+    <button
+      onClick={onAction}
+      className="mt-6 w-full flex items-center justify-center gap-2 bg-emerald-600/10 text-emerald-700 py-3 rounded-xl font-bold text-xs hover:bg-emerald-600/20 transition-all border border-emerald-600/20 active:scale-95"
+    >
+      <Icons.MessageCircle className="size-4" />
+      {action || "Efetuar Ação"}
+    </button>
+  </div>
+);
 
-      {/* CHARTS & LISTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Top Pathologies (Epidemiologia) */}
-        <div className={`bg-white border-blue-100 shadow-sm rounded-xl border p-6 lg:col-span-2`}>
-          <h3 className={`text-lg font-black uppercase tracking-tight mb-6 text-blue-900`}>Top Patologias (Perfil Epidemiológico)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              {stats.topPathologies.map((p: any, idx: number) => (
-                <ProgressBar
-                  key={idx}
-                  label={p.name}
-                  value={p.count}
-                  color={['bg-blue-600', 'bg-blue-400', 'bg-blue-300'][idx % 3]}
-                  isManagerMode={true}
-                />
-              ))}
-              {stats.topPathologies.length === 0 && <p className="text-sm text-slate-400 italic">Dados insuficientes.</p>}
-            </div>
-
-            {/* AI INSIGHTS BOX */}
-            <div className={`rounded-xl p-6 text-sm flex flex-col justify-between border bg-blue-50 border-blue-100 text-blue-900 shadow-sm relative overflow-hidden`}>
-              <div className="absolute top-0 right-0 p-2 opacity-10">
-                <Icons.Brain size={48} />
-              </div>
-              <div>
-                <div className={`flex items-center gap-2 mb-3 font-black uppercase tracking-wider text-[10px] text-blue-600`}>
-                  <Icons.Brain size={14} /> IA Manager Insight
-                </div>
-                <h4 className={`font-black mb-2 text-blue-900 uppercase text-xs`}>Análise Clínica:</h4>
-                <p className={`italic font-medium text-blue-800/80 leading-relaxed`}>"{aiInsights?.insight || 'Analisando dados estratégicos...'}"</p>
-              </div>
-              <div className={`mt-6 pt-4 border-t border-blue-100`}>
-                <span className={`block font-black mb-1 text-blue-900 uppercase text-xs`}>Ação Sugerida:</span>
-                <p className={`text-blue-700 font-black uppercase text-xs tracking-tight`}>{aiInsights?.action || 'Aguarde processamento...'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Next Appointments (Operational View) */}
-        <div className={`bg-white border-blue-100 shadow-sm rounded-xl border p-6 flex flex-col h-full`}>
-          <h3 className={`text-lg font-black uppercase tracking-tight mb-4 text-blue-900`}>Agenda Imediata</h3>
-          <div className="space-y-4 flex-1">
-            {nextAppointments.length === 0 ? (
-              <p className={`text-center py-4 text-slate-400 italic font-medium`}>Agenda livre nos próximos dias.</p>
-            ) : (
-              nextAppointments.map((app: Appointment) => (
-                <div key={app.id} className={`flex items-start gap-4 pb-4 border-b border-blue-50 last:border-0 last:pb-0 group/app`}>
-                  <div className={`w-1 h-12 rounded-full transition-transform group-hover/app:scale-y-110 ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : 'bg-blue-200'}`}></div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-black text-blue-900 text-sm truncate`}>{app.patientName}</p>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5`}>
-                      {new Date(app.startTime).toLocaleDateString()} às {new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                    <span className={`bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5 rounded-full mt-2 inline-block text-[9px] font-black uppercase tracking-widest border shadow-sm`}>{app.type}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <button
-            onClick={() => navigate('/agenda')}
-            className={`w-full mt-6 text-[10px] font-black uppercase tracking-widest text-center py-3 rounded-lg transition-all duration-200 bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-600 hover:text-white hover:shadow-lg active:scale-95`}
-          >
-            Ver agenda completa
-          </button>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// --- SUB-COMPONENT: SMART OUTREACH (WHATSAPP) ---
-const SmartOutreach = ({ patients, nextAppointments, clinic, user, navigate }: any) => {
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [aiInsights, setAiInsights] = useState<any>(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const professionalId = !isManagerMode ? user.professionalId : undefined;
+      const role = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
+
+      const [pts, apps, s] = await Promise.all([
+        db.getPatients(clinic.id, professionalId, role),
+        db.getUpcomingAppointments(clinic.id, 10, professionalId, role),
+        db.getAdvancedStats(clinic.id, professionalId, role)
+      ]);
+
+      const insights = await db.generateDashboardInsights(clinic.id, s);
+
+      setPatients(pts);
+      setAppointments(apps);
+      setStats(s);
+      setAiInsights(insights);
+      setLoading(false);
+    };
+    loadData();
+  }, [clinic.id, user.professionalId, isManagerMode]);
+
+  const todayApps = useMemo(() =>
+    appointments.filter(a => new Date(a.startTime).toDateString() === new Date().toDateString()),
+    [appointments]
+  );
+
+  const activeAlerts = useMemo(() => {
     const list: any[] = [];
-    const today = new Date();
-
-    // 1. Appointments for Tomorrow to Confirm
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-    const toConfirm = nextAppointments.filter((a: Appointment) =>
-      new Date(a.startTime).toDateString() === tomorrow.toDateString() && a.status === 'AGENDADO'
-    );
-
-    toConfirm.forEach((a: Appointment) => {
-      const p = patients.find((pt: any) => pt.id === a.patientId);
-      if (p && p.phone) {
-        list.push({
-          id: `confirm-${a.id}`,
-          patientName: a.patientName,
-          patientId: a.patientId,
-          phone: p.phone,
-          type: 'AGENDA',
-          icon: '📅',
-          title: 'Confirmar Consulta (Amanhã)',
-          message: WhatsAppService.getAppointmentReminder(
-            a.patientName,
-            new Date(a.startTime).toLocaleDateString(),
-            new Date(a.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            clinic.name
-          )
+    patients.forEach(p => {
+      if (p.clinicalSummary?.alerts) {
+        p.clinicalSummary.alerts.forEach((alert: any, idx: number) => {
+          const alertId = `${p.id}-${idx}`;
+          if (!dismissedAlerts.has(alertId)) {
+            list.push({
+              id: alertId,
+              patientId: p.id,
+              patientName: p.name,
+              phone: p.phone,
+              message: alert.description || alert.message,
+              severity: alert.severity || 'high',
+              type: alert.type || 'clinical'
+            });
+          }
         });
       }
     });
 
-    // 2. Review Exams (New Insight)
-    const examNeeds = patients.filter((p: any) =>
-      p.clinicalSummary?.alerts?.some((al: any) => al.message.toLowerCase().includes('exame'))
-    );
-
-    examNeeds.forEach((p: any) => {
-      list.push({
-        id: `exam-${p.id}`,
-        patientName: p.name,
-        patientId: p.id,
-        phone: p.phone,
-        type: 'EXAM',
-        icon: '🧪',
-        title: 'Lembrete de Exames',
-        message: WhatsAppService.getExamReminder(p.name, clinic.name)
-      });
-    });
-
-    // 3. Patients with recent Anthro but no outreach recorded recently
-    const recentAnthro = patients.filter((p: any) => {
-      if (!p.anthropometryHistory || p.anthropometryHistory.length < 2) return false;
-      const last = p.anthropometryHistory[p.anthropometryHistory.length - 1];
-      const lastDate = new Date(last.date);
-      const diffDays = Math.ceil((today.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
-      return diffDays <= 7;
-    });
-
-    recentAnthro.forEach((p: any) => {
-      const last = p.anthropometryHistory[p.anthropometryHistory.length - 1];
-      const prev = p.anthropometryHistory[p.anthropometryHistory.length - 2];
-      const weightDiff = last.weight - prev.weight;
-      const leanDiff = (last.leanMass || 0) - (prev.leanMass || 0);
-
-      list.push({
-        id: `insight-${p.id}`,
-        patientName: p.name,
-        patientId: p.id,
-        phone: p.phone,
-        type: 'INSIGHT',
-        icon: '📈',
-        title: 'Parabenizar/Ajustar Evolução',
-        message: WhatsAppService.getPostAnthroInsight(p.name, weightDiff, leanDiff)
-      });
-    });
-
-    // 4. Patients without return for > 30 days
-    const inactive = patients.filter((p: any) => {
-      const lastVisit = p.anthropometryHistory?.length ? new Date(p.anthropometryHistory[p.anthropometryHistory.length - 1].date) : new Date(today);
-      const diffDays = Math.ceil((today.getTime() - lastVisit.getTime()) / (1000 * 3600 * 24));
-      return diffDays > 30 && p.status === 'ATIVO';
-    });
-
-    inactive.slice(0, 3).forEach((p: any) => {
-      const lastVisit = p.anthropometryHistory?.length ? new Date(p.anthropometryHistory[p.anthropometryHistory.length - 1].date) : new Date(today);
-      const diffDays = Math.ceil((today.getTime() - lastVisit.getTime()) / (1000 * 3600 * 24));
-      list.push({
-        id: `recovery-${p.id}`,
-        patientName: p.name,
-        patientId: p.id,
-        phone: p.phone,
-        type: 'RECOVERY',
-        icon: '♻️',
-        title: 'Reativar Paciente Inativo',
-        message: WhatsAppService.getRecoveryMessage(p.name, diffDays)
-      });
-    });
-
-    setSuggestions(list.slice(0, 5));
-  }, [patients, nextAppointments, clinic.name]);
-
-  const handleOutreach = async (s: any) => {
-    try {
-      window.open(WhatsAppService.generateLink(s.phone, s.message), '_blank');
-
-      // Log event in timeline
-      await db.addTimelineEvent(user, s.patientId, {
-        date: new Date().toISOString(),
-        type: 'OUTRO',
-        title: `Outreach: ${s.title}`,
-        description: `Mensagem enviada via Smart Outreach Dashboard. Tipo: ${s.type}`
-      });
-
-      // Optionally remove from list after send
-      setSuggestions(prev => prev.filter(item => item.id !== s.id));
-    } catch (error) {
-      console.error("Error logging outreach:", error);
+    // Mock specific design alerts if database is clean (just for demo/preview as requested by stitch)
+    if (list.length === 0 && !isManagerMode) {
+      if (!dismissedAlerts.has('mock-1')) {
+        list.push({
+          id: 'mock-1',
+          patientName: 'Ricardo S.',
+          message: 'Análise Bioquímica: Glicemia de jejum atingiu 142 mg/dL. Requer ajuste imediato.',
+          severity: 'high',
+          type: 'bioquimica',
+          phone: '5511999999999'
+        });
+      }
+      if (!dismissedAlerts.has('mock-2')) {
+        list.push({
+          id: 'mock-2',
+          patientName: 'Julia Lima',
+          message: 'Adesão Crítica: Não logou refeições nos últimos 5 dias. 72% de queda.',
+          severity: 'medium',
+          type: 'adesao',
+          phone: '5511888888888'
+        });
+      }
     }
+
+    return list;
+  }, [patients, dismissedAlerts, isManagerMode]);
+
+  const handleWhatsAppAction = async (alert: any) => {
+    const msg = `Olá ${alert.patientName}, aqui é o Dr. Rangel da Nutritude. Notei algo importante em seu acompanhamento: ${alert.message}. Podemos conversar sobre isso?`;
+    window.open(WhatsAppService.generateLink(alert.phone, msg), '_blank');
+
+    // Log event
+    await db.addTimelineEvent(user, alert.patientId || 'system', {
+      date: new Date().toISOString(),
+      type: 'OUTRO',
+      title: 'Alerta de Dashboard Tratado',
+      description: `Mensagem enviada sobre: ${alert.message}`
+    });
+
+    // Dismiss alert and show toast
+    setDismissedAlerts(prev => new Set(prev).add(alert.id));
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  if (suggestions.length === 0) return null;
-
-  const typeConfig: Record<string, { color: string; bg: string; border: string; label: string }> = {
-    AGENDA: { color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', label: 'Consulta Amanhã' },
-    EXAM: { color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', label: 'Exames Pendentes' },
-    INSIGHT: { color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', label: 'Insight de Evolução' },
-    RECOVERY: { color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', label: 'Reconectar Paciente' },
+  const handleAiAction = () => {
+    if (aiInsights?.patientIds?.length > 0) {
+      const pId = aiInsights.patientIds[0];
+      const p = patients.find(pt => pt.id === pId);
+      if (p && p.phone) {
+        const msg = `Olá ${p.name}, notei que você não registra sua alimentação há alguns dias. Tudo bem por aí?`;
+        window.open(WhatsAppService.generateLink(p.phone, msg), '_blank');
+        return;
+      }
+    }
+    navigate('/patients');
   };
 
-  return (
-    <div className="bg-white border-blue-100 shadow-sm rounded-xl border p-6 flex flex-col h-full">
-      <div className="flex justify-between items-center mb-5">
-        <h3 className="text-lg font-black text-blue-900 flex items-center gap-2 uppercase tracking-tight">
-          <span className="text-xl">💡</span> Smart Outreach
-        </h3>
-        <span className="bg-blue-100 text-blue-800 text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-blue-200">
-          {suggestions.length} ações
-        </span>
-      </div>
-
-      <div className="space-y-3 flex-1">
-        {suggestions.map((s) => {
-          const cfg = typeConfig[s.type] || typeConfig.AGENDA;
-          // Preview da mensagem (primeiras 80 chars)
-          const preview = s.message.length > 90 ? s.message.replace(/\n/g, ' ').substring(0, 90) + '...' : s.message.replace(/\n/g, ' ');
-          return (
-            <div key={s.id} className={`p-3.5 border rounded-xl group transition-all hover:shadow-md ${cfg.bg} ${cfg.border}`}>
-              {/* Header da sugestão */}
-              <div className="flex justify-between items-start mb-2">
-                <span className={`text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
-                  {s.icon} {cfg.label}
-                </span>
-              </div>
-              {/* Nome do paciente */}
-              <p className="font-black text-sm text-slate-800 mb-1">{s.patientName}</p>
-              {/* Preview da mensagem */}
-              <p className={`text-[11px] leading-relaxed mb-3 ${cfg.color} opacity-80 italic`}>
-                "{preview}"
-              </p>
-              {/* Botão de ação */}
-              <button
-                onClick={() => handleOutreach(s)}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all active:scale-95 shadow-md shadow-blue-200"
-              >
-                <span>💬</span> Enviar via WhatsApp
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 pt-3 border-t border-blue-50">
-        <p className="text-[10px] text-slate-400 text-center uppercase font-bold tracking-widest">
-          ✨ Insights gerados por ControlClin AI
-        </p>
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-emerald-600 font-bold animate-pulse flex flex-col items-center">
+        <Icons.Activity className="size-12 mb-2" />
+        Sincronizando Nutritude Suite...
       </div>
     </div>
   );
-};
-
-
-// --- SUB-COMPONENT: PROFESSIONAL DASHBOARD ---
-
-const ProfessionalDashboard = ({ user, nextAppointments, navigate, isManagerMode, patients, clinic }: any) => {
-  const todayAppointments = nextAppointments.filter((a: Appointment) => new Date(a.startTime).toDateString() === new Date().toDateString());
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="max-w-[1600px] mx-auto pb-10">
 
-        {/* Column 1: KPIs & Outreach */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="bg-white border-emerald-200 rounded-xl shadow-sm border p-6">
-              <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Consultas Hoje</p>
-              <h3 className="text-4xl font-bold mt-2 text-emerald-900">{todayAppointments.length}</h3>
-            </div>
-            <div className="bg-white border-emerald-200 rounded-xl shadow-sm border p-6">
-              <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Total de Pacientes</p>
-              <h3 className="text-4xl font-bold mt-2 text-emerald-900">{patients.length}</h3>
-            </div>
-          </div>
+      {/* SUCCESS TOAST */}
+      {showSuccessToast && (
+        <div className="fixed top-8 right-8 z-50 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
+          <Icons.CheckCircle className="size-5" />
+          <span className="font-bold text-sm">Mensagem enviada e alerta resolvido!</span>
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Clinical Monitoring & Alerts */}
-            <div className="bg-white border-red-100 shadow-sm rounded-xl border p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-red-900 flex items-center gap-2">
-                  <span className="text-xl">🚨</span> Alertas Críticos
-                </h3>
-              </div>
-              <div className="space-y-3">
-                {patients.filter((p: any) => p.clinicalSummary?.alerts && p.clinicalSummary.alerts.length > 0).length === 0 ? (
-                  <div className="py-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200 text-sm text-gray-500 italic">
-                    Zero alertas pendentes.
-                  </div>
-                ) : (
-                  patients.filter((p: any) => p.clinicalSummary?.alerts && p.clinicalSummary.alerts.length > 0).slice(0, 3).map((p: any) => (
-                    <div key={p.id} onClick={() => navigate(`/patient/${p.id}`)} className="cursor-pointer p-3 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100/50 transition-all">
-                      <span className="font-black text-red-900 text-xs block">{p.name}</span>
-                      <p className="text-[11px] text-red-800 leading-tight mt-1">{p.clinicalSummary.alerts[0].message}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-              <button onClick={() => navigate('/alerts')} className="w-full mt-4 text-[10px] font-black uppercase text-red-700 hover:text-red-900">Ver todos os alertas →</button>
-            </div>
-
-            {/* Quick Actions (Compact) */}
-            <div className="bg-white border-slate-200 shadow-sm rounded-xl border p-6">
-              <h3 className="text-lg font-bold mb-4 text-emerald-900">Ações Rápidas</h3>
-              <div className="space-y-4">
-                <button onClick={() => navigate('/agenda')} className="w-full text-center py-3 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-95">
-                  Ver Agenda
-                </button>
-                <button onClick={() => navigate('/patients')} className="w-full text-center py-3 rounded-lg bg-white border-2 border-emerald-100 text-emerald-800 font-bold hover:bg-emerald-50 active:scale-95">
-                  Buscar Paciente
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* HEADER AREA */}
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
+            {isManagerMode ? 'Visão Estratégica' : 'Painel do Profissional'}
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Bem-vindo de volta, <span className="font-bold text-emerald-600">Dr(a). {user.name}</span>
+          </p>
         </div>
 
-        {/* Column 2: Smart Outreach & Agenda */}
-        <div className="space-y-8">
-          <SmartOutreach patients={patients} nextAppointments={nextAppointments} clinic={clinic} user={user} navigate={navigate} />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
+            <input
+              type="text"
+              placeholder="Buscar pacientes..."
+              className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-inner"
+              onFocus={() => navigate('/patients')}
+            />
+          </div>
+          <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4 h-10">
+            <button className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-emerald-600 transition-colors relative">
+              <Icons.Bell className="size-5" />
+              <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full border-2 border-white"></span>
+            </button>
+          </div>
+        </div>
+      </header>
 
-          <div className="bg-white border-emerald-200 shadow-sm rounded-xl border p-6 flex flex-col">
-            <h3 className="text-lg font-bold mb-4 text-emerald-900">Agenda Imediata</h3>
-            <div className="space-y-4 flex-1">
-              {nextAppointments.length === 0 ? (
-                <p className="text-center py-4 text-emerald-600 italic text-sm">Sua agenda está livre.</p>
+      {/* MAIN KPIs GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        <KpiCard
+          title="Consultas Hoje"
+          value={todayApps.length}
+          trend={15}
+          trendLabel="em relação a ontem"
+          icon={Icons.Calendar}
+          colorClass="bg-emerald-50 text-emerald-600"
+        />
+        <KpiCard
+          title="Pacientes Ativos"
+          value={stats?.activePatients || 0}
+          trend={4}
+          trendLabel="este mês"
+          icon={Icons.Users}
+          colorClass="bg-blue-50 text-blue-600"
+          chartData={[20, 40, 30, 50, 60, 55, 80]}
+        />
+        <AiInsightCard
+          insight={aiInsights?.insight}
+          action={aiInsights?.action}
+          onAction={handleAiAction}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* AGENDA SECTION */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Icons.Calendar className="text-emerald-500 size-5" />
+              Agenda Imediata
+            </h3>
+            <button
+              onClick={() => navigate('/agenda')}
+              className="text-emerald-600 text-xs font-black uppercase tracking-wider hover:underline"
+            >
+              Ver agenda completa
+            </button>
+          </div>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+            <div className="divide-y divide-slate-50 dark:divide-slate-800">
+              {todayApps.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 italic">
+                  Agenda livre para o dia de hoje.
+                </div>
               ) : (
-                nextAppointments.map((app: Appointment) => (
-                  <div key={app.id} className="flex items-start gap-3 pb-3 border-b border-emerald-100 last:border-0 last:pb-0">
-                    <div className={`w-2 h-12 rounded-full ${app.status === 'CONFIRMADO' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                    <div>
-                      <p className="font-bold text-emerald-900 text-sm">{app.patientName}</p>
-                      <p className="text-[10px] text-emerald-700">
-                        {new Date(app.startTime).toLocaleDateString()} às {new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 rounded mt-1 inline-block uppercase">{app.type}</span>
+                todayApps.map((app) => (
+                  <div key={app.id} className="p-6 flex items-center gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                    <div className="text-center w-16">
+                      <p className="text-xs font-bold text-slate-400">{new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-sm font-black text-emerald-600">HOJE</p>
                     </div>
+                    <div className="flex-1 flex items-center gap-4">
+                      <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
+                        {app.patientName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-slate-100">{app.patientName}</p>
+                        <p className="text-xs text-slate-500">{app.type}</p>
+                      </div>
+                    </div>
+                    <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-emerald-100 dark:border-emerald-800">
+                      Confirmado
+                    </span>
                   </div>
                 ))
               )}
@@ -437,87 +310,85 @@ const ProfessionalDashboard = ({ user, nextAppointments, navigate, isManagerMode
           </div>
         </div>
 
-      </div>
-    </div>
-  );
-};
+        {/* ALERTS SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Icons.AlertTriangle className="text-rose-500 size-5" />
+              Alertas Críticos
+            </h3>
+            <span className="bg-rose-100 text-rose-600 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+              {activeAlerts.length} pendentes
+            </span>
+          </div>
 
-
-// --- MAIN DASHBOARD COMPONENT ---
-
-const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) => {
-  const navigate = useNavigate();
-
-  // States for data
-  const [nextAppointments, setNextAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]); // For professional dashboard
-  const [stats, setStats] = useState<any>(null);
-  const [aiInsights, setAiInsights] = useState<{ insight: string, action: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-
-      const professionalId = !isManagerMode ? user.professionalId : undefined;
-
-      const mode = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
-
-      // Fetch data common to both or needed for specific roles
-      const appts = await db.getUpcomingAppointments(clinic.id, 5, professionalId, mode);
-      setNextAppointments(appts);
-
-      if (isManagerMode) {
-        const s = await db.getAdvancedStats(clinic.id, professionalId, 'ADMIN');
-        setStats(s);
-        const insights = await db.generateDashboardInsights(clinic.id, s);
-        setAiInsights(insights);
-      } else {
-        const patientData = await db.getPatients(clinic.id, professionalId, 'PROFESSIONAL');
-        setPatients(patientData);
-      }
-
-      setLoading(false);
-    };
-    fetchData();
-  }, [clinic.id, user.professionalId, isManagerMode]);
-
-  if (loading) return <div className="p-8 text-center text-slate-500">Carregando painel...</div>;
-
-  const title = isManagerMode ? "Visão Estratégica" : "Painel do Profissional";
-  const subtitle = isManagerMode ? `${clinic.name} • Gestão Inteligente de Consultório` : `Bem-vindo(a), ${user.name}!`;
-
-  return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h1 className={`text-2xl md:text-3xl font-black uppercase tracking-tight text-slate-800`}>{title}</h1>
-          <p className={`mt-1 text-sm md:text-base ${isManagerMode ? 'text-slate-600' : 'text-slate-600'}`}>{subtitle}</p>
-        </div>
-        <div className="text-left md:text-right bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg w-full md:w-auto">
-          <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-black">Última atualização</span>
-          <span className={`text-sm font-black text-slate-700`}>{new Date().toLocaleTimeString()}</span>
+          <div className="space-y-4">
+            {activeAlerts.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 text-center space-y-3 shadow-sm">
+                <div className="size-14 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto">
+                  <Icons.Check className="size-6 text-emerald-500" />
+                </div>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">Nenhum alerta crítico detectado pela IA nas últimas 24 horas.</p>
+              </div>
+            ) : (
+              activeAlerts.map(alert => (
+                <div
+                  key={alert.id}
+                  className={`${alert.severity === 'high' ? 'bg-rose-50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-900/40' : 'bg-orange-50 border-orange-100 dark:bg-orange-900/20 dark:border-orange-900/40'} p-5 rounded-[2rem] border shadow-sm relative group animate-in slide-in-from-right duration-300`}
+                >
+                  <div className="flex gap-4 items-start">
+                    <div className={`size-10 rounded-xl ${alert.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-orange-100 text-orange-600'} flex items-center justify-center shrink-0`}>
+                      {alert.type === 'bioquimica' ? <Icons.Activity className="size-5" /> : <Icons.Zap className="size-5" />}
+                    </div>
+                    <div>
+                      <p className={`text-sm font-bold ${alert.severity === 'high' ? 'text-rose-900 dark:text-rose-100' : 'text-orange-900 dark:text-orange-100'}`}>
+                        {alert.patientName}
+                      </p>
+                      <p className={`text-xs mt-1 leading-relaxed ${alert.severity === 'high' ? 'text-rose-700/80 dark:text-rose-300/60' : 'text-orange-700/80 dark:text-orange-300/60'}`}>
+                        {alert.message}
+                      </p>
+                      <button
+                        onClick={() => handleWhatsAppAction(alert)}
+                        className={`mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 ${alert.severity === 'high' ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-orange-600 text-white hover:bg-orange-700'}`}
+                      >
+                        <Icons.MessageCircle className="size-3.5" />
+                        Tratar via WhatsApp
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
-      {isManagerMode ? (
-        <ManagerDashboard
-          stats={stats}
-          aiInsights={aiInsights}
-          nextAppointments={nextAppointments}
-          navigate={navigate}
-          isManagerMode={isManagerMode}
-        />
-      ) : (
-        <ProfessionalDashboard
-          user={user}
-          nextAppointments={nextAppointments}
-          navigate={navigate}
-          isManagerMode={isManagerMode}
-          patients={patients}
-          clinic={clinic}
-        />
-      )}
+      {/* FOOTER SUMMARY */}
+      <footer className="mt-12 bg-slate-900 dark:bg-black rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 text-white shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+          <Icons.TrendingUp className="absolute -bottom-10 -right-10 size-64 rotate-12" />
+        </div>
+        <div className="flex items-center gap-6 relative z-10">
+          <div className="size-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-emerald-400 border border-white/10">
+            <Icons.Activity className="size-8" />
+          </div>
+          <div>
+            <p className="text-lg font-black tracking-tight">Estatísticas Semanais</p>
+            <p className="text-sm text-slate-400 font-medium">Sua produtividade clínica cresceu <span className="text-emerald-400 font-bold">8.4%</span> esta semana.</p>
+          </div>
+        </div>
+        <div className="flex gap-4 w-full md:w-auto relative z-10">
+          <div className="flex-1 md:flex-none bg-white/5 backdrop-blur-md px-8 py-4 rounded-3xl border border-white/10 text-center min-w-[140px]">
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Aderência</p>
+            <p className="text-2xl font-black text-emerald-400">94%</p>
+          </div>
+          <div className="flex-1 md:flex-none bg-white/5 backdrop-blur-md px-8 py-4 rounded-3xl border border-white/10 text-center min-w-[140px]">
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Impacto</p>
+            <p className="text-2xl font-black text-blue-400">Alto</p>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 };

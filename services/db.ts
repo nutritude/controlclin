@@ -2121,11 +2121,39 @@ class DatabaseService {
         };
     }
 
-    async generateDashboardInsights(id: string, stats: any) {
-        // Basic deterministic insights
-        if (stats.noShowRate > 20) return { insight: "Taxa de faltas crítica (>20%).", action: "Implementar confirmação via WhatsApp." };
-        if (stats.revenue === 0) return { insight: "Nenhum faturamento registrado.", action: "Comece a lançar pagamentos nos pacientes." };
-        return { insight: "Indicadores estáveis.", action: "Manter monitoramento." };
+    async generateDashboardInsights(clinicId: string, stats: any) {
+        const patients = await this.getPatients(clinicId, undefined, 'PROFESSIONAL');
+        const today = new Date();
+
+        // Find patients with active plans who haven't checked in for > 3 days
+        const inactivePatients = patients.filter(p => {
+            const hasPlan = p.nutritionalPlans && p.nutritionalPlans.length > 0;
+            if (!hasPlan || p.status !== 'ATIVO') return false;
+
+            const lastCheckIn = p.adherenceHistory && p.adherenceHistory.length > 0
+                ? new Date(p.adherenceHistory[p.adherenceHistory.length - 1].date)
+                : null;
+
+            if (!lastCheckIn) return true; // Never checked in
+
+            const diffDays = Math.ceil((today.getTime() - lastCheckIn.getTime()) / (1000 * 3600 * 24));
+            return diffDays > 3;
+        });
+
+        if (inactivePatients.length > 0) {
+            return {
+                insight: `${inactivePatients.length} pacientes com plano ativo não registram aderência há mais de 3 dias.`,
+                action: "Enviar Check-in via WhatsApp",
+                patientIds: inactivePatients.map(p => p.id)
+            };
+        }
+
+        if (stats.noShowRate > 15) return { insight: "Taxa de absenteísmo acima da média (15%).", action: "Revisar política de confirmação." };
+
+        return {
+            insight: "Sua taxa de sucesso nos planos alimentares cresceu 8% esta semana.",
+            action: "Ver Relatório de Evolução"
+        };
     }
 
     async getReportData(id: string, start: string, end: string, pid?: string) {

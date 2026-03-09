@@ -181,6 +181,24 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [subConfigCustomName, setSubConfigCustomName] = useState('');
     const [subConfigManualWeight, setSubConfigManualWeight] = useState('');
 
+    // Meal Collapse State
+    const [collapsedMeals, setCollapsedMeals] = useState<Record<string, boolean>>({});
+
+    const toggleMealCollapse = (mealId: string) => {
+        setCollapsedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+    };
+
+    const toggleAllMealsCollapse = () => {
+        const allCollapsed = meals.length > 0 && meals.every(m => collapsedMeals[m.id]);
+        if (allCollapsed) {
+            setCollapsedMeals({});
+        } else {
+            const newState: Record<string, boolean> = {};
+            meals.forEach(m => newState[m.id] = true);
+            setCollapsedMeals(newState);
+        }
+    };
+
     // Item management states removed (moved to modals)
 
     // AI & PDF
@@ -1379,9 +1397,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     {/* MEALS LIST - DYNAMIC HEADER */}
                     <div className="flex justify-between items-center">
                         <h3 className={`text-lg font-bold ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>Cronograma de Refeições</h3>
-                        <button onClick={handleAddMeal} className={`px-3 py-1 text-xs font-bold rounded border shadow-sm ${isManagerMode ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}>
-                            + Refeição
-                        </button>
+                        <div className="flex gap-2">
+                            <button onClick={toggleAllMealsCollapse} className={`px-3 py-1 text-xs font-bold rounded border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 ${isManagerMode ? 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                                {meals.length > 0 && meals.every(m => collapsedMeals[m.id]) ? 'Expandir Tudo' : 'Recolher Tudo'}
+                            </button>
+                            <button onClick={handleAddMeal} className={`px-3 py-1 text-xs font-bold rounded border shadow-sm ${isManagerMode ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}>
+                                + Refeição
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -1390,10 +1413,15 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         {meals.map((meal, mIndex) => {
                             const mealTotal = NutrientCalc.calculateDailyTotals([meal]);
                             return (
-                                <div key={meal.id} className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl border overflow-hidden`}>
-                                    <div className={`p-3 border-b flex justify-between items-center sticky top-0 z-10 rounded-t-xl ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
+                                <div key={meal.id} className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl border`}>
+                                    <div className={`p-3 border-b flex justify-between items-center sticky top-0 z-10 rounded-t-xl backdrop-blur-md bg-opacity-95 ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 shadow-sm border-slate-100'}`}>
                                         <div className="flex items-center gap-3">
                                             {/* Actions Menu */}
+                                            <div className="flex flex-col gap-0.5 justify-center">
+                                                <button onClick={() => toggleMealCollapse(meal.id)} className="text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-md border border-slate-200 shadow-sm p-0.5 mr-1" title={collapsedMeals[meal.id] ? "Expandir" : "Recolher"}>
+                                                    {collapsedMeals[meal.id] ? <Icons.ChevronDown className="w-4 h-4" /> : <Icons.ChevronUp className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                             <div className="flex flex-col gap-0.5 mr-1">
                                                 <button onClick={() => handleMoveMeal(mIndex, 'up')} disabled={mIndex === 0} className={`text-[8px] hover:font-bold ${mIndex === 0 ? 'opacity-20' : ''}`}>▲</button>
                                                 <button onClick={() => handleMoveMeal(mIndex, 'down')} disabled={mIndex === meals.length - 1} className={`text-[8px] hover:font-bold ${mIndex === meals.length - 1 ? 'opacity-20' : ''}`}>▼</button>
@@ -1415,75 +1443,77 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
                                         </div>
                                     </div>
-                                    <div className="p-3">
-                                        {meal.items.length === 0 ? <p className="text-xs text-gray-400 italic text-center">Vazio.</p> : (
-                                            <ul className="space-y-2">
-                                                {meal.items.map((item, idx) => (
-                                                    <li
-                                                        key={idx}
-                                                        className={`flex flex-col gap-1 p-2 rounded border border-transparent transition-all ${isManagerMode ? 'bg-blue-50 border-blue-200 hover:border-blue-300' : 'bg-gray-50 border-slate-100 hover:border-emerald-200'}`}
-                                                    >
-                                                        <div className="flex justify-between items-center group cursor-pointer" onClick={() => openAddItemModal(meal.id, false, idx)}>
-                                                            <div className="flex flex-col">
-                                                                <span className={`font-medium flex items-center gap-2 ${isManagerMode ? 'text-slate-700' : 'text-slate-700'}`}>
-                                                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px]">✏️</span>
-                                                                    <span><strong className={`${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>{formatMealItemQuantity(item)}</strong> - {item.customName || item.name}</span>
-                                                                </span>
-                                                                <span className="text-[10px] text-gray-400 pl-6">
-                                                                    {item.calculatedCalories} kcal | P {item.calculatedProtein} | C {item.calculatedCarbs} | G {item.calculatedFat}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                {!item.foodId.startsWith('custom') && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, item.foodId); }}
-                                                                        className={`p-1.5 rounded-full transition-colors ${isManagerMode ? 'hover:bg-blue-100 text-blue-600' : 'hover:bg-emerald-100 text-emerald-600'}`}
-                                                                        title="Opções de Substituição"
-                                                                    >
-                                                                        <Icons.DotsVertical className="w-4 h-4" />
+                                    {!collapsedMeals[meal.id] && (
+                                        <div className="p-3">
+                                            {meal.items.length === 0 ? <p className="text-xs text-gray-400 italic text-center">Vazio.</p> : (
+                                                <ul className="space-y-2">
+                                                    {meal.items.map((item, idx) => (
+                                                        <li
+                                                            key={idx}
+                                                            className={`flex flex-col gap-1 p-2 rounded border border-transparent transition-all ${isManagerMode ? 'bg-blue-50 border-blue-200 hover:border-blue-300' : 'bg-gray-50 border-slate-100 hover:border-emerald-200'}`}
+                                                        >
+                                                            <div className="flex justify-between items-center group cursor-pointer" onClick={() => openAddItemModal(meal.id, false, idx)}>
+                                                                <div className="flex flex-col">
+                                                                    <span className={`font-medium flex items-center gap-2 ${isManagerMode ? 'text-slate-700' : 'text-slate-700'}`}>
+                                                                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px]">✏️</span>
+                                                                        <span><strong className={`${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>{formatMealItemQuantity(item)}</strong> - {item.customName || item.name}</span>
+                                                                    </span>
+                                                                    <span className="text-[10px] text-gray-400 pl-6">
+                                                                        {item.calculatedCalories} kcal | P {item.calculatedProtein} | C {item.calculatedCarbs} | G {item.calculatedFat}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    {!item.foodId.startsWith('custom') && (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, item.foodId); }}
+                                                                            className={`p-1.5 rounded-full transition-colors ${isManagerMode ? 'hover:bg-blue-100 text-blue-600' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                                                            title="Opções de Substituição"
+                                                                        >
+                                                                            <Icons.DotsVertical className="w-4 h-4" />
+                                                                        </button>
+                                                                    )}
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveItem(meal.id, idx); }} className="text-red-400 hover:text-red-700 p-1 transition-colors" title="Remover item">
+                                                                        <Icons.Plus className="w-5 h-5 rotate-45" />
                                                                     </button>
-                                                                )}
-                                                                <button onClick={(e) => { e.stopPropagation(); handleRemoveItem(meal.id, idx); }} className="text-red-400 hover:text-red-700 p-1 transition-colors" title="Remover item">
-                                                                    <Icons.Plus className="w-5 h-5 rotate-45" />
-                                                                </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
 
-                                                        {/* LISTA DE SUBSTITUTOS (OPÇÕES) */}
-                                                        {item.substitutes && item.substitutes.length > 0 && (
-                                                            <div className="ml-6 space-y-1 mt-1 border-l-2 border-emerald-100 pl-3">
-                                                                {item.substitutes.map((sub, sIdx) => (
-                                                                    <div key={sIdx} className="flex justify-between items-center py-1 group/sub scale-95 origin-left">
-                                                                        <div className="text-[11px] text-slate-500 italic">
-                                                                            <span className="font-bold text-emerald-600 not-italic uppercase mr-1 text-[9px]">OU:</span>
-                                                                            {formatMealItemQuantity(sub)} - {sub.customName || sub.name}
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1">
-                                                                            {!sub.foodId.startsWith('custom') && (
+                                                            {/* LISTA DE SUBSTITUTOS (OPÇÕES) */}
+                                                            {item.substitutes && item.substitutes.length > 0 && (
+                                                                <div className="ml-6 space-y-1 mt-1 border-l-2 border-emerald-100 pl-3">
+                                                                    {item.substitutes.map((sub, sIdx) => (
+                                                                        <div key={sIdx} className="flex justify-between items-center py-1 group/sub scale-95 origin-left">
+                                                                            <div className="text-[11px] text-slate-500 italic">
+                                                                                <span className="font-bold text-emerald-600 not-italic uppercase mr-1 text-[9px]">OU:</span>
+                                                                                {formatMealItemQuantity(sub)} - {sub.customName || sub.name}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1">
+                                                                                {!sub.foodId.startsWith('custom') && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, sub.foodId); }}
+                                                                                        className={`p-1 opacity-0 group-hover/sub:opacity-100 rounded-full transition-all ${isManagerMode ? 'hover:bg-blue-50 text-blue-600' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                                                                                        title="Substituir esta opção"
+                                                                                    >
+                                                                                        <Icons.DotsVertical className="w-3.5 h-3.5" />
+                                                                                    </button>
+                                                                                )}
                                                                                 <button
-                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenSubstitutes(meal.id, idx, sub.foodId); }}
-                                                                                    className={`p-1 opacity-0 group-hover/sub:opacity-100 rounded-full transition-all ${isManagerMode ? 'hover:bg-blue-50 text-blue-600' : 'hover:bg-emerald-50 text-emerald-600'}`}
-                                                                                    title="Substituir esta opção"
+                                                                                    onClick={(e) => { e.stopPropagation(); handleRemoveSubstitute(meal.id, idx, sIdx); }}
+                                                                                    className="opacity-0 group-hover/sub:opacity-100 text-red-400 font-bold text-[10px] hover:text-red-600 px-1"
                                                                                 >
-                                                                                    <Icons.DotsVertical className="w-3.5 h-3.5" />
+                                                                                    remover
                                                                                 </button>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveSubstitute(meal.id, idx, sIdx); }}
-                                                                                className="opacity-0 group-hover/sub:opacity-100 text-red-400 font-bold text-[10px] hover:text-red-600 px-1"
-                                                                            >
-                                                                                remover
-                                                                            </button>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

@@ -6,6 +6,11 @@ console.log("[ControlClin] Initializing system...");
 
 import App from './App';
 import { logService } from './services/logService'; // Import logService
+import { CacheManager } from './services/cacheService';
+
+// --- AUTO-CLEAN CACHE GUARD (GLOBAL) ---
+// Resolve visualizações antigas em navegadores diferentes automaticamente.
+CacheManager.checkAndPurge();
 
 interface ErrorBoundaryProps {
   children?: ReactNode;

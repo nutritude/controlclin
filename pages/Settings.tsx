@@ -481,10 +481,28 @@ const Settings: React.FC<SettingsProps> = ({ user, clinic, isManagerMode }) => {
                                     placeholder="Adicione instruções específicas para a IA..."
                                     className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 text-sm ${isManagerMode ? 'bg-blue-50 border-blue-100 text-slate-800 focus:ring-blue-500 shadow-sm' : 'bg-white border-gray-300'}`}
                                 />
-                                <p className={`mt-1 text-[10px] font-bold uppercase tracking-tight ${isManagerMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                    Ex: "Sempre direcione pacientes para a Dra. Camila para nutrição."
-                                </p>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION: MAINTENANCE */}
+                    <div className={`${isManagerMode ? 'bg-white border-blue-50 shadow-sm' : 'bg-white border-gray-200'} shadow rounded-lg p-6 border`}>
+                        <h3 className={`text-[11px] font-black uppercase tracking-widest mb-6 ${isManagerMode ? 'text-blue-900' : 'text-gray-700'}`}>Suporte e Manutenção</h3>
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex-1">
+                                <h4 className="font-bold text-slate-800 text-sm">Resolução de Problemas Visuais</h4>
+                                <p className="text-xs text-slate-500 mt-1">Se o painel estiver com cores estranhas ou botões faltando após uma atualização, use este botão para limpar o cache da interface e forçar uma nova sincronização com a nuvem.</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Isso irá recarregar a página e limpar configurações temporárias de visualização. Deseja continuar?')) {
+                                        import('../services/cacheService').then(m => m.CacheManager.forceGlobalReset());
+                                    }
+                                }}
+                                className="px-5 py-2.5 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all active:scale-95 whitespace-nowrap"
+                            >
+                                Limpar Cache do App
+                            </button>
                         </div>
                     </div>
                 </div>

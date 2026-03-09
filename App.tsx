@@ -23,8 +23,19 @@ import { parseMasterCSV, parseSynonymCSV, parseNutrientCSV } from './services/fo
 import { ScientificCatalog } from './services/food/foodCatalogScientific';
 import { db as serviceDb } from './services/db';
 import { firebaseError } from './services/firebase';
+import { CacheManager } from './services/cacheService';
 
 function App() {
+  // --- BACKGROUND UPDATE CHECK ---
+  useEffect(() => {
+    // Verifica uma vez ao montar
+    CacheManager.checkForUpdates();
+
+    // E verifica a cada 30 minutos se a aba estiver aberta
+    const interval = setInterval(() => CacheManager.checkForUpdates(), 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (firebaseError) {
     return (
       <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-8 font-sans">
