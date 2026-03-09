@@ -15,12 +15,12 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${isActive
+    `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
       ? isManagerMode
-        ? 'bg-blue-50 text-blue-700 font-black shadow-sm border border-blue-100'
+        ? 'bg-blue-500 text-white font-black shadow-md transform scale-[1.02]'
         : 'bg-emerald-50 text-emerald-700 font-black shadow-sm border border-emerald-100'
       : isManagerMode
-        ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50/50'
+        ? 'text-blue-800 hover:text-blue-900 hover:bg-white/50'
         : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50'
     }`;
 
@@ -43,33 +43,33 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-500 ease-in-out 2xl:relative 2xl:translate-x-0
+        fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-300 ease-in-out 2xl:relative 2xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        bg-[#FDFDFD] border-r border-slate-100
-        text-slate-800 flex flex-col shadow-xl flex-shrink-0 print:hidden
+        ${isManagerMode ? 'bg-[#f0f7ff] border-r border-blue-100 text-slate-800 shadow-xl' : 'bg-[#FDFDFD] border-r border-slate-100 text-slate-800 shadow-xl'}
+        flex flex-col flex-shrink-0 print:hidden max-w-[85vw]
       `}>
         {/* BRANDING HEADER */}
-        <div className="p-8 flex-none">
-          <div className="mb-6">
+        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-blue-100' : 'border-emerald-100'} flex-none flex flex-col items-center text-center`}>
+          <div className="mb-2 w-full flex justify-center">
             {clinic.logoUrl ? (
               <img
                 src={clinic.logoUrl}
                 alt="Logo"
-                className="max-h-12 w-auto object-contain"
+                className={`max-h-12 md:max-h-16 w-auto object-contain`}
               />
             ) : (
-              <div className="size-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-2xl font-black shadow-xl rotate-3 text-white">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg text-white`}>
                 {clinic.name.charAt(0)}
               </div>
             )}
           </div>
 
-          <h1 className="text-lg font-black tracking-tight leading-tight text-slate-800">
+          <h1 className={`text-sm md:text-base font-black uppercase tracking-tight w-full break-words leading-tight ${isManagerMode ? 'text-blue-900' : 'text-slate-800'}`}>
             {clinic.name}
           </h1>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center justify-center gap-2 mt-2 w-full">
             <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400">
+            <p className={`text-[10px] uppercase tracking-[0.2em] font-black ${isManagerMode ? 'text-blue-600/60' : 'text-slate-400'}`}>
               Sistema Ativo
             </p>
           </div>
@@ -103,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
           {isManagerMode && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
             <div className="pt-6 space-y-2">
-              <p className="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 mb-4">Gestão</p>
+              <p className={`px-4 text-[10px] font-black uppercase tracking-[0.3em] mb-4 ${isManagerMode ? 'text-blue-400' : 'text-emerald-400'}`}>Gestão Clínica</p>
               <NavLink to="/professionals" className={navItemClass} onClick={() => setIsMobileMenuOpen(false)}>
                 <Icons.Users className="size-5 opacity-50" />
                 <span className="text-sm">Equipe</span>
@@ -117,25 +117,46 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
         </nav>
 
         {/* PROFILE FOOTER */}
-        <div className="p-6 mt-auto">
-          <div className="bg-slate-50 rounded-3xl p-4 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="size-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-sm font-black text-emerald-600 shadow-sm">
-                {user.name.charAt(0)}
+        <div className={`p-4 border-t ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-slate-100 bg-slate-50'} flex-none mt-auto`}>
+          {isManagerMode ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 bg-blue-600 text-white">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-bold truncate text-blue-900">{user.name}</p>
+                  <p className="text-[10px] truncate w-full uppercase font-bold text-blue-600">{user.role.replace('_', ' ')}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate text-slate-800">{user.name}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{user.role.replace('_', ' ')}</p>
-              </div>
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-colors text-blue-800 hover:text-blue-900 hover:bg-white"
+              >
+                <Icons.Logout className="size-4" />
+                Sair
+              </button>
             </div>
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-rose-50 border border-slate-100 hover:border-rose-100 hover:text-rose-500 rounded-xl transition-all text-slate-500"
-            >
-              <Icons.Logout className="size-3" />
-              Sair da conta
-            </button>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="size-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-sm font-black text-emerald-600 shadow-sm">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black truncate text-slate-800">{user.name}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{user.role.replace('_', ' ')}</p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-rose-50 border border-slate-100 hover:border-rose-100 hover:text-rose-500 rounded-xl transition-all text-slate-500"
+              >
+                <Icons.Logout className="size-3" />
+                Sair da conta
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
