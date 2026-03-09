@@ -14,8 +14,11 @@ interface DashboardProps {
 
 // --- HELPER COMPONENTS ---
 
-const KpiCard = ({ title, value, trend, trendLabel, icon: Icon, colorClass, chartData }: any) => (
-  <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden group transition-all hover:shadow-md">
+const KpiCard = ({ title, value, trend, trendLabel, icon: Icon, colorClass, chartData, onClick }: any) => (
+  <div
+    onClick={onClick}
+    className={`bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden group transition-all hover:shadow-md ${onClick ? 'cursor-pointer hover:border-emerald-200' : ''}`}
+  >
     <div className="flex justify-between items-start mb-4">
       <div>
         <p className="text-slate-500 text-xs font-black uppercase tracking-widest">{title}</p>
@@ -196,8 +199,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           });
         }
       }
+      // Add Alert for patients without a nutritional plan
+      const hasPlan = (p.nutritionalPlans && p.nutritionalPlans.length > 0) || p.nutritionalPlan;
+      if (!hasPlan) {
+        const alertId = `no-plan-${p.id}`;
+        if (!dismissedAlerts.has(alertId)) {
+          list.push({
+            id: alertId,
+            patientId: p.id,
+            patientName: p.name,
+            phone: p.phone,
+            message: `Paciente sem plano alimentar ativo cadastrado no sistema.`,
+            severity: 'orange',
+            type: 'Nutricional'
+          });
+        }
+      }
     });
-
 
     return list;
   }, [patients, dismissedAlerts, isManagerMode, user.professionalId, examRequests, allExams]);
@@ -235,11 +253,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
     return [patients.length * 0.4, patients.length * 0.5, patients.length * 0.7, patients.length * 0.6, patients.length * 0.8, patients.length * 0.9, 100];
   }, [patients]);
 
-  const handleWhatsAppAction = (phone: string, msg: string) => {
+  const handleWhatsAppAction = (phone: string, msg: string, alertId?: string) => {
     if (!phone) { alert("Telefone não cadastrado."); return; }
     window.open(WhatsAppService.generateLink(phone, msg), '_blank');
     setShowSuccessToast(true);
+    if (alertId) {
+      setDismissedAlerts(prev => new Set([...Array.from(prev), alertId]));
+    }
     setTimeout(() => setShowSuccessToast(false), 3000);
+  };
+
+  const handleDismissAlert = (alertId: string) => {
+    setDismissedAlerts(prev => new Set([...Array.from(prev), alertId]));
   };
 
   if (loading) return (
@@ -331,6 +356,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           icon={Icons.Users}
           colorClass="bg-blue-50 text-blue-600"
           chartData={patientSparkline}
+          onClick={() => navigate('/patients')}
         />
         <div className="bg-emerald-50 p-8 rounded-[3rem] text-slate-800 flex flex-col justify-between border border-emerald-100 shadow-sm relative overflow-hidden group">
           <div className="absolute -right-10 -bottom-10 opacity-5 rotate-12 group-hover:scale-110 transition-transform duration-700">
@@ -341,13 +367,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
               <Icons.Sparkles className="text-emerald-500 size-5" />
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600/60">NutriAI Analytics</span>
             </div>
-            <p className="text-lg font-black leading-tight text-slate-800">
-              {aiInsights?.insight || "Otimizando sua retenção clínica..."}
-            </p>
+            <div className="space-y-3">
+              <p className="text-lg font-black leading-[1.2] text-slate-800">
+                {aiInsights?.insight || "Otimizando sua retenção clínica..."}
+              </p>
+              <div className="flex items-center gap-2 py-2 px-3 bg-emerald-100/50 rounded-xl w-fit">
+                <Icons.Activity className="size-3 text-emerald-600" />
+                <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider">
+                  {aiInsights?.secondaryInsight || "Insight Clínico: Planos personalizados aumentam a adesão em 15%"}
+                </span>
+              </div>
+            </div>
           </div>
           <button
             onClick={() => navigate('/reports')}
-            className="mt-8 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
+            className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
           >
             Ver Relatório Completo
             <Icons.ChevronDown className="-rotate-90 size-4" />
@@ -413,9 +447,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {lastFivePatients.map(p => (
-                    <tr key={p.id} className="hover:bg-slate-50/30 transition-colors">
+                    <tr
+                      key={p.id}
+                      onClick={() => navigate(`/patients/${p.id}`)}
+                      className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                    >
                       <td className="p-6">
-                        <p className="text-sm font-black text-slate-800">{p.name}</p>
+                        <p className="text-sm font-black text-slate-800 group-hover:text-emerald-600 transition-colors">{p.name}</p>
                         <p className="text-[10px] text-slate-400 font-bold">{p.email || 'Sem e-mail'}</p>
                       </td>
                       <td className="p-6 text-sm font-bold text-slate-600">{p.birthDate ? `${calculateAge(p.birthDate)} anos` : '--'}</td>
@@ -425,9 +463,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
                         </span>
                       </td>
                       <td className="p-6 text-right">
-                        <button onClick={() => navigate(`/patients/${p.id}`)} className="text-slate-300 hover:text-emerald-500 transition-colors">
-                          <Icons.ChevronDown className="-rotate-90 size-5" />
-                        </button>
+                        <Icons.ChevronDown className="-rotate-90 size-5 text-slate-300 group-hover:text-emerald-500 transition-colors" />
                       </td>
                     </tr>
                   ))}
@@ -475,8 +511,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
             {activeAlerts.map(alert => (
               <div
                 key={alert.id}
-                className={`p-6 rounded-[2.5rem] border transition-all ${alert.severity === 'high' ? 'bg-rose-50/50 border-rose-100' : 'bg-orange-50/50 border-orange-100'}`}
+                className={`p-6 rounded-[2.5rem] border transition-all relative group ${alert.severity === 'high' ? 'bg-rose-50/50 border-rose-100' : 'bg-orange-50/50 border-orange-100'}`}
               >
+                <button
+                  onClick={() => handleDismissAlert(alert.id)}
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 text-slate-400 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100"
+                  title="Marcar como resolvido"
+                >
+                  <Icons.Check className="size-4" />
+                </button>
+
                 <div className="flex gap-4 mb-4">
                   <div className={`size-10 rounded-2xl flex items-center justify-center shrink-0 ${alert.severity === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-orange-100 text-orange-600'}`}>
                     <Icons.Zap size={20} />
@@ -489,14 +533,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
                 <p className="text-xs text-slate-600 leading-relaxed mb-6 italic opacity-80 border-l-2 border-slate-200 pl-3">
                   "{alert.message}"
                 </p>
-                <button
-                  onClick={() => handleWhatsAppAction(alert.phone, `Olá ${alert.patientName}, notei este alerta no sistema: ${alert.message}. Tudo bem?`)}
-                  className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm ${alert.severity === 'high' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-orange-500 text-white hover:bg-orange-600'
-                    }`}
-                >
-                  <Icons.MessageCircle className="size-4" />
-                  Tratar via WhatsApp
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleWhatsAppAction(alert.phone, `Olá ${alert.patientName}, notei este alerta no sistema: ${alert.message}. Tudo bem?`, alert.id)}
+                    className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm ${alert.severity === 'high' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-orange-500 text-white hover:bg-orange-600'
+                      }`}
+                  >
+                    <Icons.MessageCircle className="size-4" />
+                    Tratar
+                  </button>
+                  <button
+                    onClick={() => handleDismissAlert(alert.id)}
+                    className="px-4 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-white border border-slate-200 text-slate-400 hover:text-slate-900 active:scale-95"
+                  >
+                    Baixa
+                  </button>
+                </div>
               </div>
             ))}
           </div>

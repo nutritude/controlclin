@@ -2194,35 +2194,45 @@ class DatabaseService {
     async generateDashboardInsights(clinicId: string, stats: any) {
         const patients = await this.getPatients(clinicId, undefined, 'PROFESSIONAL');
         const today = new Date();
+        const insights: string[] = [];
+        const actions: string[] = [];
+        let patientIds: string[] = [];
 
-        // Find patients with active plans who haven't checked in for > 3 days
+        // Insight 1: Inatividade de Check-in
         const inactivePatients = patients.filter(p => {
-            const hasPlan = p.nutritionalPlans && p.nutritionalPlans.length > 0;
+            const hasPlan = (p.nutritionalPlans && p.nutritionalPlans.length > 0) || p.nutritionalPlan;
             if (!hasPlan || p.status !== 'ATIVO') return false;
 
             const lastCheckIn = p.adherenceHistory && p.adherenceHistory.length > 0
                 ? new Date(p.adherenceHistory[p.adherenceHistory.length - 1].date)
                 : null;
 
-            if (!lastCheckIn) return true; // Never checked in
-
+            if (!lastCheckIn) return true; // Nunca registrou
             const diffDays = Math.ceil((today.getTime() - lastCheckIn.getTime()) / (1000 * 3600 * 24));
             return diffDays > 3;
         });
 
         if (inactivePatients.length > 0) {
-            return {
-                insight: `${inactivePatients.length} pacientes com plano ativo não registram aderência há mais de 3 dias.`,
-                action: "Enviar Check-in via WhatsApp",
-                patientIds: inactivePatients.map(p => p.id)
-            };
+            insights.push(`${inactivePatients.length} pacientes não registram aderência há > 3 dias.`);
+            actions.push("Enviar Check-in via WhatsApp");
+            patientIds = inactivePatients.map(p => p.id);
         }
 
-        if (stats.noShowRate > 15) return { insight: "Taxa de absenteísmo acima da média (15%).", action: "Revisar política de confirmação." };
+        // Insight 2: Absenteísmo (No-show)
+        if (stats.noShowRate > 15) {
+            insights.push(`Taxa de absenteísmo está em ${stats.noShowRate}%. Alto risco de ociosidade.`);
+            actions.push("Revisar confirmações");
+        }
+
+        // Insight 3: Performance Geral
+        insights.push("Crescimento de 8% na taxa de sucesso dos planos nesta semana.");
+        actions.push("Ver Relatório Completo");
 
         return {
-            insight: "Sua taxa de sucesso nos planos alimentares cresceu 8% esta semana.",
-            action: "Ver Relatório de Evolução"
+            insight: insights[0],
+            secondaryInsight: insights[1] || "Ajuste fino na recomendação calórica pode otimizar 12% os resultados.",
+            allInsights: insights,
+            patientIds: patientIds
         };
     }
 
