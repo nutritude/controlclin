@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Clinic, Appointment, Patient } from '../types';
+import { User, Clinic, Appointment, Patient, Exam, ExamRequest } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
@@ -66,6 +66,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [aiInsights, setAiInsights] = useState<any>(null);
+  const [examRequests, setExamRequests] = useState<ExamRequest[]>([]);
+  const [allExams, setAllExams] = useState<Exam[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
@@ -79,10 +81,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       const professionalId = !isManagerMode ? user.professionalId : undefined;
       const role = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
 
-      const [pts, apps, s] = await Promise.all([
+      const [pts, apps, s, requests, exams] = await Promise.all([
         db.getPatients(clinic.id, professionalId, role),
         db.getUpcomingAppointments(clinic.id, 50, professionalId, role),
-        db.getAdvancedStats(clinic.id, professionalId, role)
+        db.getAdvancedStats(clinic.id, professionalId, role),
+        db.getAllExamRequests(clinic.id, professionalId),
+        db.getAllExams(clinic.id)
       ]);
 
       const insights = await db.generateDashboardInsights(clinic.id, s);
@@ -91,6 +95,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       setAppointments(apps);
       setStats(s);
       setAiInsights(insights);
+      setExamRequests(requests);
+      setAllExams(exams);
       setLoading(false);
     };
 
@@ -150,9 +156,51 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       }
     });
 
+    // Add pending exams for analysis (results uploaded but not analyzed)
+    allExams.filter(e => e.status === 'PENDENTE').forEach(e => {
+      const p = patients.find(patient => patient.id === e.patientId);
+      if (!p) return;
+      const alertId = `exam-pend-${e.id}`;
+      if (!dismissedAlerts.has(alertId)) {
+        list.push({
+          id: alertId,
+          patientId: p.id,
+          patientName: p.name,
+          phone: p.phone,
+          message: `Exame "${e.name}" aguardando análise profissional.`,
+          severity: 'medium',
+          type: 'exam'
+        });
+      }
+    });
+
+    // Add open exam requests (requested but no results yet)
+    examRequests.forEach(r => {
+      const p = patients.find(patient => patient.id === r.patientId);
+      if (!p) return;
+
+      // Simple heuristic: if no exam uploaded AFTER the request date, it's open
+      const hasResults = allExams.some(e => e.patientId === r.patientId && e.date >= r.date);
+
+      if (!hasResults) {
+        const alertId = `req-open-${r.id}`;
+        if (!dismissedAlerts.has(alertId)) {
+          list.push({
+            id: alertId,
+            patientId: p.id,
+            patientName: p.name,
+            phone: p.phone,
+            message: `Solicitação de exames pendente (${r.exams.length} itens).`,
+            severity: 'low',
+            type: 'exam-request'
+          });
+        }
+      }
+    });
+
 
     return list;
-  }, [patients, dismissedAlerts, isManagerMode, user.professionalId]);
+  }, [patients, dismissedAlerts, isManagerMode, user.professionalId, examRequests, allExams]);
 
   const calculateAge = (birthDate: string) => {
     if (!birthDate) return 0;

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult, Clinic, Professional } from '../types';
+import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult, Clinic, Professional, NutritionalPlanTemplate } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { FoodService, FoodItemCanonical } from '../services/food/foodCatalog';
@@ -108,6 +108,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [caloricGoalAdjustment, setCaloricGoalAdjustment] = useState(0);
     const [isAmputeeModuleOpen, setIsAmputeeModuleOpen] = useState(false);
     const [showCalcMemory, setShowCalcMemory] = useState(false);
+    const [templates, setTemplates] = useState<NutritionalPlanTemplate[]>([]);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
 
     // Plan Config State
     const [isDrafting, setIsDrafting] = useState(false);
@@ -216,16 +218,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         CatalogSync.checkAndSync();
     }, []);
 
-    // --- INITIALIZATION ---
-    useEffect(() => {
-        fetchPlans();
-        if (patient.professionalId) {
-            db.getProfessionals(clinic.id).then(list => {
-                const prof = list.find(p => p.id === patient.professionalId);
-                setResponsibleProfessional(prof || null);
-            });
-        }
-    }, [patient.id, patient.professionalId, clinic.id]);
+    // --- ACTIONS ---
+    const fetchTemplates = async () => {
+        const list = await db.getNutritionalTemplates(clinic.id, user.professionalId);
+        setTemplates(list);
+    };
 
     const fetchPlans = async () => {
         try {
@@ -244,6 +241,18 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             console.error("Failed to fetch plans", err);
         }
     };
+
+    // --- INITIALIZATION ---
+    useEffect(() => {
+        fetchPlans();
+        if (patient.professionalId) {
+            db.getProfessionals(clinic.id).then(list => {
+                const prof = list.find(p => p.id === patient.professionalId);
+                setResponsibleProfessional(prof || null);
+            });
+        }
+        fetchTemplates();
+    }, [patient.id, patient.professionalId, clinic.id, user.professionalId]);
 
     const loadPlanIntoState = (plan: NutritionalPlan) => {
         setActivePlan(plan);
@@ -427,6 +436,70 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     }, [targetKcal, proteinGrams, fatGrams]);
 
     // --- PLAN ACTIONS ---
+    // --- TEMPLATE ACTIONS ---
+    const handleSaveTemplate = async () => {
+        const title = prompt("Digite um nome para este modelo:", planTitle);
+        if (!title) return;
+
+        try {
+            await db.saveNutritionalTemplate(user, {
+                title,
+                strategyName: planStrategy,
+                methodology: planMethodology,
+                caloricTarget: targetKcal,
+                macroTargets: {
+                    protein: { g: proteinGrams, pct: Math.round((proteinGrams * 4 / (targetKcal || 1)) * 100) || 0 },
+                    carbs: { g: Math.round(((targetKcal || 0) - (proteinGrams * 4) - (fatGrams * 9)) / 4), pct: 0 },
+                    fat: { g: fatGrams, pct: Math.round((fatGrams * 9 / (targetKcal || 1)) * 100) || 0 }
+                },
+                meals,
+                inputsUsed: {
+                    weight: calculationInputs.weight,
+                    height: calculationInputs.height,
+                    age: calculationInputs.age,
+                    gender: calculationInputs.gender,
+                    formula: calcFormula as any,
+                    activityFactor: calcActivityFactor,
+                    injuryFactor: calcInjuryFactor,
+                    patientProfile: patientProfile as any,
+                    pregnancyTrimestre: pregnancyTrimestre,
+                    amputations: amputations,
+                    caloricGoalAdjustment: caloricGoalAdjustment
+                }
+            });
+            fetchTemplates();
+            alert("Modelo salvo na sua biblioteca!");
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleImportTemplate = (tpl: NutritionalPlanTemplate) => {
+        if (!confirm("Isso irá substituir os dados do rascunho atual. Deseja continuar?")) return;
+
+        setPlanStrategy(tpl.strategyName);
+        setPlanMethodology(tpl.methodology);
+        setTargetKcal(tpl.caloricTarget);
+        if (tpl.macroTargets) {
+            setProteinGrams(tpl.macroTargets.protein.g);
+            setFatGrams(tpl.macroTargets.fat.g);
+        }
+        if (tpl.inputsUsed) {
+            setCalcFormula(tpl.inputsUsed.formula as any);
+            setCalcActivityFactor(tpl.inputsUsed.activityFactor);
+            setCalcInjuryFactor(tpl.inputsUsed.injuryFactor || 1.0);
+            setPatientProfile(tpl.inputsUsed.patientProfile || 'ADULTO_EUTROFICO');
+            setAmputations(tpl.inputsUsed.amputations || []);
+            setCaloricGoalAdjustment(tpl.inputsUsed.caloricGoalAdjustment || 0);
+            setManualWeight(tpl.inputsUsed.weight);
+            setManualHeight(tpl.inputsUsed.height);
+            setIsManualMode(true);
+        }
+        setMeals(tpl.meals.map((m, i) => ({ ...m, id: `meal-imp-${Date.now()}-${i}` })));
+        setPlanTitle(`${tpl.title} (Importado)`);
+        setShowTemplateModal(false);
+    };
+
     const handleSavePlan = async () => {
         if (!user.professionalId && user.role === 'PROFESSIONAL') {
             alert("Erro: Profissional não identificado.");
@@ -929,12 +1002,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             }`}>{syncStatus}</span>
                     )}
                     <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" onClick={handleAnalyzeWithAI} data-html2pdf-ignore disabled={isAnalyzing} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isAnalyzing ? 'bg-gray-200' : (isManagerMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-purple-50 text-purple-700 border-purple-200')}`}>{isAnalyzing ? '...' : <><Icons.Brain className="w-3.5 h-3.5" /> Analisar</>}</button>
+                        <button type="button" onClick={() => setShowTemplateModal(true)} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}><Icons.BookOpen className="w-3.5 h-3.5" /> Modelos</button>
                         <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
-                        <span>💾</span> Salvar Plano
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <button type="button" title="Salvar como Modelo" onClick={handleSaveTemplate} data-html2pdf-ignore className={`px-4 py-2.5 rounded-xl border transition-all active:scale-105 ${isManagerMode ? 'border-blue-200 text-blue-600' : 'border-slate-200 text-slate-600'}`}>
+                            ⭐
+                        </button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+                            <span>💾</span> Salvar Plano
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -2007,6 +2085,148 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     )}
                 </div>
             </div>
+
+            {/* ======================== MODAL: BIBLIOTECA DE MODELOS ======================== */}
+            {showTemplateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
+
+                        {/* Header */}
+                        <div className={`flex items-center justify-between p-5 border-b ${isManagerMode ? 'border-blue-100 bg-blue-50' : 'border-emerald-100 bg-emerald-50'}`}>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+                                    📚
+                                </div>
+                                <div>
+                                    <h2 className={`text-sm font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>
+                                        Biblioteca de Modelos
+                                    </h2>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        {templates.length} modelo{templates.length !== 1 ? 's' : ''} salvos na sua biblioteca
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowTemplateModal(false)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                            {templates.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="text-5xl mb-4">📂</div>
+                                    <h3 className="text-base font-bold text-slate-700 mb-1">Nenhum modelo salvo ainda</h3>
+                                    <p className="text-sm text-slate-400 max-w-xs">
+                                        Monte um plano alimentar e clique em <strong>⭐</strong> para salvá-lo na sua biblioteca e reutilizar em outros pacientes.
+                                    </p>
+                                </div>
+                            ) : (
+                                templates.map(tpl => (
+                                    <div
+                                        key={tpl.id}
+                                        className="border border-slate-200 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition-all group bg-white"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="text-sm font-black text-slate-800 truncate">{tpl.title}</h3>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tpl.methodology === 'QUALITATIVA'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : tpl.methodology === 'EQUIVALENTES'
+                                                            ? 'bg-orange-100 text-orange-700'
+                                                            : 'bg-emerald-100 text-emerald-700'
+                                                        }`}>
+                                                        {tpl.methodology === 'QUALITATIVA' ? 'Qualitativa' : tpl.methodology === 'EQUIVALENTES' ? 'Equivalentes' : 'Alimentos'}
+                                                    </span>
+                                                </div>
+
+                                                <p className="text-xs text-slate-500 mt-1 truncate">
+                                                    {tpl.strategyName || 'Sem estratégia definida'}
+                                                </p>
+
+                                                {/* Indicadores */}
+                                                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                                    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-50 rounded-lg px-2 py-1">
+                                                        🔥 {tpl.caloricTarget || 0} kcal
+                                                    </span>
+                                                    {tpl.macroTargets && (
+                                                        <>
+                                                            <span className="text-[10px] font-bold text-red-600 bg-red-50 rounded-lg px-2 py-1">
+                                                                P: {tpl.macroTargets.protein.g}g
+                                                            </span>
+                                                            <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 rounded-lg px-2 py-1">
+                                                                G: {tpl.macroTargets.fat.g}g
+                                                            </span>
+                                                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 rounded-lg px-2 py-1">
+                                                                C: {tpl.macroTargets.carbs.g}g
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                                                        🍽️ {tpl.meals?.length || 0} refeições
+                                                    </span>
+                                                    {tpl.createdAt && (
+                                                        <span className="text-[10px] text-slate-400">
+                                                            📅 {new Date(tpl.createdAt).toLocaleDateString('pt-BR')}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Preview das refeições */}
+                                                {tpl.meals && tpl.meals.length > 0 && (
+                                                    <div className="mt-2 flex flex-wrap gap-1">
+                                                        {tpl.meals.slice(0, 5).map((m, i) => (
+                                                            <span key={i} className="text-[9px] bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
+                                                                {m.name}
+                                                            </span>
+                                                        ))}
+                                                        {tpl.meals.length > 5 && (
+                                                            <span className="text-[9px] bg-slate-100 text-slate-400 rounded px-1.5 py-0.5">
+                                                                +{tpl.meals.length - 5} mais
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Ações */}
+                                            <div className="flex flex-col gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => handleImportTemplate(tpl)}
+                                                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg text-white transition-all active:scale-95 shadow-md ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                                >
+                                                    ↩ Importar
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm(`Excluir o modelo "${tpl.title}"? Esta ação não pode ser desfeita.`)) return;
+                                                        await db.deleteNutritionalTemplate(tpl.id);
+                                                        fetchTemplates();
+                                                    }}
+                                                    className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-all active:scale-95"
+                                                >
+                                                    🗑 Excluir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className={`p-4 border-t ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-100 bg-emerald-50/50'}`}>
+                            <p className="text-[10px] text-slate-500 text-center">
+                                💡 Dica: Ao importar um modelo, as refeições e configurações serão carregadas como rascunho. Salve o plano para vinculá-lo ao paciente.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

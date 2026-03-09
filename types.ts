@@ -305,6 +305,12 @@ export interface NutritionalPlan {
 
   meals: Meal[];
 }
+// --- MODELOS DE PLANO ALIMENTAR (TEMPLATES) ---
+export interface NutritionalPlanTemplate extends Omit<NutritionalPlan, 'status'> {
+  category?: string;
+  clinicId: string;
+  isGlobal?: boolean; // Se disponível para toda a clínica ou apenas para o autor
+}
 
 // --- AI ANALYSIS STRUCTURES ---
 

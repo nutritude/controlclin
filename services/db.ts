@@ -8,7 +8,8 @@ import {
     TimelineEvent, TimelineEventType, ClinicalNote, FinancialTransaction, AIConfig,
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
-    ExamRequest, MipanAssessment, Prescription, PrescriptionItem, AdherenceCheckIn
+    ExamRequest, MipanAssessment, Prescription, PrescriptionItem, AdherenceCheckIn,
+    NutritionalPlanTemplate
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
@@ -260,6 +261,7 @@ class DatabaseService {
     private examRequests: ExamRequest[] = []; // NOVO: Solicitações de exames
     private mipanAssessments: MipanAssessment[] = []; // NOVO: Perfil Psicocomportamental
     private prescriptions: Prescription[] = []; // NOVO: Prescrição Clínica
+    private nutritionalTemplates: NutritionalPlanTemplate[] = []; // NOVO: Modelos de Planos Alimentares
     private STORAGE_KEY = 'CONTROLCLIN_DB_V10_MASTER';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
@@ -303,6 +305,7 @@ class DatabaseService {
         this.examRequests = smartMerge(this.examRequests, data.examRequests);
         this.mipanAssessments = smartMerge(this.mipanAssessments, data.mipanAssessments);
         this.prescriptions = smartMerge(this.prescriptions, data.prescriptions);
+        this.nutritionalTemplates = smartMerge(this.nutritionalTemplates, data.nutritionalTemplates);
 
         console.log(`[DB] Sync Result: ${this.patients.length} patients, ${this.appointments.length} apps.`);
 
@@ -1617,6 +1620,17 @@ class DatabaseService {
         }
         return null;
     }
+    async getAllExamRequests(clinicId: string, professionalId?: string) {
+        return this.examRequests.filter(r =>
+            r.clinicId === clinicId &&
+            !r.isDeleted &&
+            (!professionalId || r.professionalId === professionalId)
+        );
+    }
+
+    async getAllExams(clinicId: string) {
+        return this.exams.filter(e => e.clinicId === clinicId && !e.isDeleted);
+    }
 
     // --- NUTRITIONAL PLANNING PERSISTENCE (UPDATED FOR MULTI-PLAN) ---
 
@@ -1691,6 +1705,56 @@ class DatabaseService {
 
         this.saveToStorage();
         return savedPlan;
+    }
+
+    // --- TEMPLATES DE PLANO ALIMENTAR ---
+    async getNutritionalTemplates(clinicId: string, professionalId?: string) {
+        return this.nutritionalTemplates.filter(t =>
+            t.clinicId === clinicId &&
+            (t.isGlobal || !professionalId || t.authorId === professionalId)
+        ).sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+    }
+
+    async saveNutritionalTemplate(user: User, templateData: Partial<NutritionalPlanTemplate>) {
+        const id = templateData.id || `tpl-${Date.now()}`;
+        const idx = this.nutritionalTemplates.findIndex(t => t.id === id);
+
+        const newTemplate: NutritionalPlanTemplate = {
+            id,
+            title: templateData.title || 'Novo Modelo',
+            category: templateData.category || 'Geral',
+            clinicId: user.clinicId,
+            authorId: user.professionalId || '',
+            createdAt: templateData.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            strategyName: templateData.strategyName || '',
+            methodology: templateData.methodology || 'ALIMENTOS',
+            inputsUsed: templateData.inputsUsed || {
+                weight: 0, height: 0, age: 0, gender: '', formula: 'MANUAL', activityFactor: 1
+            },
+            caloricTarget: templateData.caloricTarget || 0,
+            macroTargets: templateData.macroTargets || {
+                protein: { g: 0, pct: 0 },
+                carbs: { g: 0, pct: 0 },
+                fat: { g: 0, pct: 0 }
+            },
+            meals: templateData.meals || [],
+            isGlobal: templateData.isGlobal || false
+        };
+
+        if (idx > -1) {
+            this.nutritionalTemplates[idx] = newTemplate;
+        } else {
+            this.nutritionalTemplates.push(newTemplate);
+        }
+
+        await this.saveToStorage();
+        return newTemplate;
+    }
+
+    async deleteNutritionalTemplate(id: string) {
+        this.nutritionalTemplates = this.nutritionalTemplates.filter(t => t.id !== id);
+        await this.saveToStorage();
     }
 
     // Get specific active plan (Legacy support + UI convenience)
