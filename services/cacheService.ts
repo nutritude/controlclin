@@ -9,7 +9,7 @@
 
 // Versão atual do Software (Incremental)
 // Ao mudar o layout ou lógica crítica, suba este número.
-export const CURRENT_VERSION = '1.0.9';
+export const CURRENT_VERSION = '1.1.0';
 
 const VERSION_KEY = 'CONTROLCLIN_VERSION';
 const TRANSIENT_KEYS = [

@@ -295,22 +295,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           colorClass="bg-blue-50 text-blue-600"
           chartData={patientSparkline}
         />
-        <div className="bg-[#0D1B2A] p-8 rounded-[3rem] text-white flex flex-col justify-between border border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12 group-hover:scale-110 transition-transform duration-700">
+        <div className="bg-emerald-50 p-8 rounded-[3rem] text-slate-800 flex flex-col justify-between border border-emerald-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-10 -bottom-10 opacity-5 rotate-12 group-hover:scale-110 transition-transform duration-700">
             <Icons.Brain size={200} />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Icons.Sparkles className="text-emerald-400 size-5" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400/80">NutriAI Analytcis</span>
+              <Icons.Sparkles className="text-emerald-500 size-5" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600/60">NutriAI Analytics</span>
             </div>
-            <p className="text-lg font-bold leading-tight">
+            <p className="text-lg font-black leading-tight text-slate-800">
               {aiInsights?.insight || "Otimizando sua retenção clínica..."}
             </p>
           </div>
           <button
             onClick={() => navigate('/reports')}
-            className="mt-8 bg-emerald-500 hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2"
+            className="mt-8 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
           >
             Ver Relatório Completo
             <Icons.ChevronDown className="-rotate-90 size-4" />
@@ -467,25 +467,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       </div>
 
       {/* FOOTER SUMMARY */}
-      <footer className="mt-20 bg-[#064E3B] rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 text-white shadow-3xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none"></div>
+      <footer className="mt-20 bg-emerald-50 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 text-emerald-900 border border-emerald-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-100/20 to-transparent pointer-events-none"></div>
         <div className="flex items-center gap-8 relative z-10">
-          <div className="size-20 rounded-3xl bg-white/10 backdrop-blur-xl flex items-center justify-center text-emerald-400 border border-white/20 shadow-2xl rotate-3">
+          <div className="size-20 rounded-3xl bg-white flex items-center justify-center text-emerald-500 border border-emerald-100 shadow-sm rotate-3">
             <Icons.Activity className="size-10" />
           </div>
           <div>
-            <p className="text-2xl font-black tracking-tight mb-2 italic">Performance da Clínica</p>
-            <p className="text-sm text-emerald-100/60 font-medium max-w-md">Baseado nos dados reais de <b>{patients.length} pacientes</b> vinculados ao seu registro profissional.</p>
+            <p className="text-2xl font-black tracking-tight mb-2 italic text-emerald-900">Performance da Clínica</p>
+            <p className="text-sm text-emerald-800/60 font-medium max-w-md">Baseado nos dados reais de <b>{patients.length} pacientes</b> vinculados ao seu registro profissional.</p>
           </div>
         </div>
         <div className="flex gap-6 w-full md:w-auto relative z-10">
-          <div className="flex-1 md:flex-none bg-white/5 backdrop-blur-md px-10 py-6 rounded-[2rem] border border-white/10 text-center">
-            <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-[0.2em] mb-2">Aderência Real</p>
-            <p className="text-4xl font-black text-emerald-400">{adherenceAvg}%</p>
+          <div className="flex-1 md:flex-none bg-white px-10 py-6 rounded-[2rem] border border-emerald-100 text-center shadow-sm">
+            <p className="text-[10px] text-emerald-600/60 font-black uppercase tracking-[0.2em] mb-2">Aderência Real</p>
+            <p className="text-4xl font-black text-emerald-600">{adherenceAvg}%</p>
           </div>
-          <div className="flex-1 md:flex-none bg-white/5 backdrop-blur-md px-10 py-6 rounded-[2rem] border border-white/10 text-center">
-            <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-[0.2em] mb-2">Sincronização</p>
-            <p className="text-4xl font-black text-blue-400">100%</p>
+          <div className="flex-1 md:flex-none bg-white px-10 py-6 rounded-[2rem] border border-emerald-100 text-center shadow-sm">
+            <p className="text-[10px] text-emerald-600/60 font-black uppercase tracking-[0.2em] mb-2">Sincronização</p>
+            <p className="text-4xl font-black text-blue-500">100%</p>
           </div>
         </div>
       </footer>

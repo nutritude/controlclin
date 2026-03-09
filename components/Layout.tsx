@@ -17,26 +17,26 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${isActive
       ? isManagerMode
-        ? 'bg-white/10 text-white font-black shadow-lg backdrop-blur-md border border-white/20'
-        : 'bg-white/15 text-white font-black shadow-lg backdrop-blur-md border border-white/20'
+        ? 'bg-blue-50 text-blue-700 font-black shadow-sm border border-blue-100'
+        : 'bg-emerald-50 text-emerald-700 font-black shadow-sm border border-emerald-100'
       : isManagerMode
-        ? 'text-blue-100/70 hover:text-white hover:bg-white/5'
-        : 'text-emerald-100/70 hover:text-white hover:bg-white/5'
+        ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50/50'
+        : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50'
     }`;
 
   const AlertIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   );
 
   return (
-    <div className={`flex h-screen overflow-hidden bg-[#F8FAFC]`}>
+    <div className="flex h-screen overflow-hidden bg-[#F1F5F9]">
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[60] 2xl:hidden backdrop-blur-sm transition-all duration-300"
+          className="fixed inset-0 bg-slate-900/40 z-[60] 2xl:hidden backdrop-blur-sm transition-all duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -45,8 +45,8 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <aside className={`
         fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-500 ease-in-out 2xl:relative 2xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${isManagerMode ? 'bg-[#0F172A]' : 'bg-[#064E3B]'} 
-        text-white flex flex-col shadow-2xl flex-shrink-0 print:hidden
+        bg-[#FDFDFD] border-r border-slate-100
+        text-slate-800 flex flex-col shadow-xl flex-shrink-0 print:hidden
       `}>
         {/* BRANDING HEADER */}
         <div className="p-8 flex-none">
@@ -55,21 +55,21 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
               <img
                 src={clinic.logoUrl}
                 alt="Logo"
-                className="max-h-12 w-auto object-contain brightness-0 invert"
+                className="max-h-12 w-auto object-contain"
               />
             ) : (
-              <div className="size-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-2xl font-black shadow-xl rotate-3">
+              <div className="size-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-2xl font-black shadow-xl rotate-3 text-white">
                 {clinic.name.charAt(0)}
               </div>
             )}
           </div>
 
-          <h1 className="text-lg font-black tracking-tight leading-tight">
+          <h1 className="text-lg font-black tracking-tight leading-tight text-slate-800">
             {clinic.name}
           </h1>
           <div className="flex items-center gap-2 mt-2">
-            <div className="size-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">
+            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400">
               Sistema Ativo
             </p>
           </div>
@@ -103,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
           {isManagerMode && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
             <div className="pt-6 space-y-2">
-              <p className="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Gestão</p>
+              <p className="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 mb-4">Gestão</p>
               <NavLink to="/professionals" className={navItemClass} onClick={() => setIsMobileMenuOpen(false)}>
                 <Icons.Users className="size-5 opacity-50" />
                 <span className="text-sm">Equipe</span>
@@ -118,19 +118,19 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
 
         {/* PROFILE FOOTER */}
         <div className="p-6 mt-auto">
-          <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 border border-white/10">
+          <div className="bg-slate-50 rounded-3xl p-4 border border-slate-100">
             <div className="flex items-center gap-3 mb-4">
-              <div className="size-10 rounded-2xl bg-white/10 flex items-center justify-center text-sm font-black border border-white/20">
+              <div className="size-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-sm font-black text-emerald-600 shadow-sm">
                 {user.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate">{user.name}</p>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">{user.role.replace('_', ' ')}</p>
+                <p className="text-xs font-black truncate text-slate-800">{user.name}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{user.role.replace('_', ' ')}</p>
               </div>
             </div>
             <button
               onClick={onLogout}
-              className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 rounded-xl transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-rose-50 border border-slate-100 hover:border-rose-100 hover:text-rose-500 rounded-xl transition-all text-slate-500"
             >
               <Icons.Logout className="size-3" />
               Sair da conta
