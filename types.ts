@@ -625,6 +625,7 @@ export interface Appointment {
   price?: number;
   financialStatus?: FinancialStatus;
   paymentMethod?: PaymentMethod;
+  updatedAt?: string;
 }
 
 // --- Exames e IA ---
@@ -682,6 +683,7 @@ export interface Exam {
   analysisResult?: ExamAnalysisResult; // New Structured Analysis
   healthScore?: number; // 0-100
   isDeleted?: boolean; // Suporte a exclusão lógica
+  updatedAt?: string;
 }
 
 export interface AuditLog {

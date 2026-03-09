@@ -493,50 +493,16 @@ const Settings: React.FC<SettingsProps> = ({ user, clinic, isManagerMode }) => {
                                 <h4 className="font-bold text-slate-800 text-sm">Resolução de Problemas Visuais</h4>
                                 <p className="text-xs text-slate-500 mt-1">Se o painel estiver com cores estranhas ou botões faltando após uma atualização, use este botão para limpar o cache da interface e forçar uma nova sincronização com a nuvem.</p>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => {
-                                        if (confirm('Isso irá recarregar a página e limpar configurações temporárias de visualização. Deseja continuar?')) {
-                                            import('../services/cacheService').then(m => m.CacheManager.forceGlobalReset());
-                                        }
-                                    }}
-                                    className="px-5 py-2.5 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all active:scale-95 whitespace-nowrap"
-                                >
-                                    Limpar Cache
-                                </button>
-
-                                <button
-                                    onClick={async () => {
-                                        if (confirm('Deseja enviar seus dados atuais para a nuvem? Isso garantirá que outros dispositivos vejam as mesmas informações (ex: os 8 pacientes que você vê aqui).')) {
-                                            try {
-                                                const res = await (db as any).forceSync();
-                                                alert(res.message);
-                                            } catch (e) {
-                                                alert('Erro ao sincronizar.');
-                                            }
-                                        }
-                                    }}
-                                    className="px-5 py-2.5 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all active:scale-95 whitespace-nowrap"
-                                >
-                                    Upload para Nuvem
-                                </button>
-
-                                <button
-                                    onClick={async () => {
-                                        if (confirm('Isso irá sobrescrever seus dados locais com a versão mais recente da nuvem. Deseja continuar?')) {
-                                            try {
-                                                await (db as any).loadFromRemote();
-                                                window.location.reload();
-                                            } catch (e) {
-                                                alert('Erro ao baixar dados.');
-                                            }
-                                        }
-                                    }}
-                                    className="px-5 py-2.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all active:scale-95 whitespace-nowrap"
-                                >
-                                    Restaurar da Nuvem
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Isso irá recarregar a página e limpar configurações temporárias de visualização. Deseja continuar?')) {
+                                        import('../services/cacheService').then(m => m.CacheManager.forceGlobalReset());
+                                    }
+                                }}
+                                className="px-5 py-2.5 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all active:scale-95 whitespace-nowrap"
+                            >
+                                Limpar Cache
+                            </button>
                         </div>
                     </div>
                 </div>

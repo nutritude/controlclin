@@ -597,21 +597,13 @@ class DatabaseService {
 
             if (snap.exists()) {
                 const data = snap.data();
-                const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
-                const localModified = (this as any)._localLastModified || 0;
+                console.log(`[DB] 🔄 Sincronização automática em curso...`);
+                this.applyRemoteData(data);
 
-                const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
-                const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
-                const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
-
-                if (remoteModified > localModified || isJustSeeded) {
-                    console.log(`[DB] 🔽 Baixando atualização remota (Versão mais nova ou Recuperação de Dados)...`);
-                    this.applyRemoteData(data);
-                    this.saveToStorage(false, remoteModified);
-                } else {
-                    console.log(`[DB] ✅ Local já sincronizado ou mais recente.`);
-                }
-            } else {
+                const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
+                this.saveToStorage(false, remoteModified);
+            }
+            else {
                 console.warn(`[DB] ⚠️ Clínica ${targetClinicId} sem dados na nuvem.`);
             }
         } catch (err) {
@@ -623,25 +615,15 @@ class DatabaseService {
             if (snap.exists()) {
                 const data = snap.data();
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
-                const localModified = (this as any)._localLastModified || 0;
 
-                // Sync protection: Only update if Remote is definitely newer, 
-                // OR if it's our first real cloud hit and we only have mock data locally.
-                const isMockData = this.patients.every(p => p.professionalId === 'system-demo' || ['pt1', 'pt2', 'pt_meire'].includes(p.id));
-                const hasRealDataLocally = this.patients.some(p => p.id.startsWith('pt-') && p.professionalId !== 'system-demo');
-                const isJustSeeded = (this.patients.length <= 4 && this.appointments.length === 0) || !hasRealDataLocally || isMockData;
+                this.isUpdatingFromRemote = true;
+                console.log(`[DB] ☁️ Sincronização em tempo real: Nuvem atualizada.`);
+                this.applyRemoteData(data);
+                this.saveToStorage(false, remoteModified);
+                this.isUpdatingFromRemote = false;
 
-                if (remoteModified > localModified || (localModified === 0 && isJustSeeded)) {
-                    this.isUpdatingFromRemote = true; // Block loop
-                    console.log(`[DB] ☁️ Atualização remota recebida.`);
-
-                    this.applyRemoteData(data);
-                    this.saveToStorage(false, remoteModified);
-
-                    this.isUpdatingFromRemote = false; // Unlock
-                    if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('db-remote-sync'));
-                    }
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('db-remote-sync'));
                 }
             }
         }, (err) => {
