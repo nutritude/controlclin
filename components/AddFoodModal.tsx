@@ -8,6 +8,7 @@ interface AddFoodModalProps {
     onConfirm: (item: any) => void;
     isManagerMode: boolean;
     editingItem?: any;
+    protocol?: string;
 }
 
 const AddFoodModal: React.FC<AddFoodModalProps> = ({
@@ -15,7 +16,8 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     onClose,
     onConfirm,
     isManagerMode,
-    editingItem
+    editingItem,
+    protocol
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<FoodItemCanonical[]>([]);
@@ -35,7 +37,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const handleSearch = (q: string) => {
         setSearchQuery(q);
         if (q.length > 1) {
-            const results = FoodService.search(q);
+            const results = FoodService.search(q, protocol);
             setSearchResults(results);
         } else {
             setSearchResults([]);

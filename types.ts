@@ -244,6 +244,10 @@ export interface FoodItem {
   standardPortion: number; // g or ml
   householdMeasure: string; // e.g., "1 colher de sopa"
   unit: 'g' | 'ml';
+  sem_gluten?: boolean;
+  sem_lactose?: boolean;
+  baixo_fodmap?: boolean;
+  vegano?: boolean;
 }
 
 export interface MealItem {
@@ -757,6 +761,12 @@ export interface FoodRecord {
   preparo?: string;                   // preparo_detectado
   fonte?: string;                     // __fonte (TACO, INSA, CIQUAL, TBCA)
   prio?: number;                      // __prio (1=TACO/TBCA, alta prioridade para BR)
+
+  // Flags de Restrição (Protocolos Inteligentes)
+  sem_gluten?: boolean;
+  sem_lactose?: boolean;
+  baixo_fodmap?: boolean;
+  vegano?: boolean;
 }
 
 /**

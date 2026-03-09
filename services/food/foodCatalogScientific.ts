@@ -698,7 +698,11 @@ function recordToCanonical(record: FoodRecord): FoodItemCanonical {
         },
         portions: formattedPortions.length > 0 ? formattedPortions : [
             { label: '100g (Padrão)', grams: 100 }
-        ]
+        ],
+        sem_gluten: record.sem_gluten,
+        sem_lactose: record.sem_lactose,
+        baixo_fodmap: record.baixo_fodmap,
+        vegano: record.vegano
     };
 }
 

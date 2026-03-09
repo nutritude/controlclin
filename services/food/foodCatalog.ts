@@ -23,6 +23,11 @@ export interface FoodItemCanonical {
   shoppingCategory?: string; // Optional for shopping list grouping
   nutrientsPer100g: FoodNutrients;
   portions: Portion[];
+  // Flags de Restrição
+  sem_gluten?: boolean;
+  sem_lactose?: boolean;
+  baixo_fodmap?: boolean;
+  vegano?: boolean;
 }
 
 // Mock Data - expanded from previous MOCK_FOOD_DB in db.ts but structured for the new service
@@ -30,12 +35,14 @@ const FOOD_CATALOG: FoodItemCanonical[] = [
   {
     id: 'f1', namePt: 'Arroz Branco Cozido', category: 'Cereais', shoppingCategory: 'Mercearia',
     nutrientsPer100g: { kcal: 128, protein_g: 2.5, carb_g: 28.1, fat_g: 0.2, fiber_g: 1.6, sodium_mg: 1 },
-    portions: [{ label: '1 escumadeira', grams: 150 }, { label: '1 colher de sopa', grams: 25 }]
+    portions: [{ label: '1 escumadeira', grams: 150 }, { label: '1 colher de sopa', grams: 25 }],
+    sem_gluten: true, sem_lactose: true, baixo_fodmap: true, vegano: true
   },
   {
     id: 'f2', namePt: 'Feijão Carioca Cozido', category: 'Leguminosas', shoppingCategory: 'Mercearia',
     nutrientsPer100g: { kcal: 76, protein_g: 4.8, carb_g: 13.6, fat_g: 0.5, fiber_g: 8.5, sodium_mg: 2 },
-    portions: [{ label: '1 concha', grams: 130 }, { label: '1 colher de sopa', grams: 20 }]
+    portions: [{ label: '1 concha', grams: 130 }, { label: '1 colher de sopa', grams: 20 }],
+    sem_gluten: true, sem_lactose: true, baixo_fodmap: false, vegano: true
   },
   {
     id: 'f3', namePt: 'Peito de Frango Grelhado', category: 'Carnes', shoppingCategory: 'Açougue',
@@ -70,7 +77,8 @@ const FOOD_CATALOG: FoodItemCanonical[] = [
   {
     id: 'f9', namePt: 'Pão Francês', category: 'Pães', shoppingCategory: 'Padaria',
     nutrientsPer100g: { kcal: 300, protein_g: 8, carb_g: 58, fat_g: 3, fiber_g: 2.3, sodium_mg: 648 },
-    portions: [{ label: '1 unidade', grams: 50 }]
+    portions: [{ label: '1 unidade', grams: 50 }],
+    sem_gluten: false, sem_lactose: true, baixo_fodmap: false, vegano: true
   },
   {
     id: 'f10', namePt: 'Queijo Minas Frescal', category: 'Laticínios', shoppingCategory: 'Laticínios',
@@ -110,7 +118,7 @@ import { ScientificCatalog } from './foodCatalogScientific';
  * Food Service handles interactions with the food catalog
  */
 export const FoodService = {
-  search: (query: string): FoodItemCanonical[] => {
+  search: (query: string, protocol?: string): FoodItemCanonical[] => {
     if (!query || query.length < 2) return [];
 
     const scientificResults: FoodItemCanonical[] = [];
@@ -135,6 +143,17 @@ export const FoodService = {
       if (!seenNames.has(leg.namePt.toLowerCase()) && combined.length < 30) {
         combined.push(leg);
       }
+    }
+
+    // 4. Filtragem por Protocolo (Inteligência Clínica)
+    if (protocol && protocol !== 'ALIMENTOS') {
+      return combined.filter(food => {
+        if (protocol === 'SEM_GLUTEN') return food.sem_gluten === true;
+        if (protocol === 'SEM_LACTOSE') return food.sem_lactose === true;
+        if (protocol === 'BAIXO_FODMAP') return food.baixo_fodmap === true;
+        if (protocol === 'VEGANO') return food.vegano === true;
+        return true;
+      });
     }
 
     return combined;

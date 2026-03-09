@@ -693,15 +693,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         setShowSubstitutesDrawer({ mealId, itemIdx, foodId });
     };
 
-    // Free Search in Substitution Drawer
     useEffect(() => {
         if (subTab === 'SEARCH' && subQuery.length >= 2) {
-            const results = FoodService.search(subQuery);
+            const results = FoodService.search(subQuery, planMethodology);
             setSubSearchResults(results);
         } else {
             setSubSearchResults([]);
         }
-    }, [subQuery, subTab]);
+    }, [subQuery, subTab, planMethodology]);
 
     const handlePreSelectSubstitution = (cand: FoodItemCanonical, suggestion?: SubstitutionSuggestion) => {
         setSubConfigItem(cand);
@@ -983,14 +982,18 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     </button>
 
                     <div className="flex flex-col w-full sm:w-auto mt-2 sm:mt-0">
-                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Metodologia</label>
+                        <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Metodologia / Protocolo</label>
                         <select
                             value={planMethodology}
                             onChange={(e) => setPlanMethodology(e.target.value as any)}
                             className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
-                            <option value="ALIMENTOS">Cálculo por Alimentos</option>
-                            <option value="EQUIVALENTES">Equivalentes (Pix)</option>
+                            <option value="ALIMENTOS">Cálculo por Alimentos (Padrao)</option>
+                            <option value="EQUIVALENTES">Lista de Substituição</option>
+                            <option value="SEM_GLUTEN">Protocolo Sem Glúten</option>
+                            <option value="SEM_LACTOSE">Protocolo Sem Lactose</option>
+                            <option value="BAIXO_FODMAP">Protocolo Baixos FODMAPs</option>
+                            <option value="VEGANO">Protocolo Vegano</option>
                             <option value="QUALITATIVA">Qualitativa</option>
                         </select>
                     </div>
@@ -1006,8 +1009,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" title="Salvar como Modelo" onClick={handleSaveTemplate} data-html2pdf-ignore className={`px-4 py-2.5 rounded-xl border transition-all active:scale-105 ${isManagerMode ? 'border-blue-200 text-blue-600' : 'border-slate-200 text-slate-600'}`}>
-                            ⭐
+                        <button type="button" onClick={handleSaveTemplate} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                            <Icons.Star className="w-3.5 h-3.5" /> Salvar como Modelo
                         </button>
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
                             <span>💾</span> Salvar Plano
@@ -1606,6 +1609,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 onClose={() => setIsAddItemModalOpen(false)}
                 onConfirm={handleConfirmAddItem}
                 isManagerMode={isManagerMode}
+                protocol={planMethodology}
             />
 
             {editingItem && (

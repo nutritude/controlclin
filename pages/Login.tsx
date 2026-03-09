@@ -12,8 +12,13 @@ interface LoginProps {
 type LoginMode = 'ADMIN' | 'PROFESSIONAL';
 type ViewState = 'LANDING' | 'LOGIN' | 'REGISTER' | 'SUCCESS';
 
-const TOTAL_FRAMES = 80;
-const FRAME_RATE = 12;
+const BACKGROUND_IMAGES = [
+  '/imagebk/Tela de fundo01.jpg',
+  '/imagebk/Tela de fundo02.jpg',
+  '/imagebk/Tela de fundo03.jpg',
+  '/imagebk/Tela de fundo04.jpg',
+  '/imagebk/Tela de fundo05.jpg',
+];
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [view, setView] = useState<ViewState>('LANDING');
@@ -23,6 +28,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [slug, setSlug] = useState('control');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState('');
 
   // Registration State
   const [regData, setRegData] = useState({
@@ -37,99 +43,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // --- ANIMATION STATE ---
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const framesRef = useRef<HTMLImageElement[]>([]);
-  const currentFrameRef = useRef(0);
-  const animationRef = useRef<number | null>(null);
-  const [animReady, setAnimReady] = useState(false);
-
-  // Preload all frames
+  // Sorteia a imagem de fundo ao montar o componente ou mudar para LOGIN/REGISTER
   useEffect(() => {
-    let mounted = true;
-    const images: HTMLImageElement[] = [];
-    let loaded = 0;
-
-    const fileNamePrefix = 'Usar_a_imagem_enviada_como_referncia_visual_princi_d6af91336a_';
-
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
-      const img = new Image();
-      const num = i.toString().padStart(3, '0');
-      img.src = `/imagebk/${fileNamePrefix}${num}.jpg`;
-      img.onload = () => {
-        loaded++;
-        if (loaded === TOTAL_FRAMES && mounted) {
-          framesRef.current = images;
-          setAnimReady(true);
-        }
-      };
-      img.onerror = () => {
-        loaded++;
-        if (loaded === TOTAL_FRAMES && mounted) {
-          framesRef.current = images;
-          setAnimReady(true);
-        }
-      };
-      images.push(img);
+    if (view !== 'LANDING') {
+      const randomImg = BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)];
+      setBackgroundImage(randomImg);
+    } else {
+      setBackgroundImage(''); // Reseta para economizar quando for landing
     }
-
-    return () => { mounted = false; };
-  }, []);
-
-  // Canvas drawing loop
-  const drawFrame = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    const frames = framesRef.current;
-    if (!canvas || !ctx || frames.length === 0) return;
-
-    const frame = frames[currentFrameRef.current];
-    if (frame && frame.complete && frame.naturalWidth > 0) {
-      const imgRatio = frame.naturalWidth / frame.naturalHeight;
-      const canvasRatio = canvas.width / canvas.height;
-
-      let drawWidth, drawHeight, drawX, drawY;
-
-      if (canvasRatio > imgRatio) {
-        drawWidth = canvas.width;
-        drawHeight = canvas.width / imgRatio;
-        drawX = 0;
-        drawY = (canvas.height - drawHeight) / 2;
-      } else {
-        drawHeight = canvas.height;
-        drawWidth = canvas.height * imgRatio;
-        drawX = (canvas.width - drawWidth) / 2;
-        drawY = 0;
-      }
-
-      ctx.drawImage(frame, drawX, drawY, drawWidth, drawHeight);
-    }
-
-    currentFrameRef.current = (currentFrameRef.current + 1) % TOTAL_FRAMES;
-  }, []);
-
-  // Start animation loop
-  useEffect(() => {
-    if (!animReady) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-
-    const interval = setInterval(drawFrame, 1000 / FRAME_RATE);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [animReady, drawFrame]);
+  }, [view]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -530,10 +452,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className={`min-h-screen w-full relative ${view === 'LANDING' ? 'bg-white overflow-y-auto' : 'bg-slate-950 overflow-y-auto lg:overflow-hidden'} transition-colors duration-700`}>
 
-      {/* Background Animated Canvas (only visible when outside landing) */}
-      <div className={`fixed inset-0 transition-opacity duration-1000 ${view === 'LANDING' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} style={{ zIndex: 0 }}>
-        <canvas ref={canvasRef} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" />
+      {/* Background Random Image (only visible when outside landing) */}
+      <div
+        className={`fixed inset-0 transition-opacity duration-1000 ${view === 'LANDING' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        style={{
+          zIndex: 0,
+          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-slate-950/50" />
       </div>
 
       {/* Header / Nav */}
