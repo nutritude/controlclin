@@ -260,7 +260,7 @@ class DatabaseService {
     private examRequests: ExamRequest[] = []; // NOVO: Solicitações de exames
     private mipanAssessments: MipanAssessment[] = []; // NOVO: Perfil Psicocomportamental
     private prescriptions: Prescription[] = []; // NOVO: Prescrição Clínica
-    private STORAGE_KEY = 'CONTROLCLIN_DB_V9_MULTI_PLAN';
+    private STORAGE_KEY = 'CONTROLCLIN_DB_V10_MASTER';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
     private remoteSyncUnsubscribe: (() => void) | null = null;
@@ -286,7 +286,7 @@ class DatabaseService {
                 const remoteUpdated = remoteItem.updatedAt ? new Date(remoteItem.updatedAt).getTime() : 0;
 
                 if (isDeleted) return { ...remoteItem, ...localItem, isDeleted: true };
-                if (localUpdated >= remoteUpdated) return localItem;
+                if (localUpdated > remoteUpdated) return localItem;
                 return remoteItem;
             }).concat(
                 // Add items that are ONLY on server
@@ -309,8 +309,6 @@ class DatabaseService {
         // Update modified flag based on remote
         const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
         (this as any)._localLastModified = remoteModified;
-
-        this.ensureDemoIntegrity();
     }
 
     constructor() {
@@ -378,7 +376,7 @@ class DatabaseService {
                     (this as any)._localLastModified = Date.now();
                 }
 
-                this.ensureDemoIntegrity();
+                // this.ensureDemoIntegrity();
             } catch (err) {
                 console.error("DatabaseService: Shared database corrupted. Resetting to defaults.", err);
                 this.seedInitialData();

@@ -150,23 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       }
     });
 
-    // Mock specific design alerts ONLY if empty to show the UI as requested in Stitch model
-    if (list.length === 0 && !isManagerMode) {
-      if (!dismissedAlerts.has('mock-1')) {
-        list.push({
-          id: 'mock-1', patientName: 'Ricardo S.',
-          message: 'Análise Bioquímica: Glicemia de jejum atingiu 142 mg/dL. Requer ajuste imediato.',
-          severity: 'high', type: 'bioquimica', phone: '5511999999999'
-        });
-      }
-      if (!dismissedAlerts.has('mock-2')) {
-        list.push({
-          id: 'mock-2', patientName: 'Julia Lima',
-          message: 'Adesão Crítica: Não logou refeições nos últimos 5 dias. 72% de queda.',
-          severity: 'medium', type: 'adesao', phone: '5511888888888'
-        });
-      }
-    }
+
     return list;
   }, [patients, dismissedAlerts, isManagerMode, user.professionalId]);
 
@@ -405,28 +389,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           </section>
 
           {/* SMART OUTREACH SUGGESTIONS */}
-          <section>
-            <div className="flex items-center justify-between mb-6 px-4">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                <div className="size-2 rounded-full bg-orange-500"></div>
-                Ações Sugeridas (Outreach)
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <OutreachAction
-                title="Confirmar Agendamentos"
-                description="Existem 3 pacientes para amanhã que ainda não confirmaram presença via sistema."
-                phone="5511999999999" patientName="Pedro Santos"
-                onTrigger={handleWhatsAppAction}
-              />
-              <OutreachAction
-                title="Reativação de Paciente"
-                description="Julia M. não registra refeições há 12 dias. Envie um check-in de motivação."
-                phone="5511888888888" patientName="Julia Mendes"
-                onTrigger={handleWhatsAppAction}
-              />
-            </div>
-          </section>
+          {aiInsights && aiInsights.patientIds && aiInsights.patientIds.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-6 px-4">
+                <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                  <div className="size-2 rounded-full bg-orange-500"></div>
+                  Ações de Engajamento Real
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {patients.filter(p => aiInsights.patientIds.includes(p.id)).slice(0, 2).map(p => (
+                  <OutreachAction
+                    key={p.id}
+                    title="Atenção à Adesão"
+                    description={aiInsights.insight}
+                    phone={p.phone}
+                    patientName={p.name}
+                    onTrigger={handleWhatsAppAction}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
         </div>
 
