@@ -2525,7 +2525,7 @@ class DatabaseService {
             return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Operational Error", e);
-            return { clinicalAnalysis: "IA Offline. Analise os dados manualmente.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
+            return { clinicalAnalysis: "IA Indisponível. Verifique VITE_OPENROUTER_API_KEY no painel da Vercel.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
         }
     }
 
@@ -2569,7 +2569,7 @@ class DatabaseService {
             return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Financial Error", e);
-            return { financialHealth: "IA Offline.", revenueAction: "Revisar transações pendentes." };
+            return { financialHealth: "IA Indisponível. Verifique configuração da API Key.", revenueAction: "Revisar transações pendentes." };
         }
     }
 
@@ -2596,7 +2596,7 @@ class DatabaseService {
             return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Attendance Error", e);
-            return { insight: "IA Offline.", action: "Revisar lista de riscos." };
+            return { insight: "IA Indisponível.", action: "Revisar lista de riscos e configurar OpenRouter." };
         }
     }
 

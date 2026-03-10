@@ -26,84 +26,82 @@ export interface OpenRouterAskRequest {
 
 export const OpenRouterService = {
     /**
-     * Envia um prompt para o modelo Qwen3 Next 80B A3B via OpenRouter usando o perfil (Role) especificado.
+     * Envia um prompt para o modelo Nvidia Nemotron via OpenRouter.
      */
     async ask({ prompt, role, systemPrompt, temperature }: OpenRouterAskRequest): Promise<string> {
         const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         console.log(`[OpenRouter] Iniciando requisição (Role: ${role}). API Key presente: ${!!apiKey}`);
 
-        if (!apiKey) {
-            console.error("[OpenRouter] VITE_OPENROUTER_API_KEY não configurada.");
+        if (!apiKey || apiKey === 'PLACEHOLDER') {
+            console.error("[OpenRouter] VITE_OPENROUTER_API_KEY não configurada corretamente.");
             throw new Error("Configuração ausente: VITE_OPENROUTER_API_KEY.");
         }
 
         try {
             const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
             const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
-            const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.2);
+            const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
 
-            console.log("[OpenRouter] Enviando payload...");
+            console.log("[OpenRouter] Consultando modelo: nvidia/nemotron-3-nano-30b-a3b:free");
 
-            // Tenta primeiro com STREAMING (melhor UX)
-            try {
-                const stream = await openrouter.chat.send({
-                    chatGenerationParams: {
-                        model: "qwen/qwen3-next-80b-a3b-instruct:free",
-                        messages: [
-                            { role: "system", content: finalSystemPrompt },
-                            { role: "user", content: prompt }
-                        ],
-                        stream: true,
-                        temperature: finalTemperature
-                    }
-                });
-
-                let fullContent = "";
-                for await (const chunk of stream) {
-                    const content = chunk.choices[0]?.delta?.content;
-                    if (content) fullContent += content;
-                }
-
-                if (fullContent) {
-                    console.log("[OpenRouter] Resposta via stream recebida com sucesso.");
-                    return fullContent;
-                }
-            } catch (streamError) {
-                console.warn("[OpenRouter] Falha no stream, tentando modo convencional (non-stream)...", streamError);
-            }
-
-            // FALLBACK: Non-streaming (caso o iterador de stream falhe em alguns browsers)
-            const response = await openrouter.chat.send({
+            // Chamada otimizada com a estrutura correta para a versão do SDK instalada
+            const stream = await openrouter.chat.send({
                 chatGenerationParams: {
-                    model: "qwen/qwen3-next-80b-a3b-instruct:free",
+                    model: "nvidia/nemotron-3-nano-30b-a3b:free",
                     messages: [
                         { role: "system", content: finalSystemPrompt },
                         { role: "user", content: prompt }
                     ],
-                    stream: false,
+                    stream: true,
                     temperature: finalTemperature
                 }
-            }) as any;
+            });
 
-            const content = response.choices?.[0]?.message?.content || response.choices?.[0]?.delta?.content;
+            let fullContent = "";
 
-            if (content) {
-                console.log("[OpenRouter] Resposta non-stream recebida.");
-                return content;
+            // Processamento do Stream compatível com Browser
+            for await (const chunk of stream) {
+                const content = chunk.choices[0]?.delta?.content;
+                if (content) {
+                    fullContent += content;
+                    // Log opcional para debug em tempo real no console do browser
+                    // console.log("[IA Chunk]:", content);
+                }
+
+                // Captura opcional de tokens de raciocínio se o modelo suportar
+                if (chunk.usage && (chunk.usage as any).reasoningTokens) {
+                    console.log("[OpenRouter] Reasoning tokens:", (chunk.usage as any).reasoningTokens);
+                }
             }
 
-            throw new Error("Resposta da IA retornou sem conteúdo.");
+            if (!fullContent) {
+                // Tenta fallback sem stream se o stream falhar em retornar conteúdo
+                console.warn("[OpenRouter] Stream vazio, tentando modo convencional...");
+                const response = await openrouter.chat.send({
+                    chatGenerationParams: {
+                        model: "nvidia/nemotron-3-nano-30b-a3b:free",
+                        messages: [
+                            { role: "system", content: finalSystemPrompt },
+                            { role: "user", content: prompt }
+                        ],
+                        stream: false,
+                        temperature: finalTemperature
+                    }
+                }) as any;
+
+                fullContent = response.choices?.[0]?.message?.content || "";
+            }
+
+            if (fullContent) {
+                console.log("[OpenRouter] Resposta gerada com sucesso.");
+                return fullContent;
+            }
+
+            throw new Error("O modelo não retornou conteúdo.");
 
         } catch (error: any) {
             console.error("Erro crítico na integração com OpenRouter:", error);
-
-            // Log detalhado para depuração no navegador do cliente
-            if (error.response) {
-                console.error("Status da Resposta:", error.response.status);
-                console.error("Dados da Resposta:", error.response.data);
-            }
-
-            throw new Error(`Erro IA: ${error.message || "Falha na comunicação"}. Verifique a conexão.`);
+            throw new Error(`Erro IA (${error.message || "Falha na comunicação"}). Verifique sua conexão e chave de API.`);
         }
     }
 };
