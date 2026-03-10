@@ -1,10 +1,3 @@
-import { OpenRouter } from "@openrouter/sdk";
-
-// Inicializa o cliente do OpenRouter com a chave da variável de ambiente
-const openrouter = new OpenRouter({
-    apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || ''
-});
-
 export type AIPersonaRole = 'manager' | 'professional';
 
 const SYSTEM_PROMPT_PROFESSIONAL = `Você é um Assistente Clínico Avançado especializado em Nutrição e Fisiologia Médica. 
@@ -26,82 +19,77 @@ export interface OpenRouterAskRequest {
 
 export const OpenRouterService = {
     /**
-     * Envia um prompt para o modelo Nvidia Nemotron via OpenRouter.
+     * Envia um prompt para o modelo Nvidia Nemotron via Proxy Seguro (/api/ai).
+     * Isso esconde a API Key do frontend e resolve problemas de CORS/Offline.
      */
     async ask({ prompt, role, systemPrompt, temperature }: OpenRouterAskRequest): Promise<string> {
-        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-        console.log(`[OpenRouter] Iniciando requisição (Role: ${role}). API Key presente: ${!!apiKey}`);
-
-        if (!apiKey || apiKey === 'PLACEHOLDER') {
-            console.error("[OpenRouter] VITE_OPENROUTER_API_KEY não configurada corretamente.");
-            throw new Error("Configuração ausente: VITE_OPENROUTER_API_KEY.");
-        }
+        console.log(`[OpenRouter] Iniciando requisição segura via Proxy (Role: ${role})`);
 
         try {
             const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
             const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
             const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
 
-            console.log("[OpenRouter] Consultando modelo: nvidia/nemotron-3-nano-30b-a3b:free");
+            console.log("[OpenRouter] Consultando modelo via API interna: nvidia/nemotron-3-nano-30b-a3b:free");
 
-            // Chamada otimizada com a estrutura correta para a versão do SDK instalada
-            const stream = await openrouter.chat.send({
-                chatGenerationParams: {
+            const response = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    systemPrompt: finalSystemPrompt,
+                    temperature: finalTemperature,
                     model: "nvidia/nemotron-3-nano-30b-a3b:free",
-                    messages: [
-                        { role: "system", content: finalSystemPrompt },
-                        { role: "user", content: prompt }
-                    ],
-                    stream: true,
-                    temperature: finalTemperature
-                }
+                    stream: true
+                })
             });
 
-            let fullContent = "";
-
-            // Processamento do Stream compatível com Browser
-            for await (const chunk of stream) {
-                const content = chunk.choices[0]?.delta?.content;
-                if (content) {
-                    fullContent += content;
-                    // Log opcional para debug em tempo real no console do browser
-                    // console.log("[IA Chunk]:", content);
-                }
-
-                // Captura opcional de tokens de raciocínio se o modelo suportar
-                if (chunk.usage && (chunk.usage as any).reasoningTokens) {
-                    console.log("[OpenRouter] Reasoning tokens:", (chunk.usage as any).reasoningTokens);
-                }
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
             }
 
-            if (!fullContent) {
-                // Tenta fallback sem stream se o stream falhar em retornar conteúdo
-                console.warn("[OpenRouter] Stream vazio, tentando modo convencional...");
-                const response = await openrouter.chat.send({
-                    chatGenerationParams: {
-                        model: "nvidia/nemotron-3-nano-30b-a3b:free",
-                        messages: [
-                            { role: "system", content: finalSystemPrompt },
-                            { role: "user", content: prompt }
-                        ],
-                        stream: false,
-                        temperature: finalTemperature
-                    }
-                }) as any;
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error("Corpo da resposta indisponível para streaming.");
 
-                fullContent = response.choices?.[0]?.message?.content || "";
+            let fullContent = "";
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
+
+                        try {
+                            const data = JSON.parse(dataStr);
+                            const content = data.choices[0]?.delta?.content || "";
+                            if (content) {
+                                fullContent += content;
+                            }
+                        } catch (e) {
+                            // Ignora chunks incompletos
+                        }
+                    }
+                }
             }
 
             if (fullContent) {
-                console.log("[OpenRouter] Resposta gerada com sucesso.");
+                console.log("[OpenRouter] Resposta gerada com sucesso via Proxy.");
                 return fullContent;
             }
 
             throw new Error("O modelo não retornou conteúdo.");
 
         } catch (error: any) {
-            console.error("Erro crítico na integração com OpenRouter:", error);
-            throw new Error(`Erro IA (${error.message || "Falha na comunicação"}). Verifique sua conexão e chave de API.`);
+            console.error("Erro crítico na integração com OpenRouter (Proxy):", error);
+            throw new Error(`Erro IA (${error.message || "Falha na comunicação"}). Verifique os logs da Vercel.`);
         }
     }
 };
