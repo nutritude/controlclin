@@ -1,35 +1,25 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AnthroSnapshot, AnthroAnalysisResult } from '../types';
+import { OpenRouterService } from './ai/openRouterService';
 
 export const AIAnthroAnalysisService = {
   /**
    * Generates a clinical analysis based on the anthropometry snapshot.
    */
   analyze: async (snapshot: AnthroSnapshot): Promise<AnthroAnalysisResult> => {
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY);
-
-    if (!apiKey || apiKey.length === 0) {
-      console.warn("[AI Anthro] VITE_GEMINI_API_KEY não encontrada. Usando análise offline.");
-      return getFallbackAnalysis(snapshot);
-    }
-    console.log('[AI Anthro] API Key detectada. Iniciando análise com Gemini...');
+    console.log('[AI Anthro] Iniciando análise com OpenRouter (Qwen)...');
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = buildPrompt(snapshot);
 
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.2, // Low temp for clinical consistency
-        }
+      const aiResponse = await OpenRouterService.ask({
+        prompt: prompt,
+        role: 'professional',
+        temperature: 0.2
       });
 
-      const responseText = result.response.text();
-      if (responseText) {
-        return JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim()) as AnthroAnalysisResult;
+      if (aiResponse) {
+        const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson) as AnthroAnalysisResult;
       }
       throw new Error("Empty response from AI");
 

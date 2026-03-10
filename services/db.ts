@@ -1,5 +1,6 @@
-import { NutrientCalc } from './food/nutrientCalc'; // Import NutrientCalc for deterministic totals
+import { NutrientCalc } from './food/nutrientCalc';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { OpenRouterService } from './ai/openRouterService';
 import { PicaProtocolService } from './picaProtocolService';
 
 import {
@@ -2198,42 +2199,69 @@ class DatabaseService {
         const actions: string[] = [];
         let patientIds: string[] = [];
 
-        // Insight 1: Inatividade de Check-in
+        // 1. Inatividade de Check-in (Deterministic part)
         const inactivePatients = patients.filter(p => {
             const hasPlan = (p.nutritionalPlans && p.nutritionalPlans.length > 0) || p.nutritionalPlan;
             if (!hasPlan || p.status !== 'ATIVO') return false;
-
             const lastCheckIn = p.adherenceHistory && p.adherenceHistory.length > 0
                 ? new Date(p.adherenceHistory[p.adherenceHistory.length - 1].date)
                 : null;
-
-            if (!lastCheckIn) return true; // Nunca registrou
+            if (!lastCheckIn) return true;
             const diffDays = Math.ceil((today.getTime() - lastCheckIn.getTime()) / (1000 * 3600 * 24));
             return diffDays > 3;
         });
 
         if (inactivePatients.length > 0) {
-            insights.push(`${inactivePatients.length} pacientes não registram aderência há > 3 dias.`);
-            actions.push("Enviar Check-in via WhatsApp");
             patientIds = inactivePatients.map(p => p.id);
         }
 
-        // Insight 2: Absenteísmo (No-show)
-        if (stats.noShowRate > 15) {
-            insights.push(`Taxa de absenteísmo está em ${stats.noShowRate}%. Alto risco de ociosidade.`);
-            actions.push("Revisar confirmações");
+        // 2. AI POWERED INSIGHTS (using OpenRouter/Qwen)
+        try {
+            const role = stats.revenue !== undefined ? 'manager' : 'professional';
+            const contextPrompt = `Dados atuais da clínica:
+            - Pacientes Ativos: ${stats.activePatients || patients.length}
+            - Taxa de Faltas: ${stats.noShowRate}%
+            - Receita (LTV): R$ ${stats.revenue || 'N/A'}
+            - Top Patologias: ${stats.topPathologies?.map((p: any) => p.name).join(', ') || 'N/A'}
+            - Pacientes Inativos (>3 dias): ${inactivePatients.length}
+
+            Gere um insight estratégico curto (1 frase) e uma ação secundária (1 frase).
+            Retorne um JSON: { "insight": "...", "secondaryInsight": "...", "action": "..." }`;
+
+            const aiResponse = await OpenRouterService.ask({
+                prompt: contextPrompt,
+                role: role,
+                temperature: 0.7
+            });
+
+            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            const aiData = JSON.parse(cleanJson);
+
+            return {
+                insight: aiData.insight,
+                secondaryInsight: aiData.secondaryInsight,
+                action: aiData.action,
+                allInsights: [aiData.insight, aiData.secondaryInsight],
+                patientIds: patientIds
+            };
+        } catch (error) {
+            console.error("Erro ao gerar insights com IA:", error);
+
+            // Fallback determinístico robusto
+            if (inactivePatients.length > 0) {
+                insights.push(`${inactivePatients.length} pacientes em risco de evasão sem check-in.`);
+            }
+            if (stats.noShowRate > 15) {
+                insights.push(`Absenteísmo alto (${stats.noShowRate}%).`);
+            }
+
+            return {
+                insight: insights[0] || "Otimizando sua retenção clínica...",
+                secondaryInsight: insights[1] || "Ajuste fino na recomendação calórica pode otimizar resultados.",
+                allInsights: insights,
+                patientIds: patientIds
+            };
         }
-
-        // Insight 3: Performance Geral
-        insights.push("Crescimento de 8% na taxa de sucesso dos planos nesta semana.");
-        actions.push("Ver Relatório Completo");
-
-        return {
-            insight: insights[0],
-            secondaryInsight: insights[1] || "Ajuste fino na recomendação calórica pode otimizar 12% os resultados.",
-            allInsights: insights,
-            patientIds: patientIds
-        };
     }
 
     async getReportData(id: string, start: string, end: string, pid?: string) {

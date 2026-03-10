@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@openrouter/sdk": "^0.9.11",
     "axios": "^1.13.6",
     "br-cid10-csv": "^1.0.1",
     "firebase": "^12.9.0",

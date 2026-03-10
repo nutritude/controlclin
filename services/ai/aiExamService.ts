@@ -1,59 +1,39 @@
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Exam, ExamMarker, ExamAnalysisResult, Patient } from '../../types';
 import { LaboratService } from '../laboratService';
+import { OpenRouterService } from './openRouterService';
 
 export const AIExamService = {
     /**
      * Extrai marcadores de um documento (PDF/Imagem) ou texto utilizando Gemini
      */
     extractMarkers: async (fileData?: { base64: string, mimeType: string }, text?: string): Promise<ExamMarker[]> => {
-        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-        console.log("[AI Exam] Iniciando extração. API Key presente:", !!apiKey);
-
-        if (!apiKey) {
-            console.error("[AI Exam] Erro: VITE_GEMINI_API_KEY não encontrada.");
-            return [];
-        }
-
-        const genAI = new GoogleGenerativeAI(apiKey);
+        console.log("[AI Exam] Iniciando extração com OpenRouter...");
 
         const prompt = `
       Você é um especialista em biomedicina e extração de dados laboratoriais.
-      Analise o documento anexo (ou texto) e retorne os dados estruturados no formato JSON.
+      Analise o texto fornecido e retorne os dados estruturados no formato JSON.
       Ignore cabeçalhos e rodapés irrelevantes. Foque em: Nome do exame/marcador, Valor numérico, Unidade de medida.
 
       REGRAS:
       1. Extraia apenas o valor numérico (remova vírgulas por pontos se necessário).
       2. Tente identificar a unidade (mg/dL, %, uUI/mL, etc).
       3. Se o marcador tiver um valor de referência no documento, ignore-o e foque no resultado do paciente.
-      4. Retorne no formato: [{"name": "Glicose", "value": 95, "unit": "mg/dL"}, ...]
+      4. Retorne EXATAMENTE um JSON como este: [{"name": "Glicose", "value": 95, "unit": "mg/dL"}]
 
-      ${text ? `TEXTO ADICIONAL:\n${text}` : ''}
+      ${text ? `TEXTO PARA ANÁLISE:\n${text}` : ''}
+      ${fileData ? `[Nota: O sistema enviou um arquivo, mas a análise textual será priorizada se houver conteúdo no prompt]` : ''}
     `;
 
         try {
-            const parts: any[] = [{ text: prompt }];
-
-            if (fileData) {
-                parts.push({
-                    inlineData: {
-                        data: fileData.base64.split(',')[1] || fileData.base64,
-                        mimeType: fileData.mimeType
-                    }
-                });
-            }
-
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const result = await model.generateContent({
-                contents: [{ role: 'user', parts }],
-                generationConfig: { responseMimeType: "application/json" }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'professional',
+                temperature: 0.1
             });
 
-            const responseText = result.response.text();
-            if (!responseText) throw new Error("Resposta vazia da IA");
+            if (!aiResponse) throw new Error("Resposta vazia da IA");
 
-            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonStr = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
             const raw = JSON.parse(jsonStr);
 
             return LaboratService.processMarkers(raw);
@@ -67,12 +47,7 @@ export const AIExamService = {
      * Realiza a análise clínica e cruzamento de dados de um ou mais exames
      */
     analyzeResults: async (patient: Patient, exams: Exam[]): Promise<ExamAnalysisResult> => {
-        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
         const allMarkers = exams.flatMap(e => e.markers || []);
-
-        if (!apiKey) return getFallbackAnalysis(allMarkers);
-
-        const genAI = new GoogleGenerativeAI(apiKey);
 
         const prompt = `
       Você é um Nutricionista Clínico Funcional e Especialista em Medicina Laboratorial.
@@ -81,7 +56,7 @@ export const AIExamService = {
       CONTEXTO CLÍNICO:
       Diagnósticos: ${patient.clinicalSummary?.activeDiagnoses?.join(', ') || 'Nenhum'}
       Objetivo: ${patient.clinicalSummary?.clinicalGoal || 'Não definido'}
-
+ 
       RESULTADOS PARA ANÁLISE:
       ${JSON.stringify(allMarkers.map(m => ({
             marcador: m.name,
@@ -90,7 +65,7 @@ export const AIExamService = {
             referencia: m.reference.label,
             interpretacao: m.interpretation
         })))}
-
+ 
       ESTRUTURA DE RESPOSTA (JSON):
       {
         "summary": "Resumo clínico geral focando em saúde metabólica.",
@@ -104,17 +79,17 @@ export const AIExamService = {
     `;
 
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-            const result = await model.generateContent({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: "application/json" }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'professional',
+                temperature: 0.3
             });
 
-            const responseText = result.response.text();
-            if (!responseText) throw new Error("Resposta vazia da IA");
-
-            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(jsonStr) as ExamAnalysisResult;
+            if (aiResponse) {
+                const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                return JSON.parse(cleanJson) as ExamAnalysisResult;
+            }
+            throw new Error("Empty response from AI");
         } catch (error) {
             console.error("Erro na análise AI:", error);
             return getFallbackAnalysis(allMarkers);
