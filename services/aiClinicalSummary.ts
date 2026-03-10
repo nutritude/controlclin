@@ -1,34 +1,24 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { IndividualReportSnapshot } from '../types';
+import { OpenRouterService } from './ai/openRouterService';
 
 export const AIClinicalSummaryService = {
   /**
    * Generates a clinical summary text based on the report snapshot.
    */
   generateSummary: async (snapshot: IndividualReportSnapshot): Promise<string> => {
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY);
-
-    if (!apiKey || apiKey.length === 0) {
-      console.warn("[AI Clinical] VITE_GEMINI_API_KEY não encontrada. Usando resumo offline.");
-      return getFallbackSummary(snapshot);
-    }
-    console.log('[AI Clinical] API Key detectada. Gerando resumo com Gemini...');
+    console.log('[AI Clinical] Iniciando resumo com OpenRouter...');
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = buildPrompt(snapshot);
 
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3, // Low temperature to prevent hallucination
-        }
+      const aiResponse = await OpenRouterService.ask({
+        prompt: prompt,
+        role: 'professional',
+        temperature: 0.3
       });
 
-      const responseText = result.response.text();
-      if (responseText) {
-        return responseText;
+      if (aiResponse) {
+        return aiResponse.trim();
       }
       throw new Error("Empty response from AI");
 

@@ -2516,7 +2516,6 @@ class DatabaseService {
     }
 
     async generateReportCrossAnalysis(id: string, data: any[]) {
-        if (!this.ai) return { clinicalAnalysis: "IA Offline. Analise os dados manualmente.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
         try {
             const stats = {
                 total: data.length,
@@ -2536,21 +2535,21 @@ class DatabaseService {
                 "strategicSuggestions": ["Sugestão 1 de negócio", "Sugestão 2 de marketing/operação"]
             }`;
 
-            const result = await (this.ai as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt,
-                config: { responseMimeType: "application/json" }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'manager',
+                temperature: 0.5
             });
 
-            return JSON.parse(result.text.trim());
+            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Operational Error", e);
-            return null;
+            return { clinicalAnalysis: "IA Offline. Analise os dados manualmente.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
         }
     }
 
     async generateFinancialAnalysis(id: string, dataset: any) {
-        if (!this.ai) return { financialHealth: "IA Offline.", revenueAction: "Revisar transações pendentes." };
         try {
             const { metrics, aging, transactions } = dataset;
 
@@ -2580,19 +2579,21 @@ class DatabaseService {
                 "revenueAction": "Ação comercial/operacional direta."
             }`;
 
-            const result = await (this.ai as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt,
-                config: { responseMimeType: "application/json" }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'manager',
+                temperature: 0.3
             });
-            return JSON.parse(result.text.trim());
+
+            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJson);
         } catch (e) {
-            return null;
+            console.error("AI Financial Error", e);
+            return { financialHealth: "IA Offline.", revenueAction: "Revisar transações pendentes." };
         }
     }
 
     async generateAttendanceInsights(data: any) {
-        if (!this.ai) return { insight: "IA Offline.", action: "Revisar lista de riscos." };
         try {
             const prompt = `Analise o Absenteísmo da Clínica:
             Total: ${data.stats.total}
@@ -2605,14 +2606,17 @@ class DatabaseService {
                 "action": "Estratégia prática para reduzir cancelamentos"
             }`;
 
-            const result = await (this.ai as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt,
-                config: { responseMimeType: "application/json" }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'manager',
+                temperature: 0.4
             });
-            return JSON.parse(result.text.trim());
+
+            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJson);
         } catch (e) {
-            return null;
+            console.error("AI Attendance Error", e);
+            return { insight: "IA Offline.", action: "Revisar lista de riscos." };
         }
     }
 
