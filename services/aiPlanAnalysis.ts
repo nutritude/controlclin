@@ -1,35 +1,25 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlanSnapshot, AIAnalysisResult } from '../types';
+import { OpenRouterService } from './ai/openRouterService';
 
 export const AIPlanAnalysisService = {
   /**
-   * Analyzes the nutritional plan using Gemini Flash 2.5 or falls back to a deterministic analysis.
+   * Analyzes the nutritional plan using OpenRouter (Qwen) or falls back to a deterministic analysis.
    */
   analyzePlan: async (snapshot: PlanSnapshot): Promise<AIAnalysisResult> => {
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY);
-
-    if (!apiKey || apiKey.length === 0) {
-      console.warn("[AI Plan] VITE_GEMINI_API_KEY não encontrada. Usando análise offline.");
-      return getFallbackAnalysis(snapshot);
-    }
-    console.log('[AI Plan] API Key detectada. Iniciando análise com Gemini...');
+    console.log('[AI Plan] Iniciando análise com OpenRouter...');
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = buildPrompt(snapshot);
 
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.3, // Low temperature for consistent adherence to guidelines
-        }
+      const aiResponse = await OpenRouterService.ask({
+        prompt: prompt,
+        role: 'professional',
+        temperature: 0.3
       });
 
-      const responseText = result.response.text();
-      if (responseText) {
-        return JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim()) as AIAnalysisResult;
+      if (aiResponse) {
+        const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanJson) as AIAnalysisResult;
       }
       throw new Error("Empty response from AI");
 

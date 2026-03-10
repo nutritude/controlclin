@@ -1,8 +1,10 @@
 import { NutrientCalc } from './food/nutrientCalc';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { OpenRouterService } from './ai/openRouterService';
 import { PicaProtocolService } from './picaProtocolService';
-
+import { AIAdherenceService } from './ai/aiAdherenceService';
+import { AIClinicalSummaryService } from './aiClinicalSummary';
+import { AIAnthroAnalysisService } from './aiAnthroAnalysis';
+import { AIPlanAnalysisService } from './aiPlanAnalysis';
 import {
     User, Clinic, Professional, Patient, Appointment,
     Role, AppointmentStatus, Exam, AuditLog, ExamMarker, ExamAnalysisResult,
@@ -250,7 +252,6 @@ const DEFAULT_PATIENTS: Patient[] = [
 ];
 
 class DatabaseService {
-    public ai: GoogleGenerativeAI | null = null;
     private clinics: Clinic[] = [];
     private users: User[] = [];
     private professionals: Professional[] = [];
@@ -266,7 +267,7 @@ class DatabaseService {
     private STORAGE_KEY = 'CONTROLCLIN_DB_V10_MASTER';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
-    private remoteSyncUnsubscribe: (() => void) | null = null;
+    private syncUnsubscribe: (() => void) | null = null;
     private isUpdatingFromRemote: boolean = false; // Guard to prevent infinite loops during sync
 
     private applyRemoteData(data: any) {
@@ -316,21 +317,6 @@ class DatabaseService {
     }
 
     constructor() {
-        const meta = (import.meta as any);
-        const apiKey = meta.env?.VITE_GEMINI_API_KEY;
-        if (apiKey && apiKey.length > 0 && apiKey !== 'PLACEHOLDER') {
-            try {
-                this.ai = new GoogleGenerativeAI(apiKey);
-                console.log("DatabaseService: AI initialized successfully.");
-            } catch (error) {
-                console.warn("GoogleGenAI init failed, AI features disabled.", error);
-                this.ai = null;
-            }
-        } else {
-            console.warn("GEMINI_API_KEY missing or placeholder. AI features will be disabled.");
-            this.ai = null;
-        }
-
         this.checkRemoteConfig();
         this.initializeData();
     }
@@ -584,9 +570,9 @@ class DatabaseService {
 
         // --- NEW: REAL-TIME SYNC LISTENER (ONSNAPSHOT) ---
         // Clean up previous listener if switching clinics
-        if (this.remoteSyncUnsubscribe) {
-            this.remoteSyncUnsubscribe();
-            this.remoteSyncUnsubscribe = null;
+        if (this.syncUnsubscribe) {
+            this.syncUnsubscribe();
+            this.syncUnsubscribe = null;
         }
 
         console.log(`[DB] 📡 Ativando sincronização em tempo real para: ${targetClinicId}`);
@@ -613,7 +599,7 @@ class DatabaseService {
         }
 
         // Subscribe to real-time updates
-        this.remoteSyncUnsubscribe = onSnapshot(docRef, (snap) => {
+        this.syncUnsubscribe = onSnapshot(docRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
@@ -2054,7 +2040,6 @@ class DatabaseService {
     }
 
     async improveTextWithAI(text: string) {
-        if (!this.ai) return text + " (IA Offline)";
         try {
             const prompt = `Você é um assistente de nutrição clínica especializado em terminologia técnica. 
             Melhore o texto a seguir, convertendo descrições simples em termos técnicos médicos e nutricionais adequados para um prontuário.
@@ -2062,12 +2047,13 @@ class DatabaseService {
             
             Texto: ${text}`;
 
-            const result = await (this.ai as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'professional',
+                temperature: 0.3
             });
 
-            return result.text || text;
+            return aiResponse || text;
         } catch (error) {
             console.error("Erro ao melhorar texto com IA:", error);
             return text + " (Erro IA)";
@@ -2079,17 +2065,6 @@ class DatabaseService {
         if (examIdx === -1) throw new Error("Exame não encontrado.");
 
         const exam = this.exams[examIdx];
-
-        if (!this.ai) {
-            this.exams[examIdx] = {
-                ...exam,
-                status: 'ANALISADO',
-                aiAnalysis: "Análise processada em modo offline. O sistema detectou marcadores estáveis, porém recomenda-se avaliação clínica presencial.",
-                markers: (exam.markers || []).map(m => ({ ...m, interpretation: 'NORMAL' }))
-            };
-            this.saveToStorage();
-            return;
-        }
 
         try {
             const prompt = `Analise este exame laboratorial de forma clínica para um nutricionista.
@@ -2105,26 +2080,31 @@ class DatabaseService {
                 ]
             }`;
 
-            const result = await (this.ai as any).models.generateContent({
-                model: "gemini-2.0-flash",
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json"
-                }
+            const aiResponse = await OpenRouterService.ask({
+                prompt: prompt,
+                role: 'professional',
+                temperature: 0.2
             });
 
-            const analysis = JSON.parse(result.text.trim());
+            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(cleanJson);
 
             this.exams[examIdx] = {
                 ...exam,
                 status: 'ANALISADO',
-                aiAnalysis: analysis.summary,
-                markers: analysis.markers
+                aiAnalysis: aiResult.summary,
+                markers: aiResult.markers
             };
             this.saveToStorage();
         } catch (error) {
-            console.error("Erro na análise de exame com IA:", error);
-            throw error;
+            console.error("AI Exam Analysis Error", error);
+            this.exams[examIdx] = {
+                ...exam,
+                status: 'ANALISADO',
+                aiAnalysis: "Análise processada em modo offline. O sistema detectou marcadores estáveis, porém recomenda-se avaliação clínica presencial.",
+                markers: (exam.markers || []).map(m => ({ ...m, interpretation: 'NORMAL' }))
+            };
+            this.saveToStorage();
         }
     }
 

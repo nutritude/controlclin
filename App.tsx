@@ -50,7 +50,7 @@ function App() {
           <ol className="list-decimal list-inside text-gray-700 space-y-2 mb-6">
             <li>Acesse o painel do seu projeto no menu do <strong>Vercel</strong>.</li>
             <li>Vá em <strong>Settings</strong> &gt; <strong>Environment Variables</strong>.</li>
-            <li>Adicione todas as chaves (ex: <code className="bg-gray-200 px-1 rounded">VITE_FIREBASE_API_KEY</code>, <code className="bg-gray-200 px-1 rounded">VITE_GEMINI_API_KEY</code>).</li>
+            <li>Adicione todas as chaves (ex: <code className="bg-gray-200 px-1 rounded">VITE_FIREBASE_API_KEY</code>, <code className="bg-gray-200 px-1 rounded">VITE_OPENROUTER_API_KEY</code>).</li>
             <li>Vá na aba <strong>Deployments</strong>, clique nos três pontos (<strong>...</strong>) do último deploy e faça um <strong>Redeploy</strong>.</li>
           </ol>
           <button onClick={() => window.location.reload()} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors">
