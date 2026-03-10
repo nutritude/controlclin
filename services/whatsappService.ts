@@ -149,10 +149,10 @@ export const WhatsAppService = {
     /**
      * Mensagem para acesso ao App (Paciente)
      */
-    getAppAccessMessage: (patientName: string, email: string, pass: string, clinicSlug: string) => {
+    getAppAccessMessage: (patientName: string, email: string, pass: string) => {
         const firstName = patientName.split(' ')[0];
         const base = getAppBaseUrl();
-        const appUrl = clinicSlug ? `${base}/${clinicSlug}` : base;
+        const appUrl = `${base}/#/patient/login`;
 
         return (
             `Olá ${firstName}! 📲 Seu acesso ao aplicativo da clínica já está liberado!\n\n` +
@@ -160,7 +160,8 @@ export const WhatsAppService = {
             `Seus dados de acesso:\n` +
             `🔑 Email: ${email}\n` +
             `🔑 Senha: *${pass}*\n\n` +
-            `💡 *Dica:* Ao abrir o link, você pode tocar em "Adicionar à Tela de Início" para ter nosso App direto no seu celular como um aplicativo real!\n\n` +
+            `💡 *Dica:* Ao abrir o link, você pode tocar em "Adicionar à Tela de Início" para ter nosso App direto no seu celular como um aplicativo real!\n` +
+            `O código da sua clínica para entrar é: *control*\n\n` +
             `Qualquer dúvida para acessar, é só me chamar! 😊`
         );
     }

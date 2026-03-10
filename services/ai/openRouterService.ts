@@ -53,29 +53,40 @@ export const OpenRouterService = {
             if (!reader) throw new Error("Corpo da resposta indisponível para streaming.");
 
             let fullContent = "";
+            let buffer = "";
             const decoder = new TextDecoder();
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Mantém a última linha incompleta no buffer
+                buffer = lines.pop() || "";
 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const dataStr = line.slice(6).trim();
-                        if (dataStr === '[DONE]') continue;
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
 
-                        try {
-                            const data = JSON.parse(dataStr);
-                            const content = data.choices[0]?.delta?.content || "";
-                            if (content) {
-                                fullContent += content;
-                            }
-                        } catch (e) {
-                            // Ignora chunks incompletos
+                    const dataStr = trimmedLine.slice(6).trim();
+                    if (dataStr === '[DONE]') continue;
+
+                    try {
+                        const data = JSON.parse(dataStr);
+                        const delta = data.choices[0]?.delta;
+
+                        if (delta?.content) {
+                            fullContent += delta.content;
                         }
+
+                        // Logging opcional de raciocínio se o modelo prover
+                        if (delta?.reasoning) {
+                            console.log("[IA Pensando...]:", delta.reasoning);
+                        }
+                    } catch (e) {
+                        // Ignora JSON incompleto ou mal formatado no stream
                     }
                 }
             }

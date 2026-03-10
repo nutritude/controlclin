@@ -208,6 +208,35 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         setIsEditingTab(true);
     };
 
+    const handleDeleteAnthroHistory = async (e: React.MouseEvent, record: AnthropometryRecord) => {
+        e.stopPropagation(); // Avoid triggering edit
+        if (!window.confirm("Você tem certeza que deseja excluir este registro de avaliação? Esta ação é inegociável e definitiva.")) return;
+
+        try {
+            const newHistory = (patient.anthropometryHistory || [])
+                .filter(h => h.date !== record.date);
+
+            const updates: any = {
+                anthropometryHistory: newHistory
+            };
+
+            // Se deletou o que está no snapshot principal, tentamos restaurar o anterior
+            if (patient.anthropometry && patient.anthropometry.weight === record.weight && record.date.includes(patient.anthropometry.procedureDate || '')) {
+                const sorted = [...newHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                if (sorted.length > 0) {
+                    updates.anthropometry = sorted[0];
+                }
+            }
+
+            await db.updatePatient(user, patient.id, updates);
+            setPatient(prev => prev ? { ...prev, ...updates } : prev);
+            alert("Registro excluído com sucesso.");
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao excluir registro.");
+        }
+    };
+
     const handleEditAnthroHistory = (record: AnthropometryRecord) => {
         let dateVal = record.date;
         if (dateVal.length === 10) dateVal += 'T12:00';
@@ -1030,6 +1059,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const handleAnalyzeAnthro = async () => {
         if (!patient || !patient.id) return;
         setIsAnalyzingAnthro(true);
+        setAnthroAnalysisResult(null);
         try {
             // 1. Build Snapshot using CURRENT FORM DATA (supports unsaved changes)
             const { snapshot, source, warnings } = await db.getAnthroSnapshot(patient.id, formData as Patient);
@@ -1238,7 +1268,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         const now = new Date().toISOString();
                                         await db.updatePatient(user, patient.id, { appLiberadoEm: now });
                                         setPatient(prev => { if (!prev) return prev; return { ...prev, appLiberadoEm: now } });
-                                        const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
+                                        const msg = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123');
                                         window.open(WhatsAppService.generateLink(patient.phone, msg), '_blank');
                                     }}
                                     className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow transition-all active:scale-95 ${isManagerMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
@@ -2113,9 +2143,18 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div key={idx} onClick={() => handleEditAnthroHistory(record)} className={`relative pl-8 p-3 -ml-3 rounded-lg cursor-pointer transition-colors ${isManagerMode ? 'hover:bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                                                 <div className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full border-4 ${isManagerMode ? 'bg-blue-600 border-white' : 'bg-emerald-500 border-white'} shadow-sm`}></div>
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                    <div>
-                                                        <div className={`text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>
-                                                            {new Date(record.date).toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' às')}
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className={`text-sm font-bold ${isManagerMode ? 'text-indigo-300' : 'text-emerald-700'}`}>
+                                                                {new Date(record.date).toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' às')}
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => handleDeleteAnthroHistory(e, record)}
+                                                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                                title="Excluir Avaliação"
+                                                            >
+                                                                <Icons.Trash size={16} />
+                                                            </button>
                                                         </div>
                                                         <div className="flex flex-wrap gap-2 mt-2">
                                                             <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${isManagerMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-700'}`}>Peso: {record.weight}kg</div>

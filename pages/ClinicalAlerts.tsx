@@ -137,7 +137,7 @@ const ClinicalAlerts: React.FC<ClinicalAlertsProps> = ({ user, clinic, isManager
                     `Me fala qual o melhor horário para você e encaixamos na agenda! 😊`;
                 break;
             case 'APP_NOT_LIBERATED':
-                message = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123', clinic.slug);
+                message = WhatsAppService.getAppAccessMessage(patient.name, patient.email, patient.password || '123');
                 break;
             default:
                 message =

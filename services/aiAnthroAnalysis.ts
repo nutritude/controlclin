@@ -8,23 +8,35 @@ export const AIAnthroAnalysisService = {
   analyze: async (snapshot: AnthroSnapshot): Promise<AnthroAnalysisResult> => {
     console.log('[AI Anthro] Iniciando análise com OpenRouter (Qwen)...');
 
+    let aiResponse = "";
     try {
       const prompt = buildPrompt(snapshot);
 
-      const aiResponse = await OpenRouterService.ask({
+      aiResponse = await OpenRouterService.ask({
         prompt: prompt,
         role: 'professional',
         temperature: 0.2
       });
 
       if (aiResponse) {
+        // Robô de extração de JSON: ignora textos extras ao redor do bloco {}
+        const start = aiResponse.indexOf('{');
+        const end = aiResponse.lastIndexOf('}');
+
+        if (start !== -1 && end !== -1 && end > start) {
+          const jsonStr = aiResponse.substring(start, end + 1);
+          return JSON.parse(jsonStr) as AnthroAnalysisResult;
+        }
+
+        // Tenta limpeza simples se não encontrar chaves
         const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson) as AnthroAnalysisResult;
       }
-      throw new Error("Empty response from AI");
+      throw new Error("Resposta da IA vazia.");
 
     } catch (error: any) {
-      console.error("[AI Anthro] Falha na análise:", error?.message || error);
+      console.error("[AI Anthro] Falha na análise. Verifique se o modelo retornou JSON válido.");
+      console.error("[RAW RESPONSE]:", aiResponse);
       return getFallbackAnalysis(snapshot);
     }
   }

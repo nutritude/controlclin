@@ -1670,8 +1670,18 @@ const IndividualPatientReportView = ({ data, isManagerMode, onAnalyze, analyzing
                 </div>
             )}
             {aiSummary && (
-                <div className="bg-white text-black border-gray-300 p-5 rounded-xl border prose prose-sm max-w-none shadow-sm">
-                    <div className="whitespace-pre-line leading-relaxed">{aiSummary}</div>
+                <div className="bg-white text-black border-slate-200 p-8 rounded-3xl border prose prose-slate max-w-none shadow-sm">
+                    <div
+                        className="leading-relaxed space-y-4"
+                        dangerouslySetInnerHTML={{
+                            __html: aiSummary
+                                .replace(/^### (.*$)/gim, '<h3 class="text-lg font-black text-indigo-900 border-b border-indigo-100 pb-2 mb-4 mt-6 uppercase tracking-widest">$1</h3>')
+                                .replace(/^## (.*$)/gim, '<h2 class="text-xl font-black text-slate-900 border-b-2 border-slate-100 pb-2 mb-6 mt-8 uppercase tracking-tight">$1</h2>')
+                                .replace(/^\*\* (.*$)/gim, '<p class="font-bold text-slate-800">$1</p>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                .replace(/\n/g, '<br />')
+                        }}
+                    />
                 </div>
             )}
 

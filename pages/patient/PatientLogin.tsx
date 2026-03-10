@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../../services/db';
-import { Patient, Clinic, Role } from '../../types';
+import { Patient, Clinic } from '../../types';
 import { Icons } from '../../constants';
 
 interface PatientLoginProps {
@@ -14,6 +14,19 @@ export const PatientLogin: React.FC<PatientLoginProps> = ({ onLogin }) => {
     const [slug, setSlug] = useState('control');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [bgIndex, setBgIndex] = useState(0);
+
+    const backgrounds = [
+        '/backgrounds/bg7.jpg',
+        '/backgrounds/bg8.png'
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setBgIndex((prev) => (prev + 1) % backgrounds.length);
+        }, 10000); // Mudar a cada 10 segundos
+        return () => clearInterval(interval);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,10 +34,7 @@ export const PatientLogin: React.FC<PatientLoginProps> = ({ onLogin }) => {
         setError('');
 
         try {
-            // For now, we reuse the db.login logic or create a specific one for patients.
-            // Let's create a specific one in db.ts later, but for now we simulate.
             const result = await db.loginPatient(email.trim(), password.trim(), slug.trim());
-
             if (result) {
                 onLogin(result.patient, result.clinic);
             } else {
@@ -38,71 +48,86 @@ export const PatientLogin: React.FC<PatientLoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center p-6 sm:p-12">
-            <div className="w-full max-w-sm mx-auto space-y-8">
-                <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600 text-white shadow-lg mb-4">
-                        <Icons.Activity size={32} />
-                    </div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">ControlClin <span className="text-emerald-600">Pacientes</span></h1>
-                    <p className="text-slate-500 text-sm mt-1">Acompanhe sua saúde e plano alimentar</p>
-                </div>
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden font-sans">
+            {/* Background Images with Fade Transition */}
+            {backgrounds.map((bg, idx) => (
+                <div
+                    key={bg}
+                    className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ${idx === bgIndex ? 'opacity-100' : 'opacity-0'}`}
+                    style={{ backgroundImage: `url('${bg}')` }}
+                />
+            ))}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                        <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-xl font-bold">
-                            {error}
+            {/* Dark/Glass Overlay */}
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"></div>
+
+            <div className="w-full max-w-md mx-auto relative z-10 px-6">
+                <div className="bg-white/95 backdrop-blur-xl p-8 sm:p-12 rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] border border-white/20">
+                    <div className="text-center mb-10">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 mb-6 transform hover:rotate-6 transition-transform">
+                            <Icons.Activity size={40} />
                         </div>
-                    )}
-
-                    <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Código da Clínica</label>
-                        <input
-                            type="text"
-                            required
-                            value={slug}
-                            onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                            className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800"
-                            placeholder="Ex: clinica-abc"
-                        />
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Control<span className="text-emerald-600">Clin</span> Pacientes</h1>
+                        <p className="text-slate-500 font-medium mt-2">Bem-vindo(a) ao seu portal de saúde</p>
                     </div>
 
-                    <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">E-mail</label>
-                        <input
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800"
-                            placeholder="seu@email.com"
-                        />
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-xs rounded-2xl font-bold flex items-center gap-3">
+                                <Icons.AlertTriangle size={16} />
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="space-y-1.5">
+                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Código da Clínica</label>
+                            <input
+                                type="text"
+                                required
+                                value={slug}
+                                onChange={(e) => setSlug(e.target.value.toLowerCase())}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-slate-800 placeholder:text-slate-300 font-bold"
+                                placeholder="control"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">E-mail</label>
+                            <input
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-slate-800 placeholder:text-slate-300 font-bold"
+                                placeholder="seu@email.com"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Sua Senha</label>
+                            <input
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-slate-800 placeholder:text-slate-300 font-bold"
+                                placeholder="••••••••"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-5 bg-emerald-600 text-white font-black text-lg rounded-2xl shadow-2xl shadow-emerald-500/30 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-6"
+                        >
+                            {loading ? 'Validando Acesso...' : 'Acessar Meu Portal'}
+                        </button>
+                    </form>
+
+                    <div className="text-center mt-12 pt-8 border-t border-slate-100">
+                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.3em]">Ainda não tem os dados?</p>
+                        <p className="text-xs text-slate-500 mt-2 font-medium leading-relaxed">Sua senha é entregue pessoalmente pelo seu profissional durante a consulta clínica.</p>
                     </div>
-
-                    <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Senha</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50 mt-4"
-                    >
-                        {loading ? 'Entrando...' : 'Entrar no Portal'}
-                    </button>
-                </form>
-
-                <div className="text-center pt-8">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Ainda não tem acesso?</p>
-                    <p className="text-xs text-slate-500 mt-1">Sua senha é fornecida pelo seu profissional de saúde durante a consulta.</p>
                 </div>
             </div>
         </div>

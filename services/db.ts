@@ -2086,8 +2086,16 @@ class DatabaseService {
                 temperature: 0.2
             });
 
-            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            const aiResult = JSON.parse(cleanJson);
+            const start = aiResponse.indexOf('{');
+            const end = aiResponse.lastIndexOf('}');
+            let aiResult;
+            if (start !== -1 && end !== -1 && end > start) {
+                const jsonStr = aiResponse.substring(start, end + 1);
+                aiResult = JSON.parse(jsonStr);
+            } else {
+                const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                aiResult = JSON.parse(cleanJson);
+            }
 
             this.exams[examIdx] = {
                 ...exam,
@@ -2214,8 +2222,16 @@ class DatabaseService {
                 temperature: 0.7
             });
 
-            const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            const aiData = JSON.parse(cleanJson);
+            const start = aiResponse.indexOf('{');
+            const end = aiResponse.lastIndexOf('}');
+            let aiData;
+            if (start !== -1 && end !== -1 && end > start) {
+                const jsonStr = aiResponse.substring(start, end + 1);
+                aiData = JSON.parse(jsonStr);
+            } else {
+                const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                aiData = JSON.parse(cleanJson);
+            }
 
             return {
                 insight: aiData.insight,

@@ -18,6 +18,14 @@ export const AIPlanAnalysisService = {
       });
 
       if (aiResponse) {
+        const start = aiResponse.indexOf('{');
+        const end = aiResponse.lastIndexOf('}');
+
+        if (start !== -1 && end !== -1 && end > start) {
+          const jsonStr = aiResponse.substring(start, end + 1);
+          return JSON.parse(jsonStr) as AIAnalysisResult;
+        }
+
         const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson) as AIAnalysisResult;
       }
