@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
     ComposedChart, Line, Bar, BarChart, Cell, ReferenceArea, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
@@ -376,6 +376,28 @@ export const IndividualPatientReportView = ({
 }) => {
     const { patient, metrics, anthropometry, clinical, exams, nutritional, financial, timeline, metadata } = data;
 
+    // --- MIND MAP STATES ---
+    const [mindMapCode, setMindMapCode] = useState<string | null>(null);
+    const [mindMapLoading, setMindMapLoading] = useState<string | null>(null); // 'TREATMENT' | 'GOALS' | null
+    const [mindMapType, setMindMapType] = useState<string>('');
+
+    const handleGenerateMindMap = async (type: 'TREATMENT' | 'GOALS') => {
+        if (mindMapLoading) return;
+        setMindMapLoading(type);
+        setMindMapCode(null);
+        try {
+            const code = await MindMapService.generatePatientMindMap(data, type);
+            setMindMapCode(code);
+            setMindMapType(type === 'TREATMENT' ? 'Mapa de Tratamento Metabólico' : 'Estratégia de Metas');
+        } catch (err: any) {
+            console.error('[MindMap Report] Erro:', err);
+            setMindMapCode(null);
+            alert('Erro ao gerar mapa mental: ' + (err?.message || err));
+        } finally {
+            setMindMapLoading(null);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-fadeIn">
             {/* Metadata Footer */}
@@ -504,51 +526,94 @@ export const IndividualPatientReportView = ({
                     </div>
                 )}
 
-                {/* NOVO: Mapas Mentais Clínicos */}
+                {/* MAPAS MENTAIS CLÍNICOS — FUNCIONAL */}
                 {!isPdf && (
                     <div className="mt-8 border-t border-slate-100 pt-8">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700 flex items-center gap-2">
                                 🧠 Mapas Mentais Visuais (Vision IA)
                             </h3>
-                            <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest animate-pulse">Alpha</span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-[32px] flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden group">
+                        {/* Botões de geração */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <button
+                                onClick={() => handleGenerateMindMap('TREATMENT')}
+                                disabled={!!mindMapLoading}
+                                className="bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden group hover:border-emerald-300 hover:bg-emerald-50/30 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait"
+                            >
                                 <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <Icons.TrendingUp className="w-12 h-12" />
                                 </div>
-                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Mapa de Tratamento Metabólico</h4>
-                                <p className="text-xs text-slate-400 italic text-center mb-6 px-4">Diagnóstico → Fisiopatologia → Conduta</p>
-                                <button
-                                    onClick={async () => {
-                                        await MindMapService.generatePatientMindMap(data, 'TREATMENT');
-                                        alert('Mapa de Tratamento (Científico) gerado! Visualize na aba de Insights do Paciente.');
-                                    }}
-                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95"
-                                >
-                                    Gerar Mapa de Tratamento
-                                </button>
-                            </div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Mapa de Tratamento Metabólico</h4>
+                                <p className="text-xs text-slate-400 italic text-center mb-4 px-4">Diagnóstico → Fisiopatologia → Conduta</p>
+                                {mindMapLoading === 'TREATMENT' ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                        <span className="text-[10px] font-black text-emerald-600 uppercase">Gerando...</span>
+                                    </div>
+                                ) : (
+                                    <span className="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm">
+                                        🧠 Gerar Mapa de Tratamento
+                                    </span>
+                                )}
+                            </button>
 
-                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-[32px] flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden group">
+                            <button
+                                onClick={() => handleGenerateMindMap('GOALS')}
+                                disabled={!!mindMapLoading}
+                                className="bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden group hover:border-emerald-300 hover:bg-emerald-50/30 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait"
+                            >
                                 <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <Icons.Star className="w-12 h-12" />
                                 </div>
-                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Estratégia de Metas</h4>
-                                <p className="text-xs text-slate-400 italic text-center mb-6 px-4">Objetivos Metabólicos de Curto a Longo Prazo</p>
-                                <button
-                                    onClick={async () => {
-                                        await MindMapService.generatePatientMindMap(data, 'GOALS');
-                                        alert('Estratégia de Metas gerada! Visualize na aba de Insights do Paciente.');
-                                    }}
-                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95"
-                                >
-                                    Gerar Estratégia de Metas
-                                </button>
-                            </div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Estratégia de Metas</h4>
+                                <p className="text-xs text-slate-400 italic text-center mb-4 px-4">Objetivos Metabólicos de Curto a Longo Prazo</p>
+                                {mindMapLoading === 'GOALS' ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                        <span className="text-[10px] font-black text-emerald-600 uppercase">Gerando...</span>
+                                    </div>
+                                ) : (
+                                    <span className="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm">
+                                        🎯 Gerar Estratégia de Metas
+                                    </span>
+                                )}
+                            </button>
                         </div>
+
+                        {/* Resultado do Mapa — exibido inline */}
+                        {mindMapCode && (
+                            <div className="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm animate-fadeIn">
+                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">🧠</span>
+                                        <div>
+                                            <h4 className="text-sm font-black">{mindMapType}</h4>
+                                            <p className="text-[9px] font-bold text-emerald-100 uppercase tracking-widest">Gerado por IA</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setMindMapCode(null)}
+                                        className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
+                                    >
+                                        <Icons.X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="p-6 overflow-x-auto">
+                                    <Mermaid chart={mindMapCode} />
+                                </div>
+                                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">ControlClin Vision</p>
+                                    <button
+                                        onClick={() => window.print()}
+                                        className="px-4 py-2 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-700 active:scale-95 transition-all"
+                                    >
+                                        Imprimir
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
