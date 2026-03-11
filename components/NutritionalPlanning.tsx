@@ -1094,7 +1094,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         if (item.quantity === 1) {
             return displayUnit;
         }
-        return `${item.quantity}x ${displayUnit}`;
+        return `${item.quantity} ${displayUnit}`;
     };
 
 
@@ -2152,29 +2152,27 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             </div>
 
                             {/* REFEIÇÕES */}
-                            <div className="space-y-4">
+                            <div className="flex flex-col">
                                 {snapshotForPdf.plan.meals.map((m: any, i: number) => (
                                     m.items.length > 0 && (
-                                        <div key={i} className="mb-4 break-inside-auto">
-                                            <div className="flex justify-between items-center bg-gray-50 border-b-2 border-slate-200 p-2.5 rounded-t-md mb-3 break-inside-avoid" style={{ breakAfter: 'avoid' }}>
+                                        <div key={i} className="mb-4 break-inside-avoid shadow-sm rounded-xl border border-slate-50 overflow-hidden">
+                                            <div className="flex justify-between items-center bg-gray-50 border-b-2 border-slate-200 p-2.5 mb-2">
                                                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">{m.name}</h3>
                                                 {m.time && <span className="text-[10px] font-mono font-bold text-gray-500">{m.time}</span>}
                                             </div>
-                                            <div className="space-y-2 pl-2">
+                                            <div className="space-y-1.5 p-2 pt-1">
                                                 {m.items.map((it: any, j: number) => (
-                                                    <div key={j} className="mb-2 last:mb-0 break-inside-avoid flex items-baseline gap-3">
-                                                        <div className="shrink-0 font-bold text-slate-600 w-24 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</div>
-                                                        <div className="leading-relaxed flex-1">{it.customName || it.name}</div>
+                                                    <div key={j} className="mb-1 last:mb-0 flex items-baseline gap-1.5">
+                                                        <span className="font-bold text-slate-600 shrink-0 capitalize">• {formatMealItemQuantity(it)}</span>
+                                                        <span className="leading-relaxed flex-1">{it.customName || it.name}</span>
                                                         {
                                                             it.substitutes && it.substitutes.length > 0 && (
-                                                                <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5 w-full">
+                                                                <div className="mt-1 ml-4 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5 w-full">
                                                                     {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                        <div key={sIdx} className="text-slate-500 text-[10px] flex items-baseline gap-2 py-1">
+                                                                        <div key={sIdx} className="text-slate-500 text-[10px] flex items-baseline gap-1.5 py-0.5">
                                                                             <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                            <div className="flex items-baseline gap-3 leading-relaxed flex-1">
-                                                                                <span className="shrink-0 font-bold text-slate-600 w-20 text-right">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                                <span className="italic">{sub.customName || sub.name}</span>
-                                                                            </div>
+                                                                            <span className="font-bold text-slate-600 shrink-0">{formatMealItemQuantity(sub)}</span>
+                                                                            <span className="italic">{sub.customName || sub.name}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
