@@ -1665,12 +1665,16 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             Gerencie os mapas gerados ou crie novos focados na clínica e conduta do paciente.
                                         </p>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2 max-w-2xl justify-end">
                                         {[
-                                            { id: 'CLINICAL', label: 'Clínico Completo', icon: '🏥' },
-                                            { id: 'TREATMENT', label: 'Estratégia de Tratamento', icon: '💉' },
-                                            { id: 'GOALS', label: 'Metas e Resultados', icon: '🎯' },
-                                            { id: 'EDUCATION', label: 'Educação em Saúde', icon: '📚' }
+                                            { id: 'CLINICAL', label: 'Clínico Completo' },
+                                            { id: 'TREATMENT', label: 'Estratégia de Tratamento' },
+                                            { id: 'GOALS', label: 'Metas e Resultados' },
+                                            { id: 'EDUCATION', label: 'Educação em Saúde' },
+                                            { id: 'PHYSIOPATHOLOGY', label: 'Fisiopatologia (Histórico)' },
+                                            { id: 'INTERACTIONS', label: 'Interações e Dieta' },
+                                            { id: 'ALLERGIES', label: 'Alergias e Manejo' },
+                                            { id: 'PATHOLOGY', label: 'Patologias de Base' }
                                         ].map(type => (
                                             <button
                                                 key={type.id}
@@ -1700,9 +1704,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 }}
                                                 className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 active:scale-95 ${generatingMindMap === type.id ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 shadow-sm'}`}
                                             >
-                                                {generatingMindMap === type.id ? (
+                                                {generatingMindMap === type.id && (
                                                     <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                                                ) : type.icon}
+                                                )}
                                                 {type.label}
                                             </button>
                                         ))}
@@ -1768,20 +1772,33 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
                                     <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8 shadow-inner">
                                         <div className="mb-4 inline-flex p-4 bg-white rounded-full shadow-sm border border-slate-100">
-                                            <span className="text-4xl">🧠</span>
+                                            <Icons.Activity className="w-8 h-8 text-emerald-500" />
                                         </div>
                                         <h4 className="text-slate-600 font-black mb-3 text-lg uppercase tracking-tight">Criação de Mapas Mentais</h4>
-                                        <p className="text-sm text-slate-500 max-w-lg mx-auto mb-6 leading-relaxed">
+                                        <p className="text-sm text-slate-500 max-w-2xl mx-auto mb-6 leading-relaxed">
                                             Nesta área, você pode decidir quais mapas fundamentais devem ser compartilhados com o paciente para melhorar a compreensão do tratamento.
+                                            Utilize a Inteligência Artificial para gerar visualizações que correlacionam o diagnóstico, exames e conduta de forma educativa.
                                         </p>
-                                        <div className="flex flex-col gap-2 items-center text-xs text-slate-400 font-semibold bg-white p-4 rounded-xl border border-slate-200 shadow-sm max-w-sm mx-auto">
-                                            <p>✨ Você pode gerar mapas de:</p>
-                                            <ul className="list-disc list-inside text-left">
-                                                <li>Fisiopatologia baseada no histórico</li>
-                                                <li>Interações Farmacológicas vs Dieta</li>
-                                                <li>Manejo de Alergias e Intolerâncias</li>
-                                                <li>Educação sobre Patologia de Base</li>
-                                            </ul>
+                                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto text-left">
+                                            <h5 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3">Resumo das Funcionalidades:</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Clínico e Estratégia</b>
+                                                    <p className="text-slate-500">Correlaciona antropometria, exames e patologias com a estratégia do plano alimentar atual.</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Fisiopatologia e Histórico</b>
+                                                    <p className="text-slate-500">Explica a origem dos sintomas e a evolução do quadro clínico baseada na anamnese.</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Interações e Alergias</b>
+                                                    <p className="text-slate-500">Foca no manejo de hipersensibilidades e segurança entre fármacos e nutrientes.</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Metas e Educação</b>
+                                                    <p className="text-slate-500">Ferramenta visual para engajamento do paciente nas metas de curto e longo prazo.</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (

@@ -172,7 +172,7 @@ function buildRichClinicalContext(context: any): string {
 export const MindMapService = {
   async generatePatientMindMap(
     context: any,
-    type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION' = 'CLINICAL'
+    type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION' | 'PHYSIOPATHOLOGY' | 'INTERACTIONS' | 'ALLERGIES' | 'PATHOLOGY' = 'CLINICAL'
   ): Promise<string> {
     console.log(`[AI MindMap] Gerando mapa tipo: ${type}...`);
 
@@ -182,102 +182,48 @@ export const MindMapService = {
       CLINICAL: `
 Gere um mapa mental Mermaid (sintaxe mindmap) que CONTEXTUALIZE O PLANO ALIMENTAR deste paciente de forma clínica e completa.
 
-O mapa deve ter os seguintes ramos obrigatórios a partir do nó central (que deve ser o OBJETIVO DE SAÚDE do paciente):
-
-1. DIAGNÓSTICO ANTROPOMÉTRICO
-   - IMC e classificação
-   - Percentual de gordura corporal
-   - Massa magra e gorda
-   - Risco cardiovascular (RCQ e RCEst se disponíveis)
-   - Diagnóstico PICA se houver
-
-2. EXAMES ALTERADOS
-   - Listar marcadores fora da faixa normal com valores
-   - Correlação clínica de cada alteração
-
-3. PATOLOGIA DE BASE
-   - Diagnósticos ativos
-   - Medicações em uso
-   - Impacto na conduta nutricional
-
-4. INTERVENÇÃO PELO PLANO ALIMENTAR
-   - Estratégia calórica adotada
-   - Distribuição de macros
-   - Alimentos chave do plano
-   - Justificativa nutricional
-
-5. SUPLEMENTAÇÃO
-   - Suplementos prescritos
-   - Objetivo de cada suplemento
-   - Interação com o plano alimentar
-
-6. ADESÃO E RESULTADOS ESPERADOS
-   - Score de adesão atual
-   - Metas de curto prazo com adesão
-   - Resultados clínicos esperados em 30 60 90 dias
-
-7. ABSTENÇÃO E RESULTADOS ESPERADOS
-   - Consequências da não adesão
-   - Riscos metabólicos se não seguir
-   - Prognóstico sem intervenção
-
-Use os dados reais do paciente para preencher cada ramo. Nunca invente dados.
-Se algum dado não estiver disponível, omita o ramo ou escreva "Sem dados".`,
+O mapa deve ter os seguintes ramos obrigatórios a partir do nó central:
+1. DIAGNÓSTICO ANTROPOMÉTRICO - IMC, Gordura, Massa Magra.
+2. EXAMES ALTERADOS - Marcadores e correlação.
+3. PATOLOGIA DE BASE - Diagnósticos e medicações.
+4. INTERVENÇÃO PELO PLANO - Estratégia e justificativa.
+5. SUPLEMENTAÇÃO - Prescrições e objetivos.
+6. PROGNÓSTICO - Resultados esperados com e sem adesão.`,
 
       TREATMENT: `
-Gere um mapa mental Mermaid (sintaxe mindmap) mostrando a cadeia completa de tratamento:
-O nó central deve ser o DIAGNÓSTICO PRINCIPAL do paciente.
-
-Ramos obrigatórios:
-1. FISIOPATOLOGIA — mecanismo da doença e impacto metabólico
-2. ANTROPOMETRIA — estado nutricional atual (IMC, gordura, massa magra)
-3. EXAMES — marcadores alterados e sua correlação
-4. CONDUTA NUTRICIONAL — plano alimentar como intervenção direta
-5. SUPLEMENTAÇÃO — o que foi prescrito e por quê
-6. OBJETIVO TERAPÊUTICO — metas mensuráveis (peso, gordura, glicemia, etc.)
-7. PROGNÓSTICO — com adesão vs sem adesão
-
-Use APENAS dados reais do paciente. Nunca invente valores.`,
+Gere um mapa mental Mermaid (sintaxe mindmap) mostrando a cadeia completa de tratamento.
+O nó central deve ser o DIAGNÓSTICO PRINCIPAL.
+Ramos: Fisiopatologia, Antropometria, Exames, Conduta Nutricional, Suplementação, Objetivos Terapêuticos.`,
 
       GOALS: `
 Gere um mapa mental Mermaid (sintaxe mindmap) de METAS CLÍNICAS do paciente.
-O nó central deve ser o OBJETIVO PRINCIPAL do paciente.
-
-Ramos obrigatórios:
-1. CURTO PRAZO (1 mês)
-   - Meta de peso / gordura
-   - Meta de exames
-   - Adesão esperada
-
-2. MÉDIO PRAZO (3 meses)
-   - Reeducação alimentar consolidada
-   - Melhora em marcadores clínicos
-   - Avaliação antropométrica esperada
-
-3. LONGO PRAZO (6 meses ou mais)
-   - Composição corporal ideal
-   - Exames normalizados
-   - Autonomia alimentar
-
-4. RISCOS SEM INTERVENÇÃO
-   - Degradação metabólica
-   - Complicações clínicas
-
-Use APENAS dados reais do paciente para definir metas específicas e mensuráveis.`,
+O nó central deve ser o OBJETIVO PRINCIPAL.
+Ramos: Curto Prazo (1 mês), Médio Prazo (3 meses), Longo Prazo (6 meses), Riscos sem Intervenção.`,
 
       EDUCATION: `
 Gere um mapa mental Mermaid (sintaxe mindmap) de EDUCAÇÃO NUTRICIONAL personalizada.
-O nó central deve ser "Educação Nutricional" seguido do nome do paciente.
+O nó central deve ser "Educação Nutricional".
+Ramos: Justificativa do Plano, Grupos Essenciais, Alimentos a Evitar, Substituições, Combinações Bioativas.`,
 
-Ramos obrigatórios:
-1. POR QUE ESTE PLANO — Justificativa clínica baseada nos diagnósticos
-2. GRUPOS ALIMENTARES ESSENCIAIS — do plano atual
-3. ALIMENTOS A EVITAR — Baseado nas patologias e exames
-4. SUBSTITUIÇÕES INTELIGENTES — Alternativas do plano
-5. COMBINAÇÕES BIOATIVAS — Alimentos que potencializam tratamento
-6. HORÁRIOS E ROTINA — Importância da regularidade
+      PHYSIOPATHOLOGY: `
+Gere um mapa mental Mermaid (sintaxe mindmap) focado na FISIOPATOLOGIA baseada no histórico.
+O nó central deve ser "Origem e Evolução Clínica".
+Ramos: Gatilhos Históricos, Mecanismo da Doença Atual, Impacto Metabólico, Agravantes (Habitos), Correlação com Exames.`,
 
-Use dados reais do plano e condição clínica do paciente.`
+      INTERACTIONS: `
+Gere um mapa mental Mermaid (sintaxe mindmap) focado em INTERAÇÕES FARMACOLÓGICAS VS DIETA.
+O nó central deve ser "Interações Fármaco-Nutriente".
+Ramos: Medicações em Uso, Nutrientes Afetados, Alimentos que Potencializam Medicação, Alimentos que Inibem Absorção, Horários Otimizados.`,
+
+      ALLERGIES: `
+Gere um mapa mental Mermaid (sintaxe mindmap) focado no MANEJO DE ALERGIAS E INTOLERÂNCIAS.
+O nó central deve ser "Gestão de Hipersensibilidades".
+Ramos: Alérgenos Identificados, Reações Esperadas, Alimentos Seguros (Substitutos), Cuidados em Rótulos, Estratégia de Recuperação de Barreira Intestinal.`,
+
+      PATHOLOGY: `
+Gere um mapa mental Mermaid (sintaxe mindmap) focado nas PATOLOGIAS DE BASE.
+O nó central deve ser "Quadro Clínico e Evolução".
+Ramos: Diagnósticos Ativos, Sinais e Sintomas Relatados, Complicações Prevenidas, Foco do Tratamento Atual, Monitoramento Necessário.`
     };
 
     const prompt = `
