@@ -6,6 +6,8 @@ import { IndividualPatientReportView } from '../../components/IndividualReportVi
 import PDFHeader from '../../components/PDFHeader';
 import { IndividualReportSnapshot } from '../../types';
 import { PwaInstallBanner } from '../../components/patient/PwaInstallBanner';
+import { Mermaid } from '../../components/Mermaid';
+import { MindMapService } from '../../services/ai/mindMapService';
 
 interface PatientDashboardProps {
     patient: Patient;
@@ -13,7 +15,7 @@ interface PatientDashboardProps {
     onLogout: () => void;
 }
 
-type Tab = 'home' | 'plan' | 'progress' | 'prescricao' | 'exames' | 'profile';
+type Tab = 'home' | 'plan' | 'progress' | 'prescricao' | 'exames' | 'profile' | 'insights';
 
 export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, clinic, onLogout }) => {
     const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -32,21 +34,14 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const [individualReportData, setIndividualReportData] = useState<IndividualReportSnapshot | null>(null);
     const [isLoadingReport, setIsLoadingReport] = useState(false);
 
+    const [mindMapCode, setMindMapCode] = useState<string | null>(null);
+    const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
+
 
     useEffect(() => {
         db.getPrescriptions(patient.id).then(setPrescricoes);
         db.getExamRequests(patient.id).then(setPedidosExame);
     }, [patient.id]);
-
-    useEffect(() => {
-        if (activeTab === 'progress' && !individualReportData) {
-            setIsLoadingReport(true);
-            // We use the patient's own ID and their assigned professional ID to satisfy DB security locks
-            db.buildIndividualReportDataset(patient.id, patient.professionalId)
-                .then(setIndividualReportData)
-                .finally(() => setIsLoadingReport(false));
-        }
-    }, [activeTab, patient.id, patient.professionalId, individualReportData]);
 
     // Registro mais recente do histórico (mesma fonte da aba Antropometria)
     const lastAnthro = patient.anthropometryHistory && patient.anthropometryHistory.length > 0
@@ -61,6 +56,37 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const activePlan = patient.nutritionalPlans
         ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
         : patient.nutritionalPlan || null;
+
+    useEffect(() => {
+        if (activeTab === 'progress' && !individualReportData) {
+            setIsLoadingReport(true);
+            // We use the patient's own ID and their assigned professional ID to satisfy DB security locks
+            db.buildIndividualReportDataset(patient.id, patient.professionalId)
+                .then(setIndividualReportData)
+                .finally(() => setIsLoadingReport(false));
+        }
+
+        if (activeTab === 'insights' && !mindMapCode && !isGeneratingMindMap) {
+            setIsGeneratingMindMap(true);
+            const context = {
+                patient: {
+                    name: patient.name,
+                    objective: patient.clinicalSummary?.clinicalGoal || 'Bem-estar',
+                    diagnoses: patient.clinicalSummary?.activeDiagnoses || []
+                },
+                plan: {
+                    meals: activePlan?.meals.map(m => ({
+                        name: m.name,
+                        items: m.items.map(it => it.customName || it.name)
+                    })) || []
+                }
+            };
+            MindMapService.generatePatientMindMap(context)
+                .then(setMindMapCode)
+                .finally(() => setIsGeneratingMindMap(false));
+        }
+    }, [activeTab, patient.id, patient.professionalId, individualReportData, mindMapCode, isGeneratingMindMap, activePlan, patient.clinicalSummary, patient.name]);
+
 
     // Prescrições finalizadas (não rascunho)
     const prescricoesFinalizadas = prescricoes.filter(p => p.status === 'FINALIZADA');
@@ -116,6 +142,18 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                     <p className="text-xl font-black text-slate-800">{displayBodyFat}</p>
                 </div>
             </div>
+
+            {patient.clinicalSummary?.clinicalGoal && (
+                <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                        <Icons.Sparkles className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Foco do Tratamento</p>
+                        <p className="text-sm font-black text-indigo-900 leading-tight">{patient.clinicalSummary.clinicalGoal}</p>
+                    </div>
+                </div>
+            )}
 
             <section>
                 <div className="flex items-center justify-between mb-4">
@@ -443,6 +481,61 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         </div>
     );
 
+    const renderInsights = () => (
+        <div className="space-y-6 animate-fadeIn pb-10">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Meus Insights</h1>
+
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] p-6 text-white shadow-xl">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl">✨</div>
+                    <h2 className="text-lg font-black">Por que este plano?</h2>
+                </div>
+                <p className="text-indigo-100 text-sm leading-relaxed opacity-90">
+                    Sua estratégia foi desenhada para conectar seus exames recentes aos seus objetivos de <strong>{patient.clinicalSummary?.clinicalGoal || 'saúde'}</strong>.
+                </p>
+            </div>
+
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-black text-slate-800">Mapa de Conexões Clínicas</h2>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exclusivo Portal Paciente</span>
+                </div>
+
+                <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm min-h-[300px] flex items-center justify-center">
+                    {isGeneratingMindMap ? (
+                        <div className="text-center space-y-4">
+                            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">IA construindo seu mapa...</p>
+                        </div>
+                    ) : mindMapCode ? (
+                        <div className="w-full">
+                            <Mermaid chart={mindMapCode} />
+                            <p className="text-[9px] text-center text-slate-400 mt-4 px-6 leading-relaxed italic">
+                                Este mapa conecta visualmente seus diagnósticos às ações nutricionais propostas pelo profissional.
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-slate-400 text-xs italic">Nenhum mapa disponível no momento.</p>
+                    )}
+                </div>
+            </section>
+
+            {patient.clinicalSummary && patient.clinicalSummary.activeDiagnoses && patient.clinicalSummary.activeDiagnoses.length > 0 && (
+                <section>
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4">Atenção Especial</h2>
+                    <div className="grid grid-cols-1 gap-2">
+                        {patient.clinicalSummary.activeDiagnoses.map((diag, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                                <span className="text-xs font-bold text-slate-700">{diag}</span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+        </div>
+    );
+
     const renderProfile = () => (
         <div className="space-y-6 animate-fadeIn">
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Meu Perfil</h1>
@@ -477,8 +570,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
     const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
         { id: 'home', label: 'Início', icon: <Icons.Home className="w-5 h-5" /> },
         { id: 'plan', label: 'Dieta', icon: <Icons.Utensils className="w-5 h-5" /> },
+        { id: 'insights', label: 'Insights', icon: <Icons.Sparkles className="w-5 h-5" /> },
         { id: 'progress', label: 'Evolução', icon: <Icons.TrendingUp className="w-5 h-5" /> },
-        { id: 'prescricao', label: 'Rx', icon: <Icons.FileText className="w-5 h-5" /> },
         { id: 'profile', label: 'Perfil', icon: <Icons.User className="w-5 h-5" /> },
     ];
 
@@ -504,6 +597,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
                 {activeTab === 'prescricao' && renderPrescricao()}
                 {activeTab === 'exames' && renderExames()}
                 {activeTab === 'profile' && renderProfile()}
+                {activeTab === 'insights' && renderInsights()}
             </main>
 
             {/* Bottom Nav */}

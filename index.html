@@ -163,6 +163,12 @@
   </style>
   <!-- HTML2PDF Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Mermaid.js for Mind Maps -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    window.mermaid = mermaid;
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+  </script>
 </head>
 
 <body>

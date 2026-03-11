@@ -12,8 +12,10 @@ import { AIPlanAnalysisService } from '../services/aiPlanAnalysis';
 import { AIAdherenceService, AdherenceAnalysis } from '../services/ai/aiAdherenceService';
 import { AIPlanRefinementService } from '../services/aiPlanRefinementService';
 import { AIClinicalSummaryService } from '../services/aiClinicalSummary';
+import { MindMapService } from '../services/ai/mindMapService';
 import { DocxExportService } from '../services/docxExportService';
 import { EnergyExpenditureService, AMPUTATION_MEMBERS } from '../services/nutrition/energyExpenditure';
+import { Mermaid } from './Mermaid';
 import AddFoodModal from './AddFoodModal';
 import EditFoodModal from './EditFoodModal';
 import PDFHeader from './PDFHeader';
@@ -213,6 +215,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
     const [isRefining, setIsRefining] = useState(false);
+    const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
+    const [mindMapCode, setMindMapCode] = useState<string | null>(null);
+    const [showMindMapModal, setShowMindMapModal] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string | null>(null);
     const [clinicalSummaryText, setClinicalSummaryText] = useState<string | null>(null);
@@ -874,10 +879,34 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             const refinedMeals = await AIPlanRefinementService.refinePlanLanguage(meals);
             setMeals(refinedMeals);
             alert("Inovação Concluída: Plano reescrito com linguagem amigável!");
-        } catch (err) {
-            alert("Erro ao humanizar: " + err);
         } finally {
             setIsRefining(false);
+        }
+    };
+
+    const handleGenerateMindMap = async () => {
+        setIsGeneratingMindMap(true);
+        try {
+            const context = {
+                patient: {
+                    name: patient.name,
+                    objective: patient.clinicalSummary?.clinicalGoal || patient.nutritionalPlan?.strategyName || 'Saúde',
+                    diagnoses: patient.clinicalSummary?.activeDiagnoses || []
+                },
+                plan: {
+                    meals: meals.map(m => ({
+                        name: m.name,
+                        items: m.items.map(it => it.customName || it.name)
+                    }))
+                }
+            };
+            const code = await MindMapService.generatePatientMindMap(context);
+            setMindMapCode(code);
+            setShowMindMapModal(true);
+        } catch (err) {
+            alert("Erro ao gerar mapa mental: " + err);
+        } finally {
+            setIsGeneratingMindMap(false);
         }
     };
 
@@ -1152,6 +1181,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     <div className="flex flex-wrap items-center gap-2">
                         <button type="button" onClick={handleRefineLanguage} disabled={isRefining} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border transition-all active:scale-95 ${isRefining ? 'bg-gray-100 text-slate-400' : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-900'}`}>
                             {isRefining ? 'Humanizando...' : 'Humanizar Plano'}
+                        </button>
+                        <button type="button" onClick={handleGenerateMindMap} disabled={isGeneratingMindMap} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border transition-all active:scale-95 ${isGeneratingMindMap ? 'bg-gray-100 text-slate-400' : 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700'}`}>
+                            {isGeneratingMindMap ? 'Mapeando...' : 'Mapa Mental'}
                         </button>
                         <button type="button" onClick={() => setShowTemplateModal(true)} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                             <Icons.BookOpen className="w-3.5 h-3.5" /> Modelos
@@ -2400,7 +2432,59 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     </div>
                 )
             }
-        </div >
+            {/* ======================== MODAL: MAPA MENTAL (IA) ======================== */}
+            {
+                showMindMapModal && mindMapCode && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-indigo-100 animate-scaleIn">
+                            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">🧠</div>
+                                    <div>
+                                        <h3 className="font-black text-lg">Raciocínio Clínico Visual</h3>
+                                        <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">Mapa Mental Gerado por IA</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowMindMapModal(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all">
+                                    <Icons.X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+                                <div className="w-full bg-slate-50/50 rounded-[40px] border border-slate-100 p-8 shadow-inner overflow-x-auto">
+                                    <Mermaid chart={mindMapCode} />
+                                </div>
+
+                                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                    <div className="bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100/50">
+                                        <h4 className="text-[10px] font-black text-indigo-700 uppercase mb-2">💡 Como usar este mapa?</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed italic">
+                                            Apresente este mapa ao paciente para explicar as conexões entre o diagnóstico e a conduta nutricional. Isso aumenta drasticamente a adesão.
+                                        </p>
+                                    </div>
+                                    <div className="bg-purple-50/50 p-5 rounded-3xl border border-purple-100/50">
+                                        <h4 className="text-[10px] font-black text-purple-700 uppercase mb-2">🚀 Benefício Clínico</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed italic">
+                                            A visualização espacial ajuda na memorização das orientações e reforça a autoridade do profissional.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">ControlClin Vision • Mapa exclusivo</p>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="px-6 py-2.5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all"
+                                >
+                                    Imprimir Mapa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div>
     );
 };
 
