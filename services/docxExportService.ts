@@ -1,6 +1,7 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 import { Meal, MealItem } from '../types';
+import { ShoppingListService } from './food/shoppingList';
 
 export const DocxExportService = {
     async generatePlanDocx(snapshot: any) {
@@ -8,119 +9,188 @@ export const DocxExportService = {
 
         const doc = new Document({
             sections: [{
-                properties: {},
+                properties: {
+                    page: {
+                        margin: {
+                            top: 1440, // 1 inch
+                            right: 1440,
+                            bottom: 1440,
+                            left: 1440,
+                        },
+                    },
+                },
                 children: [
-                    // Header - Clinic Name
+                    // 1. HEADER (Clinic & Patient Info)
                     new Paragraph({
                         text: clinic?.name || 'ControlClin',
                         heading: HeadingLevel.HEADING_1,
                         alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
                     }),
                     new Paragraph({
-                        text: `Plano Alimentar - ${patient.name}`,
-                        heading: HeadingLevel.HEADING_2,
+                        children: [
+                            new TextRun({ text: "Plano Alimentar Individualizado", bold: true, size: 28 }),
+                        ],
                         alignment: AlignmentType.CENTER,
                         spacing: { after: 400 },
                     }),
 
-                    // Patient Info
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Paciente: ", bold: true }),
-                            new TextRun({ text: `${patient.name} (${patient.age} anos)` }),
+                            new TextRun({ text: `${patient.name} (${patient.age || ''} anos)` }),
                         ],
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Objetivo: ", bold: true }),
-                            new TextRun({ text: patient.objective }),
+                            new TextRun({ text: patient.objective || 'Manutenção da Saúde' }),
                         ],
-                        spacing: { after: 400 },
+                        spacing: { after: 600 },
                     }),
 
-                    // Clinical Summary
+                    // 2. CLINICAL SUMMARY (IA)
                     ...(clinicalSummary ? [
                         new Paragraph({
                             text: "RESUMO CLÍNICO E ORIENTAÇÕES",
                             heading: HeadingLevel.HEADING_3,
-                            spacing: { before: 400, after: 200 },
+                            shading: { fill: "F0FDF4", type: "clear", color: "auto" },
+                            spacing: { before: 400, after: 300 },
                         }),
                         ...clinicalSummary.split('\n').map((line: string) =>
                             new Paragraph({
                                 text: line,
                                 spacing: { after: 120 },
+                                indent: { left: 240 },
                             })
                         ),
                     ] : []),
 
-                    // Meals Title
+                    // 3. MEALS (Plano Alimentar)
                     new Paragraph({
                         text: "PLANO ALIMENTAR",
-                        heading: HeadingLevel.HEADING_3,
+                        heading: HeadingLevel.HEADING_2,
                         alignment: AlignmentType.CENTER,
-                        spacing: { before: 400, after: 400 },
+                        spacing: { before: 800, after: 600 },
                     }),
 
-                    // Meals
                     ...plan.meals.flatMap((meal: Meal) => {
                         if (meal.items.length === 0) return [];
                         return [
                             new Paragraph({
-                                text: `${meal.name}${meal.time ? ` - ${meal.time}` : ''}`,
-                                heading: HeadingLevel.HEADING_4,
-                                shading: { fill: "F3F4F6", type: "clear", color: "auto" },
-                                spacing: { before: 400, after: 200 },
+                                text: `${meal.name.toUpperCase()}${meal.time ? ` (${meal.time})` : ''}`,
+                                heading: HeadingLevel.HEADING_3,
+                                shading: { fill: "F8FAFC", type: "clear", color: "auto" },
+                                spacing: { before: 500, after: 300 },
+                                border: { bottom: { color: "CBD5E1", size: 6, space: 1, style: BorderStyle.SINGLE } }
                             }),
-                            ...meal.items.map((item: MealItem) =>
+                            ...meal.items.flatMap((item: MealItem) => [
                                 new Paragraph({
                                     children: [
-                                        new TextRun({ text: "• ", bold: true }),
+                                        new TextRun({ text: "• ", bold: true, color: "475569" }),
                                         new TextRun({ text: `${item.quantity} ${item.unit} `, bold: true }),
                                         new TextRun({ text: item.customName || item.name }),
                                     ],
-                                    indent: { left: 720 },
-                                    spacing: { after: 120 },
-                                })
-                            ),
-                            // Substitutes if any
-                            ...meal.items.flatMap((item: MealItem) => (item.substitutes || []).map(sub =>
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({ text: "   OU ", bold: true, color: "059669" }),
-                                        new TextRun({ text: `${sub.quantity} ${sub.unit} `, italics: true }),
-                                        new TextRun({ text: sub.customName || sub.name, italics: true }),
-                                    ],
-                                    indent: { left: 1440 },
-                                    spacing: { after: 120 },
-                                })
-                            ))
+                                    indent: { left: 480 },
+                                    spacing: { before: 100, after: 100 },
+                                }),
+                                ...(item.substitutes || []).map(sub =>
+                                    new Paragraph({
+                                        children: [
+                                            new TextRun({ text: "   OU ", bold: true, color: "059669", size: 16 }),
+                                            new TextRun({ text: `${sub.quantity} ${sub.unit} `, italics: true, color: "475569" }),
+                                            new TextRun({ text: sub.customName || sub.name, italics: true, color: "475569" }),
+                                        ],
+                                        indent: { left: 960 },
+                                        spacing: { after: 80 },
+                                    })
+                                )
+                            ])
                         ];
                     }),
 
-                    // Adherence Tips
+                    // 4. ADHERENCE TIPS (IA)
                     ...(adherence ? [
                         new Paragraph({
                             text: "ESTRATÉGIAS PARA SUA ADESÃO",
-                            heading: HeadingLevel.HEADING_3,
-                            spacing: { before: 600, after: 200 },
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { before: 1000, after: 400 },
                         }),
-                        ...adherence.tips.map((tip: any, idx: number) =>
+                        ...adherence.tips.flatMap((tip: any, idx: number) => [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: `${idx + 1}. ${tip.category}: `, bold: true }),
-                                    new TextRun({ text: tip.tip }),
-                                    new TextRun({ text: `\nMotivo: ${tip.rationale}`, italics: true, size: 18 }),
+                                    new TextRun({ text: `${idx + 1}. ${tip.category}: `, bold: true, color: "059669" }),
+                                    new TextRun({ text: tip.tip, bold: true }),
+                                ],
+                                spacing: { before: 200, after: 100 },
+                                indent: { left: 240 },
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: tip.rationale,
+                                        italics: true,
+                                        size: 18,
+                                        color: "64748B",
+                                    }),
                                 ],
                                 spacing: { after: 200 },
+                                indent: { left: 480 },
                             })
-                        ),
+                        ]),
                     ] : []),
 
-                    // Professional Footer
+                    // 5. SHOPPING LIST
+                    new Paragraph({
+                        text: "LISTA DE COMPRAS SEMANAL",
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 1000, after: 400 },
+                    }),
+                    ...Object.entries(ShoppingListService.generate(plan.meals)).flatMap(([category, items]: [string, any[]]) => {
+                        if (items.length === 0) return [];
+                        return [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: category.toUpperCase(),
+                                        color: "059669",
+                                        bold: true,
+                                    }),
+                                ],
+                                spacing: { before: 300, after: 150 },
+                            }),
+                            ...items.map(item => new Paragraph({
+                                children: [
+                                    new TextRun({ text: "☐ ", color: "CBD5E1" }),
+                                    new TextRun({ text: `${item.name}: `, color: "334155" }),
+                                    new TextRun({ text: `${(item.totalGrams * 7).toFixed(0)}g`, bold: true }),
+                                ],
+                                indent: { left: 480 },
+                                spacing: { after: 100 },
+                            }))
+                        ];
+                    }),
+
+                    // 6. FOOTER
+                    new Paragraph({
+                        text: `________________________________________`,
+                        alignment: AlignmentType.RIGHT,
+                        spacing: { before: 1200 },
+                    }),
                     new Paragraph({
                         text: `Responsável: ${professional?.name || ''}`,
                         alignment: AlignmentType.RIGHT,
-                        spacing: { before: 1000 },
+                        spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Gerado em: ${new Date().toLocaleString('pt-BR')}`,
+                                size: 16,
+                                color: "94A3B8",
+                            }),
+                        ],
+                        alignment: AlignmentType.RIGHT,
                     }),
                 ],
             }],

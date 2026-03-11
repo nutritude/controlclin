@@ -70,37 +70,22 @@ function buildPrompt(snapshot: IndividualReportSnapshot): string {
   };
 
   return `
-    Você é um cientista de dados clínicos e nutricionista sênior. 
-    Sua missão é gerar um RELATÓRIO DE EVOLUÇÃO COMPLETO e EXPLICATIVO para ser entregue ao paciente.
-    O relatório deve ler e INTERPRETAR os gráficos de evolução implícitos nos dados abaixo.
+    Você é um nutricionista clínico focado em comunicação clara e empática para o paciente.
+    Sua missão é gerar um RESUMO CLÍNICO E COMPORTAMENTAL SIMPLIFICADO para o paciente ler.
 
-    ESTRUTURA OBRIGATÓRIA DA RESPOSTA:
+    REGRAS CRÍTICAS:
+    1. O texto deve ter NO MÁXIMO 10 LINHAS.
+    2. Linguagem extremamente simples e motivadora (evite termos técnicos complexos demais).
+    3. Foque no progresso atual e no que ele precisa fazer para continuar melhorando.
+    4. NÃO use tabelas ou listas longas.
+    5. O resumo deve ser focado no USO do paciente, não de outros profissionais.
 
-    1. **ANÁLISE NARRATIVA DO QUADRO**: Um parágrafo acolhedor e técnico sobre o momento atual do paciente.
-    
-    2. **INTERPRETAÇÃO DOS GRÁFICOS DE EVOLUÇÃO**: 
-       - Analise a tendência nos gráficos:
-         * **"Dinâmica de Composição"** (Massa Gorda vs. Massa Magra).
-         * **"Dinâmica de Perdas e Ganhos"** (Variação de Circunferências).
-         * **"Gordura Localizada"** (Variação de Dobras Cutâneas).
-       - Se houve perda de gordura e ganho/manutenção de massa magra, explique a "Recomposição Corporal".
-       - Comente sobre a redução de medidas (Cintura/Abdômen) e o impacto no risco metabólico.
-       - Use os dados de "evolution" para quantificar os resultados (ex: "Desde o início, observamos uma redução de X kg de gordura...").
+    Estrutura:
+    - Um parágrafo sobre como ele está (baseado na evolução dos dados).
+    - O foco principal desta etapa do plano.
+    - Uma frase final de incentivo.
 
-    3. **ADESÃO E COMPORTAMENTO**:
-       - Interprete o score de adesão (${data.adherence.score}%). 
-       - Relacione a adesão com os resultados obtidos (ex: "Sua alta adesão reflete diretamente na melhora do perfil lipídico...").
-
-    4. **PARECER TÉCNICO E PRÓXIMOS PASSOS**:
-       - Baseado nos exames e evolução, qual deve ser o foco clínico agora?
-
-    REGRAS:
-    - Responda em Markdown.
-    - Use um tom de "Consultoria de Alta Performance".
-    - Seja detalhado e explicativo, não apenas liste números.
-    - Se houver diagnósticos ativos, relacione os resultados a eles (ex: melhora da glicemia para DM2).
-
-    DADOS BRUTOS:
+    DADOS BRUTOS PARA ANÁLISE:
     ${JSON.stringify(data)}
   `;
 }

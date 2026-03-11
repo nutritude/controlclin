@@ -1091,39 +1091,42 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     return (
         <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${isManagerMode ? 'text-slate-800' : 'text-slate-800'}`}>
 
-            {/* TOP TOOLBAR: PLAN SELECTION & MANAGEMENT */}
-            <div className={`xl:col-span-3 flex flex-col lg:flex-row gap-4 p-4 rounded-xl border shadow-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`}>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
-                    <div className="flex flex-col w-full sm:w-auto">
+            {/* TOP TOOLBAR: REORGANIZADO EM 2 LINHAS */}
+            <div className={`xl:col-span-3 flex flex-col gap-4 p-5 rounded-2xl border shadow-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`}>
+                {/* LINHA 1: SELEÇÃO E PROTOCOLO */}
+                <div className="flex flex-col md:flex-row items-end gap-4">
+                    <div className="flex flex-col flex-1 w-full">
                         <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Plano Selecionado</label>
-                        <select
-                            value={currentPlanId || ''}
-                            onChange={(e) => {
-                                if (e.target.value === 'NEW') initNewDraft();
-                                else handlePlanSelection(e.target.value);
-                            }}
-                            className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full sm:min-w-[200px] ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
-                        >
-                            {plansList.map(p => (
-                                <option key={p.id} value={p.id}>
-                                    {p.status === 'ATIVO' ? '(ATIVO) ' : ''}{p.title || 'Plano'} - {new Date(p.createdAt).toLocaleDateString()}
-                                </option>
-                            ))}
-                            {(!currentPlanId && plansList.length === 0) && <option value="">Novo Rascunho</option>}
-                        </select>
+                        <div className="flex gap-2 w-full font-black uppercase tracking-tight">
+                            <select
+                                value={currentPlanId || ''}
+                                onChange={(e) => {
+                                    if (e.target.value === 'NEW') initNewDraft();
+                                    else handlePlanSelection(e.target.value);
+                                }}
+                                className={`border rounded-lg p-2 text-xs flex-1 ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
+                            >
+                                {plansList.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.status === 'ATIVO' ? '(ATIVO) ' : ''}{p.title || 'Plano'} - {new Date(p.createdAt).toLocaleDateString()}
+                                    </option>
+                                ))}
+                                {(!currentPlanId && plansList.length === 0) && <option value="">Novo Rascunho</option>}
+                            </select>
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all active:scale-95 ${isManagerMode ? 'border-blue-300 hover:bg-blue-50 text-blue-700 shadow-sm' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700 shadow-sm'}`}>
+                                Novo
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); initNewDraft(); }} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border transition-all active:scale-95 ${isManagerMode ? 'border-blue-300 hover:bg-blue-50 text-blue-700 shadow-sm' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700 shadow-sm'}`}>
-                        + Novo
-                    </button>
 
-                    <div className="flex flex-col w-full sm:w-auto mt-2 sm:mt-0">
+                    <div className="flex flex-col w-full md:w-72">
                         <label className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Metodologia / Protocolo</label>
                         <select
                             value={planMethodology}
                             onChange={(e) => setPlanMethodology(e.target.value as any)}
                             className={`border rounded-lg p-2 text-xs font-black uppercase tracking-tight w-full ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900 shadow-sm' : 'bg-white border-emerald-300 text-emerald-900 shadow-sm'}`}
                         >
-                            <option value="ALIMENTOS">Cálculo por Alimentos (Padrao)</option>
+                            <option value="ALIMENTOS">Cálculo por Alimentos (Padrão)</option>
                             <option value="EQUIVALENTES">Lista de Substituição</option>
                             <option value="SEM_GLUTEN">Protocolo Sem Glúten</option>
                             <option value="SEM_LACTOSE">Protocolo Sem Lactose</option>
@@ -1134,26 +1137,39 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:justify-end mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                    {syncStatus && (
-                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full border ${syncStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                            }`}>{syncStatus}</span>
-                    )}
-                    <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" onClick={handleRefineLanguage} disabled={isRefining} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isRefining ? 'bg-gray-100' : 'bg-gradient-to-r from-purple-50 to-indigo-50 text-indigo-700 border-indigo-200'}`}>
-                            <span className="animate-pulse">✨</span> {isRefining ? 'Humanizando...' : 'Inovar: IA Amigável'}
+                {/* LINHA 2: AÇÕES E INTELIGÊNCIA */}
+                <div className={`flex flex-wrap items-center justify-between gap-3 pt-4 border-t ${isManagerMode ? 'border-blue-50' : 'border-slate-50'}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={handleRefineLanguage} disabled={isRefining} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border transition-all active:scale-95 ${isRefining ? 'bg-gray-100 text-slate-400' : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-900'}`}>
+                            {isRefining ? 'Humanizando...' : 'Humanizar Plano'}
                         </button>
-                        <button type="button" onClick={() => setShowTemplateModal(true)} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}><Icons.BookOpen className="w-3.5 h-3.5" /> Modelos</button>
-                        <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
-                        <button type="button" onClick={handleGenerateDOCX} data-html2pdf-ignore disabled={isGeneratingDocx} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingDocx ? 'bg-gray-200' : 'bg-white text-blue-700 border-blue-200'}`}>{isGeneratingDocx ? '...' : <><Icons.Download className="w-3.5 h-3.5" /> DOCX</>}</button>
+                        <button type="button" onClick={() => setShowTemplateModal(true)} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                            <Icons.BookOpen className="w-3.5 h-3.5" /> Modelos
+                        </button>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" onClick={handleSaveTemplate} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                            <Icons.Star className="w-3.5 h-3.5" /> Salvar como Modelo
-                        </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSavePlan(); }} data-html2pdf-ignore className={`w-full sm:w-auto px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-105 ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
-                            <span>💾</span> Salvar Plano
-                        </button>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {syncStatus && (
+                            <span className={`text-[10px] font-black uppercase px-3 py-2 rounded-lg border mr-2 ${syncStatus.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                }`}>{syncStatus.replace('🤖 ', '').replace('✅ ', '')}</span>
+                        )}
+                        <div className="flex gap-2">
+                            <button type="button" onClick={handleGeneratePDF} disabled={isGeneratingPdf} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200 text-slate-400' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'}`}>
+                                <Icons.FileText className="w-3.5 h-3.5" /> PDF
+                            </button>
+                            <button type="button" onClick={handleGenerateDOCX} disabled={isGeneratingDocx} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 ${isGeneratingDocx ? 'bg-gray-200 text-slate-400' : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'}`}>
+                                <Icons.Download className="w-3.5 h-3.5" /> DOCX
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSavePlan}
+                                disabled={isSyncing}
+                                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 ${isSyncing ? 'bg-gray-400 cursor-not-allowed' : (isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700')} text-white`}
+                            >
+                                <Icons.Save className="w-3.5 h-3.5" />
+                                {isSyncing ? 'Salvando...' : 'Salvar Plano'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1163,7 +1179,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                 {/* Energy Calculator */}
                 <div className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-sm rounded-xl p-5 border relative overflow-hidden`}>
                     {/* Header com Manual Toggle */}
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex justify-between items-center mb-6" >
                         <div className="flex flex-col">
                             <h3 className={`text-sm font-black uppercase tracking-tighter ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Estimativa Energética</h3>
                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Precisão Diagnóstica</p>
@@ -1172,7 +1188,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             <label className="text-[10px] uppercase font-black text-gray-500">Manual</label>
                             <input type="checkbox" checked={isManualMode} onChange={e => setIsManualMode(e.target.checked)} className="toggle-checkbox" />
                         </div>
-                    </div>
+                    </div >
 
                     {!calculatedResults.isValid && !isManualMode && (
                         <div className="mb-4 p-3 bg-red-50 text-red-800 text-[11px] rounded-xl border border-red-100 flex items-center gap-2">
@@ -1180,11 +1196,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         </div>
                     )}
 
-                    {!isManualMode && calculatedResults.isValid && (
-                        <div className="mb-4 p-2 bg-emerald-50 text-emerald-800 text-[10px] rounded-lg border border-emerald-100 flex items-center gap-2">
-                            <span>✅</span> <span>Dados sincronizados com o prontuário.</span>
-                        </div>
-                    )}
+                    {
+                        !isManualMode && calculatedResults.isValid && (
+                            <div className="mb-4 p-2 bg-emerald-50 text-emerald-800 text-[10px] rounded-lg border border-emerald-100 flex items-center gap-2">
+                                <span>✅</span> <span>Dados sincronizados com o prontuário.</span>
+                            </div>
+                        )
+                    }
 
                     <div className="space-y-6">
                         {/* 0. Dados Base (Somente se Manual) */}
@@ -1390,7 +1408,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             )}
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Daily Totals Summary */}
                 <div className={`${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'} shadow-md rounded-xl p-5 border sticky top-2 z-[45]`}>
@@ -1457,11 +1475,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             <button onClick={() => setShowShoppingListModal(true)} className={`text-xs py-2 border rounded font-bold transition-all ${isManagerMode ? 'border-blue-200 hover:bg-blue-50 text-blue-700' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-700'}`}>Lista de Compras</button>
                         </div>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* CENTER/RIGHT COLUMN */}
-            <div className="xl:col-span-2 space-y-6">
+            <div className="xl:col-span-2 space-y-6" >
                 <div className="space-y-6 animate-fadeIn">
 
                     {/* AI ANALYSIS RESULT SECTION (NEW) */}
@@ -1565,11 +1583,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         {/* Macro Targets Inputs */}
                         <div className="grid grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estratégia</label>
+                                <label className="block text-xs font-bold uppercase mb-1">Estratégia</label>
                                 <input type="text" value={planStrategy} onChange={e => setPlanStrategy(e.target.value)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Metodologia</label>
+                                <label className="block text-xs font-bold uppercase mb-1">Metodologia</label>
                                 <select value={planMethodology} onChange={e => setPlanMethodology(e.target.value as any)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-slate-200'}`}>
                                     <option value="ALIMENTOS">Plano por Alimentos</option>
                                     <option value="EQUIVALENTES">Lista de Substituição</option>
@@ -1739,7 +1757,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         })}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* --- MODALS --- */}
 
@@ -1762,320 +1780,327 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             )}
 
             {/* MEAL CONFIG MODAL */}
-            {isMealModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-2xl' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-sm p-6`}>
-                        <h3 className="text-lg font-bold mb-4">{mealForm.id ? 'Editar Refeição' : 'Nova Refeição'}</h3>
-                        <div className="space-y-3">
-                            <div>
-                                <label className="text-xs font-bold uppercase mb-1 block">Nome</label>
-                                <input type="text" value={mealForm.name} onChange={e => setMealForm({ ...mealForm, name: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} placeholder="Ex: Pré-treino" />
+            {
+                isMealModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+                        <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-2xl' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-sm p-6`}>
+                            <h3 className="text-lg font-bold mb-4">{mealForm.id ? 'Editar Refeição' : 'Nova Refeição'}</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold uppercase mb-1 block">Nome</label>
+                                    <input type="text" value={mealForm.name} onChange={e => setMealForm({ ...mealForm, name: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} placeholder="Ex: Pré-treino" />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold uppercase mb-1 block">Horário (Opcional)</label>
+                                    <input type="time" value={mealForm.time} onChange={e => setMealForm({ ...mealForm, time: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-xs font-bold uppercase mb-1 block">Horário (Opcional)</label>
-                                <input type="time" value={mealForm.time} onChange={e => setMealForm({ ...mealForm, time: e.target.value })} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                                <button onClick={() => setIsMealModalOpen(false)} className="px-3 py-1.5 text-sm border rounded">Cancelar</button>
+                                <button onClick={handleSaveMealConfig} className="px-3 py-1.5 text-sm bg-green-600 text-white rounded font-bold">Salvar</button>
                             </div>
-                        </div>
-                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                            <button onClick={() => setIsMealModalOpen(false)} className="px-3 py-1.5 text-sm border rounded">Cancelar</button>
-                            <button onClick={handleSaveMealConfig} className="px-3 py-1.5 text-sm bg-green-600 text-white rounded font-bold">Salvar</button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MICRONUTRIENTS MODAL (REVISED: DETERMINISTIC TABLE) */}
-            {showMicrosModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-black'} rounded-lg shadow-xl w-full max-w-lg p-6 flex flex-col max-h-[80vh]`}>
-                        <div className="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 className="text-lg font-bold">Tabela de Nutrientes do Plano</h3>
-                            <button onClick={() => setShowMicrosModal(false)}>✕</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <table className="w-full text-sm">
-                                <thead className={`${isManagerMode ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-black'}`}>
-                                    <tr>
-                                        <th className="text-left p-2">Nutriente</th>
-                                        <th className="text-right p-2">Total Calculado</th>
-                                        <th className="text-center p-2">Obs</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Macronutrientes */}
-                                    <tr className="font-bold bg-gray-50/10">
-                                        <td className={`p-2 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Calorias</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-400' : 'text-emerald-700'}`}>{dailyTotals.calories} kcal</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Proteína</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.protein} g</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Carboidratos</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.carbs} g</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Gorduras Totais</td>
-                                        <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.fat} g</td>
-                                        <td></td>
-                                    </tr>
-                                    {/* Micronutrientes c/ DRI Analysis */}
-                                    <tr><td colSpan={3} className="p-2 font-bold text-xs uppercase bg-gray-50/5 mt-2">Análise de Micronutrientes (vs DRIs)</td></tr>
-                                    {[
-                                        { label: 'Fibras', val: dailyTotals.fiber, unit: 'g', ref: 25, isMax: false },
-                                        { label: 'Sódio', val: dailyTotals.sodium, unit: 'mg', ref: 2300, isMax: true },
-                                        { label: 'Potássio', val: dailyTotals.potassium, unit: 'mg', ref: 4700, isMax: false },
-                                        { label: 'Cálcio', val: dailyTotals.calcium, unit: 'mg', ref: 1000, isMax: false },
-                                        { label: 'Ferro', val: dailyTotals.iron, unit: 'mg', ref: 8, isMax: false },
-                                        { label: 'Vitamina C', val: dailyTotals.vitaminC, unit: 'mg', ref: 75, isMax: false },
-                                    ].map(m => {
-                                        const pct = Math.round((m.val / m.ref) * 100);
-                                        const isLow = !m.isMax && pct < 70;
-                                        const isHigh = m.isMax && pct > 100;
-                                        return (
-                                            <tr key={m.label} className="border-b border-gray-100 dark:border-gray-700">
-                                                <td className={`p-2 ${isManagerMode ? 'text-slate-600' : 'text-gray-700'}`}>{m.label}</td>
-                                                <td className="text-right p-2 font-bold">
-                                                    {m.val} {m.unit}
-                                                    <div className="text-[10px] text-gray-400 font-normal">DRI: {m.ref}{m.unit}</div>
-                                                </td>
-                                                <td className="text-center p-2">
-                                                    <div className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold inline-block ${isLow ? 'bg-yellow-100 text-yellow-700' :
-                                                        isHigh ? 'bg-red-100 text-red-700' :
-                                                            'bg-emerald-100 text-emerald-700'
-                                                        }`}>
-                                                        {pct}% {m.isMax && pct > 100 ? 'ALTO' : (pct < 70 ? 'BAIXO' : 'OK')}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                            <p className={`text-[10px] mt-4 text-center ${isManagerMode ? 'text-slate-500' : 'text-black'}`}>
-                                * Valores calculados com base na Tabela TACO/IBGE e densidade nutricional dos alimentos cadastrados.
-                                Alguns micronutrientes podem estar subestimados se o cadastro do alimento estiver incompleto.
-                            </p>
+            {
+                showMicrosModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+                        <div className={`${isManagerMode ? 'bg-white text-slate-800' : 'bg-white text-black'} rounded-lg shadow-xl w-full max-w-lg p-6 flex flex-col max-h-[80vh]`}>
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-lg font-bold">Tabela de Nutrientes do Plano</h3>
+                                <button onClick={() => setShowMicrosModal(false)}>✕</button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                <table className="w-full text-sm">
+                                    <thead className={`${isManagerMode ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-black'}`}>
+                                        <tr>
+                                            <th className="text-left p-2">Nutriente</th>
+                                            <th className="text-right p-2">Total Calculado</th>
+                                            <th className="text-center p-2">Obs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {/* Macronutrientes */}
+                                        <tr className="font-bold bg-gray-50/10">
+                                            <td className={`p-2 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Calorias</td>
+                                            <td className={`text-right p-2 ${isManagerMode ? 'text-emerald-400' : 'text-emerald-700'}`}>{dailyTotals.calories} kcal</td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Proteína</td>
+                                            <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.protein} g</td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Carboidratos</td>
+                                            <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.carbs} g</td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td className={`p-2 pl-4 ${isManagerMode ? 'text-slate-800' : 'text-black'}`}>Gorduras Totais</td>
+                                            <td className={`text-right p-2 ${isManagerMode ? 'text-blue-600' : 'text-emerald-700'}`}>{dailyTotals.fat} g</td>
+                                            <td></td>
+                                        </tr>
+                                        {/* Micronutrientes c/ DRI Analysis */}
+                                        <tr><td colSpan={3} className="p-2 font-bold text-xs uppercase bg-gray-50/5 mt-2">Análise de Micronutrientes (vs DRIs)</td></tr>
+                                        {[
+                                            { label: 'Fibras', val: dailyTotals.fiber, unit: 'g', ref: 25, isMax: false },
+                                            { label: 'Sódio', val: dailyTotals.sodium, unit: 'mg', ref: 2300, isMax: true },
+                                            { label: 'Potássio', val: dailyTotals.potassium, unit: 'mg', ref: 4700, isMax: false },
+                                            { label: 'Cálcio', val: dailyTotals.calcium, unit: 'mg', ref: 1000, isMax: false },
+                                            { label: 'Ferro', val: dailyTotals.iron, unit: 'mg', ref: 8, isMax: false },
+                                            { label: 'Vitamina C', val: dailyTotals.vitaminC, unit: 'mg', ref: 75, isMax: false },
+                                        ].map(m => {
+                                            const pct = Math.round((m.val / m.ref) * 100);
+                                            const isLow = !m.isMax && pct < 70;
+                                            const isHigh = m.isMax && pct > 100;
+                                            return (
+                                                <tr key={m.label} className="border-b border-gray-100 dark:border-gray-700">
+                                                    <td className={`p-2 ${isManagerMode ? 'text-slate-600' : 'text-gray-700'}`}>{m.label}</td>
+                                                    <td className="text-right p-2 font-bold">
+                                                        {m.val} {m.unit}
+                                                        <div className="text-[10px] text-gray-400 font-normal">DRI: {m.ref}{m.unit}</div>
+                                                    </td>
+                                                    <td className="text-center p-2">
+                                                        <div className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold inline-block ${isLow ? 'bg-yellow-100 text-yellow-700' :
+                                                            isHigh ? 'bg-red-100 text-red-700' :
+                                                                'bg-emerald-100 text-emerald-700'
+                                                            }`}>
+                                                            {pct}% {m.isMax && pct > 100 ? 'ALTO' : (pct < 70 ? 'BAIXO' : 'OK')}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                                <p className={`text-[10px] mt-4 text-center ${isManagerMode ? 'text-slate-500' : 'text-black'}`}>
+                                    * Valores calculados com base na Tabela TACO/IBGE e densidade nutricional dos alimentos cadastrados.
+                                    Alguns micronutrientes podem estar subestimados se o cadastro do alimento estiver incompleto.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* SHOPPING LIST MODAL */}
-            {showShoppingListModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-sm' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col`}>
-                        <h3 className="text-lg font-bold mb-4">Lista de Compras (Semanal)</h3>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {Object.entries(ShoppingListService.generate(meals)).map(([category, items]) => (
-                                <div key={category} className="mb-4">
-                                    <h4 className="font-bold text-xs uppercase bg-gray-100 dark:bg-gray-700 p-1 mb-2 rounded">{category}</h4>
-                                    <ul className="text-sm space-y-1">
-                                        {items.map((item, i) => (
-                                            <li key={i} className="flex justify-between">
-                                                <span>{item.name}</span>
-                                                <span className="font-mono">{(item.totalGrams * 7).toFixed(0)}g (x7 dias)</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
+            {
+                showShoppingListModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+                        <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100 shadow-sm' : 'bg-white text-gray-900'} rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col`}>
+                            <h3 className="text-lg font-bold mb-4">Lista de Compras (Semanal)</h3>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                {Object.entries(ShoppingListService.generate(meals)).map(([category, items]) => (
+                                    <div key={category} className="mb-4">
+                                        <h4 className="font-bold text-xs uppercase bg-gray-100 dark:bg-gray-700 p-1 mb-2 rounded">{category}</h4>
+                                        <ul className="text-sm space-y-1">
+                                            {items.map((item, i) => (
+                                                <li key={i} className="flex justify-between">
+                                                    <span>{item.name}</span>
+                                                    <span className="font-mono">{(item.totalGrams * 7).toFixed(0)}g (x7 dias)</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={() => setShowShoppingListModal(false)} className="mt-4 w-full py-2 border rounded font-bold">Fechar</button>
                         </div>
-                        <button onClick={() => setShowShoppingListModal(false)} className="mt-4 w-full py-2 border rounded font-bold">Fechar</button>
                     </div>
-                </div>
-            )}
+                )
+            }
 
 
 
             {/* SUBSTITUTES MODAL (Centered for better UX) */}
-            {showSubstitutesDrawer && (
-                <div className="fixed inset-0 z-50 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center p-4">
-                    <div className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl flex flex-col animate-scaleUp ${isManagerMode ? 'bg-white text-slate-800 border border-blue-100' : 'bg-white text-gray-900'}`} style={{ maxHeight: '85vh' }}>
-                        <div className="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 className="font-bold text-lg">Substituições Sugeridas</h3>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ajuste técnico com base na categoria</p>
-                            </div>
-                            <button onClick={() => { setShowSubstitutesDrawer(null); setSubConfigItem(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">✕</button>
-                        </div>
-
-                        {/* TABS (Hidden during config) */}
-                        {!subConfigItem && (
-                            <div className="flex border-b mb-4 dark:border-gray-700">
-                                <button
-                                    onClick={() => { setSubTab('SUGGESTIONS'); setSubConfigItem(null); }}
-                                    className={`flex-1 py-2 text-sm font-bold border-b-2 transition-colors ${subTab === 'SUGGESTIONS' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}
-                                >
-                                    Sugestões do Grupo
-                                </button>
-                                <button
-                                    onClick={() => { setSubTab('SEARCH'); setSubConfigItem(null); }}
-                                    className={`flex-1 py-2 text-sm font-bold border-b-2 transition-colors ${subTab === 'SEARCH' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}
-                                >
-                                    Busca Livre
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-2 min-h-[300px]">
-                            {subConfigItem ? (
-                                <div className={`p-4 rounded-2xl border-2 animate-fadeIn ${isManagerMode ? 'bg-gray-700/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
-                                    <h4 className="font-bold text-emerald-600 mb-1">Configurar Seleção</h4>
-                                    <div className="text-sm font-medium mb-4">{subConfigItem.namePt}</div>
-
-                                    <div className="mb-4">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400">Nome para Impressão</label>
-                                        <input
-                                            type="text"
-                                            value={subConfigCustomName}
-                                            onChange={(e) => setSubConfigCustomName(e.target.value)}
-                                            className={`w-full p-2 mt-1 rounded-lg border text-sm font-medium ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-200 focus:ring-2 focus:ring-emerald-500'}`}
-                                            placeholder="Ex: Café Expresso"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className={subConfigPortionIdx === -1 ? 'col-span-1' : 'col-span-1'}>
-                                            <label className="text-[10px] uppercase font-bold text-gray-400">Porção</label>
-                                            <select
-                                                value={subConfigPortionIdx}
-                                                onChange={(e) => {
-                                                    setSubConfigPortionIdx(parseInt(e.target.value));
-                                                    if (parseInt(e.target.value) !== -1) setSubConfigManualWeight('');
-                                                }}
-                                                className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                            >
-                                                {subConfigItem.portions.map((p, i) => (
-                                                    <option key={i} value={i}>{p.label} ({p.grams}g)</option>
-                                                ))}
-                                                <option value="-1">Outra (digitar)</option>
-                                            </select>
-                                        </div>
-                                        {subConfigPortionIdx === -1 && (
-                                            <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Peso (g/mL)</label>
-                                                <input
-                                                    type="number"
-                                                    value={subConfigManualWeight}
-                                                    onChange={(e) => setSubConfigManualWeight(e.target.value)}
-                                                    className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className={subConfigPortionIdx === -1 ? 'col-span-2' : 'col-span-1'}>
-                                            <label className="text-[10px] uppercase font-bold text-gray-400">Qtd</label>
-                                            <input
-                                                type="number"
-                                                value={subConfigQuantity}
-                                                onChange={(e) => setSubConfigQuantity(parseFloat(e.target.value) || 0)}
-                                                className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* PRÉVIA NUTRICIONAL */}
-                                    {(() => {
-                                        const nut = subConfigItem.nutrientsPer100g;
-                                        let ratio = 0;
-                                        if (subConfigPortionIdx === -1) {
-                                            ratio = ((parseFloat(subConfigManualWeight) || 0) * subConfigQuantity) / 100;
-                                        } else {
-                                            const p = subConfigItem.portions[subConfigPortionIdx];
-                                            ratio = (p.grams * subConfigQuantity) / 100;
-                                        }
-                                        const preview = {
-                                            kcal: Math.round(nut.kcal * ratio),
-                                            p: (nut.protein_g * ratio).toFixed(1),
-                                            c: (nut.carb_g * ratio).toFixed(1),
-                                            g: (nut.fat_g * ratio).toFixed(1)
-                                        };
-                                        return (
-                                            <div className={`mt-4 p-3 rounded-xl flex justify-around text-center border ${isManagerMode ? 'bg-gray-900 border-gray-700' : 'bg-slate-50 border-slate-100'}`}>
-                                                <div><div className="text-[9px] text-gray-400 uppercase">Kcal</div><div className="font-bold text-sm">{preview.kcal}</div></div>
-                                                <div><div className="text-[9px] text-gray-400 uppercase">Prot</div><div className="font-bold text-sm text-blue-500">{preview.p}</div></div>
-                                                <div><div className="text-[9px] text-gray-400 uppercase">Carb</div><div className="font-bold text-sm text-green-600">{preview.c}</div></div>
-                                                <div><div className="text-[9px] text-gray-400 uppercase">Gord</div><div className="font-bold text-sm text-yellow-600">{preview.g}</div></div>
-                                            </div>
-                                        );
-                                    })()}
-
-                                    <div className="flex gap-2 mt-6">
-                                        <button onClick={() => setSubConfigItem(null)} className="flex-1 py-2 text-sm font-bold rounded-xl border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Voltar</button>
-                                        <button onClick={confirmSubstitution} className="flex-1 py-2 text-sm font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all">Confirmar</button>
-                                    </div>
+            {
+                showSubstitutesDrawer && (
+                    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center p-4">
+                        <div className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl flex flex-col animate-scaleUp ${isManagerMode ? 'bg-white text-slate-800 border border-blue-100' : 'bg-white text-gray-900'}`} style={{ maxHeight: '85vh' }}>
+                            <div className="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 className="font-bold text-lg">Substituições Sugeridas</h3>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ajuste técnico com base na categoria</p>
                                 </div>
-                            ) : subTab === 'SUGGESTIONS' ? (
-                                <>
-                                    <p className="text-xs text-gray-500 italic">Itens tecnicamente similares em calorias e macronutrientes.</p>
-                                    <div className="space-y-2">
-                                        {substituteCandidates.length === 0 ? (
-                                            <p className="text-center italic text-gray-500 py-10 bg-gray-50 dark:bg-gray-700/30 rounded-lg">Sem substitutos diretos encontrados.</p>
-                                        ) : (
-                                            substituteCandidates.map(suggestion => {
-                                                const cand = suggestion.food;
-                                                const portionDesc = suggestion.isManualWeight
-                                                    ? `${suggestion.suggestedWeightGrams}g`
-                                                    : cand.portions[suggestion.suggestedPortionIdx]?.label;
+                                <button onClick={() => { setShowSubstitutesDrawer(null); setSubConfigItem(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">✕</button>
+                            </div>
 
-                                                return (
-                                                    <button key={cand.id} onClick={() => handlePreSelectSubstitution(cand, suggestion)} className={`w-full text-left p-3 rounded-xl border flex justify-between items-center transition-all ${isManagerMode ? 'border-gray-700 hover:bg-gray-700 hover:border-emerald-500/50' : 'border-slate-100 hover:bg-emerald-50 hover:border-emerald-200'}`}>
-                                                        <div className="flex-1">
-                                                            <div className="font-bold text-sm">{cand.namePt}</div>
-                                                            <div className="text-[10px] text-gray-400 uppercase">{cand.category}</div>
-                                                            <div className="text-[11px] text-emerald-600 font-bold mt-1 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full w-fit">
-                                                                Sugerido: {suggestion.suggestedQuantity > 1 ? `${suggestion.suggestedQuantity}x ` : ''} {portionDesc}
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-emerald-600 font-bold text-[10px] px-2 py-1 bg-emerald-100 dark:bg-emerald-900/40 rounded uppercase ml-2">Ajustar</span>
-                                                    </button>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Busque qualquer alimento..."
-                                            value={subQuery}
-                                            onChange={(e) => setSubQuery(e.target.value)}
-                                            className={`w-full p-3 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 outline-none ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-                                            autoFocus
-                                        />
-                                        <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
-                                            <Icons.Search />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        {subSearchResults.length === 0 ? (
-                                            <p className="text-center italic text-gray-500 py-10">Digite algo para buscar na base...</p>
-                                        ) : (
-                                            subSearchResults.map(cand => (
-                                                <button key={cand.id} onClick={() => handlePreSelectSubstitution(cand)} className={`w-full text-left p-3 rounded-xl border flex justify-between items-center transition-all ${isManagerMode ? 'border-gray-700 hover:bg-gray-700 hover:border-emerald-500/50' : 'border-slate-100 hover:bg-emerald-50 hover:border-emerald-200'}`}>
-                                                    <div>
-                                                        <div className="font-bold text-sm">{cand.namePt}</div>
-                                                        <div className="text-[10px] text-gray-500 uppercase">{cand.category} • {cand.nutrientsPer100g.kcal} kcal/100g</div>
-                                                    </div>
-                                                    <span className="text-emerald-600 font-bold text-[10px] px-2 py-1 bg-emerald-100 dark:bg-emerald-900/40 rounded uppercase">Selecionar</span>
-                                                </button>
-                                            ))
-                                        )}
-                                    </div>
+                            {/* TABS (Hidden during config) */}
+                            {!subConfigItem && (
+                                <div className="flex border-b mb-4 dark:border-gray-700">
+                                    <button
+                                        onClick={() => { setSubTab('SUGGESTIONS'); setSubConfigItem(null); }}
+                                        className={`flex-1 py-2 text-sm font-bold border-b-2 transition-colors ${subTab === 'SUGGESTIONS' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}
+                                    >
+                                        Sugestões do Grupo
+                                    </button>
+                                    <button
+                                        onClick={() => { setSubTab('SEARCH'); setSubConfigItem(null); }}
+                                        className={`flex-1 py-2 text-sm font-bold border-b-2 transition-colors ${subTab === 'SEARCH' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}
+                                    >
+                                        Busca Livre
+                                    </button>
                                 </div>
                             )}
+
+                            <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-2 min-h-[300px]">
+                                {subConfigItem ? (
+                                    <div className={`p-4 rounded-2xl border-2 animate-fadeIn ${isManagerMode ? 'bg-gray-700/50 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
+                                        <h4 className="font-bold text-emerald-600 mb-1">Configurar Seleção</h4>
+                                        <div className="text-sm font-medium mb-4">{subConfigItem.namePt}</div>
+
+                                        <div className="mb-4">
+                                            <label className="text-[10px] uppercase font-bold text-gray-400">Nome para Impressão</label>
+                                            <input
+                                                type="text"
+                                                value={subConfigCustomName}
+                                                onChange={(e) => setSubConfigCustomName(e.target.value)}
+                                                className={`w-full p-2 mt-1 rounded-lg border text-sm font-medium ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-emerald-200 focus:ring-2 focus:ring-emerald-500'}`}
+                                                placeholder="Ex: Café Expresso"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className={subConfigPortionIdx === -1 ? 'col-span-1' : 'col-span-1'}>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">Porção</label>
+                                                <select
+                                                    value={subConfigPortionIdx}
+                                                    onChange={(e) => {
+                                                        setSubConfigPortionIdx(parseInt(e.target.value));
+                                                        if (parseInt(e.target.value) !== -1) setSubConfigManualWeight('');
+                                                    }}
+                                                    className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                                >
+                                                    {subConfigItem.portions.map((p, i) => (
+                                                        <option key={i} value={i}>{p.label} ({p.grams}g)</option>
+                                                    ))}
+                                                    <option value="-1">Outra (digitar)</option>
+                                                </select>
+                                            </div>
+                                            {subConfigPortionIdx === -1 && (
+                                                <div>
+                                                    <label className="text-[10px] uppercase font-bold text-gray-400">Peso (g/mL)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={subConfigManualWeight}
+                                                        onChange={(e) => setSubConfigManualWeight(e.target.value)}
+                                                        className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className={subConfigPortionIdx === -1 ? 'col-span-2' : 'col-span-1'}>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">Qtd</label>
+                                                <input
+                                                    type="number"
+                                                    value={subConfigQuantity}
+                                                    onChange={(e) => setSubConfigQuantity(parseFloat(e.target.value) || 0)}
+                                                    className={`w-full p-2 mt-1 rounded-lg border text-sm ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* PRÉVIA NUTRICIONAL */}
+                                        {(() => {
+                                            const nut = subConfigItem.nutrientsPer100g;
+                                            let ratio = 0;
+                                            if (subConfigPortionIdx === -1) {
+                                                ratio = ((parseFloat(subConfigManualWeight) || 0) * subConfigQuantity) / 100;
+                                            } else {
+                                                const p = subConfigItem.portions[subConfigPortionIdx];
+                                                ratio = (p.grams * subConfigQuantity) / 100;
+                                            }
+                                            const preview = {
+                                                kcal: Math.round(nut.kcal * ratio),
+                                                p: (nut.protein_g * ratio).toFixed(1),
+                                                c: (nut.carb_g * ratio).toFixed(1),
+                                                g: (nut.fat_g * ratio).toFixed(1)
+                                            };
+                                            return (
+                                                <div className={`mt-4 p-3 rounded-xl flex justify-around text-center border ${isManagerMode ? 'bg-gray-900 border-gray-700' : 'bg-slate-50 border-slate-100'}`}>
+                                                    <div><div className="text-[9px] text-gray-400 uppercase">Kcal</div><div className="font-bold text-sm">{preview.kcal}</div></div>
+                                                    <div><div className="text-[9px] text-gray-400 uppercase">Prot</div><div className="font-bold text-sm text-blue-500">{preview.p}</div></div>
+                                                    <div><div className="text-[9px] text-gray-400 uppercase">Carb</div><div className="font-bold text-sm text-green-600">{preview.c}</div></div>
+                                                    <div><div className="text-[9px] text-gray-400 uppercase">Gord</div><div className="font-bold text-sm text-yellow-600">{preview.g}</div></div>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        <div className="flex gap-2 mt-6">
+                                            <button onClick={() => setSubConfigItem(null)} className="flex-1 py-2 text-sm font-bold rounded-xl border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Voltar</button>
+                                            <button onClick={confirmSubstitution} className="flex-1 py-2 text-sm font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all">Confirmar</button>
+                                        </div>
+                                    </div>
+                                ) : subTab === 'SUGGESTIONS' ? (
+                                    <>
+                                        <p className="text-xs text-gray-500 italic">Itens tecnicamente similares em calorias e macronutrientes.</p>
+                                        <div className="space-y-2">
+                                            {substituteCandidates.length === 0 ? (
+                                                <p className="text-center italic text-gray-500 py-10 bg-gray-50 dark:bg-gray-700/30 rounded-lg">Sem substitutos diretos encontrados.</p>
+                                            ) : (
+                                                substituteCandidates.map(suggestion => {
+                                                    const cand = suggestion.food;
+                                                    const portionDesc = suggestion.isManualWeight
+                                                        ? `${suggestion.suggestedWeightGrams}g`
+                                                        : cand.portions[suggestion.suggestedPortionIdx]?.label;
+
+                                                    return (
+                                                        <button key={cand.id} onClick={() => handlePreSelectSubstitution(cand, suggestion)} className={`w-full text-left p-3 rounded-xl border flex justify-between items-center transition-all ${isManagerMode ? 'border-gray-700 hover:bg-gray-700 hover:border-emerald-500/50' : 'border-slate-100 hover:bg-emerald-50 hover:border-emerald-200'}`}>
+                                                            <div className="flex-1">
+                                                                <div className="font-bold text-sm">{cand.namePt}</div>
+                                                                <div className="text-[10px] text-gray-400 uppercase">{cand.category}</div>
+                                                                <div className="text-[11px] text-emerald-600 font-bold mt-1 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full w-fit">
+                                                                    Sugerido: {suggestion.suggestedQuantity > 1 ? `${suggestion.suggestedQuantity}x ` : ''} {portionDesc}
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-emerald-600 font-bold text-[10px] px-2 py-1 bg-emerald-100 dark:bg-emerald-900/40 rounded uppercase ml-2">Ajustar</span>
+                                                        </button>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Busque qualquer alimento..."
+                                                value={subQuery}
+                                                onChange={(e) => setSubQuery(e.target.value)}
+                                                className={`w-full p-3 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 outline-none ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
+                                                autoFocus
+                                            />
+                                            <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+                                                <Icons.Search />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {subSearchResults.length === 0 ? (
+                                                <p className="text-center italic text-gray-500 py-10">Digite algo para buscar na base...</p>
+                                            ) : (
+                                                subSearchResults.map(cand => (
+                                                    <button key={cand.id} onClick={() => handlePreSelectSubstitution(cand)} className={`w-full text-left p-3 rounded-xl border flex justify-between items-center transition-all ${isManagerMode ? 'border-gray-700 hover:bg-gray-700 hover:border-emerald-500/50' : 'border-slate-100 hover:bg-emerald-50 hover:border-emerald-200'}`}>
+                                                        <div>
+                                                            <div className="font-bold text-sm">{cand.namePt}</div>
+                                                            <div className="text-[10px] text-gray-500 uppercase">{cand.category} • {cand.nutrientsPer100g.kcal} kcal/100g</div>
+                                                        </div>
+                                                        <span className="text-emerald-600 font-bold text-[10px] px-2 py-1 bg-emerald-100 dark:bg-emerald-900/40 rounded uppercase">Selecionar</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* VISTA DE IMPRESSÃO (Oculta mas capturada pelo html2pdf) */}
             <div className="fixed top-0 left-0 w-full opacity-0 pointer-events-none -z-50" data-html2pdf-ignore="false">
@@ -2120,31 +2145,31 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             <div className="space-y-6 flex-1">
                                 {snapshotForPdf.plan.meals.map((m: any, i: number) => (
                                     m.items.length > 0 && (
-                                        <div key={i} className="break-inside-avoid mb-6">
-                                            <div className="flex justify-between items-center bg-gray-50 border-b-2 border-slate-200 p-2.5 rounded-t-md mb-3">
+                                        <div key={i} className="mb-6">
+                                            <div className="flex justify-between items-center bg-gray-50 border-b-2 border-slate-200 p-2.5 rounded-t-md mb-3 break-inside-avoid">
                                                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">{m.name}</h3>
                                                 {m.time && <span className="text-[10px] font-mono font-bold text-gray-500">{m.time}</span>}
                                             </div>
                                             <div className="space-y-3 pl-3">
                                                 {m.items.map((it: any, j: number) => (
-                                                    <div key={j} className="mb-2 last:mb-0">
-                                                        <div className="text-xs font-medium text-slate-800 flex items-baseline gap-3">
-                                                            <span className="shrink-0 font-bold text-slate-600 w-24 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</span>
-                                                            <span className="leading-relaxed flex-1">{it.customName || it.name}</span>
-                                                        </div>
-                                                        {it.substitutes && it.substitutes.length > 0 && (
-                                                            <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
-                                                                {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                    <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-1">
-                                                                        <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                        <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed flex-1">
-                                                                            <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                            <span className="italic">{sub.customName || sub.name}</span>
+                                                    <div key={j} className="mb-2 last:mb-0 break-inside-avoid">
+                                                        <span className="shrink-0 font-bold text-slate-600 w-24 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</span>
+                                                        <span className="leading-relaxed flex-1">{it.customName || it.name}</span>
+                                                        {
+                                                            it.substitutes && it.substitutes.length > 0 && (
+                                                                <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
+                                                                    {it.substitutes.map((sub: any, sIdx: number) => (
+                                                                        <div key={sIdx} className="text-slate-500 text-[10px] flex items-center gap-2 py-1">
+                                                                            <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
+                                                                            <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed flex-1">
+                                                                                <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
+                                                                                <span className="italic">{sub.customName || sub.name}</span>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        }
                                                     </div>
                                                 ))}
                                             </div>
@@ -2222,150 +2247,152 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {/* ======================== MODAL: BIBLIOTECA DE MODELOS ======================== */}
-            {showTemplateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
+            {
+                showTemplateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
 
-                        {/* Header */}
-                        <div className={`flex items-center justify-between p-5 border-b ${isManagerMode ? 'border-blue-100 bg-blue-50' : 'border-emerald-100 bg-emerald-50'}`}>
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
-                                    📚
+                            {/* Header */}
+                            <div className={`flex items-center justify-between p-5 border-b ${isManagerMode ? 'border-blue-100 bg-blue-50' : 'border-emerald-100 bg-emerald-50'}`}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+                                        📚
+                                    </div>
+                                    <div>
+                                        <h2 className={`text-sm font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>
+                                            Biblioteca de Modelos
+                                        </h2>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            {templates.length} modelo{templates.length !== 1 ? 's' : ''} salvos na sua biblioteca
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className={`text-sm font-black uppercase tracking-widest ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>
-                                        Biblioteca de Modelos
-                                    </h2>
-                                    <p className="text-xs text-slate-500 mt-0.5">
-                                        {templates.length} modelo{templates.length !== 1 ? 's' : ''} salvos na sua biblioteca
-                                    </p>
-                                </div>
+                                <button
+                                    onClick={() => setShowTemplateModal(false)}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                >
+                                    ✕
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setShowTemplateModal(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
 
-                        {/* Body */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                            {templates.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-center">
-                                    <div className="text-5xl mb-4">📂</div>
-                                    <h3 className="text-base font-bold text-slate-700 mb-1">Nenhum modelo salvo ainda</h3>
-                                    <p className="text-sm text-slate-400 max-w-xs">
-                                        Monte um plano alimentar e clique em <strong>⭐</strong> para salvá-lo na sua biblioteca e reutilizar em outros pacientes.
-                                    </p>
-                                </div>
-                            ) : (
-                                templates.map(tpl => (
-                                    <div
-                                        key={tpl.id}
-                                        className="border border-slate-200 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition-all group bg-white"
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="text-sm font-black text-slate-800 truncate">{tpl.title}</h3>
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tpl.methodology === 'QUALITATIVA'
-                                                        ? 'bg-purple-100 text-purple-700'
-                                                        : tpl.methodology === 'EQUIVALENTES'
-                                                            ? 'bg-orange-100 text-orange-700'
-                                                            : 'bg-emerald-100 text-emerald-700'
-                                                        }`}>
-                                                        {tpl.methodology === 'QUALITATIVA' ? 'Qualitativa' : tpl.methodology === 'EQUIVALENTES' ? 'Equivalentes' : 'Alimentos'}
-                                                    </span>
-                                                </div>
-
-                                                <p className="text-xs text-slate-500 mt-1 truncate">
-                                                    {tpl.strategyName || 'Sem estratégia definida'}
-                                                </p>
-
-                                                {/* Indicadores */}
-                                                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                                    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-50 rounded-lg px-2 py-1">
-                                                        🔥 {tpl.caloricTarget || 0} kcal
-                                                    </span>
-                                                    {tpl.macroTargets && (
-                                                        <>
-                                                            <span className="text-[10px] font-bold text-red-600 bg-red-50 rounded-lg px-2 py-1">
-                                                                P: {tpl.macroTargets.protein.g}g
-                                                            </span>
-                                                            <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 rounded-lg px-2 py-1">
-                                                                G: {tpl.macroTargets.fat.g}g
-                                                            </span>
-                                                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 rounded-lg px-2 py-1">
-                                                                C: {tpl.macroTargets.carbs.g}g
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                                                        🍽️ {tpl.meals?.length || 0} refeições
-                                                    </span>
-                                                    {tpl.createdAt && (
-                                                        <span className="text-[10px] text-slate-400">
-                                                            📅 {new Date(tpl.createdAt).toLocaleDateString('pt-BR')}
+                            {/* Body */}
+                            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                                {templates.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                                        <div className="text-5xl mb-4">📂</div>
+                                        <h3 className="text-base font-bold text-slate-700 mb-1">Nenhum modelo salvo ainda</h3>
+                                        <p className="text-sm text-slate-400 max-w-xs">
+                                            Monte um plano alimentar e clique em <strong>⭐</strong> para salvá-lo na sua biblioteca e reutilizar em outros pacientes.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    templates.map(tpl => (
+                                        <div
+                                            key={tpl.id}
+                                            className="border border-slate-200 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition-all group bg-white"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <h3 className="text-sm font-black text-slate-800 truncate">{tpl.title}</h3>
+                                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tpl.methodology === 'QUALITATIVA'
+                                                            ? 'bg-purple-100 text-purple-700'
+                                                            : tpl.methodology === 'EQUIVALENTES'
+                                                                ? 'bg-orange-100 text-orange-700'
+                                                                : 'bg-emerald-100 text-emerald-700'
+                                                            }`}>
+                                                            {tpl.methodology === 'QUALITATIVA' ? 'Qualitativa' : tpl.methodology === 'EQUIVALENTES' ? 'Equivalentes' : 'Alimentos'}
                                                         </span>
-                                                    )}
-                                                </div>
+                                                    </div>
 
-                                                {/* Preview das refeições */}
-                                                {tpl.meals && tpl.meals.length > 0 && (
-                                                    <div className="mt-2 flex flex-wrap gap-1">
-                                                        {tpl.meals.slice(0, 5).map((m, i) => (
-                                                            <span key={i} className="text-[9px] bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
-                                                                {m.name}
-                                                            </span>
-                                                        ))}
-                                                        {tpl.meals.length > 5 && (
-                                                            <span className="text-[9px] bg-slate-100 text-slate-400 rounded px-1.5 py-0.5">
-                                                                +{tpl.meals.length - 5} mais
+                                                    <p className="text-xs text-slate-500 mt-1 truncate">
+                                                        {tpl.strategyName || 'Sem estratégia definida'}
+                                                    </p>
+
+                                                    {/* Indicadores */}
+                                                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-50 rounded-lg px-2 py-1">
+                                                            🔥 {tpl.caloricTarget || 0} kcal
+                                                        </span>
+                                                        {tpl.macroTargets && (
+                                                            <>
+                                                                <span className="text-[10px] font-bold text-red-600 bg-red-50 rounded-lg px-2 py-1">
+                                                                    P: {tpl.macroTargets.protein.g}g
+                                                                </span>
+                                                                <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 rounded-lg px-2 py-1">
+                                                                    G: {tpl.macroTargets.fat.g}g
+                                                                </span>
+                                                                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 rounded-lg px-2 py-1">
+                                                                    C: {tpl.macroTargets.carbs.g}g
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                                                            🍽️ {tpl.meals?.length || 0} refeições
+                                                        </span>
+                                                        {tpl.createdAt && (
+                                                            <span className="text-[10px] text-slate-400">
+                                                                📅 {new Date(tpl.createdAt).toLocaleDateString('pt-BR')}
                                                             </span>
                                                         )}
                                                     </div>
-                                                )}
-                                            </div>
 
-                                            {/* Ações */}
-                                            <div className="flex flex-col gap-2 shrink-0">
-                                                <button
-                                                    onClick={() => handleImportTemplate(tpl)}
-                                                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg text-white transition-all active:scale-95 shadow-md ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                                                >
-                                                    ↩ Importar
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!confirm(`Excluir o modelo "${tpl.title}"? Esta ação não pode ser desfeita.`)) return;
-                                                        await db.deleteNutritionalTemplate(tpl.id);
-                                                        fetchTemplates();
-                                                    }}
-                                                    className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-all active:scale-95"
-                                                >
-                                                    🗑 Excluir
-                                                </button>
+                                                    {/* Preview das refeições */}
+                                                    {tpl.meals && tpl.meals.length > 0 && (
+                                                        <div className="mt-2 flex flex-wrap gap-1">
+                                                            {tpl.meals.slice(0, 5).map((m, i) => (
+                                                                <span key={i} className="text-[9px] bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
+                                                                    {m.name}
+                                                                </span>
+                                                            ))}
+                                                            {tpl.meals.length > 5 && (
+                                                                <span className="text-[9px] bg-slate-100 text-slate-400 rounded px-1.5 py-0.5">
+                                                                    +{tpl.meals.length - 5} mais
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Ações */}
+                                                <div className="flex flex-col gap-2 shrink-0">
+                                                    <button
+                                                        onClick={() => handleImportTemplate(tpl)}
+                                                        className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg text-white transition-all active:scale-95 shadow-md ${isManagerMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                                    >
+                                                        ↩ Importar
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!confirm(`Excluir o modelo "${tpl.title}"? Esta ação não pode ser desfeita.`)) return;
+                                                            await db.deleteNutritionalTemplate(tpl.id);
+                                                            fetchTemplates();
+                                                        }}
+                                                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-all active:scale-95"
+                                                    >
+                                                        🗑 Excluir
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                                    ))
+                                )}
+                            </div>
 
-                        {/* Footer */}
-                        <div className={`p-4 border-t ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-100 bg-emerald-50/50'}`}>
-                            <p className="text-[10px] text-slate-500 text-center">
-                                💡 Dica: Ao importar um modelo, as refeições e configurações serão carregadas como rascunho. Salve o plano para vinculá-lo ao paciente.
-                            </p>
+                            {/* Footer */}
+                            <div className={`p-4 border-t ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-100 bg-emerald-50/50'}`}>
+                                <p className="text-[10px] text-slate-500 text-center">
+                                    💡 Dica: Ao importar um modelo, as refeições e configurações serão carregadas como rascunho. Salve o plano para vinculá-lo ao paciente.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

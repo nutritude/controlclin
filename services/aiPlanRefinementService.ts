@@ -11,18 +11,19 @@ export const AIPlanRefinementService = {
 
         try {
             const prompt = `
-        Você é um nutricionista com foco em comunicação humanizada.
-        Abaixo está uma lista de refeições de um plano alimentar com nomes de alimentos que podem estar em formato técnico de banco de dados (ex: "Arroz Branco Cozido", "Pão de forma integral").
-        
-        Sua tarefa é reescrever os nomes dos alimentos (customName) para uma linguagem AMIGÁVEL e CONVENCIONAL que um paciente entenda perfeitamente.
-        
-        REGRAS:
-        1. Mantenha a essência do alimento e a porção técnica.
-        2. NÃO altere as quantidades (gramas, unidades). Use-as para tornar a descrição clara.
-        3. Se o nome já estiver amigável, mantenha-o.
-        4. Retorne EXATAMENTE o mesmo JSON de entrada (array de refeições), mas com o campo "customName" de cada item atualizado.
-        5. NÃO adicione ou remova itens ou refeições.
-        
+        Você é um nutricionista focado em experiência do paciente.
+        Abaixo está uma lista de refeições de um plano alimentar. 
+        Muitos alimentos vieram diretamente de um banco de dados técnico e estão com nomes pouco naturais (ex: "Pão, trigo, forma, integral" ou "Arroz, branco, cozido").
+
+        Sua tarefa é identificar esses nomes técnicos e convertê-los para nomes AMIGÁVEIS e APETITOSOS que uma pessoa comum usaria (ex: "Pão de forma integral" ou "Arroz branco").
+
+        REGRAS DE OURO:
+        1. Identifique nomes que usem vírgulas para separar atributos (ex: "Alimento, tipo, estado") e transforme-os em linguagem fluida.
+        2. Mantenha a essência do alimento.
+        3. NÃO altere quantidades ou porções.
+        4. Retorne EXATAMENTE o mesmo JSON de entrada, apenas com o campo "customName" de cada item atualizado.
+        5. Se um item já tiver um nome amigável ou personalizado pelo profissional, mantenha-o.
+
         PLANO ATUAL:
         ${JSON.stringify(plan)}
       `;
