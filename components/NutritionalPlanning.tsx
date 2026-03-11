@@ -10,6 +10,9 @@ import { SubstitutionService, SubstitutionSuggestion } from '../services/food/su
 import { ShoppingListService, ShoppingItem } from '../services/food/shoppingList';
 import { AIPlanAnalysisService } from '../services/aiPlanAnalysis';
 import { AIAdherenceService, AdherenceAnalysis } from '../services/ai/aiAdherenceService';
+import { AIPlanRefinementService } from '../services/aiPlanRefinementService';
+import { AIClinicalSummaryService } from '../services/aiClinicalSummary';
+import { DocxExportService } from '../services/docxExportService';
 import { EnergyExpenditureService, AMPUTATION_MEMBERS } from '../services/nutrition/energyExpenditure';
 import AddFoodModal from './AddFoodModal';
 import EditFoodModal from './EditFoodModal';
@@ -208,8 +211,11 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [adherenceAnalysis, setAdherenceAnalysis] = useState<AdherenceAnalysis | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+    const [isRefining, setIsRefining] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string | null>(null);
+    const [clinicalSummaryText, setClinicalSummaryText] = useState<string | null>(null);
     const pdfRef = useRef<HTMLDivElement>(null);
     const [snapshotForPdf, setSnapshotForPdf] = useState<any>(null);
 
@@ -858,6 +864,23 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         }
     };
 
+    const handleRefineLanguage = async () => {
+        if (meals.length === 0) {
+            alert("Adicione itens ao plano antes de humanizar.");
+            return;
+        }
+        setIsRefining(true);
+        try {
+            const refinedMeals = await AIPlanRefinementService.refinePlanLanguage(meals);
+            setMeals(refinedMeals);
+            alert("Inovação Concluída: Plano reescrito com linguagem amigável!");
+        } catch (err) {
+            alert("Erro ao humanizar: " + err);
+        } finally {
+            setIsRefining(false);
+        }
+    };
+
     const sanitizeFilename = (name: string): string => {
         const clean = name.trim()
             .normalize('NFD')
@@ -879,6 +902,46 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
         try {
             const state = stateRef.current; // ALWAYS FRESH
+            // 1. Gerar Resumo Clínico e Dicas se não houver
+            let finalSummary = clinicalSummaryText;
+            let finalAdherence = adherenceAnalysis;
+
+            if (!finalSummary || !finalAdherence) {
+                setSyncStatus('🤖 IA Gerando Resumo...');
+                try {
+                    const reportSnapshot = await db.buildIndividualReportDataset(patient.id);
+                    if (reportSnapshot) {
+                        const [summary, adherence] = await Promise.all([
+                            AIClinicalSummaryService.generateSummary(reportSnapshot),
+                            AIAdherenceService.generateTips({
+                                patient: {
+                                    name: patient.name,
+                                    age: patientAge,
+                                    gender: patient.gender,
+                                    diagnoses: patient.clinicalSummary?.activeDiagnoses || [],
+                                    objective: patient.clinicalSummary?.clinicalGoal || 'Manutenção da saúde',
+                                    activityFactor: state.calcActivityFactor,
+                                    kcalTarget: state.targetKcal,
+                                    macroTargets: {
+                                        protein: state.macroResults.protein.g,
+                                        carbs: state.macroResults.carbs.g,
+                                        fat: state.macroResults.fat.g,
+                                    }
+                                },
+                                totals: dailyTotals,
+                                plan: { meals }
+                            } as any)
+                        ]);
+                        finalSummary = summary;
+                        finalAdherence = adherence;
+                        setClinicalSummaryText(summary);
+                        setAdherenceAnalysis(adherence);
+                    }
+                } catch (e) {
+                    console.error("Erro IA no PDF:", e);
+                }
+                setSyncStatus(null);
+            }
 
             // Monta snapshot a partir do estado local
             const localSnapshot = {
@@ -904,6 +967,8 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     meals: state.meals,
                 },
                 totals: dailyTotals,
+                clinicalSummary: finalSummary,
+                adherence: finalAdherence
             };
 
             setSnapshotForPdf(localSnapshot);
@@ -944,6 +1009,76 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
 
 
+
+    const handleGenerateDOCX = async () => {
+        if (meals.length === 0) {
+            alert('Adicione refeições ao plano antes de gerar o Word.');
+            return;
+        }
+        if (isGeneratingDocx) return;
+        setIsGeneratingDocx(true);
+        try {
+            const state = stateRef.current;
+            // Reutiliza a lógica de preparação do snapshot (IA)
+            let finalSummary = clinicalSummaryText;
+            let finalAdherence = adherenceAnalysis;
+
+            if (!finalSummary || !finalAdherence) {
+                setSyncStatus('🤖 IA Gerando Dados...');
+                const reportSnapshot = await db.buildIndividualReportDataset(patient.id);
+                if (reportSnapshot) {
+                    const [summary, adherence] = await Promise.all([
+                        AIClinicalSummaryService.generateSummary(reportSnapshot),
+                        AIAdherenceService.generateTips({
+                            patient: {
+                                name: patient.name,
+                                age: patientAge,
+                                gender: patient.gender,
+                                diagnoses: patient.clinicalSummary?.activeDiagnoses || [],
+                                objective: patient.clinicalSummary?.clinicalGoal || 'Manutenção da saúde',
+                                activityFactor: state.calcActivityFactor,
+                                kcalTarget: state.targetKcal,
+                                macroTargets: {
+                                    protein: state.macroResults.protein.g,
+                                    carbs: state.macroResults.carbs.g,
+                                    fat: state.macroResults.fat.g,
+                                }
+                            },
+                            totals: dailyTotals,
+                            plan: { meals }
+                        } as any)
+                    ]);
+                    finalSummary = summary;
+                    finalAdherence = adherence;
+                    setClinicalSummaryText(summary);
+                    setAdherenceAnalysis(adherence);
+                }
+                setSyncStatus(null);
+            }
+
+            const snapshot = {
+                patient: {
+                    name: patient.name,
+                    age: patientAge,
+                    gender: patient.gender,
+                    diagnoses: patient.clinicalSummary?.activeDiagnoses || [],
+                    objective: patient.clinicalSummary?.clinicalGoal || 'Manutenção da saúde',
+                },
+                responsibleProfessional: responsibleProfessional,
+                clinic: clinic,
+                plan: { meals },
+                clinicalSummary: finalSummary,
+                adherence: finalAdherence
+            };
+
+            await DocxExportService.generatePlanDocx(snapshot);
+        } catch (err) {
+            console.error('[DOCX] Error:', err);
+            alert('Erro ao gerar Word: ' + String(err));
+        } finally {
+            setIsGeneratingDocx(false);
+        }
+    };
 
     const formatMealItemQuantity = (item: MealItem) => {
         if (item.quantity === 1) {
@@ -1005,8 +1140,12 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             }`}>{syncStatus}</span>
                     )}
                     <div className="flex gap-2 w-full sm:w-auto">
+                        <button type="button" onClick={handleRefineLanguage} disabled={isRefining} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isRefining ? 'bg-gray-100' : 'bg-gradient-to-r from-purple-50 to-indigo-50 text-indigo-700 border-indigo-200'}`}>
+                            <span className="animate-pulse">✨</span> {isRefining ? 'Humanizando...' : 'Inovar: IA Amigável'}
+                        </button>
                         <button type="button" onClick={() => setShowTemplateModal(true)} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}><Icons.BookOpen className="w-3.5 h-3.5" /> Modelos</button>
                         <button type="button" onClick={handleGeneratePDF} data-html2pdf-ignore disabled={isGeneratingPdf} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingPdf ? 'bg-gray-200' : (isManagerMode ? 'bg-white text-blue-700 border-blue-200' : 'bg-white text-slate-700 border-slate-200')}`}>{isGeneratingPdf ? '...' : <><Icons.FileText className="w-3.5 h-3.5" /> PDF</>}</button>
+                        <button type="button" onClick={handleGenerateDOCX} data-html2pdf-ignore disabled={isGeneratingDocx} className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isGeneratingDocx ? 'bg-gray-200' : 'bg-white text-blue-700 border-blue-200'}`}>{isGeneratingDocx ? '...' : <><Icons.Download className="w-3.5 h-3.5" /> DOCX</>}</button>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button type="button" onClick={handleSaveTemplate} data-html2pdf-ignore className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center justify-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
@@ -1955,25 +2094,20 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 patientObjective={snapshotForPdf.patient.objective}
                             />
 
-                            {/* RESUMO DE METAS */}
-                            <div className="grid grid-cols-4 gap-4 mb-8 bg-slate-50/80 p-5 rounded-xl border border-slate-200">
-                                <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Metas Nutricionais</p>
-                                    <p className="text-2xl font-black text-emerald-700 leading-none">{snapshotForPdf.patient.kcalTarget} <span className="text-xs font-bold">kcal</span></p>
+                            {/* RESUMO CLÍNICO IA (Substitui Macronutrientes por solicitação) */}
+                            {snapshotForPdf.clinicalSummary && (
+                                <div className="mb-8 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100/50 break-inside-avoid shadow-sm">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-lg">💡</div>
+                                        <h2 className="text-xs font-black text-emerald-800 uppercase tracking-widest">Resumo Clínico e Orientações</h2>
+                                    </div>
+                                    <div className="prose prose-sm max-w-none text-slate-700 text-xs leading-relaxed">
+                                        {snapshotForPdf.clinicalSummary.split('\n').map((line: string, i: number) => (
+                                            <p key={i} className="mb-2 last:mb-0">{line}</p>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Proteínas</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.protein.toFixed(1)}g</p>
-                                </div>
-                                <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Carbos</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.carbs.toFixed(1)}g</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Gorduras</p>
-                                    <p className="text-xl font-bold text-slate-800 leading-none">{snapshotForPdf.patient.macroTargets.fat.toFixed(1)}g</p>
-                                </div>
-                            </div>
+                            )}
 
                             {/* TÍTULO DA SEÇÃO */}
                             <div className="flex items-center gap-4 mb-4">
@@ -1994,9 +2128,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             <div className="space-y-3 pl-3">
                                                 {m.items.map((it: any, j: number) => (
                                                     <div key={j} className="mb-2 last:mb-0">
-                                                        <div className="text-xs font-medium text-slate-800 flex items-baseline gap-3 whitespace-nowrap overflow-hidden">
+                                                        <div className="text-xs font-medium text-slate-800 flex items-baseline gap-3">
                                                             <span className="shrink-0 font-bold text-slate-600 w-24 text-right">• {formatMealItemQuantity(it).replace('x ', ' ')}</span>
-                                                            <span className="leading-relaxed truncate flex-1">{it.customName || it.name}</span>
+                                                            <span className="leading-relaxed flex-1">{it.customName || it.name}</span>
                                                         </div>
                                                         {it.substitutes && it.substitutes.length > 0 && (
                                                             <div className="mt-2 ml-24 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5">
@@ -2005,7 +2139,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                                         <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
                                                                         <div className="flex items-baseline gap-1.5 min-w-0 leading-relaxed flex-1">
                                                                             <span className="shrink-0 font-bold text-slate-600 whitespace-nowrap">{formatMealItemQuantity(sub).replace('x ', ' ')}</span>
-                                                                            <span className="italic overflow-visible break-words">{sub.customName || sub.name}</span>
+                                                                            <span className="italic">{sub.customName || sub.name}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -2020,13 +2154,13 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             </div>
 
                             {/* ESTRATÉGIAS DE ADESÃO (IA) */}
-                            {adherenceAnalysis && (
+                            {(snapshotForPdf.adherence || adherenceAnalysis) && (
                                 <div className="mt-8 pt-8 border-t-2 border-slate-100 break-inside-avoid">
                                     <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide mb-6 flex items-center gap-2">
                                         🚀 Estratégias para sua Adesão
                                     </h2>
                                     <div className="grid grid-cols-1 gap-4 w-full">
-                                        {adherenceAnalysis.tips.map((tip, idx) => (
+                                        {(snapshotForPdf.adherence || adherenceAnalysis).tips.map((tip: any, idx: number) => (
                                             <div key={idx} className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100/60 flex gap-4 items-start w-full">
                                                 <div className="bg-emerald-600 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full shrink-0 shadow-sm mt-0.5">
                                                     {idx + 1}

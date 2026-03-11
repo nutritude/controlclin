@@ -11,8 +11,11 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@openrouter/sdk": "^0.9.11",
+    "@types/file-saver": "^2.0.7",
     "axios": "^1.13.6",
     "br-cid10-csv": "^1.0.1",
+    "docx": "^9.6.1",
+    "file-saver": "^2.0.5",
     "firebase": "^12.9.0",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^0.576.0",
