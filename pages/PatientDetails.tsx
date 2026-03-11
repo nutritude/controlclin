@@ -2,8 +2,10 @@ import { Trash2 } from "lucide-react";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { User, Clinic, Patient, Exam, Role, AnthropometryRecord, TimelineEventType, PaymentMode, FinancialTransaction, PaymentMethod, FinancialStatus, Appointment, Professional, AppointmentStatus, Anthropometry, AnthroSnapshot, AnthroAnalysisResult } from '../types';
+import { User, Clinic, Patient, Exam, Role, AnthropometryRecord, TimelineEventType, PaymentMode, FinancialTransaction, PaymentMethod, FinancialStatus, Appointment, Professional, AppointmentStatus, Anthropometry, AnthroSnapshot, AnthroAnalysisResult, PatientMindMap } from '../types';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Mermaid } from '../components/Mermaid';
+import { MindMapService } from '../services/ai/mindMapService';
 import { db } from '../services/db';
 import { AIAnthroAnalysisService } from '../services/aiAnthroAnalysis';
 import { PicaProtocolService } from '../services/picaProtocolService';
@@ -301,6 +303,10 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
         hypothesis: '',
         appointmentId: ''
     });
+
+    // --- MIND MAP GENERATION STATE ---
+    const [generatingMindMap, setGeneratingMindMap] = useState<string | null>(null);
+    const [previewMindMap, setPreviewMindMap] = useState<{ code: string, type: string, title: string } | null>(null);
 
     // Prontuário AI State
     const [noteContent, setNoteContent] = useState('');
@@ -1656,20 +1662,127 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div>
                                         <h3 className="text-lg font-black text-slate-800">Mapas Mentais Salvos (IA)</h3>
                                         <p className="text-xs text-slate-500 mt-1">
-                                            Gerencie os mapas gerados. Alterne a visibilidade para o paciente visualizar no Portal.
+                                            Gerencie os mapas gerados ou crie novos focados na clínica e conduta do paciente.
                                         </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            { id: 'CLINICAL', label: 'Clínico Completo', icon: '🏥' },
+                                            { id: 'TREATMENT', label: 'Estratégia de Tratamento', icon: '💉' },
+                                            { id: 'GOALS', label: 'Metas e Resultados', icon: '🎯' },
+                                            { id: 'EDUCATION', label: 'Educação em Saúde', icon: '📚' }
+                                        ].map(type => (
+                                            <button
+                                                key={type.id}
+                                                disabled={!!generatingMindMap}
+                                                onClick={async () => {
+                                                    setGeneratingMindMap(type.id);
+                                                    try {
+                                                        // Preparar snapshot para IA
+                                                        const snapshot = {
+                                                            patient: { ...patient, age: calculateAge(patient.birthDate) },
+                                                            anthropometry: { current: { anthro: anthropometryResults } },
+                                                            clinical: patient.clinicalHistory,
+                                                            exams: exams,
+                                                            prescriptions: patient.prescriptions || []
+                                                        };
+                                                        const code = await MindMapService.generatePatientMindMap(snapshot, type.id as any);
+                                                        setPreviewMindMap({
+                                                            code,
+                                                            type: type.id,
+                                                            title: `Mapa: ${type.label}`
+                                                        });
+                                                    } catch (err: any) {
+                                                        alert("Erro ao gerar mapa: " + err.message);
+                                                    } finally {
+                                                        setGeneratingMindMap(null);
+                                                    }
+                                                }}
+                                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 active:scale-95 ${generatingMindMap === type.id ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 shadow-sm'}`}
+                                            >
+                                                {generatingMindMap === type.id ? (
+                                                    <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                                                ) : type.icon}
+                                                {type.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
+                                {/* Preview Modal / Area */}
+                                {previewMindMap && (
+                                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+                                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{previewMindMap.title}</h3>
+                                                    <p className="text-xs text-slate-500">Revise o mapa gerado pela IA antes de salvar no prontuário.</p>
+                                                </div>
+                                                <button onClick={() => setPreviewMindMap(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                                    <Icons.X className="w-6 h-6 text-slate-400" />
+                                                </button>
+                                            </div>
+                                            <div className="flex-1 overflow-auto p-6 bg-white flex justify-center items-center min-h-[400px]">
+                                                <Mermaid chart={previewMindMap.code} />
+                                            </div>
+                                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                                                <button
+                                                    onClick={() => setPreviewMindMap(null)}
+                                                    className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-all uppercase tracking-widest"
+                                                >
+                                                    Descartar
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        setLoading(true);
+                                                        try {
+                                                            const { doc, updateDoc, arrayUnion } = await import('firebase/firestore');
+                                                            const { db: firestore } = await import('../services/firebase');
+                                                            const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+                                                            const newMap: PatientMindMap = {
+                                                                id: `${previewMindMap.type}_${Date.now()}`,
+                                                                type: previewMindMap.type as any,
+                                                                title: previewMindMap.title,
+                                                                code: previewMindMap.code,
+                                                                createdAt: new Date().toISOString(),
+                                                                visibleToPatient: true
+                                                            };
+                                                            await updateDoc(patientRef, { mindMaps: arrayUnion(newMap) });
+                                                            if (id) await fetchData(id);
+                                                            setPreviewMindMap(null);
+                                                        } catch (err: any) {
+                                                            alert("Erro ao salvar: " + err.message);
+                                                        } finally {
+                                                            setLoading(false);
+                                                        }
+                                                    }}
+                                                    className="px-8 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-black hover:bg-emerald-700 shadow-lg shadow-emerald-200 active:scale-95 transition-all uppercase tracking-widest"
+                                                >
+                                                    Salvar no Prontuário
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
-                                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300 p-8">
-                                        <h4 className="text-slate-600 font-bold mb-3 text-lg">Nenhum mapa salvo</h4>
-                                        <p className="text-sm text-slate-500 max-w-lg mx-auto mb-4">
-                                            Quais as opçoes de geraçao de mapas mentais podem ser salvos e compartilhados ???
+                                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8 shadow-inner">
+                                        <div className="mb-4 inline-flex p-4 bg-white rounded-full shadow-sm border border-slate-100">
+                                            <span className="text-4xl">🧠</span>
+                                        </div>
+                                        <h4 className="text-slate-600 font-black mb-3 text-lg uppercase tracking-tight">Criação de Mapas Mentais</h4>
+                                        <p className="text-sm text-slate-500 max-w-lg mx-auto mb-6 leading-relaxed">
+                                            Nesta área, você pode decidir quais mapas fundamentais devem ser compartilhados com o paciente para melhorar a compreensão do tratamento.
                                         </p>
-                                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                                            Você pode criar mapas mentais da fisiopatologia com base na patologia de base do paciente, Interações farmacológicas, Alergias, tudo com base no historico.
-                                        </p>
+                                        <div className="flex flex-col gap-2 items-center text-xs text-slate-400 font-semibold bg-white p-4 rounded-xl border border-slate-200 shadow-sm max-w-sm mx-auto">
+                                            <p>✨ Você pode gerar mapas de:</p>
+                                            <ul className="list-disc list-inside text-left">
+                                                <li>Fisiopatologia baseada no histórico</li>
+                                                <li>Interações Farmacológicas vs Dieta</li>
+                                                <li>Manejo de Alergias e Intolerâncias</li>
+                                                <li>Educação sobre Patologia de Base</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
