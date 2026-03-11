@@ -408,6 +408,8 @@ export interface FinancialTransaction {
   installmentCount?: number; // Número de parcelas (int)
 
   authorizationCode?: string; // Para convênios
+  isDeleted?: boolean;
+  aiContextFlag?: boolean;
 }
 
 export interface FinancialInfo {
