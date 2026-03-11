@@ -12,35 +12,49 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
     useEffect(() => {
         if (!ref.current || !chart) return;
 
+        let isMounted = true;
         setHasError(false);
         setIsRendering(true);
 
-        const mermaid = (window as any).mermaid;
-        if (!mermaid) {
-            console.error('[Mermaid] Biblioteca não carregada.');
-            setHasError(true);
-            setIsRendering(false);
-            return;
-        }
-
-        // Limpa o container ANTES de renderizar
-        ref.current.innerHTML = '';
-
-        const renderId = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-
-        mermaid.render(renderId, chart)
-            .then((result: { svg: string }) => {
-                if (ref.current) {
-                    ref.current.innerHTML = result.svg;
+        const renderChart = async () => {
+            try {
+                const mermaid = (window as any).mermaid;
+                if (!mermaid) {
+                    console.error('[Mermaid] Biblioteca não carregada.');
+                    if (isMounted) {
+                        setHasError(true);
+                        setIsRendering(false);
+                    }
+                    return;
                 }
-                setIsRendering(false);
-            })
-            .catch((err: Error) => {
-                console.error('[Mermaid Render Error]:', err.message);
+
+                if (ref.current) ref.current.innerHTML = '';
+                const renderId = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+
+                // Algumas versões do Mermaid lançam erros síncronos ignorando o retorno Promise
+                const result = await Promise.resolve().then(() => mermaid.render(renderId, chart));
+
+                if (isMounted && ref.current) {
+                    ref.current.innerHTML = result.svg;
+                    setIsRendering(false);
+                }
+            } catch (err: any) {
+                console.error('[Mermaid Render Error]:', err?.message || err);
                 console.error('[Mermaid] Código que falhou:\n', chart);
-                setHasError(true);
-                setIsRendering(false);
-            });
+                if (isMounted) {
+                    setHasError(true);
+                    setIsRendering(false);
+                }
+            }
+        };
+
+        // Adicionamos um pequeno delay (setTimeout zero) para garantir que
+        // não trave o DOM principal durante o parser síncrono do Mermaid.
+        setTimeout(renderChart, 0);
+
+        return () => {
+            isMounted = false;
+        };
     }, [chart]);
 
     if (isRendering) {
