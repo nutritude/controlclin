@@ -282,7 +282,7 @@ export interface NutritionalPlan {
 
   // Strategy
   strategyName: string; // e.g. "Low Carb", "Hipertrofia"
-  methodology: 'ALIMENTOS' | 'EQUIVALENTES' | 'QUALITATIVA';
+  methodology: 'ALIMENTOS' | 'EQUIVALENTES' | 'QUALITATIVA' | 'SEM_GLUTEN' | 'SEM_LACTOSE' | 'BAIXO_FODMAP' | 'VEGANO';
 
   // Calculations
   inputsUsed: {

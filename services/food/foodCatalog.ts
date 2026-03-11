@@ -146,12 +146,73 @@ export const FoodService = {
     }
 
     // 4. Filtragem por Protocolo (Inteligência Clínica)
-    if (protocol && protocol !== 'ALIMENTOS') {
+    const protocolsToFilter = ['SEM_GLUTEN', 'SEM_LACTOSE', 'BAIXO_FODMAP', 'VEGANO'];
+
+    if (protocol && protocolsToFilter.includes(protocol)) {
       return combined.filter(food => {
-        if (protocol === 'SEM_GLUTEN') return food.sem_gluten === true;
-        if (protocol === 'SEM_LACTOSE') return food.sem_lactose === true;
-        if (protocol === 'BAIXO_FODMAP') return food.baixo_fodmap === true;
-        if (protocol === 'VEGANO') return food.vegano === true;
+        const name = (food.namePt || '').toLowerCase();
+        const cat = (food.category || '').toLowerCase();
+
+        // PROTOCOLO SEM GLÚTEN
+        if (protocol === 'SEM_GLUTEN') {
+          if (food.sem_gluten === true) return true;
+          if (food.sem_gluten === false) return false;
+
+          // Whitelist por categorias naturalmente seguras
+          const safeCategories = ['frutas', 'vegetais', 'carnes', 'aves', 'peixes', 'ovos', 'óleos', 'gorduras', 'tubérculos', 'açúcares', 'leguminosas'];
+          if (safeCategories.some(c => cat.includes(c))) return true;
+
+          // Blacklist por categorias suspeitas (Cereais, Pães, Massas, Bolos)
+          if (cat.includes('pães') || cat.includes('massa') || cat.includes('bolo') || cat.includes('biscoito') || cat.includes('cereais') || cat.includes('panificação')) {
+            // Só libera se o nome disser explicitamente que é seguro
+            return name.includes('sem gluten') || name.includes('sem glúten') || name.includes('gluten free');
+          }
+          return true; // Por padrão, libera outros grupos menores se não forem suspeitos
+        }
+
+        // PROTOCOLO SEM LACTOSE
+        if (protocol === 'SEM_LACTOSE') {
+          if (food.sem_lactose === true) return true;
+          if (food.sem_lactose === false) return false;
+
+          // Blacklist de Laticínios
+          if (cat.includes('laticínio') || cat.includes('queijo') || cat.includes('leite') || cat.includes('iogurte') || cat.includes('requeijão') || cat.includes('creme de leite')) {
+            return name.includes('sem lactose') || name.includes('zero lactose') || name.includes('lac free') || name.includes('vegano');
+          }
+          return true; // Tudo que não for laticínio é seguro por padrão
+        }
+
+        // PROTOCOLO VEGANO
+        if (protocol === 'VEGANO') {
+          if (food.vegano === true) return true;
+          if (food.vegano === false) return false;
+
+          // Blacklist de Origem Animal
+          const animalCategories = ['carne', 'ave', 'peixe', 'ovo', 'laticínio', 'leite', 'queijo', 'iogurte', 'mel', 'embutidos', 'frios', 'açougue'];
+          if (animalCategories.some(c => cat.includes(c))) return false;
+
+          // Verificação rápida no nome
+          const animalKeywords = ['carne', 'frango', 'peixe', 'ovo', 'clara', 'gema', 'leite', 'queijo', 'presunto', 'salame', 'linguiça', 'bacon'];
+          if (animalKeywords.some(k => name.includes(k))) {
+            // Só libera se o próprio nome disser que é vegano (ex: "Hambúrguer Vegano")
+            return name.includes('vegano') || name.includes('vegan');
+          }
+
+          return true;
+        }
+
+        // PROTOCOLO BAIXO FODMAP (Simplificado e Conservador)
+        if (protocol === 'BAIXO_FODMAP') {
+          if (food.baixo_fodmap === true) return true;
+          if (food.baixo_fodmap === false) return false;
+
+          // Blacklist clássica de FODMAPs se undefined
+          if (cat.includes('leguminosas') || cat.includes('laticínio') || cat.includes('pães') || cat.includes('massa')) return false;
+          if (name.includes('feijão') || name.includes('trigo') || name.includes('leite') || name.includes('cebola') || name.includes('alho')) return false;
+
+          return true;
+        }
+
         return true;
       });
     }

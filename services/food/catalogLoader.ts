@@ -133,6 +133,19 @@ export function parseMasterCSV(csvContent: string): {
         preparo: colIndex(headers, 'preparo_detectado'),
         fonte: colIndex(headers, '__fonte'),
         prio: colIndex(headers, '__prio'),
+        sem_gluten: colIndex(headers, 'sem_gluten'),
+        sem_lactose: colIndex(headers, 'sem_lactose'),
+        baixo_fodmap: colIndex(headers, 'baixo_fodmap'),
+        vegano: colIndex(headers, 'vegano'),
+    };
+
+    /** Converte valores '1', 'true' ou 'SIM' para boolean */
+    const toBool = (val?: string): boolean | undefined => {
+        if (!val) return undefined;
+        const v = val.trim().toLowerCase();
+        if (v === '1' || v === 'true' || v === 'sim' || v === 's') return true;
+        if (v === '0' || v === 'false' || v === 'nao' || v === 'não' || v === 'n') return false;
+        return undefined;
     };
 
     // Parsear linhas de dados
@@ -176,6 +189,10 @@ export function parseMasterCSV(csvContent: string): {
             preparo: idx.preparo !== -1 ? (cells[idx.preparo]?.trim() || undefined) : undefined,
             fonte: idx.fonte !== -1 ? (cells[idx.fonte]?.trim() || undefined) : undefined,
             prio: idx.prio !== -1 ? toNumber(cells[idx.prio]) : undefined,
+            sem_gluten: idx.sem_gluten !== -1 ? toBool(cells[idx.sem_gluten]) : undefined,
+            sem_lactose: idx.sem_lactose !== -1 ? toBool(cells[idx.sem_lactose]) : undefined,
+            baixo_fodmap: idx.baixo_fodmap !== -1 ? toBool(cells[idx.baixo_fodmap]) : undefined,
+            vegano: idx.vegano !== -1 ? toBool(cells[idx.vegano]) : undefined,
         };
 
         records.push(record);

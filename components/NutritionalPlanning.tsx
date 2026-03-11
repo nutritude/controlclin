@@ -119,7 +119,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     // Plan Config State
     const [isDrafting, setIsDrafting] = useState(false);
     const [planStrategy, setPlanStrategy] = useState('Dieta Balanceada');
-    const [planMethodology, setPlanMethodology] = useState<'ALIMENTOS' | 'EQUIVALENTES' | 'QUALITATIVA'>('ALIMENTOS');
+    const [planMethodology, setPlanMethodology] = useState<'ALIMENTOS' | 'EQUIVALENTES' | 'QUALITATIVA' | 'SEM_GLUTEN' | 'SEM_LACTOSE' | 'BAIXO_FODMAP' | 'VEGANO'>('ALIMENTOS');
 
     // Macro Targets
     const [targetKcal, setTargetKcal] = useState<number>(0);
