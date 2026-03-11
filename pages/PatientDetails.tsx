@@ -24,7 +24,7 @@ interface PatientDetailsProps {
     patientData?: Patient;
 }
 
-type Tab = 'HISTORY' | 'PRONTUARIO' | 'ANTHRO' | 'NUTRITION' | 'PRESCRIPTION' | 'FINANCIAL' | 'EXAMS';
+type Tab = 'HISTORY' | 'PRONTUARIO' | 'ANTHRO' | 'NUTRITION' | 'PRESCRIPTION' | 'FINANCIAL' | 'EXAMS' | 'MIND_MAPS';
 
 // --- HELPERS ---
 
@@ -1432,6 +1432,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                 <nav className="-mb-px flex space-x-4 md:space-x-8 min-w-max px-2">
                     {[
                         { id: 'HISTORY', label: 'Histórico & Evolução' },
+                        { id: 'MIND_MAPS', label: '🧠 Mapas Mentais' },
                         { id: 'PRONTUARIO', label: 'Prontuário (IA)' },
                         { id: 'ANTHRO', label: 'Antropometria' },
                         { id: 'NUTRITION', label: 'Planejamento Nutricional' },
@@ -2389,6 +2390,84 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                )}
+
+                {/* TAB: MAPAS MENTAIS */}
+                {activeTab === 'MIND_MAPS' && patient && (
+                    <div className="space-y-6 animate-fadeIn">
+                        <div className="flex justify-between items-center bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-800">Mapas Mentais Salvos (IA)</h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Gerencie os mapas gerados. Alterne a visibilidade para o paciente visualizar no Portal.
+                                </p>
+                            </div>
+                        </div>
+
+                        {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
+                            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                <span className="text-4xl block mb-2">🧠</span>
+                                <h4 className="text-slate-600 font-bold mb-1">Nenhum mapa salvo</h4>
+                                <p className="text-xs text-slate-400 max-w-sm mx-auto">Gere um mapa na visão "Insights e Evolução" (relatório) ou no "Planejamento Nutricional" e clique em "Salvar p/ Paciente".</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {patient.mindMaps.map((map) => (
+                                    <div key={map.id} className="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                                        <div>
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="text-3xl filter drop-shadow hover:scale-110 transition-transform">🧠</span>
+                                                <button
+                                                    onClick={async () => {
+                                                        const desc = map.visibleToPatient ? 'ocultar este mapa do paciente' : 'exibir este mapa para o paciente ver no app/portal dele';
+                                                        if (!window.confirm(`Deseja ${desc}?`)) return;
+                                                        setLoading(true);
+                                                        try {
+                                                            const { doc, updateDoc } = await import('firebase/firestore');
+                                                            const { db: firestore } = await import('../services/firebase');
+                                                            const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+                                                            const updatedMaps = patient.mindMaps!.map(m => m.id === map.id ? { ...m, visibleToPatient: !m.visibleToPatient } : m);
+                                                            await updateDoc(patientRef, { mindMaps: updatedMaps });
+                                                            if (id) await fetchData(id);
+                                                        } catch (err: any) {
+                                                            alert('Erro: ' + err.message);
+                                                        } finally { setLoading(false); }
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 ${map.visibleToPatient ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200 opacity-60'}`}
+                                                >
+                                                    {map.visibleToPatient ? '👁️ Paciente Vê' : '🙈 Oculto'}
+                                                </button>
+                                            </div>
+                                            <h4 className="font-bold text-slate-800 text-lg mb-1 leading-tight">{map.title}</h4>
+                                            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{new Date(map.createdAt).toLocaleDateString()} • {new Date(map.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        </div>
+                                        <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
+                                            {/* TODO: Lógica para abrir modal e renderizar <Mermaid chart={map.code} /> se desejado */}
+                                            <button
+                                                onClick={async () => {
+                                                    if (!window.confirm("Remover este mapa definitivamente?")) return;
+                                                    setLoading(true);
+                                                    try {
+                                                        const { doc, updateDoc } = await import('firebase/firestore');
+                                                        const { db: firestore } = await import('../services/firebase');
+                                                        const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+                                                        const updatedMaps = patient.mindMaps!.filter(m => m.id !== map.id);
+                                                        await updateDoc(patientRef, { mindMaps: updatedMaps });
+                                                        if (id) await fetchData(id);
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                    } finally { setLoading(false); }
+                                                }}
+                                                className="w-full p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs uppercase flex justify-center items-center gap-2"
+                                            >
+                                                <Icons.Trash className="w-4 h-4" /> Apagar Mapa
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

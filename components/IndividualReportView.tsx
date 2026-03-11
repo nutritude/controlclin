@@ -10,6 +10,9 @@ import PDFHeader from './PDFHeader';
 import { Mermaid } from './Mermaid';
 import { MindMapService } from '../services/ai/mindMapService';
 
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db as firestore } from '../services/firebase';
+
 // --- HELPERS ---
 const calculateAge = (birthDate: string) => {
     if (!birthDate) return 0;
@@ -380,6 +383,8 @@ export const IndividualPatientReportView = ({
     const [mindMapCode, setMindMapCode] = useState<string | null>(null);
     const [mindMapLoading, setMindMapLoading] = useState<string | null>(null); // 'TREATMENT' | 'GOALS' | null
     const [mindMapType, setMindMapType] = useState<string>('');
+    const [mindMapId, setMindMapId] = useState<string>(''); // Para identificar o tipo original ao salvar
+    const [isSavingMindMap, setIsSavingMindMap] = useState(false);
 
     const handleGenerateMindMap = async (type: 'TREATMENT' | 'GOALS') => {
         if (mindMapLoading) return;
@@ -389,12 +394,38 @@ export const IndividualPatientReportView = ({
             const code = await MindMapService.generatePatientMindMap(data, type);
             setMindMapCode(code);
             setMindMapType(type === 'TREATMENT' ? 'Mapa de Tratamento Metabólico' : 'Estratégia de Metas');
+            setMindMapId(type);
         } catch (err: any) {
             console.error('[MindMap Report] Erro:', err);
             setMindMapCode(null);
             alert('Erro ao gerar mapa mental: ' + (err?.message || err));
         } finally {
             setMindMapLoading(null);
+        }
+    };
+
+    const handleSaveMindMap = async () => {
+        if (!mindMapCode || !patient.id || !clinic?.id) return;
+        setIsSavingMindMap(true);
+        try {
+            const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+            const newMap = {
+                id: mindMapId + '_' + Date.now().toString(),
+                type: mindMapId as any,
+                title: mindMapType,
+                code: mindMapCode,
+                createdAt: new Date().toISOString(),
+                visibleToPatient: true // Por padrão, libera para o paciente ver no app dele
+            };
+            await updateDoc(patientRef, {
+                mindMaps: arrayUnion(newMap)
+            });
+            alert('Mapa salvo com sucesso! O paciente agora tem permissão para visualizar este mapa no seu portal.');
+        } catch (err: any) {
+            console.error('Erro ao salvar mapa:', err);
+            alert('Erro ao salvar mapa: ' + err.message);
+        } finally {
+            setIsSavingMindMap(false);
         }
     };
 
@@ -605,12 +636,21 @@ export const IndividualPatientReportView = ({
                                 </div>
                                 <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
                                     <p className="text-[9px] font-bold text-slate-400 uppercase">ControlClin Vision</p>
-                                    <button
-                                        onClick={() => window.print()}
-                                        className="px-4 py-2 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-700 active:scale-95 transition-all"
-                                    >
-                                        Imprimir
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={handleSaveMindMap}
+                                            disabled={isSavingMindMap}
+                                            className="px-4 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isSavingMindMap ? 'Salvando...' : 'Salvar no Portal do Paciente'}
+                                        </button>
+                                        <button
+                                            onClick={() => window.print()}
+                                            className="px-4 py-2 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-700 active:scale-95 transition-all"
+                                        >
+                                            Imprimir
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

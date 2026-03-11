@@ -32,7 +32,7 @@ fetch('https://openrouter.ai/api/v1/chat/completions', {
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        model: 'google/gemma-2-9b-it:free',
+        model: 'nvidia/nemotron-3-nano-30b-a3b:free',
         messages: [
             { role: 'user', content: prompt }
         ],

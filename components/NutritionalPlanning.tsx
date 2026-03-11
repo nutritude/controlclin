@@ -218,6 +218,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
     const [mindMapCode, setMindMapCode] = useState<string | null>(null);
     const [showMindMapModal, setShowMindMapModal] = useState(false);
+    const [isSavingMindMap, setIsSavingMindMap] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string | null>(null);
     const [clinicalSummaryText, setClinicalSummaryText] = useState<string | null>(null);
@@ -982,6 +983,34 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             alert("Erro ao gerar mapa mental: " + err);
         } finally {
             setIsGeneratingMindMap(false);
+        }
+    };
+
+    const handleSaveMindMap = async () => {
+        if (!mindMapCode || !patient.id || !clinic?.id) return;
+        setIsSavingMindMap(true);
+        try {
+            const { doc, updateDoc, arrayUnion } = await import('firebase/firestore');
+            const { db: firestore } = await import('../services/firebase');
+
+            const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+            const newMap = {
+                id: 'CLINICAL_' + Date.now().toString(),
+                type: 'CLINICAL',
+                title: 'Mapa do Plano Alimentar',
+                code: mindMapCode,
+                createdAt: new Date().toISOString(),
+                visibleToPatient: true
+            };
+            await updateDoc(patientRef, {
+                mindMaps: arrayUnion(newMap)
+            });
+            alert('Mapa salvo com sucesso! O paciente visualizará no portal com as explicações.');
+        } catch (err: any) {
+            console.error('Erro ao salvar mapa:', err);
+            alert('Erro ao salvar mapa: ' + err.message);
+        } finally {
+            setIsSavingMindMap(false);
         }
     };
 
@@ -2555,12 +2584,21 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
                             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">ControlClin Vision • Mapa exclusivo</p>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="px-6 py-2.5 bg-emerald-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all"
-                                >
-                                    Imprimir Mapa
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleSaveMindMap}
+                                        disabled={isSavingMindMap}
+                                        className="px-6 py-2.5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                                    >
+                                        {isSavingMindMap ? 'Salvando...' : 'Salvar p/ Paciente'}
+                                    </button>
+                                    <button
+                                        onClick={() => window.print()}
+                                        className="px-6 py-2.5 bg-emerald-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all"
+                                    >
+                                        Imprimir Mapa
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

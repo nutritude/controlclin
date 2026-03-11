@@ -578,6 +578,15 @@ export interface IndividualReportSnapshot {
   };
 }
 
+export interface PatientMindMap {
+  id: string;
+  type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION';
+  title: string;
+  code: string;
+  createdAt: string;
+  visibleToPatient: boolean;
+}
+
 export interface Patient {
   id: string;
   clinicId: string;
@@ -604,6 +613,7 @@ export interface Patient {
   patientEvents?: PatientEvent[];
   mipanAssessments?: MipanAssessment[];
   prescriptions?: Prescription[];
+  mindMaps?: PatientMindMap[]; // NOVO: Mapas mentais salvos (visíveis para o paciente)
   adherenceHistory?: AdherenceCheckIn[]; // NOVO: Histórico de check-ins do paciente
   lastVisit?: string;
   professionalId?: string; // NOVO: Profissional responsável pelo paciente
