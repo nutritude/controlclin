@@ -1,6 +1,7 @@
+import { Trash2 } from "lucide-react";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Trash2, useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { User, Clinic, Patient, Exam, Role, AnthropometryRecord, TimelineEventType, PaymentMode, FinancialTransaction, PaymentMethod, FinancialStatus, Appointment, Professional, AppointmentStatus, Anthropometry, AnthroSnapshot, AnthroAnalysisResult } from '../types';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { db } from '../services/db';

@@ -8,8 +8,8 @@
  */
 
 // Versão atual do Software (Incremental)
-// Ao mudar o layout ou lógica crítica, suba este número.
-export const CURRENT_VERSION = '1.1.1';
+// Agora usamos a flag injetada pelo Vite build ou um default local
+export const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
 
 const VERSION_KEY = 'CONTROLCLIN_VERSION';
 const TRANSIENT_KEYS = [
@@ -65,6 +65,8 @@ export const CacheManager = {
                     url.searchParams.set('v', targetVersion);
                     window.location.href = url.toString();
                 }, 500);
+            } else {
+                 console.log("[CacheManager] Salvando primeira vez:", targetVersion);
             }
         }
     },
