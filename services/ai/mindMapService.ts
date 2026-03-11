@@ -1,48 +1,77 @@
 import { OpenRouterService } from './openRouterService';
 
 export const MindMapService = {
-    /**
-     * Gera o código Mermaid para um mapa mental baseado no contexto do paciente.
-     */
-    async generatePatientMindMap(context: any): Promise<string> {
-        console.log('[AI MindMap] Gerando mapa mental explicativo...');
+  /**
+   * Gera o código Mermaid para um mapa mental baseado no contexto do paciente.
+   * Foco: Objetivo, Científico e Comportamental.
+   */
+  async generatePatientMindMap(context: any, type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION' = 'CLINICAL'): Promise<string> {
+    console.log(`[AI MindMap] Gerando mapa mental do tipo: ${type}...`);
 
-        const prompt = `
-      Você é um especialista em comunicação visual para saúde.
-      Crie um mapa mental no formato Mermaid (sintaxe mindmap) que explique para o paciente a conexão entre seu DIAGNÓSTICO, seus EXAMES e a CONDUTA (Dieta/Suplementos).
+    const typeInstructions = {
+      CLINICAL: `
+                FOCO: Conexão entre Perfil comportamental psicológico (MIPAN), Exames, Patologias e Diagnóstico Antropométrico.
+                CONTEÚDO OBRIGATÓRIO:
+                - Perfil comportamental psicológico (MIPAN)
+                - Conduta clínica baseada em evidências
+                - Contexto das escolhas dos alimentos (por que este alimento e não outro?)
+                - Relação das refeições com a rotina do paciente
+                - Efeito metabólico esperado (ex: melhora sensib. insulina, saciedade)
+                - Efeito caso não haja adesão (riscos clínicos reais)`,
+      TREATMENT: `
+                FOCO: Conectar "Diagnóstico" → "Fisiopatologia" → "Conduta Nutricional".
+                Deve explicar COMO o alimento atua no problema de saúde.`,
+      GOALS: `
+                FOCO: Estratégia de Metas de Curto, Médio e Longo Prazo.
+                Visualizar a escada do sucesso do paciente.`,
+      EDUCATION: `
+                FOCO: Educação Nutricional.
+                Combinações inteligentes de alimentos ou substituições de alto valor biológico.`
+    };
 
-      CONTEXTO:
-      ${JSON.stringify(context)}
+    const prompt = `
+            Você é um Cientista de Dados e Nutricionista Clínico sênior especializado em Medicina de Precisão.
+            Crie um mapa mental no formato Mermaid (sintaxe mindmap) extremamente OBJETIVO e CIENTÍFICO.
 
-      REGRAS:
-      1. Use a sintaxe Mermaid MINDMAP (ex começa com 'mindmap').
-      2. O nó central deve ser o objetivo do paciente ou o nome dele.
-      3. Crie ramos para: "Meus Exames", "Diagnóstico" e "Ações do Meu Plano".
-      4. Use linguagem empática e motivadora.
-      5. Não use caracteres especiais que quebrem o código Mermaid (como aspas duplas internas).
-      6. Retorne APENAS o código do diagrama, sem explicações.
+            TIPO DE MAPA: ${type}
+            ${typeInstructions[type]}
 
-      Exemplo de saída:
-      mindmap
-        root((Minha Saúde))
-          Exames
-            Glicose::Controlada
-          Plano
-            Refeição::Foco em fibras
-    `;
+            CONTEXTO DO PACIENTE:
+            ${JSON.stringify(context)}
 
-        try {
-            const response = await OpenRouterService.ask({
-                prompt: prompt,
-                role: 'professional',
-                temperature: 0.3
-            });
+            REGRAS TÉCNICAS MERMAID:
+            1. Use a sintaxe Mermaid MINDMAP (começa com 'mindmap').
+            2. Use formas variadas: root((Central)), node[Retângulo], node))Orelha((, node{{Hexágono}}.
+            3. Use o nó central para o conceito chave (ex: "Estratégia Metabólica" ou "Jornada de ${context.patient?.name}").
+            4. NÃO use aspas duplas, hifens sozinhos em ramos ou qualquer caractere que quebre o Mermaid.
+            5. Retorne APENAS o código purista do diagrama.
 
-            // Limpeza básica do código mermaid
-            return response.replace(/```mermaid/g, '').replace(/```/g, '').trim();
-        } catch (error) {
-            console.error('[MindMap] Erro ao gerar mapa:', error);
-            return `mindmap\n  root((Minha Jornada))\n    Diagnóstico\n      Acompanhamento Clínico\n    Objetivo\n      ${context.patient?.objective || 'Saúde Geral'}`;
-        }
+            EXEMPLO DE ESTRUTURA METABÓLICA:
+            mindmap
+              root((Estratégia Metabólica))
+                Conduta::Foco Anti-inflamatório
+                  Ação[Aumento de Ômega 3]
+                    Alimento))Sardinha e Chia((
+                    Efeito-Redução PCR
+                Risco::Não Adesão
+                  Consequência{{Aumento Fadiga Crônica}}
+        `;
+
+    try {
+      const response = await OpenRouterService.ask({
+        prompt: prompt,
+        role: 'professional',
+        temperature: 0.2
+      });
+
+      let cleanCode = response.replace(/```mermaid/g, '').replace(/```/g, '').trim();
+      if (!cleanCode.startsWith('mindmap')) {
+        cleanCode = 'mindmap\n' + cleanCode;
+      }
+      return cleanCode;
+    } catch (error) {
+      console.error('[MindMap] Erro ao gerar mapa:', error);
+      return `mindmap\n  root((Minha Jornada))\n    Diagnóstico\n      Acompanhamento Clínico\n    Objetivo\n      ${context.patient?.objective || 'Saúde Geral'}`;
     }
+  }
 };

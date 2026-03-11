@@ -7,6 +7,8 @@ import {
 import { IndividualReportSnapshot, Clinic, User } from '../types';
 import { Icons } from '../constants';
 import PDFHeader from './PDFHeader';
+import { Mermaid } from './Mermaid';
+import { MindMapService } from '../services/ai/mindMapService';
 
 // --- HELPERS ---
 const calculateAge = (birthDate: string) => {
@@ -499,6 +501,54 @@ export const IndividualPatientReportView = ({
                         <p className="mt-4 text-[9px] text-slate-400 font-bold italic">
                             * O Protocolo PICA integra IMC, adiposidade, massa magra e repercussão clínica para além do peso isolado.
                         </p>
+                    </div>
+                )}
+
+                {/* NOVO: Mapas Mentais Clínicos */}
+                {!isPdf && (
+                    <div className="mt-8 border-t border-slate-100 pt-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-indigo-700 flex items-center gap-2">
+                                🧠 Mapas Mentais Visuais (Vision IA)
+                            </h3>
+                            <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest animate-pulse">Alpha</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-[32px] flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <Icons.TrendingUp className="w-12 h-12" />
+                                </div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Mapa de Tratamento Metabólico</h4>
+                                <p className="text-xs text-slate-400 italic text-center mb-6 px-4">Diagnóstico → Fisiopatologia → Conduta</p>
+                                <button
+                                    onClick={async () => {
+                                        await MindMapService.generatePatientMindMap(data, 'TREATMENT');
+                                        alert('Mapa de Tratamento (Científico) gerado! Visualize na aba de Insights do Paciente.');
+                                    }}
+                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95"
+                                >
+                                    Gerar Mapa de Tratamento
+                                </button>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 p-6 rounded-[32px] flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <Icons.Star className="w-12 h-12" />
+                                </div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Estratégia de Metas</h4>
+                                <p className="text-xs text-slate-400 italic text-center mb-6 px-4">Objetivos Metabólicos de Curto a Longo Prazo</p>
+                                <button
+                                    onClick={async () => {
+                                        await MindMapService.generatePatientMindMap(data, 'GOALS');
+                                        alert('Estratégia de Metas gerada! Visualize na aba de Insights do Paciente.');
+                                    }}
+                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95"
+                                >
+                                    Gerar Estratégia de Metas
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
