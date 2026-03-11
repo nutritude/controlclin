@@ -1660,9 +1660,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="flex justify-between items-center bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-800">Mapas Mentais Salvos (IA)</h3>
-                                        <p className="text-xs text-slate-500 mt-1">
-                                            Gerencie os mapas gerados ou crie novos focados na clínica e conduta do paciente.
+                                        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">CRIE SEUS MAPAS MENTAIS E DISPONIBILIZE PARA SEU PACIENTE</h3>
+                                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider font-semibold">
+                                            Utilize o poder da IA para transformar o plano em conhecimento visual.
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2 max-w-2xl justify-end">
@@ -1769,97 +1769,134 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     </div>
                                 )}
 
-                                {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
-                                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8 shadow-inner">
-                                        <div className="mb-4 inline-flex p-4 bg-white rounded-full shadow-sm border border-slate-100">
-                                            <Icons.Activity className="w-8 h-8 text-emerald-500" />
-                                        </div>
-                                        <h4 className="text-slate-600 font-black mb-3 text-lg uppercase tracking-tight">Criação de Mapas Mentais</h4>
-                                        <p className="text-sm text-slate-500 max-w-2xl mx-auto mb-6 leading-relaxed">
-                                            Nesta área, você pode decidir quais mapas fundamentais devem ser compartilhados com o paciente para melhorar a compreensão do tratamento.
-                                            Utilize a Inteligência Artificial para gerar visualizações que correlacionam o diagnóstico, exames e conduta de forma educativa.
-                                        </p>
-                                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto text-left">
-                                            <h5 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3">Resumo das Funcionalidades:</h5>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Clínico e Estratégia</b>
-                                                    <p className="text-slate-500">Correlaciona antropometria, exames e patologias com a estratégia do plano alimentar atual.</p>
-                                                </div>
-                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Fisiopatologia e Histórico</b>
-                                                    <p className="text-slate-500">Explica a origem dos sintomas e a evolução do quadro clínico baseada na anamnese.</p>
-                                                </div>
-                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Interações e Alergias</b>
-                                                    <p className="text-slate-500">Foca no manejo de hipersensibilidades e segurança entre fármacos e nutrientes.</p>
-                                                </div>
-                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                                    <b className="text-slate-700 block mb-1 uppercase text-[9px]">Metas e Educação</b>
-                                                    <p className="text-slate-500">Ferramenta visual para engajamento do paciente nas metas de curto e longo prazo.</p>
-                                                </div>
+                                <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8 shadow-inner">
+                                    {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
+                                        <div className="text-center py-6">
+                                            <div className="mb-4 inline-flex p-4 bg-white rounded-full shadow-sm border border-slate-100">
+                                                <Icons.Activity className="w-8 h-8 text-emerald-500" />
                                             </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {patient.mindMaps.map((map) => (
-                                            <div key={map.id} className="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <span className="text-3xl filter drop-shadow hover:scale-110 transition-transform">🧠</span>
-                                                        <button
-                                                            onClick={async () => {
-                                                                const desc = map.visibleToPatient ? 'ocultar este mapa do paciente' : 'exibir este mapa para o paciente ver no app/portal dele';
-                                                                if (!window.confirm(`Deseja ${desc}?`)) return;
-                                                                setLoading(true);
-                                                                try {
-                                                                    const { doc, updateDoc } = await import('firebase/firestore');
-                                                                    const { db: firestore } = await import('../services/firebase');
-                                                                    const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
-                                                                    const updatedMaps = patient.mindMaps!.map(m => m.id === map.id ? { ...m, visibleToPatient: !m.visibleToPatient } : m);
-                                                                    await updateDoc(patientRef, { mindMaps: updatedMaps });
-                                                                    const idToFetch = patient.id; // Correct parameter passed inside the scope
-                                                                    if (idToFetch) await fetchData(idToFetch);
-                                                                } catch (err: any) {
-                                                                    alert('Erro: ' + err.message);
-                                                                } finally { setLoading(false); }
-                                                            }}
-                                                            className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 ${map.visibleToPatient ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200 opacity-60'}`}
-                                                        >
-                                                            {map.visibleToPatient ? '👁️ Paciente Vê' : '🙈 Oculto'}
-                                                        </button>
+                                            <h4 className="text-slate-600 font-black mb-3 text-lg uppercase tracking-tight">Criação de Mapas Mentais</h4>
+                                            <p className="text-sm text-slate-500 max-w-2xl mx-auto mb-6 leading-relaxed">
+                                                Nesta área, você pode decidir quais mapas fundamentais devem ser compartilhados com o paciente para melhorar a compreensão do tratamento.
+                                                Utilize a Inteligência Artificial para gerar visualizações que correlacionam o diagnóstico, exames e conduta de forma educativa.
+                                            </p>
+                                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto text-left mb-8">
+                                                <h5 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3">Resumo das Funcionalidades:</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <b className="text-slate-700 block mb-1 uppercase text-[9px]">Clínico e Estratégia</b>
+                                                        <p className="text-slate-500">Correlaciona antropometria, exames e patologias com a estratégia do plano alimentar atual.</p>
                                                     </div>
-                                                    <h4 className="font-bold text-slate-800 text-lg mb-1 leading-tight">{map.title}</h4>
-                                                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{new Date(map.createdAt).toLocaleDateString()} • {new Date(map.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                                </div>
-                                                <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
-                                                    {/* TODO: Lógica para abrir modal e renderizar <Mermaid chart={map.code} /> se desejado */}
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (!window.confirm("Remover este mapa definitivamente?")) return;
-                                                            setLoading(true);
-                                                            try {
-                                                                const { doc, updateDoc } = await import('firebase/firestore');
-                                                                const { db: firestore } = await import('../services/firebase');
-                                                                const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
-                                                                const updatedMaps = patient.mindMaps!.filter(m => m.id !== map.id);
-                                                                await updateDoc(patientRef, { mindMaps: updatedMaps });
-                                                                const idToFetch = patient.id; // Avoid scope bugs with id from useParams vs id locally
-                                                                if (idToFetch) await fetchData(idToFetch);
-                                                            } catch (err) {
-                                                                console.error(err);
-                                                            } finally { setLoading(false); }
-                                                        }}
-                                                        className="w-full p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs uppercase flex justify-center items-center gap-2"
-                                                    >
-                                                        <Icons.Trash className="w-4 h-4" /> Apagar Mapa
-                                                    </button>
+                                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <b className="text-slate-700 block mb-1 uppercase text-[9px]">Fisiopatologia e Histórico</b>
+                                                        <p className="text-slate-500">Explica a origem dos sintomas e a evolução do quadro clínico baseada na anamnese.</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <b className="text-slate-700 block mb-1 uppercase text-[9px]">Interações e Alergias</b>
+                                                        <p className="text-slate-500">Foca no manejo de hipersensibilidades e segurança entre fármacos e nutrientes.</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <b className="text-slate-700 block mb-1 uppercase text-[9px]">Metas e Educação</b>
+                                                        <p className="text-slate-500">Ferramenta visual para engajamento do paciente nas metas de curto e longo prazo.</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        </div>
+                                    ) : (
+                                        <div className="mb-8">
+                                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto text-left">
+                                                <h5 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3">Guia de Uso dos Mapas:</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                    <p className="text-slate-500">Utilize os botões acima para gerar novos mapas. Cada mapa gerado ficará listado na área de administração abaixo, onde você poderá revisar e escolher quais disponibilizar para o portal do paciente.</p>
+                                                    <p className="text-slate-500">Os mapas são educativos e ajudam na adesão ao tratamento, tornando a conduta clínica mais transparente e compreensível.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ÁREA DE ADMINISTRAÇÃO DOS MAPAS */}
+                                    <div className="mt-6 pt-8 border-t border-slate-200">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h4 className="text-sm font-black text-slate-700 uppercase tracking-tighter">Área de Administração dos Mapas</h4>
+                                            {patient.mindMaps && patient.mindMaps.length > 0 && (
+                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase">{patient.mindMaps.length} Mapas Arquivados</span>
+                                            )}
+                                        </div>
+
+                                        {(!patient.mindMaps || patient.mindMaps.length === 0) ? (
+                                            <div className="text-center py-10 bg-white/50 rounded-xl border border-dashed border-slate-200">
+                                                <p className="text-xs text-slate-400 font-medium italic">Nenhum mapa administrativo disponível para este paciente ainda.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {patient.mindMaps.map((map) => (
+                                                    <div key={map.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 bg-emerald-50 rounded-lg">
+                                                                    <Icons.FileText className="w-4 h-4 text-emerald-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <h5 className="font-bold text-slate-800 text-sm leading-tight">{map.title}</h5>
+                                                                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Gerado em {new Date(map.createdAt).toLocaleDateString()}</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    const desc = map.visibleToPatient ? 'ocultar este mapa do paciente' : 'exibir este mapa para o paciente ver no app/portal dele';
+                                                                    if (!window.confirm(`Deseja ${desc}?`)) return;
+                                                                    setLoading(true);
+                                                                    try {
+                                                                        const { doc, updateDoc } = await import('firebase/firestore');
+                                                                        const { db: firestore } = await import('../services/firebase');
+                                                                        const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+                                                                        const updatedMaps = patient.mindMaps!.map(m => m.id === map.id ? { ...m, visibleToPatient: !m.visibleToPatient } : m);
+                                                                        await updateDoc(patientRef, { mindMaps: updatedMaps });
+                                                                        const idToFetch = patient.id;
+                                                                        if (idToFetch) await fetchData(idToFetch);
+                                                                    } catch (err: any) {
+                                                                        alert('Erro: ' + err.message);
+                                                                    } finally { setLoading(false); }
+                                                                }}
+                                                                className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border active:scale-95 ${map.visibleToPatient ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 opacity-60'}`}
+                                                            >
+                                                                {map.visibleToPatient ? 'VISÍVEL NO PORTAL' : 'OCULTO NO PORTAL'}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-2 pt-3 border-t border-slate-50">
+                                                            <button
+                                                                onClick={() => setPreviewMindMap({ code: map.code, type: map.type, title: map.title })}
+                                                                className="flex-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-tight transition-colors"
+                                                            >
+                                                                Visualizar
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (!window.confirm("Remover este mapa definitivamente?")) return;
+                                                                    setLoading(true);
+                                                                    try {
+                                                                        const { doc, updateDoc } = await import('firebase/firestore');
+                                                                        const { db: firestore } = await import('../services/firebase');
+                                                                        const patientRef = doc(firestore, 'clinics', clinic.id, 'patients', patient.id);
+                                                                        const updatedMaps = patient.mindMaps!.filter(m => m.id !== map.id);
+                                                                        await updateDoc(patientRef, { mindMaps: updatedMaps });
+                                                                        const idToFetch = patient.id;
+                                                                        if (idToFetch) await fetchData(idToFetch);
+                                                                    } catch (err: any) {
+                                                                        alert('Erro: ' + err.message);
+                                                                    } finally { setLoading(false); }
+                                                                }}
+                                                                className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors"
+                                                            >
+                                                                <Icons.Trash className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
 
