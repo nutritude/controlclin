@@ -912,19 +912,69 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const handleGenerateMindMap = async () => {
         setIsGeneratingMindMap(true);
         try {
+            // Monta o snapshot antropométrico mais recente
+            const lastAnthro = patient.anthropometryHistory?.length
+                ? patient.anthropometryHistory[patient.anthropometryHistory.length - 1]
+                : patient.anthropometry;
+
+            const anthroSnapshot = lastAnthro ? {
+                current: {
+                    anthro: {
+                        weightKg: lastAnthro.weight,
+                        heightM: lastAnthro.height,
+                        bodyComp: {
+                            bmi: lastAnthro.bmi,
+                            bodyFatPct: lastAnthro.bodyFatPercentage,
+                            fatMassKg: lastAnthro.fatMass,
+                            leanMassKg: lastAnthro.leanMass,
+                            whr: lastAnthro.waistToHipRatio,
+                            whtr: lastAnthro.waistToHeightRatio,
+                            picaDiagnosis: lastAnthro.picaDiagnosis,
+                            picaConduct: lastAnthro.picaConduct,
+                        }
+                    }
+                }
+            } : undefined;
+
             const context = {
                 patient: {
                     name: patient.name,
+                    age: patientAge,
+                    gender: patient.gender,
                     objective: patient.clinicalSummary?.clinicalGoal || patient.nutritionalPlan?.strategyName || 'Saúde',
                     diagnoses: patient.clinicalSummary?.activeDiagnoses || []
                 },
+                anthropometry: anthroSnapshot,
+                clinical: {
+                    activeDiagnoses: patient.clinicalSummary?.activeDiagnoses || patient.clinicalHistory?.pathologies || [],
+                    medications: patient.clinicalHistory?.medications || [],
+                    anamnesisSummary: [
+                        patient.clinicalHistory?.habits,
+                        patient.clinicalHistory?.symptoms,
+                        patient.clinicalHistory?.allergies?.join(', ')
+                    ].filter(Boolean).join('. ')
+                },
+                exams: (patient as any).exams || [],
+                prescriptions: patient.prescriptions || [],
+                nutritional: {
+                    targets: targetKcal > 0 ? {
+                        kcal: targetKcal,
+                        protein: macroResults.protein.g,
+                        carbs: macroResults.carbs.g,
+                        fat: macroResults.fat.g
+                    } : null
+                },
+                adherence: patient.adherenceHistory?.length ? {
+                    score: Math.round(patient.adherenceHistory.filter(a => a.status === 'TOTAL' || a.status === 'PARCIAL').length / patient.adherenceHistory.length * 100)
+                } : undefined,
                 plan: {
                     meals: meals.map(m => ({
                         name: m.name,
-                        items: m.items.map(it => it.customName || it.name)
+                        items: m.items.map(it => ({ name: it.customName || it.name, quantity: it.quantity, unit: it.unit }))
                     }))
                 }
             };
+
             const code = await MindMapService.generatePatientMindMap(context);
             setMindMapCode(code);
             setShowMindMapModal(true);
