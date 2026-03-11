@@ -1290,7 +1290,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     title="Liberar Acesso ao App (WhatsApp)"
                                 >
                                     <Icons.Smartphone className="w-4 h-4" />
-                                    <span>Liberar App</span>
+                                    <span>Liberar Acesso [v2]</span>
                                 </button>
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
@@ -2315,7 +2315,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <tr><td colSpan={6} className={`px-6 py-10 text-center italic ${isManagerMode ? 'text-gray-400' : 'text-emerald-600'}`}>Nenhuma movimentação registrada.</td></tr>
                                     ) : (
                                         financialTransactions.map(t => (
-                                            <tr key={t.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'} transition-colors`}>
+                                            <tr key={t.id} className={`${isManagerMode ? 'hover:bg-gray-700' : 'hover:bg-emerald-50'} transition-colors ${t.isDeleted ? 'opacity-50 grayscale' : ''}`}>
                                                 <td className={`px-6 py-4 whitespace-nowrap font-medium ${isManagerMode ? 'text-gray-200' : 'text-emerald-800'}`}>{new Date(t.date).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4">
                                                     <div className={`font-bold ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>{t.description}</div>
@@ -2342,43 +2342,44 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
-                                                        {/* Botão Marcar como Pago (apenas PENDENTE/AGUARDANDO) */}
-                                                        {(t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO') && (
+                                                        {/* Botão Marcar como Pago */}
+                                                        {(t.status === 'PENDENTE' || t.status === 'AGUARDANDO_AUTORIZACAO') && !t.isDeleted && (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(t); }}
-                                                                title="Confirmar recebimento e marcar como Pago"
-                                                                className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-95 whitespace-nowrap"
+                                                                title="Confirmar recebimento"
+                                                                className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
                                                             >
                                                                 ✓ Receber
                                                             </button>
                                                         )}
-                                                        {/* Botões de recibo (apenas PAGO) */}
-                                                        {t.status === 'PAGO' && (
+                                                        {/* Recibo e WhatsApp */}
+                                                        {t.status === 'PAGO' && !t.isDeleted && (
                                                             <>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleGenerateReceipt(t); }}
-                                                                    disabled={isGeneratingReceipt}
-                                                                    title="Baixar Recibo PDF"
-                                                                    className={`p-1.5 rounded-lg transition-colors inline-flex items-center justify-center ${isManagerMode ? 'hover:bg-indigo-900/50 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                                                    className={`p-1.5 rounded-lg transition-colors ${isManagerMode ? 'hover:bg-indigo-900/50 text-indigo-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
                                                                 >
-                                                                    {isGeneratingReceipt && snapshotForReceipt?.id === t.id ? (
-                                                                        <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
-                                                                    ) : (
-                                                                        <Icons.FileText className="w-4 h-4" />
-                                                                    )}
+                                                                    <Icons.FileText className="w-4 h-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleSendReceiptViaWhatsApp(t); }}
-                                                                    title="Enviar comprovante de pagamento via WhatsApp"
-                                                                    className="p-1.5 rounded-lg transition-colors inline-flex items-center justify-center text-green-600 hover:bg-green-100"
+                                                                    className="p-1.5 rounded-lg text-green-600 hover:bg-green-100 transition-colors"
                                                                 >
                                                                     <Icons.Smartphone className="w-4 h-4" />
                                                                 </button>
                                                             </>
                                                         )}
-                                                        {/* Status sem ação disponível */}
-                                                        {t.status !== 'PAGO' && t.status !== 'PENDENTE' && t.status !== 'AGUARDANDO_AUTORIZACAO' && (
-                                                            <span className="text-gray-300 opacity-30">—</span>
+                                                        {/* Botão EXCLUIR (Trash) */}
+                                                        {!t.isDeleted ? (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(t.id); }}
+                                                                title="Cancelar Transação"
+                                                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                                            >
+                                                                <Icons.Trash className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-red-500 uppercase italic">Cancelado</span>
                                                         )}
                                                     </div>
                                                 </td>

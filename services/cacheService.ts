@@ -9,7 +9,7 @@
 
 // Versão atual do Software (Incremental)
 // Agora usamos a flag injetada pelo Vite build ou um default local
-export const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
+export const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION || 'v2.1.0-final';
 
 const VERSION_KEY = 'CONTROLCLIN_VERSION';
 const TRANSIENT_KEYS = [
@@ -66,7 +66,7 @@ export const CacheManager = {
                     window.location.href = url.toString();
                 }, 500);
             } else {
-                 console.log("[CacheManager] Salvando primeira vez:", targetVersion);
+                console.log("[CacheManager] Salvando primeira vez:", targetVersion);
             }
         }
     },
