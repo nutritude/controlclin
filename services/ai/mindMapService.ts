@@ -319,7 +319,8 @@ mindmap
       const response = await OpenRouterService.ask({
         prompt,
         role: 'professional',
-        temperature: 0.05
+        temperature: 0.1, // aumentei um golinho pra facilitar criatividade na frase explicativa
+        model: 'meta-llama/llama-3.3-70b-instruct:free' // LLAMA 3.3 70B respeita formatação de Mermaid muito melhor que o Nemotron gratuito
       });
 
       const cleanCode = sanitizeMermaidMindmap(response);

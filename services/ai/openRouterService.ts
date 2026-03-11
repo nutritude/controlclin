@@ -15,22 +15,23 @@ export interface OpenRouterAskRequest {
     role: AIPersonaRole;
     systemPrompt?: string;
     temperature?: number;
+    model?: string;
 }
 
 export const OpenRouterService = {
     /**
-     * Envia um prompt para o modelo Nvidia Nemotron via Proxy Seguro (/api/ai).
-     * Isso esconde a API Key do frontend e resolve problemas de CORS/Offline.
+     * Envia um prompt via Proxy Seguro (/api/ai).
      */
-    async ask({ prompt, role, systemPrompt, temperature }: OpenRouterAskRequest): Promise<string> {
+    async ask({ prompt, role, systemPrompt, temperature, model }: OpenRouterAskRequest): Promise<string> {
         console.log(`[OpenRouter] Iniciando requisição segura via Proxy (Role: ${role})`);
 
         try {
             const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
             const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
             const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
+            const finalModel = model || "nvidia/nemotron-3-nano-30b-a3b:free";
 
-            console.log("[OpenRouter] Consultando modelo via API interna: nvidia/nemotron-3-nano-30b-a3b:free");
+            console.log(`[OpenRouter] Consultando modelo via API interna: ${finalModel}`);
 
             const response = await fetch('/api/ai', {
                 method: 'POST',
@@ -39,7 +40,7 @@ export const OpenRouterService = {
                     prompt,
                     systemPrompt: finalSystemPrompt,
                     temperature: finalTemperature,
-                    model: "nvidia/nemotron-3-nano-30b-a3b:free",
+                    model: finalModel,
                     stream: true
                 })
             });
