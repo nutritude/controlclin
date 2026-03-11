@@ -8,7 +8,8 @@ function sanitizeNodeText(text: string): string {
   return text
     .normalize('NFC')
     .replace(/[""\"'']/g, '')
-    .replace(/[^\w\sÀ-ÿ]/g, ' ')
+    // Permite letras, números, espaços e também: ponto, vírgula, dois pontos e exclamação.
+    .replace(/[^\w\sÀ-ÿ.,:!]/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
@@ -286,47 +287,32 @@ ${clinicalData}
 TAREFA:
 ${prompts[type]}
 
-REGRAS ABSOLUTAS DE SINTAXE MERMAID MINDMAP v10:
+REGRAS ABSOLUTAS DE SINTAXE MERMAID MINDMAP v10 E ESTRUTURA:
 1. PRIMEIRA LINHA: "mindmap" sem nada mais.
 2. SEGUNDA LINHA: "  root((TEXTO AQUI))" com 2 espaços de indentação.
-3. Cada nível filho adiciona mais 2 espaços.
-4. PROIBIDO ABSOLUTAMENTE dentro de qualquer texto de nó:
-   - Aspas simples ou duplas ( ' " )
-   - Parênteses ( ) exceto os delimitadores de nó
-   - Colchetes [ ] exceto os delimitadores de nó
-   - Chaves { } exceto os delimitadores de nó
-   - Dois pontos (:), vírgulas (,), hifens (-), barras (/)
-   - Qualquer símbolo especial
-5. Use APENAS palavras, números e letras acentuadas nos textos.
-6. NÃO escreva mais de 6 palavras por nó.
-7. Retorne SOMENTE o código mindmap, sem markdown, sem explicação.
+3. Cada nível filho adiciona mais 2 espaços exatos.
+4. PROIBIDO ABSOLUTAMENTE dentro de qualquer texto de nó: aspas simples/duplas ( ' " ), parênteses e chaves que não sejam delimitadores, e símbolos especiais (# $ & * etc).
+5. REGRA DA EXPLICAÇÃO (OBRIGATÓRIO): Para CADA ramo principal que sai do nó central, o PRIMEIRO nó filho deve ser OBRIGATORIAMENTE uma "breve explicação contextualizando", com até 3 linhas visando o paciente leigo. Esta explicação DEVE estar entre colchetes, por exemplo: [Paciente apresenta gordura visceral acima do ideal. Foco na redução...].
+6. Os demais nós (dados/parâmetros) devem ter no máximo 5 palavras.
+7. Retorne SOMENTE o código mindmap, sem markdown, sem introduções.
 
-EXEMPLO CORRETO:
+EXEMPLO CORRETO DE ESTRUTURA:
 mindmap
   root((Controle Metabólico))
     Diagnóstico Antropométrico
+      [O paciente apresenta excesso de gordura visceral. O objetivo primário é promover déficit calórico para proteção cardiovascular.]
       IMC 28 Sobrepeso
       Gordura Corporal 32 porcento
       Massa Magra 45kg
-    Exames Alterados
-      Glicemia 140 mg dL
-      Colesterol Total 240
     Patologia de Base
+      [A resistência à insulina diagnosticada exige controle rigoroso de açúcares. A medicação atual foi ajustada para este fim.]
       Diabetes Tipo 2
       Dislipidemia
     Intervenção Nutricional
+      [A dieta foi calculada com leve déficit calórico. Maior consumo de fibras para controle da glicose.]
       Dieta 1800 kcal
       Proteína 120g dia
       Fibras Aumentadas
-    Suplementação
-      Ômega 3 EPA DHA
-      Cromo Quelato
-    Adesão Esperada
-      Perda 3kg em 30 dias
-      Glicemia Normalizada 90 dias
-    Sem Adesão Riscos
-      Resistência Insulínica
-      Aumento Risco Cardiovascular
 `;
 
     try {
