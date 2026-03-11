@@ -1,48 +1,59 @@
-import { Meal, PlanSnapshot } from '../types';
+import { Meal } from '../types';
 import { OpenRouterService } from './ai/openRouterService';
 
 export const AIPlanRefinementService = {
     /**
-     * Reescreve os nomes dos alimentos no plano para uma linguagem amigável e convencional,
-     * mantendo as porções e informações técnicas precisas.
+     * Humaniza os nomes dos alimentos.
+     * OTIMIZAÇÃO EXTREMA: Envia apenas os nomes sem contexto adicional desnecessário.
      */
-    async refinePlanLanguage(plan: Meal[]): Promise<Meal[]> {
-        console.log('[AI Refinement] Iniciando humanização do plano...');
+    async refinePlanLanguage(meals: Meal[]): Promise<Meal[]> {
+        console.log('[AI Refinement] Humanizando nomes técnicos...');
+
+        const technicalNames = new Set<string>();
+        meals.forEach(m => m.items.forEach(it => {
+            if (!it.customName && (it.name.includes(',') || it.name.length > 15)) {
+                technicalNames.add(it.name);
+            }
+        }));
+
+        if (technicalNames.size === 0) return meals;
+
+        const list = Array.from(technicalNames);
+        const prompt = `Atue como nutricionista clínico. Converta estes nomes técnicos de alimentos em nomes amigáveis e curtos para um cardápio (sem vírgulas invertidas). 
+        Retorne APENAS um objeto JSON plano onde a chave é o nome técnico e o valor é o nome amigável.
+        
+        Exemplo: {"Arroz, branco, cozido": "Arroz branco"}
+        
+        LISTA:
+        ${list.join('\n')}`;
 
         try {
-            const prompt = `
-        Você é um nutricionista focado em experiência do paciente.
-        Abaixo está uma lista de refeições de um plano alimentar. 
-        Muitos alimentos vieram diretamente de um banco de dados técnico e estão com nomes pouco naturais (ex: "Pão, trigo, forma, integral" ou "Arroz, branco, cozido").
-
-        Sua tarefa é identificar esses nomes técnicos e convertê-los para nomes AMIGÁVEIS e APETITOSOS que uma pessoa comum usaria (ex: "Pão de forma integral" ou "Arroz branco").
-
-        REGRAS DE OURO:
-        1. Identifique nomes que usem vírgulas para separar atributos (ex: "Alimento, tipo, estado") e transforme-os em linguagem fluida.
-        2. Mantenha a essência do alimento.
-        3. NÃO altere quantidades ou porções.
-        4. Retorne EXATAMENTE o mesmo JSON de entrada, apenas com o campo "customName" de cada item atualizado.
-        5. Se um item já tiver um nome amigável ou personalizado pelo profissional, mantenha-o.
-
-        PLANO ATUAL:
-        ${JSON.stringify(plan)}
-      `;
-
-            const aiResponse = await OpenRouterService.ask({
+            const response = await OpenRouterService.ask({
                 prompt: prompt,
                 role: 'professional',
-                temperature: 0.3
+                temperature: 0, // Zero para máxima consistência e velocidade
             });
 
-            if (aiResponse) {
-                const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-                return JSON.parse(cleanJson) as Meal[];
+            if (response) {
+                // Regex para localizar o JSON caso a IA envie texto extra
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const mapping = JSON.parse(jsonMatch[0]);
+                    return meals.map(meal => ({
+                        ...meal,
+                        items: meal.items.map(item => {
+                            if (mapping[item.name]) {
+                                return { ...item, customName: mapping[item.name] };
+                            }
+                            return item;
+                        })
+                    }));
+                }
             }
-            throw new Error("Resposta vazia da IA");
-
-        } catch (error: any) {
-            console.error("[AI Refinement] Falha na humanização:", error?.message || error);
-            return plan; // Fallback para o plano original
+            return meals;
+        } catch (error) {
+            console.error("[Refinement] Error:", error);
+            return meals;
         }
     }
 };

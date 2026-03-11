@@ -426,16 +426,16 @@ export const IndividualPatientReportView = ({
                 ) : (
                     <div className="bg-white border-slate-200 p-4 rounded-xl border text-center shadow-sm">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Próxima</p>
-                        <p className="text-base font-black text-indigo-600">{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p>
+                        <p className="text-base font-black text-emerald-600">{metrics.nextAppointmentDate ? new Date(metrics.nextAppointmentDate).toLocaleDateString() : 'N/A'}</p>
                     </div>
                 )}
             </div>
 
             {/* AI Analysis */}
             {onAnalyze && !isPdf && (
-                <div className="bg-indigo-50/30 p-4 rounded-2xl flex items-center justify-between print:hidden border border-indigo-100">
-                    <p className="text-sm font-black text-indigo-900 uppercase tracking-widest">Auditoria Clínica Digital (IA)</p>
-                    <button onClick={onAnalyze} disabled={analyzing} className={`text-xs px-5 py-2 rounded-xl shadow-lg font-black flex items-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                <div className="bg-emerald-50/30 p-4 rounded-2xl flex items-center justify-between print:hidden border border-emerald-100">
+                    <p className="text-sm font-black text-emerald-900 uppercase tracking-widest">Auditoria Clínica Digital (IA)</p>
+                    <button onClick={onAnalyze} disabled={analyzing} className={`text-xs px-5 py-2 rounded-xl shadow-lg font-black flex items-center gap-2 transform active:scale-95 transition-all ${analyzing ? 'bg-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
                         {analyzing ? 'Processando...' : <>🔬 Gerar Análise</>}
                     </button>
                 </div>
@@ -471,10 +471,10 @@ export const IndividualPatientReportView = ({
 
                 {/* NOVO: Bloco PICA no Relatório */}
                 {anthropometry.history.length > 0 && anthropometry.history[anthropometry.history.length - 1].picaDiagnosis && (
-                    <div className={`mt-8 p-6 rounded-3xl border-2 ${isPdf ? 'bg-gray-50 border-gray-200' : 'bg-indigo-50/50 border-indigo-100 shadow-inner'}`}>
+                    <div className={`mt-8 p-6 rounded-3xl border-2 ${isPdf ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50/50 border-emerald-100 shadow-inner'}`}>
                         <div className="flex items-center gap-3 mb-4">
                             <span className="text-xl">📋</span>
-                            <h4 className={`text-xs font-black uppercase tracking-[0.2em] ${isPdf ? 'text-gray-700' : 'text-indigo-900'}`}>Protocolo PICA (Diagnóstico Clínico Integrado)</h4>
+                            <h4 className={`text-xs font-black uppercase tracking-[0.2em] ${isPdf ? 'text-gray-700' : 'text-emerald-900'}`}>Protocolo PICA (Diagnóstico Clínico Integrado)</h4>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-4">
@@ -491,7 +491,7 @@ export const IndividualPatientReportView = ({
                                     </p>
                                 </div>
                             </div>
-                            <div className={`p-4 rounded-2xl ${isPdf ? 'bg-white border-gray-100' : 'bg-white/80 border-indigo-50 border font-black'} shadow-sm`}>
+                            <div className={`p-4 rounded-2xl ${isPdf ? 'bg-white border-gray-100' : 'bg-white/80 border-emerald-50 border font-black'} shadow-sm`}>
                                 <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Conduta Prioritária</p>
                                 <p className="text-xs font-black text-emerald-900 leading-relaxed uppercase">
                                     {anthropometry.history[anthropometry.history.length - 1].picaConduct}
@@ -508,10 +508,10 @@ export const IndividualPatientReportView = ({
                 {!isPdf && (
                     <div className="mt-8 border-t border-slate-100 pt-8">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-indigo-700 flex items-center gap-2">
+                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700 flex items-center gap-2">
                                 🧠 Mapas Mentais Visuais (Vision IA)
                             </h3>
-                            <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest animate-pulse">Alpha</span>
+                            <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest animate-pulse">Alpha</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -526,7 +526,7 @@ export const IndividualPatientReportView = ({
                                         await MindMapService.generatePatientMindMap(data, 'TREATMENT');
                                         alert('Mapa de Tratamento (Científico) gerado! Visualize na aba de Insights do Paciente.');
                                     }}
-                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95"
+                                    className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95"
                                 >
                                     Gerar Mapa de Tratamento
                                 </button>

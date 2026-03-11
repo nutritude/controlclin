@@ -1,77 +1,176 @@
 import { OpenRouterService } from './openRouterService';
 
-export const MindMapService = {
-  /**
-   * Gera o código Mermaid para um mapa mental baseado no contexto do paciente.
-   * Foco: Objetivo, Científico e Comportamental.
-   */
-  async generatePatientMindMap(context: any, type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION' = 'CLINICAL'): Promise<string> {
-    console.log(`[AI MindMap] Gerando mapa mental do tipo: ${type}...`);
+/**
+ * Sanitiza o texto de um nó Mermaid removendo toda a pontuação problemática.
+ * Mermaid Mindmap v10: não aceita: " ' ( ) [ ] { } / \ : , . ! ? @ # $ % & * + = | < > ^
+ */
+function sanitizeNodeText(text: string): string {
+  return text
+    .normalize('NFC')
+    .replace(/["""'']/g, '')  // aspas tipográficas e retas
+    .replace(/[^\w\sÀ-ÿ]/g, ' ')  // mantém letras, números, acentos e espaços
+    .replace(/\s{2,}/g, ' ')      // remove espaços duplos
+    .trim();
+}
 
-    const typeInstructions = {
+/**
+ * Analisa e limpa cada linha do código Mermaid gerado.
+ */
+function sanitizeMermaidMindmap(raw: string): string {
+  // 1. Remove blocos de código markdown
+  let code = raw.replace(/```mermaid\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // 2. Garante que começa com "mindmap"
+  if (!code.toLowerCase().startsWith('mindmap')) {
+    code = 'mindmap\n' + code;
+  }
+
+  // 3. Processa linha a linha
+  const lines = code.split('\n');
+  const cleanedLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.trim() === '' || line.trim().toLowerCase() === 'mindmap') {
+      cleanedLines.push(line.trim() === '' ? '' : 'mindmap');
+      continue;
+    }
+
+    // Captura a indentação (espaços no início)
+    const indentMatch = line.match(/^(\s*)/);
+    const indent = indentMatch ? indentMatch[1] : '';
+    const body = line.trim();
+
+    // Detecta estruturas de nó do Mermaid mindmap e limpa o conteúdo interno
+    // Formatos: root((text)), node[text], node))text((, node{{text}}, plain text
+    let cleanedLine = '';
+
+    if (body.match(/^root\(\(.*\)\)$/)) {
+      // Central root node: root((Texto))
+      const inner = body.slice(6, -2); // remove 'root((' e '))'
+      cleanedLine = `root((${sanitizeNodeText(inner)}))`;
+    } else if (body.match(/^.*\(\(.*\)\)$/)) {
+      // Nó com parênteses duplos
+      const pIdx = body.indexOf('((');
+      const prefix = body.slice(0, pIdx);
+      const inner = body.slice(pIdx + 2, -2);
+      cleanedLine = `${sanitizeNodeText(prefix)}((${sanitizeNodeText(inner)}))`;
+    } else if (body.match(/^.*\[\[.*\]\]$/)) {
+      // Nó estilo quadrado duplo
+      const pIdx = body.indexOf('[[');
+      const prefix = body.slice(0, pIdx);
+      const inner = body.slice(pIdx + 2, -2);
+      cleanedLine = `${sanitizeNodeText(prefix)}[[${sanitizeNodeText(inner)}]]`;
+    } else if (body.match(/^.*\[.*\]$/)) {
+      // Nó estilo quadrado simples
+      const pIdx = body.indexOf('[');
+      const prefix = body.slice(0, pIdx);
+      const inner = body.slice(pIdx + 1, -1);
+      cleanedLine = `${sanitizeNodeText(prefix)}[${sanitizeNodeText(inner)}]`;
+    } else if (body.match(/^\)\).*\(\($/)) {
+      // Nó arredondado: ))text((
+      const inner = body.slice(2, -2);
+      cleanedLine = `))${sanitizeNodeText(inner)}((`;
+    } else if (body.match(/^.*\{\{.*\}\}$/)) {
+      // Nó hexágono: {{text}}
+      const pIdx = body.indexOf('{{');
+      const prefix = body.slice(0, pIdx);
+      const inner = body.slice(pIdx + 2, -2);
+      cleanedLine = `${sanitizeNodeText(prefix)}{{${sanitizeNodeText(inner)}}}`;
+    } else {
+      // Texto puro (branch padrão)
+      cleanedLine = sanitizeNodeText(body);
+    }
+
+    if (cleanedLine) {
+      cleanedLines.push(indent + cleanedLine);
+    }
+  }
+
+  return cleanedLines.join('\n');
+}
+
+export const MindMapService = {
+  async generatePatientMindMap(
+    context: any,
+    type: 'CLINICAL' | 'TREATMENT' | 'GOALS' | 'EDUCATION' = 'CLINICAL'
+  ): Promise<string> {
+    console.log(`[AI MindMap] Gerando mapa tipo: ${type}...`);
+
+    const prompts: Record<string, string> = {
       CLINICAL: `
-                FOCO: Conexão entre Perfil comportamental psicológico (MIPAN), Exames, Patologias e Diagnóstico Antropométrico.
-                CONTEÚDO OBRIGATÓRIO:
-                - Perfil comportamental psicológico (MIPAN)
-                - Conduta clínica baseada em evidências
-                - Contexto das escolhas dos alimentos (por que este alimento e não outro?)
-                - Relação das refeições com a rotina do paciente
-                - Efeito metabólico esperado (ex: melhora sensib. insulina, saciedade)
-                - Efeito caso não haja adesão (riscos clínicos reais)`,
+                Gere um mapa mental Mermaid (sintaxe mindmap) para o plano alimentar do paciente.
+                Conecte: DIAGNÓSTICO, EXAMES, CONDUTA NUTRICIONAL e ADESÃO.
+                O nó central deve ser o objetivo de saúde do paciente.`,
       TREATMENT: `
-                FOCO: Conectar "Diagnóstico" → "Fisiopatologia" → "Conduta Nutricional".
-                Deve explicar COMO o alimento atua no problema de saúde.`,
+                Gere um mapa mental Mermaid (sintaxe mindmap) mostrando a cadeia:
+                DIAGNÓSTICO -> MECANISMO -> INTERVENÇÃO NUTRICIONAL -> RESULTADO ESPERADO.`,
       GOALS: `
-                FOCO: Estratégia de Metas de Curto, Médio e Longo Prazo.
-                Visualizar a escada do sucesso do paciente.`,
+                Gere um mapa mental Mermaid (sintaxe mindmap) de metas:
+                Curto Prazo (1 mês), Médio Prazo (3 meses), Longo Prazo (6 meses+).
+                Seja específico com os valores esperados.`,
       EDUCATION: `
-                FOCO: Educação Nutricional.
-                Combinações inteligentes de alimentos ou substituições de alto valor biológico.`
+                Gere um mapa mental Mermaid (sintaxe mindmap) de educação nutricional:
+                Grupos alimentares, substituições inteligentes e combinações bioativas.`
     };
 
     const prompt = `
-            Você é um Cientista de Dados e Nutricionista Clínico sênior especializado em Medicina de Precisão.
-            Crie um mapa mental no formato Mermaid (sintaxe mindmap) extremamente OBJETIVO e CIENTÍFICO.
+CONTEXTO DO PACIENTE:
+${JSON.stringify(context, null, 2)}
 
-            TIPO DE MAPA: ${type}
-            ${typeInstructions[type]}
+TAREFA:
+${prompts[type]}
 
-            CONTEXTO DO PACIENTE:
-            ${JSON.stringify(context)}
+REGRAS ABSOLUTAS DE SINTAXE MERMAID MINDMAP v10:
+1. PRIMEIRA LINHA: "mindmap" sem nada mais.
+2. SEGUNDA LINHA: "  root((TEXTO AQUI))" com 2 espaços de indentação.
+3. Cada nível filho adiciona mais 2 espaços.
+4. PROIBIDO ABSOLUTAMENTE dentro de qualquer texto de nó:
+   - Aspas simples ou duplas ( ' " )
+   - Parênteses ( ) exceto os delimitadores de nó
+   - Colchetes [ ] exceto os delimitadores de nó
+   - Chaves { } exceto os delimitadores de nó
+   - Dois pontos (:), vírgulas (,), hifens (-), barras (/)
+   - Qualquer símbolo especial
+5. Use APENAS palavras, números e letras acentuadas nos textos.
+6. NÃO escreva mais de 5 palavras por nó.
+7. Retorne SOMENTE o código, sem markdown, sem explicação.
 
-            REGRAS TÉCNICAS MERMAID:
-            1. Use a sintaxe Mermaid MINDMAP (começa com 'mindmap').
-            2. Use formas variadas: root((Central)), node[Retângulo], node))Orelha((, node{{Hexágono}}.
-            3. Use o nó central para o conceito chave (ex: "Estratégia Metabólica" ou "Jornada de ${context.patient?.name}").
-            4. NÃO use aspas duplas, hifens sozinhos em ramos ou qualquer caractere que quebre o Mermaid.
-            5. Retorne APENAS o código purista do diagrama.
-
-            EXEMPLO DE ESTRUTURA METABÓLICA:
-            mindmap
-              root((Estratégia Metabólica))
-                Conduta::Foco Anti-inflamatório
-                  Ação[Aumento de Ômega 3]
-                    Alimento))Sardinha e Chia((
-                    Efeito-Redução PCR
-                Risco::Não Adesão
-                  Consequência{{Aumento Fadiga Crônica}}
-        `;
+EXEMPLO CORRETO:
+mindmap
+  root((Controle Metabólico))
+    Diagnóstico
+      Diabetes Tipo 2
+      Sobrepeso
+    Conduta
+      Redução de Carboidratos
+        Priorizar Fibras
+        Evitar Açúcar
+      Proteína Adequada
+        Frango e Ovos
+    Metas
+      Reduzir Peso 3kg
+      Glicemia Normalizada
+`;
 
     try {
       const response = await OpenRouterService.ask({
-        prompt: prompt,
+        prompt,
         role: 'professional',
-        temperature: 0.2
+        temperature: 0.05 // Mínimo para máxima consistência
       });
 
-      let cleanCode = response.replace(/```mermaid/g, '').replace(/```/g, '').trim();
-      if (!cleanCode.startsWith('mindmap')) {
-        cleanCode = 'mindmap\n' + cleanCode;
-      }
+      const cleanCode = sanitizeMermaidMindmap(response);
+      console.log('[MindMap] Código gerado (sanitizado):\n', cleanCode);
       return cleanCode;
     } catch (error) {
-      console.error('[MindMap] Erro ao gerar mapa:', error);
-      return `mindmap\n  root((Minha Jornada))\n    Diagnóstico\n      Acompanhamento Clínico\n    Objetivo\n      ${context.patient?.objective || 'Saúde Geral'}`;
+      console.error('[MindMap] Erro:', error);
+      return `mindmap
+  root((Plano Clinico))
+    Meta Principal
+      Saude Metabolica
+    Conduta
+      Alimentacao Equilibrada
+      Hidratacao Adequada`;
     }
   }
 };
