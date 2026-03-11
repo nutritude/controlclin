@@ -32,17 +32,32 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   componentDidCatch(error: any, errorInfo: any) {
     console.error("Uncaught error:", error, errorInfo);
     logService.addLog('ERROR', 'Uncaught React Error:', error, errorInfo); // Log to service
+
+    // SE for um erro de carregamento de chunk (módulo dinâmico), força o reload automático.
+    // Isso resolve o erro "Failed to fetch dynamically imported module" após um novo deploy.
+    const errorStr = error?.toString() || "";
+    if (errorStr.includes("dynamically imported module") || errorStr.includes("ChunkLoadError")) {
+      console.warn("[ErrorBoundary] Detectado erro de módulo desatualizado. Forçando reload...");
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
   }
 
   render() {
     if (this.state.hasError) {
+      // Diferenciar visualmente se estiver em processo de reload
+      const isModuleError = this.state.error?.toString().includes("dynamically imported module");
+
       return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif', color: '#333' }}>
-          <h1 style={{ color: '#e11d48' }}>Algo deu errado.</h1>
-          <p>Ocorreu um erro ao carregar a aplicação.</p>
-          <pre style={{ background: '#f1f1f1', padding: '15px', borderRadius: '5px', overflow: 'auto' }}>
-            {this.state.error?.toString()}
-          </pre>
+        <div style={{ padding: '20px', fontFamily: 'sans-serif', color: '#333', textAlign: 'center', marginTop: '50px' }}>
+          <h1 style={{ color: '#e11d48' }}>{isModuleError ? "Atualizando Sistema..." : "Algo deu errado."}</h1>
+          <p>{isModuleError ? "Uma nova versão foi detectada. Recarregando dados seguros..." : "Ocorreu um erro ao carregar a aplicação."}</p>
+          {!isModuleError && (
+            <pre style={{ background: '#f1f1f1', padding: '15px', borderRadius: '5px', overflow: 'auto', textAlign: 'left', margin: '20px auto', maxWidth: '800px' }}>
+              {this.state.error?.toString()}
+            </pre>
+          )}
           <button
             onClick={() => window.location.reload()}
             style={{ marginTop: '10px', padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
