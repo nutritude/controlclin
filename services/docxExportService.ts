@@ -76,6 +76,20 @@ export const DocxExportService = {
 
                     ...plan.meals.flatMap((meal: Meal) => {
                         if (meal.items.length === 0) return [];
+
+                        const formatQuantity = (item: MealItem) => {
+                            let displayUnit = item.unit;
+                            const lowerName = (item.customName || item.name).toLowerCase();
+                            if (displayUnit === 'g') {
+                                const liquids = ['vinho', 'suco', 'água', 'café', 'cafe', 'chá', 'cha', 'bebida', 'leite', 'refrigerante', 'cerveja', 'hidratação'];
+                                if (liquids.some(l => lowerName.includes(l))) displayUnit = 'ml';
+                            }
+                            const countableUnits = ['fatia', 'fatias', 'unidade', 'unidades', 'copo', 'copos', 'pedaço', 'pedaços', 'porção', 'porções', 'colher', 'colheres', 'xícara', 'xícaras', 'concha', 'conchas', 'filé', 'filés', 'ovo', 'ovos'];
+                            const isCountable = countableUnits.some(cu => displayUnit.toLowerCase().includes(cu));
+                            if (item.quantity === 1 && !isCountable) return displayUnit;
+                            return `${item.quantity} ${displayUnit}`;
+                        };
+
                         return [
                             new Paragraph({
                                 text: `${meal.name.toUpperCase()}${meal.time ? ` (${meal.time})` : ''}`,
@@ -87,9 +101,9 @@ export const DocxExportService = {
                             ...meal.items.flatMap((item: MealItem) => [
                                 new Paragraph({
                                     children: [
-                                        new TextRun({ text: "• ", bold: true, color: "475569" }),
-                                        new TextRun({ text: `${item.quantity} ${item.unit} `, bold: true }),
-                                        new TextRun({ text: item.customName || item.name }),
+                                        new TextRun({ text: "• ", bold: true, color: "475569", font: "Calibri" }),
+                                        new TextRun({ text: `${formatQuantity(item)} `, bold: true, font: "Calibri" }),
+                                        new TextRun({ text: item.customName || item.name, font: "Calibri" }),
                                     ],
                                     indent: { left: 480 },
                                     spacing: { before: 100, after: 100 },
@@ -97,9 +111,9 @@ export const DocxExportService = {
                                 ...(item.substitutes || []).map(sub =>
                                     new Paragraph({
                                         children: [
-                                            new TextRun({ text: "   OU ", bold: true, color: "059669", size: 16 }),
-                                            new TextRun({ text: `${sub.quantity} ${sub.unit} `, italics: true, color: "475569" }),
-                                            new TextRun({ text: sub.customName || sub.name, italics: true, color: "475569" }),
+                                            new TextRun({ text: "   OU ", bold: true, color: "059669", size: 16, font: "Calibri" }),
+                                            new TextRun({ text: `${formatQuantity(sub)} `, italics: true, color: "475569", font: "Calibri" }),
+                                            new TextRun({ text: sub.customName || sub.name, italics: true, color: "475569", font: "Calibri" }),
                                         ],
                                         indent: { left: 960 },
                                         spacing: { after: 80 },

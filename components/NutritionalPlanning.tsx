@@ -870,6 +870,25 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     };
 
     const isRefiningRef = useRef(false);
+
+    // Humaniza uma única refeição (mais rápido que humanizar o plano todo)
+    const handleRefineMeal = async (mealId: string) => {
+        if (isRefiningRef.current || isRefining) return;
+        const targetMeal = meals.find(m => m.id === mealId);
+        if (!targetMeal || targetMeal.items.length === 0) return;
+        isRefiningRef.current = true;
+        setIsRefining(true);
+        try {
+            const refined = await AIPlanRefinementService.refinePlanLanguage([targetMeal]);
+            setMeals(prev => prev.map(m => m.id === mealId ? refined[0] : m));
+        } catch (e) {
+            console.error('[Humanizar Refeição] Erro:', e);
+        } finally {
+            setIsRefining(false);
+            isRefiningRef.current = false;
+        }
+    };
+
     const handleRefineLanguage = async () => {
         if (isRefiningRef.current || isRefining) return; // Double-guard anti-loop
         if (meals.length === 0 || meals.every(m => m.items.length === 0)) {
@@ -1115,18 +1134,25 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
         }
     };
 
-    const formatMealItemQuantity = (item: MealItem) => {
+    const formatMealItemQuantity = (item: MealItem): string => {
         let displayUnit = item.unit;
-        // Forçar ml para líquidos baseados no nome ou categoria
+        const lowerName = (item.customName || item.name).toLowerCase();
+
+        // Força ml para líquidos
         if (displayUnit === 'g') {
-            const lowerName = (item.customName || item.name).toLowerCase();
-            const liquids = ['vinho', 'suco', 'água', 'café', 'cafe', 'chá', 'cha', 'bebida', 'leite', 'refrigerante', 'cerveja', 'hidratação', 'iogurte líquid'];
+            const liquids = ['vinho', 'suco', 'água', 'café', 'cafe', 'chá', 'cha', 'bebida', 'leite', 'refrigerante', 'cerveja', 'hidratação'];
             if (liquids.some(l => lowerName.includes(l))) {
                 displayUnit = 'ml';
             }
         }
 
-        if (item.quantity === 1) {
+        // Unidades contáveis onde "1" deve aparecer explicitamente
+        const countableUnits = ['fatia', 'fatias', 'unidade', 'unidades', 'copo', 'copos', 'pedaço', 'pedaços', 'porção', 'porções', 'colher', 'colheres', 'xícara', 'xícaras', 'concha', 'conchas', 'filé', 'filés', 'ovo', 'ovos'];
+        const unitLower = displayUnit.toLowerCase();
+        const isCountable = countableUnits.some(cu => unitLower.includes(cu));
+
+        if (item.quantity === 1 && !isCountable) {
+            // Para gramas e ml com quantidade 1, exibe apenas a unidade
             return displayUnit;
         }
         return `${item.quantity} ${displayUnit}`;
@@ -1724,6 +1750,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleRefineMeal(meal.id)}
+                                                disabled={isRefining}
+                                                className={`text-xs px-2 py-1 rounded border font-bold transition-all ${isRefining ? 'opacity-40 cursor-not-allowed' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}
+                                                title="Humanizar nomes desta refeição com IA"
+                                            >
+                                                {isRefining ? '⏳' : '✨'} Humanizar
+                                            </button>
                                             <button onClick={() => handleDuplicateMeal(meal)} className={`text-xs px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors font-medium`} title="Duplicar Refeição">Duplicar</button>
                                             <button onClick={() => handleDeleteMeal(meal.id)} className={`text-xs px-2 py-1 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors font-medium`} title="Remover Refeição">Excluir</button>
                                             <button onClick={() => openAddItemModal(meal.id)} className={`text-xs px-3 py-1 rounded font-bold border ${isManagerMode ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>+ Item</button>
@@ -2152,11 +2186,14 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
             {/* VISTA DE IMPRESSÃO (Oculta mas capturada pelo html2pdf) */}
             <div className="fixed top-0 left-0 w-full opacity-0 pointer-events-none -z-50" data-html2pdf-ignore="false">
-                <div ref={pdfRef} className="bg-white text-black font-sans px-[8mm] py-[12mm] w-[210mm] min-h-[297mm] shadow-2xl mx-auto">
+                <div
+                    ref={pdfRef}
+                    className="bg-white text-black w-[210mm] min-h-[297mm] mx-auto shadow-2xl"
+                    style={{ fontFamily: "'Calibri', 'Tahoma', 'Arial', sans-serif", fontSize: '11pt', padding: '14mm 12mm 12mm 12mm' }}
+                >
                     {snapshotForPdf && (
-                        <div className="flex flex-col h-full">
-                            {/* CABEÇALHO PROFISSIONAL */}
-                            {/* CABEÇALHO ALINHADO À ESQUERDA */}
+                        <div>
+                            {/* CABEÇALHO */}
                             <PDFHeader
                                 clinic={snapshotForPdf.clinic}
                                 patient={snapshotForPdf.patient}
@@ -2167,112 +2204,100 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                 patientObjective={snapshotForPdf.patient.objective}
                             />
 
-                            {/* RESUMO CLÍNICO IA (Substitui Macronutrientes por solicitação) */}
+                            {/* RESUMO CLÍNICO */}
                             {snapshotForPdf.clinicalSummary && (
-                                <div className="mb-8 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100/50 break-inside-avoid shadow-sm">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-lg">💡</div>
-                                        <h2 className="text-xs font-black text-emerald-800 uppercase tracking-widest">Resumo Clínico e Orientações</h2>
-                                    </div>
-                                    <div className="prose prose-sm max-w-none text-slate-700 text-xs leading-relaxed">
-                                        {snapshotForPdf.clinicalSummary.split('\n').map((line: string, i: number) => (
-                                            <p key={i} className="mb-2 last:mb-0">{line}</p>
-                                        ))}
-                                    </div>
+                                <div style={{ marginBottom: '6mm', padding: '4mm 5mm', backgroundColor: '#f0fdf4', borderRadius: '4px', border: '1px solid #d1fae5', pageBreakInside: 'avoid' }}>
+                                    <p style={{ fontSize: '8pt', fontWeight: 'bold', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2mm' }}>💡 Resumo Clínico</p>
+                                    {snapshotForPdf.clinicalSummary.split('\n').map((line: string, i: number) => (
+                                        <p key={i} style={{ fontSize: '9pt', color: '#374151', marginBottom: '1.5mm', lineHeight: '1.4' }}>{line}</p>
+                                    ))}
                                 </div>
                             )}
 
-                            {/* TÍTULO DA SEÇÃO */}
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="flex-1 h-[2px] bg-slate-100"></div>
-                                <h2 className="text-sm font-black text-emerald-800 uppercase tracking-[0.2em]">Plano Alimentar</h2>
-                                <div className="flex-1 h-[2px] bg-slate-100"></div>
+                            {/* DIVIDER PLANO ALIMENTAR */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4mm', marginBottom: '4mm' }}>
+                                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+                                <span style={{ fontSize: '9.5pt', fontWeight: 'bold', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>Plano Alimentar</span>
+                                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
                             </div>
 
-                            {/* REFEIÇÕES */}
-                            <div className="flex flex-col">
-                                {snapshotForPdf.plan.meals.map((m: any, i: number) => (
-                                    m.items.length > 0 && (
-                                        <div key={i} className="mb-4 break-inside-avoid shadow-sm rounded-xl border border-slate-50 overflow-hidden">
-                                            <div className="flex justify-between items-center bg-gray-50 border-b-2 border-slate-200 p-2.5 mb-2">
-                                                <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wide">{m.name}</h3>
-                                                {m.time && <span className="text-[10px] font-mono font-bold text-gray-500">{m.time}</span>}
-                                            </div>
-                                            <div className="space-y-1.5 p-2 pt-1">
-                                                {m.items.map((it: any, j: number) => (
-                                                    <div key={j} className="mb-1 last:mb-0 flex items-baseline gap-1.5">
-                                                        <span className="font-bold text-slate-600 shrink-0 capitalize">• {formatMealItemQuantity(it)}</span>
-                                                        <span className="leading-relaxed flex-1">{it.customName || it.name}</span>
-                                                        {
-                                                            it.substitutes && it.substitutes.length > 0 && (
-                                                                <div className="mt-1 ml-4 space-y-1 border-l-2 border-emerald-50 pl-4 py-0.5 w-full">
-                                                                    {it.substitutes.map((sub: any, sIdx: number) => (
-                                                                        <div key={sIdx} className="text-slate-500 text-[10px] flex items-baseline gap-1.5 py-0.5">
-                                                                            <span className="font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-[4px] text-[7px] uppercase shrink-0">OU</span>
-                                                                            <span className="font-bold text-slate-600 shrink-0">{formatMealItemQuantity(sub)}</span>
-                                                                            <span className="italic">{sub.customName || sub.name}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )
-                                                        }
-                                                    </div>
-                                                ))}
-                                            </div>
+                            {/* REFEIÇÕES — layout tabular para garantir linha única sem quebra */}
+                            {snapshotForPdf.plan.meals.map((m: any, i: number) => (
+                                m.items.length > 0 && (
+                                    <div key={i} style={{ marginBottom: '4mm', pageBreakInside: 'avoid', border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                        {/* Header refeição */}
+                                        <div style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1', padding: '2.5mm 4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '9pt', fontWeight: 'bold', color: '#134e4a', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.name}</span>
+                                            {m.time && <span style={{ fontSize: '8pt', color: '#64748b', fontFamily: 'Courier, monospace' }}>{m.time}</span>}
                                         </div>
-                                    )
-                                ))}
-                            </div>
 
-                            {/* ESTRATÉGIAS DE ADESÃO (IA) */}
-                            {(snapshotForPdf.adherence || adherenceAnalysis) && (
-                                <div className="mt-8 pt-8 border-t-2 border-slate-100 break-inside-avoid">
-                                    <h2 className="text-sm font-black text-emerald-800 uppercase tracking-wide mb-6 flex items-center gap-2">
-                                        🚀 Estratégias para sua Adesão
-                                    </h2>
-                                    <div className="grid grid-cols-1 gap-4 w-full">
-                                        {(snapshotForPdf.adherence || adherenceAnalysis).tips.map((tip: any, idx: number) => (
-                                            <div key={idx} className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100/60 flex gap-4 items-start w-full">
-                                                <div className="bg-emerald-600 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full shrink-0 shadow-sm mt-0.5">
-                                                    {idx + 1}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">
-                                                            {tip.category}
-                                                        </p>
-                                                    </div>
-                                                    <p className="text-xs font-bold text-emerald-800 leading-snug mb-1 list-none">
-                                                        {tip.tip}
-                                                    </p>
-                                                    <p className="text-[10px] text-slate-600 leading-relaxed italic border-t border-emerald-100/50 pt-1 mt-1">
-                                                        {tip.rationale}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        {/* Itens — tabela com col fixo para quantidade */}
+                                        <div style={{ padding: '2mm 4mm 2.5mm 4mm' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                                                <colgroup>
+                                                    <col style={{ width: '34mm' }} />
+                                                    <col />
+                                                </colgroup>
+                                                <tbody>
+                                                    {m.items.map((it: any, j: number) => (
+                                                        <React.Fragment key={j}>
+                                                            <tr style={{ verticalAlign: 'top' }}>
+                                                                <td style={{ fontSize: '10pt', fontWeight: 'bold', color: '#374151', paddingTop: '1.5mm', paddingBottom: '1.5mm', whiteSpace: 'nowrap', paddingRight: '2mm', lineHeight: '1.3' }}>
+                                                                    &bull; {formatMealItemQuantity(it)}
+                                                                </td>
+                                                                <td style={{ fontSize: '10pt', color: '#1e293b', paddingTop: '1.5mm', paddingBottom: '1.5mm', lineHeight: '1.3', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                                                    {it.customName || it.name}
+                                                                </td>
+                                                            </tr>
+                                                            {it.substitutes && it.substitutes.map((sub: any, sIdx: number) => (
+                                                                <tr key={`sub-${sIdx}`} style={{ verticalAlign: 'top' }}>
+                                                                    <td style={{ paddingLeft: '5mm', paddingBottom: '1mm', paddingTop: '0' }}>
+                                                                        <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#059669', backgroundColor: '#ecfdf5', padding: '0.5mm 1.5mm', borderRadius: '2px', display: 'inline-block', lineHeight: '1.6' }}>OU</span>
+                                                                        {' '}
+                                                                        <span style={{ fontSize: '9pt', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>{formatMealItemQuantity(sub)}</span>
+                                                                    </td>
+                                                                    <td style={{ fontSize: '9pt', color: '#64748b', fontStyle: 'italic', paddingBottom: '1mm', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                                                        {sub.customName || sub.name}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
+                                )
+                            ))}
+
+                            {/* ESTRATÉGIAS DE ADESÃO */}
+                            {(snapshotForPdf.adherence || adherenceAnalysis) && (
+                                <div style={{ marginTop: '7mm', paddingTop: '5mm', borderTop: '2px solid #e2e8f0', pageBreakInside: 'avoid' }}>
+                                    <p style={{ fontSize: '9.5pt', fontWeight: 'bold', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4mm' }}>🚀 Estratégias para sua Adesão</p>
+                                    {(snapshotForPdf.adherence || adherenceAnalysis).tips.map((tip: any, idx: number) => (
+                                        <div key={idx} style={{ backgroundColor: '#f0fdf4', padding: '3mm 4mm', marginBottom: '2.5mm', borderRadius: '4px', border: '1px solid #d1fae5', pageBreakInside: 'avoid' }}>
+                                            <p style={{ fontSize: '7.5pt', fontWeight: 'bold', color: '#059669', textTransform: 'uppercase', marginBottom: '1mm' }}>{tip.category}</p>
+                                            <p style={{ fontSize: '9.5pt', fontWeight: 'bold', color: '#134e4a', marginBottom: '1mm', lineHeight: '1.4' }}>{tip.tip}</p>
+                                            <p style={{ fontSize: '8.5pt', color: '#374151', fontStyle: 'italic', lineHeight: '1.4' }}>{tip.rationale}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
                             {/* LISTA DE COMPRAS */}
-                            <div className="mt-10 pt-8 border-t-2 border-slate-100 break-inside-avoid">
-                                <h2 className="text-sm font-black text-emerald-800 uppercase tracking-wide mb-8 pb-3 border-b-2 border-slate-100 flex items-center gap-2">
-                                    🛒 Lista de Compras Semanal
-                                </h2>
-                                <div className="grid grid-cols-2 gap-x-8 gap-y-8 w-full max-w-full">
+                            <div style={{ marginTop: '7mm', paddingTop: '5mm', borderTop: '2px solid #e2e8f0', pageBreakInside: 'avoid' }}>
+                                <p style={{ fontSize: '9.5pt', fontWeight: 'bold', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4mm' }}>🛒 Lista de Compras Semanal</p>
+                                <div style={{ columns: '2', columnGap: '8mm' }}>
                                     {Object.entries(ShoppingListService.generate(snapshotForPdf.plan.meals)).map(([category, items]: [string, any[]]) => (
                                         items.length > 0 && (
-                                            <div key={category} className="mb-2 w-full min-w-0">
-                                                <h4 className="text-[10px] font-black text-emerald-700 bg-emerald-50 inline-block px-2.5 py-1 rounded-md uppercase mb-4 truncate max-w-full">{category}</h4>
-                                                <div className="space-y-0.5">
-                                                    {items.map((item: any, i: number) => (
-                                                        <div key={i} className="flex justify-between items-start text-xs text-slate-700 py-1.5 border-b border-dashed border-slate-200">
-                                                            <span className="pr-2 leading-tight flex-1 break-words min-w-0">{item.name}</span>
-                                                            <span className="font-black text-emerald-900 whitespace-nowrap shrink-0 ml-2">{(item.totalGrams * 7).toFixed(0)} <span className="text-[10px] text-slate-500 font-bold ml-0.5">g</span></span>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                            <div key={category} style={{ breakInside: 'avoid', marginBottom: '3mm' }}>
+                                                <p style={{ fontSize: '7.5pt', fontWeight: 'bold', color: '#059669', backgroundColor: '#f0fdf4', padding: '1mm 2mm', borderRadius: '2px', textTransform: 'uppercase', marginBottom: '1.5mm' }}>{category}</p>
+                                                {items.map((item: any, i: number) => (
+                                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', padding: '0.8mm 0', fontSize: '8.5pt', color: '#374151' }}>
+                                                        <span>{item.name}</span>
+                                                        <span style={{ fontWeight: 'bold', color: '#134e4a', whiteSpace: 'nowrap', paddingLeft: '2mm' }}>{(item.totalGrams * 7).toFixed(0)}g</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )
                                     ))}
@@ -2280,14 +2305,15 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             </div>
 
                             {/* RODAPÉ */}
-                            <div className="mt-auto pt-8 flex justify-between items-end border-t border-slate-100">
-                                <div className="text-[8px] text-slate-400 max-w-xs">
-                                    <p className="font-bold text-emerald-700 uppercase mb-0.5">{snapshotForPdf.clinic.name}</p>
+                            <div style={{ marginTop: '8mm', paddingTop: '3mm', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                <div style={{ fontSize: '6.5pt', color: '#94a3b8' }}>
+                                    <p style={{ fontWeight: 'bold', color: '#059669', marginBottom: '0.5mm' }}>{snapshotForPdf.clinic.name}</p>
                                     <p>{snapshotForPdf.clinic.address} • {snapshotForPdf.clinic.phone}</p>
-                                    <p className="mt-1">© {new Date().getFullYear()} - Documento validado cientificamente por ControlClin SaaS</p>
+                                    <p style={{ marginTop: '0.5mm' }}>© {new Date().getFullYear()} — Gerado por ControlClin SaaS</p>
                                 </div>
-                                <div className="text-[8px] text-slate-400 italic">
-                                    Gerado por {user.name} em {new Date().toLocaleString('pt-BR')}
+                                <div style={{ fontSize: '6.5pt', color: '#94a3b8', fontStyle: 'italic', textAlign: 'right' }}>
+                                    <p>Responsável: {user.name}</p>
+                                    <p>{new Date().toLocaleString('pt-BR')}</p>
                                 </div>
                             </div>
                         </div>
@@ -2490,7 +2516,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                     </div>
                 )
             }
-        </div>
+        </div >
     );
 };
 
