@@ -38,7 +38,7 @@ export const Help: React.FC<HelpProps> = ({ user, clinic, isManagerMode }) => {
             <div className={`relative p-8 rounded-3xl overflow-hidden border ${isManagerMode ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border-blue-400' : 'bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400'} shadow-2xl`}>
                 <div className="relative z-10 max-w-2xl mx-auto text-center">
                     <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tight">Como podemos ajudar?</h2>
-                    <p className="text-white/80 text-sm mb-8 font-medium italic">Encontre respostas rápidas ou fale com nossa inteligência artificial suporte.</p>
+                    <p className="text-white/80 text-sm mb-8 font-medium italic">Encontre respostas rápidas sobre as funcionalidades do sistema.</p>
 
                     <div className="relative group">
                         <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
@@ -88,21 +88,19 @@ export const Help: React.FC<HelpProps> = ({ user, clinic, isManagerMode }) => {
 
                 {/* SIDE ACTIONS */}
                 <div className="space-y-6">
-                    {/* IA ASSISTANT CARD */}
                     <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden group">
                         <div className="relative z-10">
                             <div className="bg-emerald-500/20 p-2 rounded-lg inline-block mb-4">
-                                <Icons.Sparkles className="size-6 text-emerald-400" />
+                                <Icons.BookOpen className="size-6 text-emerald-400" />
                             </div>
-                            <h3 className="text-lg font-black uppercase tracking-tight mb-2">IA de Suporte</h3>
+                            <h3 className="text-lg font-black uppercase tracking-tight mb-2">Guia do Sistema</h3>
                             <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-                                Nossa inteligência artificial está pronta para responder dúvidas técnicas ou clínicas em tempo real.
+                                Acesse o manual completo de instruções nativo para dominar todas as ferramentas.
                             </p>
                             <button className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
-                                Iniciar Chat IA
+                                Abrir Manual
                             </button>
                         </div>
-                        {/* Mesh gradient effect */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/40 via-transparent to-transparent opacity-50"></div>
                     </div>
 
