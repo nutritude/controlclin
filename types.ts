@@ -872,3 +872,24 @@ export interface CatalogLoadResult {
   errors: string[];
   warnings: string[];
 }
+
+export interface ManagerIntelligence {
+  financial: {
+    projection30d: number;
+    projection60d: number;
+    analysis: string;
+    bottleneck: string;
+  };
+  opportunities: Array<{
+    type: 'UP-SELL' | 'CROSS-SELL';
+    title: string;
+    description: string;
+    targetProfile: string;
+  }>;
+  marketGaps: {
+    commonDeficiencies: string[];
+    suggestedProducts: string[];
+    supplementOpportunities: string[];
+  };
+}
+

@@ -21,8 +21,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, label, color, isManage
   </div>
 );
 
-export const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate, isManagerMode }: any) => {
+export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointments, navigate, isManagerMode }: any) => {
   if (!stats) return null;
+
+  const financial = intelligence?.financial;
+  const opportunities = intelligence?.opportunities || [];
+  const marketGaps = intelligence?.marketGaps;
 
   return (
     <>
@@ -147,6 +151,121 @@ export const ManagerDashboard = ({ stats, aiInsights, nextAppointments, navigate
           >
             Ver agenda completa
           </button>
+        </div>
+      </div>
+
+      {/* NEW: INTELLIGENCE SECTIONS */}
+      <div className="space-y-8 pb-20">
+
+        {/* FINANCIAL PREDICTION */}
+        <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-blue-500/10 blur-[100px] -rotate-12 translate-x-20"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="size-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+                <Icons.TrendingUp size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-tight">Performance Financeira Preditiva</h3>
+                <p className="text-blue-400/60 text-[10px] font-black uppercase tracking-widest">Análise de Fluxo via IA</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Projeção 30 Dias</span>
+                <p className="text-3xl font-black mt-2">R$ {financial?.projection30d?.toLocaleString('pt-BR') || '---'}</p>
+                <div className="mt-4 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 w-[70%] animate-pulse"></div>
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Projeção 60 Dias</span>
+                <p className="text-3xl font-black mt-2">R$ {financial?.projection60d?.toLocaleString('pt-BR') || '---'}</p>
+              </div>
+              <div className="md:col-span-1 flex flex-col justify-center">
+                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Gargalo Identificado:</span>
+                <p className="text-sm font-medium text-slate-300 italic">"{financial?.bottleneck || 'Processando análise de perdas...'}"</p>
+              </div>
+            </div>
+
+            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+              <p className="text-xs text-blue-100/80 leading-relaxed font-medium">📋 <b className="text-blue-300">Análise de IA:</b> {financial?.analysis || "Aguardando volume de dados para projeção precisa."}</p>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* UP-SELL / CROSS-SELL */}
+          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Oportunidades de Up-sell</h3>
+              <Icons.Zap className="text-amber-500" />
+            </div>
+            <div className="space-y-4">
+              {opportunities.length > 0 ? opportunities.map((op: any, i: number) => (
+                <div key={i} className="p-5 rounded-3xl bg-slate-50 border border-slate-100 group transition-all hover:border-blue-200">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${op.type === 'UP-SELL' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {op.type}
+                    </span>
+                  </div>
+                  <h4 className="font-black text-slate-800 text-sm mb-1">{op.title}</h4>
+                  <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">{op.description}</p>
+                  <div className="pt-3 border-t border-slate-200/50 flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-slate-400 italic">Perfil: {op.targetProfile}</span>
+                    <button className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest">Aplicar Estratégia</button>
+                  </div>
+                </div>
+              )) : (
+                <div className="py-12 text-center text-slate-300 italic text-sm">Nenhuma oportunidade identificada no momento.</div>
+              )}
+            </div>
+          </section>
+
+          {/* MARKET GAPS & PRODUCTS */}
+          <section className="bg-indigo-50 border border-indigo-100 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden">
+            <div className="absolute -right-20 -top-20 size-60 bg-white/50 rounded-full blur-[80px]"></div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight mb-8">Lacunas de Mercado & Produtos</h3>
+
+              <div className="space-y-6">
+                <div>
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-3">Dores Comuns Detectadas</span>
+                  <div className="flex flex-wrap gap-2">
+                    {marketGaps?.commonDeficiencies?.map((d: string, i: number) => (
+                      <span key={i} className="bg-white border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 shadow-sm">{d}</span>
+                    )) || <span className="text-slate-400 italic text-xs">Mapeando base de pacientes...</span>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white p-5 rounded-3xl shadow-sm border border-indigo-100">
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-3">Novos Produtos</span>
+                    <ul className="space-y-2">
+                      {marketGaps?.suggestedProducts?.map((p: string, i: number) => (
+                        <li key={i} className="text-[11px] font-black text-indigo-900 flex items-center gap-2">
+                          <div className="size-1.5 rounded-full bg-indigo-400"></div>
+                          {p}
+                        </li>
+                      )) || <li className="text-slate-400 italic text-xs">Sem sugestões ativos.</li>}
+                    </ul>
+                  </div>
+                  <div className="bg-indigo-900 p-5 rounded-3xl shadow-xl">
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest block mb-3">Suplementação Alvo</span>
+                    <ul className="space-y-2">
+                      {marketGaps?.supplementOpportunities?.map((p: string, i: number) => (
+                        <li key={i} className="text-[11px] font-black text-white flex items-center gap-2">
+                          <div className="size-1.5 rounded-full bg-emerald-400"></div>
+                          {p}
+                        </li>
+                      )) || <li className="text-slate-400 italic text-xs">Aguardando análise PICA.</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </>

@@ -70,6 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [aiInsights, setAiInsights] = useState<any>(null);
+  const [managerIntelligence, setManagerIntelligence] = useState<any>(null);
   const [examRequests, setExamRequests] = useState<ExamRequest[]>([]);
   const [allExams, setAllExams] = useState<Exam[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -99,6 +100,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       setAppointments(apps);
       setStats(s);
       setAiInsights(insights);
+      if (isManagerMode) {
+        db.getManagerIntelligence(clinic.id).then(setManagerIntelligence);
+      }
       setExamRequests(requests);
       setAllExams(exams);
       setLoading(false);
@@ -282,6 +286,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       <ManagerDashboard
         stats={stats}
         aiInsights={aiInsights}
+        intelligence={managerIntelligence}
         nextAppointments={appointments}
         navigate={navigate}
         isManagerMode={isManagerMode}

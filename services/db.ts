@@ -1,4 +1,7 @@
 import { NutrientCalc } from './food/nutrientCalc';
+import { WhatsAppService } from '../services/whatsappService';
+import { HolidaysService, Holiday } from '../services/holidaysService';
+import { AIManagerIntelligenceService } from './ai/aiManagerIntelligenceService';
 import { AIService } from './ai/aiService';
 import { PicaProtocolService } from './picaProtocolService';
 import { AIAdherenceService } from './ai/aiAdherenceService';
@@ -1455,7 +1458,7 @@ class DatabaseService {
         };
 
         this.logPatientEvent(patientId, 'PAYMENT_RECORDED', { amount: data.amount }, `Pagamento registrado: R$${data.amount}`, user);
-        
+
         // FORÇA SALVAMENTO NO CLOUD
         await this.saveToStorage(true);
         console.log(`[DB] Transação adicionada (cloud-first) para ${patientId}: R$${data.amount}`);
@@ -1473,10 +1476,10 @@ class DatabaseService {
         if (tIdx === -1) throw new Error("Transação não encontrada");
 
         const updatedTransactions = [...patient.financial.transactions];
-        
+
         // Verifica se a transação está deletada (se soft delete)
         if (updatedTransactions[tIdx].isDeleted) {
-           throw new Error("Transação deletada e não pode ser editada");
+            throw new Error("Transação deletada e não pode ser editada");
         }
 
         updatedTransactions[tIdx] = { ...updatedTransactions[tIdx], ...updates };
@@ -1507,10 +1510,10 @@ class DatabaseService {
         if (tIdx === -1) throw new Error("Transação não encontrada");
 
         const updatedTransactions = [...patient.financial.transactions];
-        
+
         // Apenas marca como deletada ao invés de excluir da array (Soft Delete)
-        updatedTransactions[tIdx] = { 
-            ...updatedTransactions[tIdx], 
+        updatedTransactions[tIdx] = {
+            ...updatedTransactions[tIdx],
             isDeleted: true,
             status: 'CANCELADO' // Força status cancelado para sair dos reportes
         };
@@ -1521,7 +1524,7 @@ class DatabaseService {
         };
 
         this.logPatientEvent(patientId, 'PAYMENT_RECORDED', { transactionId, isDeleted: true }, `Transação excluída (soft-delete)`, user);
-        
+
         // FORÇA SALVAMENTO NO CLOUD
         await this.saveToStorage(true);
         console.log(`[DB] Transação deletada via soft delete (cloud-first) para ${patientId} / ${transactionId}`);
@@ -2239,8 +2242,30 @@ class DatabaseService {
             appointmentsCount: totalAppts,
             noShowRate,
             genderDistribution,
-            topPathologies
+            topPathologies,
+            paidTransactionsCount
         };
+    }
+
+    async getManagerIntelligence(clinicId: string) {
+        const stats = await this.getAdvancedStats(clinicId, undefined, 'ADMIN');
+        const patients = await this.getPatients(clinicId, undefined, 'ADMIN');
+
+        const patientsSummary = patients.map(p => ({
+            id: p.id,
+            name: p.name,
+            picaDiagnosis: p.anthropometry?.picaDiagnosis,
+            mipanClassification: p.mipanAssessments?.[0]?.classification,
+            lastGoal: p.clinicalSummary?.clinicalGoal
+        }));
+
+        const intelligence = await AIManagerIntelligenceService.analyzeIntelligence({
+            stats,
+            recentTransactions: [], // Can be filled if needed
+            patientsSummary
+        });
+
+        return intelligence;
     }
 
     async generateDashboardInsights(clinicId: string, stats: any) {
