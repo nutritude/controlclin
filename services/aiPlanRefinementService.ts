@@ -1,5 +1,5 @@
 import { Meal } from '../types';
-import { OpenRouterService } from './ai/openRouterService';
+import { AIService } from './ai/aiService';
 
 export const AIPlanRefinementService = {
     /**
@@ -28,10 +28,11 @@ export const AIPlanRefinementService = {
         ${list.join('\n')}`;
 
         try {
-            const response = await OpenRouterService.ask({
+            const response = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0, // Zero para máxima consistência e velocidade
+                model: 'google/gemini-2.5-flash'
             });
 
             if (response) {

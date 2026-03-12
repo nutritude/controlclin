@@ -1,6 +1,6 @@
 import { Exam, ExamMarker, ExamAnalysisResult, Patient } from '../../types';
 import { LaboratService } from '../laboratService';
-import { OpenRouterService } from './openRouterService';
+import { AIService } from './aiService';
 
 export const AIExamService = {
     /**
@@ -25,7 +25,7 @@ export const AIExamService = {
     `;
 
         try {
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.1
@@ -79,7 +79,7 @@ export const AIExamService = {
     `;
 
         try {
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.3

@@ -1,4 +1,4 @@
-import { OpenRouterService } from './openRouterService';
+import { AIService } from './aiService';
 
 /**
  * Sanitiza o texto de um nó Mermaid removendo toda a pontuação problemática.
@@ -262,11 +262,11 @@ mindmap
 `;
 
     try {
-      const response = await OpenRouterService.ask({
+      const response = await AIService.ask({
         prompt,
         role: 'professional',
-        temperature: 0.1, // aumentei um golinho pra facilitar criatividade na frase explicativa
-        model: 'meta-llama/llama-3.3-70b-instruct:free' // LLAMA 3.3 70B respeita formatação de Mermaid muito melhor que o Nemotron gratuito
+        temperature: 0.2,
+        model: 'google/gemini-2.5-flash' // O Proxy redirecionará para o 2.5 Flash ou 2.0 conforme configurado
       });
 
       const cleanCode = sanitizeMermaidMindmap(response);

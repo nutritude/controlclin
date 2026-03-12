@@ -1,21 +1,22 @@
 import { AnthroSnapshot, AnthroAnalysisResult } from '../types';
-import { OpenRouterService } from './ai/openRouterService';
+import { AIService } from './ai/aiService';
 
 export const AIAnthroAnalysisService = {
   /**
    * Generates a clinical analysis based on the anthropometry snapshot.
    */
   analyze: async (snapshot: AnthroSnapshot): Promise<AnthroAnalysisResult> => {
-    console.log('[AI Anthro] Iniciando análise com OpenRouter (Qwen)...');
+    console.log('[AI Anthro] Iniciando análise com Gemini...');
 
     let aiResponse = "";
     try {
       const prompt = buildPrompt(snapshot);
 
-      aiResponse = await OpenRouterService.ask({
+      aiResponse = await AIService.ask({
         prompt: prompt,
         role: 'professional',
-        temperature: 0.2
+        temperature: 0.2,
+        model: 'google/gemini-2.5-flash'
       });
 
       if (aiResponse) {

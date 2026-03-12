@@ -1,5 +1,5 @@
 import { PlanSnapshot } from '../../types';
-import { OpenRouterService } from './openRouterService';
+import { AIService } from './aiService';
 
 export interface AdherenceTip {
     category: string;
@@ -34,7 +34,7 @@ Retorne EXATAMENTE UM JSON válido, sem markdown e sem crases, neste formato exa
   "idealTiming": "Dica sobre distribuição ou timing das refeições em 1 frase"
 }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.3 // Temperatura baixa para formatação JSON estrita

@@ -1,5 +1,5 @@
 import { NutrientCalc } from './food/nutrientCalc';
-import { OpenRouterService } from './ai/openRouterService';
+import { AIService } from './ai/aiService';
 import { PicaProtocolService } from './picaProtocolService';
 import { AIAdherenceService } from './ai/aiAdherenceService';
 import { AIClinicalSummaryService } from './aiClinicalSummary';
@@ -2110,7 +2110,7 @@ class DatabaseService {
             
             Texto: ${text}`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.3
@@ -2143,7 +2143,7 @@ class DatabaseService {
                 ]
             }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.2
@@ -2279,7 +2279,7 @@ class DatabaseService {
             Gere um insight estratégico curto (1 frase) e uma ação secundária (1 frase).
             Retorne um JSON: { "insight": "...", "secondaryInsight": "...", "action": "..." }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: contextPrompt,
                 role: role,
                 temperature: 0.7
@@ -2594,7 +2594,7 @@ class DatabaseService {
                 "strategicSuggestions": ["Sugestão 1 de negócio", "Sugestão 2 de marketing/operação"]
             }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'manager',
                 temperature: 0.5
@@ -2638,7 +2638,7 @@ class DatabaseService {
                 "revenueAction": "Ação comercial/operacional direta."
             }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'manager',
                 temperature: 0.3
@@ -2665,7 +2665,7 @@ class DatabaseService {
                 "action": "Estratégia prática para reduzir cancelamentos"
             }`;
 
-            const aiResponse = await OpenRouterService.ask({
+            const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'manager',
                 temperature: 0.4

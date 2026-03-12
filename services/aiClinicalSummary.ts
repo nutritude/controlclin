@@ -1,5 +1,5 @@
 import { IndividualReportSnapshot } from '../types';
-import { OpenRouterService } from './ai/openRouterService';
+import { AIService } from './ai/aiService';
 
 export const AIClinicalSummaryService = {
   /**
@@ -11,10 +11,11 @@ export const AIClinicalSummaryService = {
     try {
       const prompt = buildPrompt(snapshot);
 
-      const aiResponse = await OpenRouterService.ask({
+      const aiResponse = await AIService.ask({
         prompt: prompt,
         role: 'professional',
-        temperature: 0.3
+        temperature: 0.3,
+        model: 'google/gemini-2.5-flash'
       });
 
       if (aiResponse) {
