@@ -2317,45 +2317,45 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                             {/* REFEIÇÕES — layout tabular para garantir linha única sem quebra */}
                             {snapshotForPdf.plan.meals.map((m: any, i: number) => (
                                 m.items.length > 0 && (
-                                    <div key={i} style={{ marginBottom: '4mm', pageBreakInside: 'avoid', border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div key={i} style={{ marginBottom: '6mm', border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
                                         {/* Header refeição */}
-                                        <div style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1', padding: '2.5mm 4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1', padding: '2.5mm 4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pageBreakInside: 'avoid', pageBreakAfter: 'avoid' }}>
                                             <span style={{ fontSize: '9pt', fontWeight: 'bold', color: '#134e4a', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.name}</span>
                                             {m.time && <span style={{ fontSize: '8pt', color: '#64748b', fontFamily: 'Courier, monospace' }}>{m.time}</span>}
                                         </div>
 
-                                        {/* Itens — tabela com col fixo para quantidade */}
+                                        {/* Itens — Layout de fluxo único para evitar quebras por coluna curta */}
                                         <div style={{ padding: '2mm 4mm 2.5mm 4mm' }}>
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                                                <colgroup>
-                                                    <col style={{ width: '34mm' }} />
-                                                    <col />
-                                                </colgroup>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                                 <tbody>
                                                     {m.items.map((it: any, j: number) => (
                                                         <React.Fragment key={j}>
-                                                            <tr style={{ verticalAlign: 'top' }}>
-                                                                <td style={{ fontSize: '10pt', fontWeight: 'bold', color: '#374151', paddingTop: '1.5mm', paddingBottom: '1.5mm', whiteSpace: 'nowrap', paddingRight: '2mm', lineHeight: '1.3' }}>
-                                                                    &bull; {formatMealItemQuantity(it)}
-                                                                </td>
-                                                                <td style={{ fontSize: '10pt', color: '#1e293b', paddingTop: '1.5mm', paddingBottom: '1.5mm', lineHeight: '1.3', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                                            <tr style={{ verticalAlign: 'top', pageBreakInside: 'avoid' }}>
+                                                                <td style={{ fontSize: '10pt', color: '#1e293b', paddingTop: '1.5mm', paddingBottom: '1mm', lineHeight: '1.3' }}>
+                                                                    <span style={{ fontWeight: 'bold', color: '#374151', marginRight: '2mm' }}>&bull; {formatMealItemQuantity(it)}</span>
                                                                     {it.customName || it.name}
                                                                 </td>
                                                             </tr>
                                                             {it.substitutes && it.substitutes.map((sub: any, sIdx: number) => (
-                                                                <tr key={`sub-${sIdx}`} style={{ verticalAlign: 'top' }}>
-                                                                    <td style={{ paddingLeft: '5mm', paddingBottom: '1mm', paddingTop: '0' }}>
-                                                                        <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#059669', backgroundColor: '#ecfdf5', padding: '0.5mm 1.5mm', borderRadius: '2px', display: 'inline-block', lineHeight: '1.6' }}>OU</span>
-                                                                        {' '}
-                                                                        <span style={{ fontSize: '9pt', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>{formatMealItemQuantity(sub)}</span>
-                                                                    </td>
-                                                                    <td style={{ fontSize: '9pt', color: '#64748b', fontStyle: 'italic', paddingBottom: '1mm', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                                                <tr key={`sub-${sIdx}`} style={{ verticalAlign: 'top', pageBreakInside: 'avoid' }}>
+                                                                    <td style={{ paddingLeft: '4mm', paddingBottom: '1mm', paddingTop: '0', fontSize: '9pt', color: '#64748b', fontStyle: 'italic', lineHeight: '1.3' }}>
+                                                                        <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#059669', backgroundColor: '#ecfdf5', padding: '0.5mm 1.5mm', borderRadius: '2px', display: 'inline-block', lineHeight: '1.2', marginRight: '2mm', verticalAlign: 'middle' }}>OU</span>
+                                                                        <span style={{ fontWeight: 'bold', color: '#475569', marginRight: '2mm' }}>{formatMealItemQuantity(sub)}</span>
                                                                         {sub.customName || sub.name}
                                                                     </td>
                                                                 </tr>
                                                             ))}
                                                         </React.Fragment>
                                                     ))}
+                                                    {m.notes && (
+                                                        <tr style={{ pageBreakInside: 'avoid' }}>
+                                                            <td style={{ paddingTop: '2mm', paddingBottom: '1mm' }}>
+                                                                <div style={{ padding: '2.5mm 3.5mm', backgroundColor: '#f8fafc', borderLeft: '3px solid #0ea5e9', borderRadius: '4px', fontSize: '8.5pt', color: '#334155' }}>
+                                                                    <strong>📝 Observação:</strong> {m.notes}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
                                                 </tbody>
                                             </table>
                                         </div>

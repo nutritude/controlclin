@@ -15,6 +15,11 @@ export const AIPlanRefinementService = {
             if (!it.customName) {
                 technicalNames.add(it.name);
             }
+            if (it.substitutes && it.substitutes.length > 0) {
+                it.substitutes.forEach(sub => {
+                    if (!sub.customName) technicalNames.add(sub.name);
+                });
+            }
         }));
 
         // Coleta observações das refeições para humanizar
@@ -71,10 +76,19 @@ Retorne APENAS o JSON resultante. Exemplo:
                         ...meal,
                         notes: noteMapping[meal.name] || meal.notes,
                         items: meal.items.map(item => {
+                            let newItem = { ...item };
                             if (foodMapping[item.name]) {
-                                return { ...item, customName: foodMapping[item.name] };
+                                newItem.customName = foodMapping[item.name];
                             }
-                            return item;
+                            if (newItem.substitutes && newItem.substitutes.length > 0) {
+                                newItem.substitutes = newItem.substitutes.map(sub => {
+                                    if (foodMapping[sub.name]) {
+                                        return { ...sub, customName: foodMapping[sub.name] };
+                                    }
+                                    return sub;
+                                });
+                            }
+                            return newItem;
                         })
                     }));
                 }

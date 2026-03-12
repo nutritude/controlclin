@@ -119,7 +119,18 @@ export const DocxExportService = {
                                         spacing: { after: 80 },
                                     })
                                 )
-                            ])
+                            ]),
+                            ...(meal.notes ? [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({ text: "📝 Observação: ", bold: true, color: "0EA5E9", size: 18 }),
+                                        new TextRun({ text: meal.notes, color: "334155", size: 18 }),
+                                    ],
+                                    spacing: { before: 100, after: 300 },
+                                    indent: { left: 480 },
+                                    shading: { fill: "F8FAFC", type: "clear", color: "auto" },
+                                })
+                            ] : [])
                         ];
                     }),
 
