@@ -10,6 +10,7 @@ import { db } from '../services/db';
 import { AIAnthroAnalysisService } from '../services/aiAnthroAnalysis';
 import { PicaProtocolService } from '../services/picaProtocolService';
 import { Icons } from '../constants';
+import BodyHeatMap from '../components/BodyHeatMap';
 import { WhatsAppService } from '../services/whatsappService';
 import NutritionalPlanning from '../components/NutritionalPlanning';
 import { ExamManager } from '../components/ExamManager';
@@ -319,6 +320,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
     const pdfReportRef = useRef<HTMLDivElement>(null);
     const [pdfSnapshot, setPdfSnapshot] = useState<AnthroSnapshot | null>(null); // Snapshot state for PDF consistency
 
+    // --- TYPES & CONSTANTS ---
     // --- RECEIPT STATES ---
     const [snapshotForReceipt, setSnapshotForReceipt] = useState<FinancialTransaction | null>(null);
     const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
@@ -2240,36 +2242,11 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 )}
 
                                 <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border relative overflow-hidden`}>
-                                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Mapa de Calor Corporal</h3>
-                                    <div className="flex justify-center py-2">
-                                        <svg viewBox="0 0 100 200" className="h-48 w-auto">
-                                            {/* Human Silhouette - Simplified */}
-                                            <path
-                                                d="M50,15 c-5,0 -9,4 -9,9 s4,9 9,9 s9,-4 9,-9 s-4,-9 -9,-9 M41,34 c-10,2 -15,10 -15,20 v40 c0,5 5,5 5,0 v-30 h4 v80 c0,10 10,10 10,0 v-40 h10 v40 c0,10 10,10 10,0 v-80 h4 v30 c0,5 5,5 5,0 v-40 c0,-10 -5,-18 -15,-20 z"
-                                                fill={isManagerMode ? '#374151' : '#f1f5f9'}
-                                                stroke={isManagerMode ? '#4b5563' : '#cbd5e1'}
-                                                strokeWidth="1"
-                                            />
-                                            {/* Measurement Highlights */}
-                                            {/* Neck */}
-                                            {formData.anthropometry?.circNeck > 0 && <circle cx="50" cy="33" r="3" fill="#fbbf24" opacity="0.6" />}
-                                            {/* Chest */}
-                                            {formData.anthropometry?.circChest > 0 && <ellipse cx="50" cy="55" rx="12" ry="8" fill="#10b981" opacity="0.4" />}
-                                            {/* Waist */}
-                                            {formData.anthropometry?.circWaist > 0 && <ellipse cx="50" cy="75" rx="10" ry="6" fill={anthropometryResults.waistToHipRatio > 0.9 ? "#ef4444" : "#10b981"} opacity="0.5" />}
-                                            {/* Hip */}
-                                            {formData.anthropometry?.circHip > 0 && <ellipse cx="50" cy="95" rx="14" ry="8" fill="#3b82f6" opacity="0.4" />}
-                                            {/* Arm */}
-                                            {formData.anthropometry?.circArmContracted > 0 && <circle cx="28" cy="65" r="5" fill="#f59e0b" opacity="0.5" />}
-                                            {/* Thigh */}
-                                            {formData.anthropometry?.circThigh > 0 && <circle cx="43" cy="120" r="6" fill="#8b5cf6" opacity="0.4" />}
-                                        </svg>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-1 mt-2">
-                                        <div className="text-center"><span className="block text-[8px] font-bold text-gray-500 uppercase">Foco</span><span className="text-[10px] font-bold text-emerald-600 underline">Hipertrofia</span></div>
-                                        <div className="text-center"><span className="block text-[8px] font-bold text-gray-500 uppercase">Risco</span><span className={`text-[10px] font-bold ${anthropometryResults.waistToHipRatio > 0.9 ? 'text-red-500' : 'text-emerald-600'}`}>{anthropometryResults.waistToHipRatio > 0.9 ? 'Alto' : 'Baixo'}</span></div>
-                                        <div className="text-center"><span className="block text-[8px] font-bold text-gray-500 uppercase">Biometria</span><span className="text-[10px] font-bold text-blue-600">Completa</span></div>
-                                    </div>
+                                    <BodyHeatMap
+                                        data={formData.anthropometry || {}}
+                                        results={anthropometryResults}
+                                        isManagerMode={isManagerMode}
+                                    />
                                 </div>
 
                                 <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
