@@ -3,48 +3,76 @@ import { AIService } from './ai/aiService';
 
 export const AIPlanRefinementService = {
     /**
-     * Humaniza os nomes dos alimentos.
-     * OTIMIZAÇÃO EXTREMA: Envia apenas os nomes sem contexto adicional desnecessário.
+     * Humaniza os nomes dos alimentos e reescreve observações das refeições.
+     * CORRIGIDO: filtro anterior era restritivo demais (exigia vírgula ou >15 chars)
      */
     async refinePlanLanguage(meals: Meal[]): Promise<Meal[]> {
         console.log('[AI Refinement] Humanizando nomes técnicos...');
 
+        // Coleta TODOS os nomes que ainda não foram humanizados (sem customName)
         const technicalNames = new Set<string>();
         meals.forEach(m => m.items.forEach(it => {
-            if (!it.customName && (it.name.includes(',') || it.name.length > 15)) {
+            if (!it.customName) {
                 technicalNames.add(it.name);
             }
         }));
 
-        if (technicalNames.size === 0) return meals;
+        // Coleta observações das refeições para humanizar
+        const mealNotes: Record<string, string> = {};
+        meals.forEach(m => {
+            if (m.notes && m.notes.trim()) {
+                mealNotes[m.name] = m.notes;
+            }
+        });
+
+        if (technicalNames.size === 0 && Object.keys(mealNotes).length === 0) return meals;
 
         const list = Array.from(technicalNames);
-        const prompt = `Atue como nutricionista clínico. Converta estes nomes técnicos de alimentos em nomes amigáveis e curtos para um cardápio (sem vírgulas invertidas). 
-        Retorne APENAS um objeto JSON plano onde a chave é o nome técnico e o valor é o nome amigável.
-        
-        Exemplo: {"Arroz, branco, cozido": "Arroz branco"}
-        
-        LISTA:
-        ${list.join('\n')}`;
+
+        let prompt = `Atue como nutricionista clínico humanizando um cardápio para o paciente. 
+
+TAREFA 1: Converta estes nomes técnicos de alimentos em nomes amigáveis e curtos para um cardápio impresso. Sem vírgulas invertidas. Mantenha o alimento reconhecível.
+Retorne um JSON com chave "foods" contendo um objeto onde a chave é o nome técnico e o valor o amigável.
+
+LISTA DE ALIMENTOS:
+${list.join('\n')}`;
+
+        if (Object.keys(mealNotes).length > 0) {
+            prompt += `
+
+TAREFA 2: Reescreva estas observações das refeições de modo INFORMAL, ATRATIVA e FUNCIONAL para o paciente leigo.
+Adicione ao JSON uma chave "notes" com objeto onde a chave é o nome da refeição e o valor a observação reescrita.
+
+OBSERVAÇÕES:
+${Object.entries(mealNotes).map(([name, note]) => `${name}: ${note}`).join('\n')}`;
+        }
+
+        prompt += `
+
+Retorne APENAS o JSON resultante. Exemplo:
+{"foods": {"Arroz, branco, cozido": "Arroz branco"}, "notes": {"Almoço": "Capricha no azeite na salada! 🥗"}}`;
 
         try {
             const response = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                temperature: 0, // Zero para máxima consistência e velocidade
+                temperature: 0.3,
                 model: 'google/gemini-2.5-flash'
             });
 
             if (response) {
-                // Regex para localizar o JSON caso a IA envie texto extra
                 const jsonMatch = response.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
-                    const mapping = JSON.parse(jsonMatch[0]);
+                    const result = JSON.parse(jsonMatch[0]);
+                    const foodMapping = result.foods || result;
+                    const noteMapping = result.notes || {};
+
                     return meals.map(meal => ({
                         ...meal,
+                        notes: noteMapping[meal.name] || meal.notes,
                         items: meal.items.map(item => {
-                            if (mapping[item.name]) {
-                                return { ...item, customName: mapping[item.name] };
+                            if (foodMapping[item.name]) {
+                                return { ...item, customName: foodMapping[item.name] };
                             }
                             return item;
                         })

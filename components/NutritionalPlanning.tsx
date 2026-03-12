@@ -1911,6 +1911,20 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                                                     ))}
                                                 </ul>
                                             )}
+
+                                            {/* OBSERVAÇÕES DA REFEIÇÃO */}
+                                            <div className="mt-3 pt-2 border-t border-dashed border-slate-200">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">📝 Observações</span>
+                                                </div>
+                                                <textarea
+                                                    placeholder="Ex: Use azeite na salada, prefira alimentos integrais..."
+                                                    value={meal.notes || ''}
+                                                    onChange={e => setMeals(prev => prev.map(m => m.id === meal.id ? { ...m, notes: e.target.value } : m))}
+                                                    rows={2}
+                                                    className={`w-full text-xs p-2 border rounded-lg resize-none transition-colors focus:ring-1 ${isManagerMode ? 'bg-emerald-50/50 border-emerald-200 focus:ring-emerald-300 text-emerald-900' : 'bg-slate-50 border-slate-200 focus:ring-emerald-300 text-slate-700'}`}
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                 </div>

@@ -26,11 +26,17 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const [customPortionValue, setCustomPortionValue] = useState('');
     const [quantityMultiplier, setQuantityMultiplier] = useState(1);
 
-    // Modo item manual
+    // Modo item manual - CAMPOS NUTRICIONAIS
     const [isCustomItemMode, setIsCustomItemMode] = useState(false);
     const [customItemName, setCustomItemName] = useState('');
     const [customItemQty, setCustomItemQty] = useState('1');
     const [customItemUnit, setCustomItemUnit] = useState('g');
+    const [customKcal100, setCustomKcal100] = useState('');
+    const [customProtein100, setCustomProtein100] = useState('');
+    const [customCarbs100, setCustomCarbs100] = useState('');
+    const [customFat100, setCustomFat100] = useState('');
+    const [customPortionLabel, setCustomPortionLabel] = useState('');
+    const [customPortionGrams, setCustomPortionGrams] = useState('');
 
     if (!isOpen) return null;
 
@@ -90,15 +96,33 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const handleConfirm = () => {
         if (isCustomItemMode) {
             if (!customItemName.trim()) return;
+            const qty = parseFloat(customItemQty) || 1;
+            const kcal100 = parseFloat(customKcal100) || 0;
+            const prot100 = parseFloat(customProtein100) || 0;
+            const carb100 = parseFloat(customCarbs100) || 0;
+            const fat100 = parseFloat(customFat100) || 0;
+            const portGrams = parseFloat(customPortionGrams) || 100;
+
+            // Se o profissional definiu uma porção, calcula proporcionalmente
+            const ratio = (portGrams * qty) / 100;
+
             onConfirm({
                 foodId: `custom-${Date.now()}`,
                 name: customItemName,
-                quantity: parseFloat(customItemQty) || 1,
-                unit: customItemUnit,
-                calculatedCalories: 0,
-                calculatedProtein: 0,
-                calculatedCarbs: 0,
-                calculatedFat: 0
+                quantity: qty,
+                unit: customPortionLabel || `${portGrams}${customItemUnit === 'ml' ? 'mL' : 'g'}`,
+                calculatedCalories: Math.round(kcal100 * ratio),
+                calculatedProtein: parseFloat((prot100 * ratio).toFixed(1)),
+                calculatedCarbs: parseFloat((carb100 * ratio).toFixed(1)),
+                calculatedFat: parseFloat((fat100 * ratio).toFixed(1)),
+                manualNutrition: {
+                    kcalPer100g: kcal100,
+                    proteinPer100g: prot100,
+                    carbsPer100g: carb100,
+                    fatPer100g: fat100,
+                    portionLabel: customPortionLabel || undefined,
+                    portionGrams: portGrams
+                }
             });
         } else if (selectedFood) {
             const totals = calculateTotals();
@@ -255,29 +279,84 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                     {isCustomItemMode && (
                         <div className="space-y-4 animate-slideIn">
                             <div className="flex justify-between items-center">
-                                <h4 className="font-bold text-blue-500">Item Livre / Manual</h4>
+                                <h4 className="font-bold text-blue-500">🧪 Alimento Manual (Não Encontrado)</h4>
                                 <button onClick={() => setIsCustomItemMode(false)} className="text-xs text-gray-500 hover:underline">Voltar para busca</button>
                             </div>
                             <div>
-                                <label className="text-xs font-bold block mb-1">Descrição</label>
-                                <input placeholder="Ex: Whey Protein Importado" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                                <label className="text-xs font-bold block mb-1">Nome do Alimento</label>
+                                <input placeholder="Ex: Whey Protein Gold Standard" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
                             </div>
-                            <div className="flex gap-2">
-                                <div className="flex-1">
-                                    <label className="text-xs font-bold block mb-1">Qtd</label>
-                                    <input type="number" value={customItemQty} onChange={e => setCustomItemQty(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+
+                            <div className={`p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">📊 Tabela Nutricional (por 100g/100mL)</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Kcal</label>
+                                        <input type="number" step="0.1" placeholder="Ex: 375" value={customKcal100} onChange={e => setCustomKcal100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Proteína (g)</label>
+                                        <input type="number" step="0.1" placeholder="Ex: 80" value={customProtein100} onChange={e => setCustomProtein100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Carboidrato (g)</label>
+                                        <input type="number" step="0.1" placeholder="Ex: 6.7" value={customCarbs100} onChange={e => setCustomCarbs100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Gordura (g)</label>
+                                        <input type="number" step="0.1" placeholder="Ex: 3.3" value={customFat100} onChange={e => setCustomFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <label className="text-xs font-bold block mb-1">Unidade</label>
-                                    <select value={customItemUnit} onChange={e => setCustomItemUnit(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`}>
-                                        <option value="un">un (unidade)</option>
+                            </div>
+
+                            <div className={`p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">📐 Porcionamento</p>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Qtd</label>
+                                        <input type="number" min="0.5" step="0.5" value={customItemQty} onChange={e => setCustomItemQty(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Rótulo da Porção</label>
+                                        <input placeholder="Ex: 1 scoop" value={customPortionLabel} onChange={e => setCustomPortionLabel(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Peso (g/mL)</label>
+                                        <input type="number" placeholder="30" value={customPortionGrams} onChange={e => setCustomPortionGrams(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                </div>
+                                <div className="mt-2">
+                                    <label className="text-[10px] font-bold text-gray-600">Unidade base</label>
+                                    <select value={customItemUnit} onChange={e => setCustomItemUnit(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white mt-1">
                                         <option value="g">g (gramas)</option>
-                                        <option value="ml">ml (mililitros)</option>
+                                        <option value="ml">mL (mililitros)</option>
+                                        <option value="un">un (unidade)</option>
                                         <option value="sc">sc (scoop)</option>
                                     </select>
                                 </div>
                             </div>
-                            <p className="text-[10px] text-red-400 italic">Itens manuais não possuem cálculo nutricional automático.</p>
+
+                            {/* Preview calculado para manual */}
+                            {(parseFloat(customKcal100) > 0 || parseFloat(customProtein100) > 0) && (
+                                <div className={`p-3 rounded-lg border ${isManagerMode ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-100'}`}>
+                                    <div className="text-[10px] uppercase font-bold text-gray-500 mb-2">Pré-visualização (calculado):</div>
+                                    {(() => {
+                                        const qty = parseFloat(customItemQty) || 1;
+                                        const portG = parseFloat(customPortionGrams) || 100;
+                                        const ratio = (portG * qty) / 100;
+                                        return (
+                                            <div className="grid grid-cols-4 gap-2 text-center">
+                                                <div><div className="text-[10px] text-gray-400">Kcal</div><div className="font-bold text-lg">{Math.round((parseFloat(customKcal100) || 0) * ratio)}</div></div>
+                                                <div><div className="text-[10px] text-gray-400">P (g)</div><div className="font-bold text-lg text-blue-500">{((parseFloat(customProtein100) || 0) * ratio).toFixed(1)}</div></div>
+                                                <div><div className="text-[10px] text-gray-400">C (g)</div><div className="font-bold text-lg text-green-600">{((parseFloat(customCarbs100) || 0) * ratio).toFixed(1)}</div></div>
+                                                <div><div className="text-[10px] text-gray-400">G (g)</div><div className="font-bold text-lg text-yellow-600">{((parseFloat(customFat100) || 0) * ratio).toFixed(1)}</div></div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
+                            <p className="text-[10px] text-emerald-600 italic text-center">✅ Preencha os dados nutricionais do rótulo para que os cálculos sejam validados.</p>
                         </div>
                     )}
                 </div>

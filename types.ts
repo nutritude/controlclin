@@ -264,6 +264,16 @@ export interface MealItem {
   snapshot?: Record<string, number>; // Snapshot nutricional (micros e outros campos do FoodRecord)
   substitutes?: MealItem[]; // NOVO: Opções secundárias de substituição
   customName?: string; // NOVO: Nome personalizado para exibição/impressão
+  // Campos usados quando alimento manual (sem base de dados)
+  manualNutrition?: {
+    kcalPer100g: number;
+    proteinPer100g: number;
+    carbsPer100g: number;
+    fatPer100g: number;
+    fiberPer100g?: number;
+    portionLabel?: string; // Ex: '1 scoop (30g)'
+    portionGrams?: number;
+  };
 }
 
 export interface Meal {
@@ -271,6 +281,7 @@ export interface Meal {
   name: string; // Café, Almoço, etc.
   time?: string; // Horário opcional (ex: 08:00)
   items: MealItem[];
+  notes?: string; // NOVO: Observações livres do profissional
 }
 
 export interface NutritionalPlan {
