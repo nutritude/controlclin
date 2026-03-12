@@ -14,15 +14,32 @@ export const Help: React.FC<HelpProps> = ({ user, clinic, isManagerMode }) => {
     const professionalFAQs = [
         { q: 'Como criar um plano alimentar?', a: 'Acesse o prontuário do paciente, selecione a aba Planejamento e clique em Novo Plano.' },
         { q: 'Como interpretar alertas clínicos?', a: 'Os alertas são automáticos baseados nos exames e anamnese. Clique no ícone de alerta no topo para ver detalhes.' },
-        { q: 'Como gerar um mapa mental?', a: 'No perfil do paciente, aba Mapas Mentais, escolha o tipo de mapa e clique em Gerar com IA.' },
-        { q: 'Como cadastrar um novo alimento?', a: 'No modal de busca de alimentos, escolha a opção "Adicionar item manual" se não encontrar no catálogo.' }
+        { q: 'Como gerar um mapa mental?', a: 'No perfil do paciente, aba Mapas Mentais, escolha o tipo de mapa e clique em Gerar conforme o objetivo clínico.' },
+        { q: 'Como cadastrar um novo alimento?', a: 'No modal de busca de alimentos, escolha a opção "Adicionar item manual" se não encontrar no catálogo.' },
+        { q: 'Como solicitar exames laboratoriais?', a: 'No prontuário, acesse a aba Exames e utilize o buscador para selecionar os marcadores desejados.' },
+        { q: 'Como ver o histórico de peso e medidas?', a: 'Vá na aba Antropometria do paciente para ver gráficos de evolução e tabelas históricas.' },
+        { q: 'Como comparar fotos de evolução?', a: 'Na seção de Relatórios do paciente, selecione Comparativo de Fotos para visualizar o progresso estético.' },
+        { q: 'Como configurar substituições automáticas?', a: 'Ao editar um alimento no plano, você pode clicar em "Gerar Substitutos" para facilitar a troca pelo paciente.' },
+        { q: 'Como imprimir a dieta ou salvar em PDF?', a: 'Dentro do plano alimentar, clique no ícone de impressora ou "Gerar PDF" no topo da página.' },
+        { q: 'Como enviar o plano direto para o WhatsApp do paciente?', a: 'Após finalizar o plano, use o botão de compartilhar via WhatsApp na tela de sucesso ou no prontuário.' },
+        { q: 'Como registrar uma anamnese personalizada?', a: 'Acesse a aba Anamnese e utilize os campos estruturados para registrar o histórico clínico e hábitos.' },
+        { q: 'O que é o rastreamento metabólico?', a: 'É uma ferramenta para pontuar sintomas e identificar possíveis gatilhos inflamatórios ou deficiências.' },
+        { q: 'Como configurar as metas de ingestão de água?', a: 'Nas configurações do plano alimentar, você pode definir a meta hídrica diária sugerida.' },
+        { q: 'Onde vejo o diário alimentar preenchido pelo paciente?', a: 'Se o paciente usa o portal, você verá os registros dele na aba Acompanhamento/Diário do prontuário.' },
+        { q: 'Como prescrever suplementos ou fórmulas?', a: 'Utilize a aba Prescrições no prontuário para criar receitas detalhadas de manipulados.' },
+        { q: 'Como ativar os protocolos clínicos inteligentes?', a: 'Ao iniciar um plano, selecione a metodologia (ex: Sem Glúten, Low FODMAP) para filtrar o banco de alimentos.' },
+        { q: 'Como ver as mensagens enviadas pelo portal do paciente?', a: 'Verifique a Central de Mensagens ou o ícone de chat no perfil de cada paciente ativo.' },
+        { q: 'Como agendar a próxima consulta (retorno)?', a: 'Acesse a Agenda na barra lateral e clique no horário desejado para reservar o retorno do paciente.' },
+        { q: 'Como exportar relatórios completos de evolução?', a: 'Na aba Relatórios, você pode gerar um dossiê clínico com todos os dados antropométricos e de consumo.' },
+        { q: 'Como garantir que o paciente tenha acesso ao portal?', a: 'Certifique-se de que o e-mail do paciente está correto no cadastro e forneça o link de acesso portal.' }
     ];
 
     const managerFAQs = [
         { q: 'Como ver o faturamento da clínica?', a: 'No Painel principal do Gestor, você encontra os indicadores financeiros de faturamento e ticket médio.' },
         { q: 'Como cadastrar um novo nutricionista?', a: 'Acesse a aba Equipe na barra lateral e clique no botão Cadastrar Profissional.' },
         { q: 'Como alterar o logo da clínica?', a: 'Vá em Configurações e faça o upload da imagem na seção Identidade Visual.' },
-        { q: 'Como gerenciar acessos?', a: 'Nas configurações de Equipe, você pode definir as permissões de cada usuário.' }
+        { q: 'Como gerenciar acessos?', a: 'Nas configurações de Equipe, você pode definir as permissões de cada usuário.' },
+        { q: 'Como gerar relatórios financeiros?', a: 'Na aba Relatórios do modo Gestor, selecione Fluxo de Caixa para ver entradas e saídas.' }
     ];
 
     const faqs = isManagerMode ? managerFAQs : professionalFAQs;
@@ -51,9 +68,6 @@ export const Help: React.FC<HelpProps> = ({ user, clinic, isManagerMode }) => {
                         />
                     </div>
                 </div>
-                {/* Decoration */}
-                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-48 h-48 bg-black/10 rounded-full blur-3xl"></div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
