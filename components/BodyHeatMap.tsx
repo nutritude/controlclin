@@ -20,39 +20,39 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
     const isHighRisk = results.waistToHipRatio > 0.9;
 
     return (
-        <div className={`relative p-6 rounded-[2rem] border transition-all duration-500 ${isManagerMode
-                ? 'bg-slate-900/40 border-indigo-500/30 backdrop-blur-xl shadow-2xl'
-                : 'bg-white border-emerald-100 shadow-xl'
+        <div className={`relative p-6 rounded-[2.5rem] border transition-all duration-700 ${isManagerMode
+            ? 'bg-slate-950/40 border-indigo-500/20 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)]'
+            : 'bg-white border-emerald-50 shadow-[0_20px_40px_rgba(16,185,129,0.05)]'
             }`}>
             {/* Header do Card */}
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex justify-between items-start mb-8">
                 <div>
-                    <h3 className={`text-xs font-black uppercase tracking-[0.2em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-800'}`}>
+                    <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-900'}`}>
                         Scan Biométrico
                     </h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Mapeamento Termográfico</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-wider">Mapeamento Termográfico</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isManagerMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-50 text-emerald-600'
+                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.15em] animate-pulse ${isManagerMode ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                     }`}>
-                    Live Preview
+                    Live Analysis
                 </div>
             </div>
 
             {/* Container do SVG */}
-            <div className="relative flex justify-center items-center py-4 group">
-                {/* Glow de Background */}
-                <div className={`absolute inset-0 opacity-20 blur-[50px] transition-all duration-1000 group-hover:opacity-40 ${isHighRisk ? 'bg-red-500' : (isManagerMode ? 'bg-indigo-500' : 'bg-emerald-500')
+            <div className="relative flex justify-center items-center py-6 group">
+                {/* Glow de Background Dinâmico */}
+                <div className={`absolute inset-0 opacity-15 blur-[60px] transition-all duration-1000 group-hover:opacity-25 ${isHighRisk ? 'bg-rose-500' : (isManagerMode ? 'bg-indigo-600' : 'bg-emerald-400')
                     }`} />
 
-                <svg viewBox="0 0 100 200" className="h-64 w-auto relative z-10 filter drop-shadow-2xl">
+                <svg viewBox="0 0 100 200" className="h-72 w-auto relative z-10 transition-transform duration-700 group-hover:scale-[1.02]">
                     <defs>
                         <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor={isManagerMode ? "#1e293b" : "#f8fafc"} />
-                            <stop offset="100%" stopColor={isManagerMode ? "#0f172a" : "#e2e8f0"} />
+                            <stop offset="0%" stopColor={isManagerMode ? "#1e293b" : "#f1f5f9"} />
+                            <stop offset="100%" stopColor={isManagerMode ? "#020617" : "#cbd5e1"} />
                         </linearGradient>
 
-                        <filter id="glow">
-                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                        <filter id="glow-point">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                             <feMerge>
                                 <feMergeNode in="coloredBlur" />
                                 <feMergeNode in="SourceGraphic" />
@@ -60,80 +60,81 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
                         </filter>
 
                         <style>{`
-              @keyframes pulse {
-                0% { transform: scale(1); opacity: 0.6; }
-                50% { transform: scale(1.3); opacity: 0.9; }
-                100% { transform: scale(1); opacity: 0.6; }
-              }
-              .heat-point {
-                animation: pulse 2s infinite ease-in-out;
-                filter: url(#glow);
-              }
-            `}</style>
+                            @keyframes glow-pulse {
+                                0% { opacity: 0.3; filter: brightness(1) drop-shadow(0 0 2px currentColor); }
+                                50% { opacity: 0.9; filter: brightness(1.4) drop-shadow(0 0 8px currentColor); }
+                                100% { opacity: 0.3; filter: brightness(1) drop-shadow(0 0 2px currentColor); }
+                            }
+                            .heat-point {
+                                animation: glow-pulse 3s infinite ease-in-out;
+                                transform-origin: center;
+                            }
+                        `}</style>
                     </defs>
 
-                    {/* Silhueta Humana Aperfeiçoada */}
+                    {/* Silhueta Humana Realista (Path Curvado) */}
                     <path
-                        d="M50,12 c-6,0-11,5-11,11 c0,5,4,10,10,11 c-8,2-14,8-16,18 l-2,35 c-1,6,4,7,5,1 l2-30 h3 v85 c0,8,10,8,10,0 v-45 h8 v45 c0,8,10,8,10,0 v-85 h3 l2,30 c1,6,6,5,5-1 l-2-35 c-2-10-8-16-16-18 c6-1,10-6,10-11 C61,17,56,12,50,12z"
+                        d="M50,10c-4.5,0-8.2,3.7-8.2,8.2s3.7,8.2,8.2,8.2s8.2-3.7,8.2-8.2S54.5,10,50,10z M37.5,27.5c-4.2,0-8.5,1.5-11.2,4.8c-2.8,3.5-3.8,8.2-4.2,12.5l-3.2,38c-0.5,5.8,5.5,8.2,6.8,2.5l2.8-28.5c0.4-3.5,1.8-3.5,2.2,0v96c0,8.5,12.5,8.5,12.5,0v-52h9.2v52c0,8.5,12.5,8.5,12.5,0v-96c0.4-3.5,1.8-3.5,2.2,0l2.8,28.5c1.3,5.7,7.3,3.3,6.8-2.5l-3.2-38c-0.4-4.3-1.4-9-4.2-12.5c-2.7-3.3-7-4.8-11.2-4.8H37.5z"
                         fill="url(#bodyGradient)"
-                        stroke={isManagerMode ? "#334155" : "#cbd5e1"}
-                        strokeWidth="0.5"
-                        className="transition-all duration-700"
+                        stroke={isManagerMode ? "#334155" : "#94a3b8"}
+                        strokeWidth="0.4"
+                        className="transition-all duration-1000"
                     />
 
-                    {/* Pontos de Calor Dinâmicos */}
+                    {/* Pontos de Calor (Fixos com Luz Pulsante Lenta) */}
+
                     {/* Pescoço */}
                     {data.circNeck && data.circNeck > 0 && (
-                        <circle cx="50" cy="35" r="3" fill="#fbbf24" className="heat-point" style={{ animationDelay: '0s' }} />
+                        <circle cx="50" cy="33" r="3.2" fill="#FBBF24" className="heat-point text-[#FBBF24]" style={{ animationDelay: '0s' }} />
                     )}
 
-                    {/* Tórax */}
+                    {/* Tórax / Peitoral */}
                     {data.circChest && data.circChest > 0 && (
-                        <ellipse cx="50" cy="58" rx="10" ry="7" fill="#10b981" fillOpacity="0.5" className="heat-point" style={{ animationDelay: '0.3s' }} />
+                        <ellipse cx="50" cy="55" rx="11" ry="8" fill="#10B981" fillOpacity="0.5" className="heat-point text-[#10B981]" style={{ animationDelay: '0.5s' }} />
                     )}
 
-                    {/* Cintura (Risco) */}
+                    {/* Abdômen / Cintura */}
                     {data.circWaist && data.circWaist > 0 && (
-                        <ellipse cx="50" cy="78" rx="9" ry="6"
-                            fill={isHighRisk ? "#ef4444" : "#10b981"}
+                        <ellipse cx="50" cy="78" rx="10" ry="7"
+                            fill={isHighRisk ? "#EF4444" : "#10B981"}
                             fillOpacity="0.6"
-                            className="heat-point"
-                            style={{ animationDelay: '0.6s' }}
+                            className="heat-point text-[#EF4444]"
+                            style={{ animationDelay: '1s' }}
                         />
                     )}
 
                     {/* Quadril */}
                     {data.circHip && data.circHip > 0 && (
-                        <ellipse cx="50" cy="98" rx="12" ry="8" fill="#3b82f6" fillOpacity="0.5" className="heat-point" style={{ animationDelay: '0.9s' }} />
+                        <ellipse cx="50" cy="100" rx="13" ry="9" fill="#3B82F6" fillOpacity="0.5" className="heat-point text-[#3B82F6]" style={{ animationDelay: '1.5s' }} />
                     )}
 
-                    {/* Braço */}
+                    {/* Braço Direito (Referência) */}
                     {data.circArmContracted && data.circArmContracted > 0 && (
-                        <circle cx="30" cy="68" r="4.5" fill="#f59e0b" fillOpacity="0.6" className="heat-point" style={{ animationDelay: '1.2s' }} />
+                        <circle cx="28.5" cy="65" r="5" fill="#F59E0B" fillOpacity="0.6" className="heat-point text-[#F59E0B]" style={{ animationDelay: '2s' }} />
                     )}
 
-                    {/* Coxa */}
+                    {/* Coxa Direita (Referência) */}
                     {data.circThigh && data.circThigh > 0 && (
-                        <circle cx="43" cy="125" r="5.5" fill="#8b5cf6" fillOpacity="0.5" className="heat-point" style={{ animationDelay: '1.5s' }} />
+                        <circle cx="42.5" cy="130" r="6" fill="#8B5CF6" fillOpacity="0.5" className="heat-point text-[#8B5CF6]" style={{ animationDelay: '2.5s' }} />
                     )}
                 </svg>
 
-                {/* Scan Line Decorativo */}
-                <div className={`absolute left-0 w-full h-[1px] opacity-20 animate-scan pointer-events-none ${isManagerMode ? 'bg-indigo-400' : 'bg-emerald-400'
+                {/* Scan Line Laser Decorativa */}
+                <div className={`absolute left-0 w-full h-[2px] opacity-30 animate-scan pointer-events-none blur-[1px] ${isManagerMode ? 'bg-indigo-400' : 'bg-emerald-400'
                     }`} />
             </div>
 
-            {/* Indicadores Footer */}
-            <div className="grid grid-cols-3 gap-2 mt-6">
+            {/* Indicadores Premium Footer */}
+            <div className="grid grid-cols-3 gap-3 mt-8">
                 {[
-                    { label: 'Foco', value: 'Hipertrofia', color: 'text-emerald-500', underline: true },
-                    { label: 'Risco', value: isHighRisk ? 'Alto' : 'Baixo', color: isHighRisk ? 'text-red-500' : 'text-emerald-500' },
-                    { label: 'Biometria', value: 'Completa', color: 'text-blue-500' }
+                    { label: 'Foco Clínico', value: 'Hipertrofia', color: isManagerMode ? 'text-emerald-400' : 'text-emerald-600', active: true },
+                    { label: 'Risco Metabólico', value: isHighRisk ? 'Alto' : 'Baixo', color: isHighRisk ? 'text-rose-500' : 'text-emerald-500' },
+                    { label: 'Status Biometria', value: 'Completa', color: isManagerMode ? 'text-blue-400' : 'text-blue-600' }
                 ].map((item, id) => (
-                    <div key={id} className={`text-center p-2 rounded-xl border transition-all hover:scale-105 ${isManagerMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'
+                    <div key={id} className={`text-center p-3 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] ${isManagerMode ? 'bg-slate-900/60 border-slate-800 shadow-inner' : 'bg-slate-50/50 border-slate-100 shadow-sm'
                         }`}>
-                        <span className="block text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
-                        <span className={`text-[9px] font-black uppercase ${item.color} ${item.underline ? 'underline decoration-2 underline-offset-2' : ''}`}>
+                        <span className="block text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5 opacity-80">{item.label}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-tight ${item.color} ${item.active ? 'underline decoration-2 underline-offset-4 decoration-emerald-500/30' : ''}`}>
                             {item.value}
                         </span>
                     </div>
@@ -141,15 +142,16 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
             </div>
 
             <style>{`
-        @keyframes scan {
-          0% { top: 20%; opacity: 0; }
-          50% { opacity: 0.5; }
-          100% { top: 80%; opacity: 0; }
-        }
-        .animate-scan {
-          animation: scan 4s infinite linear;
-        }
-      `}</style>
+                @keyframes scan {
+                    0% { top: 15%; opacity: 0; transform: scaleX(0.8); }
+                    10% { opacity: 0.4; transform: scaleX(1); }
+                    90% { opacity: 0.4; transform: scaleX(1); }
+                    100% { top: 85%; opacity: 0; transform: scaleX(0.8); }
+                }
+                .animate-scan {
+                    animation: scan 6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+                }
+            `}</style>
         </div>
     );
 };
