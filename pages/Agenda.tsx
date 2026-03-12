@@ -4,6 +4,7 @@ import { User, Clinic, Professional, Appointment, AppointmentStatus, Patient, Ro
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
+import { HolidaysService, Holiday } from '../services/holidaysService';
 
 interface AgendaProps {
     user: User;
@@ -22,6 +23,7 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
+    const [holidays, setHolidays] = useState<Holiday[]>([]);
 
     // FILTER STATE (Multi-Select)
     const [selectedProfIds, setSelectedProfIds] = useState<string[]>([]);
@@ -111,6 +113,16 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentDate, viewMode, selectedProfIds, loading, isProfessionalUser, user.professionalId]); // Added isProfessionalUser and user.professionalId
+
+    // --- EFFECT: HOLIDAYS FETCHING ---
+    useEffect(() => {
+        const loadHolidays = async () => {
+            const year = currentDate.getFullYear();
+            const hs = await HolidaysService.getHolidays(year);
+            setHolidays(hs);
+        };
+        loadHolidays();
+    }, [currentDate.getFullYear()]);
 
     const updateCurrentTimeIndicator = () => {
         const now = new Date();
@@ -347,9 +359,13 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                     </div>
                     {viewType === 'full' && heightPx > 45 && (
                         <div className="flex items-center justify-between text-[10px] mt-0.5 opacity-80">
-                            <div className="flex flex-col">
-                                <span className={isCanceled ? 'text-gray-400' : ''}>{appt.type.substring(0, 3)}</span>
-                                {!isCanceled && appt.financialStatus === 'PENDENTE' && <span className="text-[9px] text-red-600 font-bold">$ Pend.</span>}
+                            <div className="flex flex-col gap-0.5">
+                                <div className={`flex items-center gap-1 ${isCanceled ? 'text-gray-400' : ''}`}>
+                                    {appt.type === 'AVALIACAO' ? <span className="bg-indigo-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm" title="Primeira Consulta">1ª CONS</span> : null}
+                                    {appt.type === 'RETORNO' ? <span className="text-emerald-700 font-bold" title="Retorno">🔄</span> : null}
+                                </div>
+                                {!isCanceled && appt.financialStatus === 'PENDENTE' && <span className="text-[9px] text-rose-600 font-black px-1 bg-white border border-rose-200 rounded max-w-fit mt-0.5 shadow-sm">⚠️ $ PENDENTE</span>}
+                                {!isCanceled && appt.financialStatus === 'PAGO' && <span className="text-[9px] text-emerald-600 font-black px-1 bg-white border border-emerald-200 rounded max-w-fit mt-0.5 shadow-sm">✅ $ PAGO</span>}
                             </div>
                             <span className="font-mono">{new Date(appt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -394,6 +410,13 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
         if (!checkDateAvailability(dateStr)) {
             alert("Data não disponível para agendamento (Clínica fechada).");
             return;
+        }
+
+        const holyForDate = HolidaysService.getHolidayForDate(holidays, dateStr);
+        if (holyForDate) {
+            if (!window.confirm(`Atenção: A data ${dateStr.split('-').reverse().join('/')} é feriado (${holyForDate.name}). Tem certeza que deseja agendar?`)) {
+                return;
+            }
         }
 
         setModalMode('create');
@@ -617,7 +640,17 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                     </div>
                     <div className="relative group">
                         <div className="flex items-center gap-2 cursor-pointer">
-                            <h2 className={`text-xl font-black uppercase tracking-tight min-w-[150px] text-center ${isManagerMode ? 'text-blue-900' : 'text-slate-800'}`}>{getNavLabel()}</h2>
+                            <h2 className={`text-xl font-black uppercase tracking-tight min-w-[150px] text-center ${isManagerMode ? 'text-blue-900' : 'text-slate-800'} flex flex-col items-center`}>
+                                <span>{getNavLabel()}</span>
+                                {(() => {
+                                    if (viewMode === 'DAY' || viewMode === 'TEAM') {
+                                        const dateStr = currentDate.toISOString().split('T')[0];
+                                        const hInfo = HolidaysService.getHolidayForDate(holidays, dateStr);
+                                        if (hInfo) return <div className="text-[10px] bg-amber-100 text-amber-800 rounded-full px-3 py-0.5 mt-1 shadow-sm font-bold truncate max-w-xs leading-tight">🎉 Feriado: {hInfo.name}</div>;
+                                    }
+                                    return null;
+                                })()}
+                            </h2>
                             <Icons.Calendar />
                         </div>
                         <input type="date" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleDateChange} />
@@ -752,6 +785,10 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                     <div key={i} className={`flex-1 min-w-[140px] p-2 text-center border-r ${isManagerMode ? 'border-blue-50' : 'border-emerald-100'} ${isToday ? (isManagerMode ? 'bg-blue-600/10' : 'bg-emerald-100') : (isManagerMode ? 'bg-white' : 'bg-white')} ${!isOpen ? 'bg-slate-50 opacity-50' : ''}`}>
                                         <div className={`text-[10px] uppercase font-black tracking-widest ${isToday ? (isManagerMode ? 'text-blue-700' : 'text-emerald-700') : (isManagerMode ? 'text-blue-400' : 'text-emerald-600')}`}>{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
                                         <div className={`text-xl font-black ${isToday ? (isManagerMode ? 'text-blue-900' : 'text-emerald-800') : (isManagerMode ? 'text-slate-800' : 'text-slate-900')}`}>{d.getDate()}</div>
+                                        {(() => {
+                                            const hInfo = HolidaysService.getHolidayForDate(holidays, d.toISOString().split('T')[0]);
+                                            return hInfo ? <div className="text-[8px] bg-amber-100/80 text-amber-800 uppercase px-1 rounded truncate mt-0.5 font-bold shadow-sm" title={hInfo.name}>🎉 {hInfo.name}</div> : null;
+                                        })()}
                                     </div>
                                 );
                             })}
@@ -804,7 +841,13 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                     ${isManagerMode ? 'hover:bg-blue-50/70' : 'hover:bg-emerald-50'}`}
                                             onClick={() => { setCurrentDate(dayDate); setViewMode('DAY'); }}
                                         >
-                                            <div className={`text-sm font-black text-right ${isToday ? (isManagerMode ? 'text-blue-600' : 'text-emerald-600') : (isManagerMode ? 'text-slate-400' : 'text-slate-700')}`}>{i}</div>
+                                            <div className="flex justify-between items-start w-full">
+                                                {(() => {
+                                                    const hInfo = HolidaysService.getHolidayForDate(holidays, dayDate.toISOString().split('T')[0]);
+                                                    return hInfo ? <div className="text-[8px] max-w-[70%] bg-amber-100/80 text-amber-800 uppercase px-1 rounded truncate font-bold shadow-sm" title={hInfo.name}>🎉 {hInfo.name.split(' ')[0]}...</div> : <div></div>;
+                                                })()}
+                                                <div className={`text-sm font-black text-right ${isToday ? (isManagerMode ? 'text-blue-600' : 'text-emerald-600') : (isManagerMode ? 'text-slate-400' : 'text-slate-700')}`}>{i}</div>
+                                            </div>
                                             <div className="flex-1 overflow-y-auto mt-1 space-y-0.5 custom-scrollbar h-0 group">
                                                 {dayAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="mini" />)}
                                             </div>
