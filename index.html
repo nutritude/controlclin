@@ -167,7 +167,24 @@
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
     window.mermaid = mermaid;
-    mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+    mermaid.initialize({ 
+      startOnLoad: false, 
+      theme: 'base', 
+      securityLevel: 'loose',
+      themeVariables: {
+        fontFamily: 'Inter, sans-serif',
+        primaryColor: '#f0fdf4',
+        primaryTextColor: '#065f46',
+        primaryBorderColor: '#34d399',
+        lineColor: '#6ee7b7',
+        secondaryColor: '#fef3c7',
+        tertiaryColor: '#f8fafc'
+      },
+      mindmap: {
+        padding: 20,
+        maxNodeWidth: 150
+      }
+    });
   </script>
 </head>
 

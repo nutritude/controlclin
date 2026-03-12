@@ -238,8 +238,8 @@ REGRAS ABSOLUTAS DE SINTAXE MERMAID MINDMAP v10 E ESTRUTURA:
 2. SEGUNDA LINHA: "  root((TEXTO AQUI))" com 2 espaços de indentação.
 3. Cada nível filho adiciona mais 2 espaços exatos.
 4. PROIBIDO ABSOLUTAMENTE dentro de qualquer texto de nó: aspas simples/duplas ( ' " ), parênteses e chaves que não sejam delimitadores, e símbolos especiais (# $ & * etc).
-5. REGRA DA EXPLICAÇÃO (OBRIGATÓRIO): Para CADA ramo principal que sai do nó central, o PRIMEIRO nó filho deve ser OBRIGATORIAMENTE uma "breve explicação contextualizando", com até 3 linhas visando o paciente leigo. Esta explicação DEVE estar entre colchetes, por exemplo: [Paciente apresenta gordura visceral acima do ideal. Foco na redução...].
-6. Os demais nós (dados/parâmetros) devem ter no máximo 5 palavras.
+5. REGRA DA EXPLICAÇÃO (OBRIGATÓRIO): Para CADA ramo principal que sai do nó central, o PRIMEIRO nó filho deve ser OBRIGATORIAMENTE uma "breve explicação", com MAXIMO de 10 palavras, visando o paciente leigo. Esta explicação DEVE estar entre colchetes, por exemplo: [Gordura visceral alta. Foco na redução].
+6. MÁXIMO DE 3 NÓS FILHOS (dados/parâmetros) por cada explicação para evitar poluição visual. Os dados devem ter no máximo 4 palavras.
 7. Retorne SOMENTE o código mindmap, sem markdown, sem introduções.
 
 EXEMPLO CORRETO DE ESTRUTURA:
