@@ -8,15 +8,21 @@ interface BodyHeatMapProps {
         circWaist?: number;
         circHip?: number;
         circArmContracted?: number;
+        circArmRelaxed?: number;
         circThigh?: number;
+        measurementSide?: 'Direito' | 'Esquerdo';
     };
     results: {
         waistToHipRatio: number;
+        picaDiagnosis?: string;
+        clinicalGravity?: string;
+        functionalStatus?: string;
     };
+    pathologies?: string[];
     isManagerMode?: boolean;
 }
 
-const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode }) => {
+const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, pathologies, isManagerMode }) => {
     const isHighRisk = results.waistToHipRatio > 0.9;
 
     return (
@@ -28,13 +34,13 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
             <div className="flex justify-between items-start mb-8">
                 <div>
                     <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] ${isManagerMode ? 'text-indigo-400' : 'text-emerald-900'}`}>
-                        Scan Biométrico
+                        Scan Biométrico ({data.measurementSide || 'Direito'})
                     </h3>
                     <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-wider">Mapeamento Termográfico</p>
                 </div>
                 <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.15em] animate-pulse ${isManagerMode ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                     }`}>
-                    Live Analysis
+                    {results.functionalStatus || 'Live Analysis'}
                 </div>
             </div>
 
@@ -108,7 +114,12 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
                         <ellipse cx="50" cy="100" rx="13" ry="9" fill="#3B82F6" fillOpacity="0.5" className="heat-point text-[#3B82F6]" style={{ animationDelay: '1.5s' }} />
                     )}
 
-                    {/* Braço Direito (Referência) */}
+                    {/* Braço Relaxado (Novo) */}
+                    {data.circArmRelaxed && data.circArmRelaxed > 0 && (
+                        <circle cx="28.5" cy="65" r="4" fill="#60A5FA" fillOpacity="0.4" className="heat-point text-[#60A5FA]" style={{ animationDelay: '1.8s' }} />
+                    )}
+
+                    {/* Braço Direito (Contraído) */}
                     {data.circArmContracted && data.circArmContracted > 0 && (
                         <circle cx="28.5" cy="65" r="5" fill="#F59E0B" fillOpacity="0.6" className="heat-point text-[#F59E0B]" style={{ animationDelay: '2s' }} />
                     )}
@@ -119,6 +130,22 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
                     )}
                 </svg>
 
+                {/* INOVAÇÃO: Bio-Vitality Aura (Anel de Saturação Clínica) */}
+                <div className="absolute inset-x-0 bottom-0 flex justify-center pointer-events-none">
+                    <div className={`px-4 py-1.5 rounded-full border flex items-center gap-2 mb-[-12px] shadow-lg backdrop-blur-md transition-all duration-500 ${results.clinicalGravity === 'G3' ? 'bg-rose-500/10 border-rose-500/30 text-rose-600' :
+                        results.clinicalGravity === 'G2' ? 'bg-amber-500/10 border-amber-500/30 text-amber-600' :
+                            'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                        }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full animate-ping ${results.clinicalGravity === 'G3' ? 'bg-rose-500' :
+                            results.clinicalGravity === 'G2' ? 'bg-amber-500' :
+                                'bg-emerald-500'
+                            }`} />
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">
+                            Vitalidade: {results.clinicalGravity || 'G0'}
+                        </span>
+                    </div>
+                </div>
+
                 {/* Scan Line Laser Decorativa */}
                 <div className={`absolute left-0 w-full h-[2px] opacity-30 animate-scan pointer-events-none blur-[1px] ${isManagerMode ? 'bg-indigo-400' : 'bg-emerald-400'
                     }`} />
@@ -127,14 +154,27 @@ const BodyHeatMap: React.FC<BodyHeatMapProps> = ({ data, results, isManagerMode 
             {/* Indicadores Premium Footer */}
             <div className="grid grid-cols-3 gap-3 mt-8">
                 {[
-                    { label: 'Foco Clínico', value: 'Hipertrofia', color: isManagerMode ? 'text-emerald-400' : 'text-emerald-600', active: true },
-                    { label: 'Risco Metabólico', value: isHighRisk ? 'Alto' : 'Baixo', color: isHighRisk ? 'text-rose-500' : 'text-emerald-500' },
-                    { label: 'Status Biometria', value: 'Completa', color: isManagerMode ? 'text-blue-400' : 'text-blue-600' }
+                    {
+                        label: 'Foco Clínico',
+                        value: results.picaDiagnosis || 'Aguardando...',
+                        color: isManagerMode ? 'text-emerald-400' : 'text-emerald-600',
+                        active: true
+                    },
+                    {
+                        label: 'Risco Metabólico',
+                        value: results.waistToHipRatio > 0.9 ? 'Alto (Elevado)' : 'Normal/Baixo',
+                        color: results.waistToHipRatio > 0.9 ? 'text-rose-500' : 'text-emerald-500'
+                    },
+                    {
+                        label: 'Prioridade Patológica',
+                        value: pathologies && pathologies.length > 0 ? pathologies[0] : 'Nenhuma Detectada',
+                        color: pathologies && pathologies.length > 0 ? 'text-amber-500' : (isManagerMode ? 'text-blue-400' : 'text-blue-600')
+                    }
                 ].map((item, id) => (
                     <div key={id} className={`text-center p-3 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] ${isManagerMode ? 'bg-slate-900/60 border-slate-800 shadow-inner' : 'bg-slate-50/50 border-slate-100 shadow-sm'
                         }`}>
                         <span className="block text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5 opacity-80">{item.label}</span>
-                        <span className={`text-[9px] font-black uppercase tracking-tight ${item.color} ${item.active ? 'underline decoration-2 underline-offset-4 decoration-emerald-500/30' : ''}`}>
+                        <span className={`text-[9px] font-black uppercase tracking-tight break-words line-clamp-2 ${item.color} ${item.active ? 'underline decoration-2 underline-offset-4 decoration-emerald-500/30' : ''}`}>
                             {item.value}
                         </span>
                     </div>

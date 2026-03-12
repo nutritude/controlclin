@@ -94,6 +94,10 @@ const SKINFOLD_PROTOCOLS: Record<NonNullable<Anthropometry['skinfoldProtocol']>,
     ISAK: {
         label: 'ISAK (Medidas Completas)',
         folds: () => ['skinfoldTriceps', 'skinfoldBiceps', 'skinfoldSubscapular', 'skinfoldSuprailiac', 'skinfoldAbdominal', 'skinfoldThigh', 'skinfoldCalf', 'skinfoldAxillary', 'skinfoldChest']
+    },
+    'Chumlea (Acamados)': {
+        label: 'Chumlea (Acamados)',
+        folds: () => ['skinfoldTriceps', 'skinfoldSubscapular']
     }
 };
 
@@ -839,7 +843,9 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
             picaSynthesis: pica.synthesis,
             picaConduct: pica.conduct,
             picaAlerts: pica.alerts,
-            picaClassId: pica.classId
+            picaClassId: pica.classId,
+            clinicalGravity: pica.clinicalGravity,
+            functionalStatus: pica.functionalStatus
         };
     }, [formData.anthropometry, patient, calculateAge]);
 
@@ -2047,9 +2053,20 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                 </div>
                                 {/* Circunferências */}
                                 <div className={`${isManagerMode ? 'bg-white border-blue-100 shadow-sm' : 'bg-white border-emerald-200'} shadow-sm rounded-xl p-4 border`}>
-                                    <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Circunferências (cm)</h3>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className={`text-sm font-bold uppercase tracking-wide ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Circunferências (cm)</h3>
+                                        <select
+                                            disabled={!isEditingTab}
+                                            value={formData.anthropometry?.measurementSide || 'Direito'}
+                                            onChange={e => updateAnthroData('measurementSide', e.target.value)}
+                                            className={`text-xs p-1 rounded font-bold border ${isManagerMode ? 'text-blue-900 border-blue-200 bg-blue-50' : 'text-emerald-900 border-emerald-200 bg-emerald-50'}`}
+                                        >
+                                            <option value="Direito">Lado Direito</option>
+                                            <option value="Esquerdo">Lado Esquerdo</option>
+                                        </select>
+                                    </div>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        {[{ id: 'circNeck', label: 'Pescoço' }, { id: 'circChest', label: 'Tórax' }, { id: 'circWaist', label: 'Cintura' }, { id: 'circAbdomen', label: 'Abdômen' }, { id: 'circHip', label: 'Quadril' }, { id: 'circArmContracted', label: 'Braço Contraído' }, { id: 'circThigh', label: 'Coxa' }, { id: 'circCalf', label: 'Panturrilha' }].map(item => (
+                                        {[{ id: 'circNeck', label: 'Pescoço' }, { id: 'circChest', label: 'Tórax' }, { id: 'circWaist', label: 'Cintura' }, { id: 'circAbdomen', label: 'Abdômen' }, { id: 'circHip', label: 'Quadril' }, { id: 'circArmRelaxed', label: 'Braço Relaxado' }, { id: 'circArmContracted', label: 'Braço Contraído' }, { id: 'circThigh', label: 'Coxa' }, { id: 'circCalf', label: 'Panturrilha' }].map(item => (
                                             <div key={item.id}>
                                                 <label className="text-xs font-medium">{item.label}</label>
                                                 <input type="number" step="0.1" disabled={!isEditingTab} value={formData.anthropometry?.[item.id as keyof Anthropometry] || ''} onChange={e => updateAnthroData(item.id as keyof Anthropometry, e.target.value)} className={`w-full mt-1 p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-blue-200' : 'bg-white border-emerald-300'} disabled:bg-gray-100`} />
@@ -2245,6 +2262,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <BodyHeatMap
                                         data={formData.anthropometry || {}}
                                         results={anthropometryResults}
+                                        pathologies={activeDiagnoses}
                                         isManagerMode={isManagerMode}
                                     />
                                 </div>

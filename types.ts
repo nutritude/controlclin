@@ -170,6 +170,7 @@ export interface Anthropometry {
   procedureDate?: string; // NOVO: Data de realização do procedimento
   skinfoldProtocol?: skinfoldProtocol; // NOVO: Protocolo de dobras
   anthroAiAnalysis?: string; // Campo para armazenar a análise da IA (JSON stringified)
+  measurementSide?: 'Direito' | 'Esquerdo'; // NOVO: Preferência de lado
 }
 
 // --- ANTHROPOMETRY SNAPSHOT & ANALYSIS (NEW) ---
@@ -718,7 +719,7 @@ export interface AuditLog {
 }
 
 // --- ALERTA DE ATRASO ANTROPOMÉTRICO (NOVO) ---
-export type skinfoldProtocol = 'JacksonPollock7' | 'JacksonPollock3' | 'Guedes' | 'DurninWomersley' | 'Faulkner' | 'ISAK';
+export type skinfoldProtocol = 'JacksonPollock7' | 'JacksonPollock3' | 'Guedes' | 'DurninWomersley' | 'Faulkner' | 'ISAK' | 'Chumlea (Acamados)';
 
 // --- ALERTAS CLÍNICOS (NOVO) ---
 export type AlertType = 'RETURN_OVERDUE' | 'EXAM_ATTENTION' | 'RECURRING_ABSENCE' | 'GOAL_EXPIRED' | 'MISSED_CRITICAL' | 'ANTHROMETRY_OVERDUE' | 'APP_NOT_LIBERATED';

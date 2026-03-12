@@ -7,6 +7,8 @@ export interface PicaResult {
     synthesis: string;
     conduct: string;
     alerts: string[];
+    clinicalGravity: string;
+    functionalStatus: string;
 }
 
 export const PicaProtocolService = {
@@ -111,6 +113,6 @@ export const PicaProtocolService = {
             alerts.push("MANEJO INTENSIVO: Perfil de maior gravidade clínica. Exige acompanhamento próximo e interdisciplinar.");
         }
 
-        return { classId, diagnosis, synthesis, conduct, alerts };
+        return { classId, diagnosis, synthesis, conduct, alerts, clinicalGravity: grav, functionalStatus: func };
     }
 };
