@@ -1,3 +1,4 @@
+
 export type AIPersonaRole = 'manager' | 'professional';
 
 const SYSTEM_PROMPT_PROFESSIONAL = `Você é um Assistente Clínico Avançado especializado em Nutrição e Fisiologia Médica. 
@@ -21,17 +22,18 @@ export interface OpenRouterAskRequest {
 export const OpenRouterService = {
     /**
      * Envia um prompt via Proxy Seguro (/api/ai).
+     * Agora otimizado para Gemini 2.5 Flash por padrão.
      */
     async ask({ prompt, role, systemPrompt, temperature, model }: OpenRouterAskRequest): Promise<string> {
-        console.log(`[OpenRouter] Iniciando requisição segura via Proxy (Role: ${role})`);
+        const finalModel = model || "google/gemini-2.5-flash";
+        const isGemini = finalModel.toLowerCase().includes('gemini');
+
+        console.log(`[AI Service] Iniciando requisição (Model: ${finalModel}, Role: ${role})`);
 
         try {
             const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
             const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
             const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
-            const finalModel = model || "nvidia/nemotron-3-nano-30b-a3b:free";
-
-            console.log(`[OpenRouter] Consultando modelo via API interna: ${finalModel}`);
 
             const response = await fetch('/api/ai', {
                 method: 'POST',
@@ -41,7 +43,7 @@ export const OpenRouterService = {
                     systemPrompt: finalSystemPrompt,
                     temperature: finalTemperature,
                     model: finalModel,
-                    stream: true
+                    stream: !isGemini // Desabilitamos stream para Gemini nativo via proxy por simplicidade de normalização
                 })
             });
 
@@ -50,58 +52,48 @@ export const OpenRouterService = {
                 throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
             }
 
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error("Corpo da resposta indisponível para streaming.");
+            // Se for Gemini nativo (não-streaming), processamos o JSON direto
+            if (!isGemini) {
+                // Lógica de Streaming para OpenRouter tradicional
+                const reader = response.body?.getReader();
+                if (!reader) throw new Error("Corpo da resposta indisponível para streaming.");
 
-            let fullContent = "";
-            let buffer = "";
-            const decoder = new TextDecoder();
+                let fullContent = "";
+                let buffer = "";
+                const decoder = new TextDecoder();
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || "";
 
-                // Mantém a última linha incompleta no buffer
-                buffer = lines.pop() || "";
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
 
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+                        const dataStr = trimmedLine.slice(6).trim();
+                        if (dataStr === '[DONE]') continue;
 
-                    const dataStr = trimmedLine.slice(6).trim();
-                    if (dataStr === '[DONE]') continue;
-
-                    try {
-                        const data = JSON.parse(dataStr);
-                        const delta = data.choices[0]?.delta;
-
-                        if (delta?.content) {
-                            fullContent += delta.content;
-                        }
-
-                        // Logging opcional de raciocínio se o modelo prover
-                        if (delta?.reasoning) {
-                            console.log("[IA Pensando...]:", delta.reasoning);
-                        }
-                    } catch (e) {
-                        // Ignora JSON incompleto ou mal formatado no stream
+                        try {
+                            const data = JSON.parse(dataStr);
+                            const delta = data.choices[0]?.delta;
+                            if (delta?.content) fullContent += delta.content;
+                        } catch (e) { }
                     }
                 }
-            }
-
-            if (fullContent) {
-                console.log("[OpenRouter] Resposta gerada com sucesso via Proxy.");
                 return fullContent;
+            } else {
+                // Resposta JSON normalizada do Proxy para Gemini
+                const data = await response.json();
+                return data.choices?.[0]?.message?.content || "";
             }
-
-            throw new Error("O modelo não retornou conteúdo.");
 
         } catch (error: any) {
-            console.error("Erro crítico na integração com OpenRouter (Proxy):", error);
-            throw new Error(`Erro IA (${error.message || "Falha na comunicação"}). Verifique os logs da Vercel.`);
+            console.error("Erro crítico na integração AI:", error);
+            throw new Error(`Falha na IA: ${error.message || "Erro de comunicação"}`);
         }
     }
 };
