@@ -14,6 +14,7 @@ const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.S
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
 const Professionals = lazy(() => import('./pages/Professionals').then(m => ({ default: m.Professionals })));
 const ClinicalAlerts = lazy(() => import('./pages/ClinicalAlerts').then(m => ({ default: m.ClinicalAlerts })));
+const Help = lazy(() => import('./pages/Help').then(m => ({ default: m.Help })));
 const SuccessCard = lazy(() => import('./pages/SuccessCard').then(m => ({ default: m.SuccessCard })));
 const DebugLog = lazy(() => import('./pages/DebugLog').then(m => ({ default: m.DebugLog })));
 const PatientLogin = lazy(() => import('./pages/patient/PatientLogin').then(m => ({ default: m.PatientLogin })));
@@ -266,6 +267,7 @@ function App() {
             <Route path="reports" element={<Reports user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
             <Route path="professionals" element={<Professionals user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
             <Route path="settings" element={<Settings user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
+            <Route path="help" element={<Help user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
             <Route path="debug" element={<DebugLog user={user} clinic={clinic!} isManagerMode={isManagerMode} />} />
           </Route>
 

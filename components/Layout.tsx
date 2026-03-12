@@ -101,6 +101,11 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
             <span className="text-sm">Relatórios</span>
           </NavLink>
 
+          <NavLink to="/help" className={navItemClass} onClick={() => setIsMobileMenuOpen(false)}>
+            <Icons.HelpCircle className="size-5" />
+            <span className="text-sm">Ajuda</span>
+          </NavLink>
+
           {isManagerMode && (user.role === Role.CLINIC_ADMIN || user.role === Role.SUPER_ADMIN) && (
             <div className="pt-6 space-y-2">
               <p className={`px-4 text-[10px] font-black uppercase tracking-[0.3em] mb-4 ${isManagerMode ? 'text-blue-400' : 'text-emerald-400'}`}>Gestão Clínica</p>
