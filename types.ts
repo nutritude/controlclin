@@ -270,6 +270,8 @@ export interface MealItem {
     proteinPer100g: number;
     carbsPer100g: number;
     fatPer100g: number;
+    saturatedFatPer100g?: number;
+    sodiumPer100g?: number;
     fiberPer100g?: number;
     portionLabel?: string; // Ex: '1 scoop (30g)'
     portionGrams?: number;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FoodService, FoodItemCanonical, Portion } from '../services/food/foodCatalog';
 import { Icons } from '../constants';
+import { AIService } from '../services/ai/aiService';
 
 interface AddFoodModalProps {
     isOpen: boolean;
@@ -35,6 +36,10 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const [customProtein100, setCustomProtein100] = useState('');
     const [customCarbs100, setCustomCarbs100] = useState('');
     const [customFat100, setCustomFat100] = useState('');
+    const [customSatFat100, setCustomSatFat100] = useState('');
+    const [customFiber100, setCustomFiber100] = useState('');
+    const [customSodium100, setCustomSodium100] = useState('');
+    const [isAiFilling, setIsAiFilling] = useState(false);
     const [customPortionLabel, setCustomPortionLabel] = useState('');
     const [customPortionGrams, setCustomPortionGrams] = useState('');
 
@@ -93,6 +98,36 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         };
     };
 
+    const handleAiFill = async () => {
+        if (!customItemName.trim()) return;
+        setIsAiFilling(true);
+        try {
+            const prompt = `Como um assistente clínico nutricional, forneça os dados nutricionais para 100g do alimento: "${customItemName}".
+            Retorne APENAS um objeto JSON válido (sem markdown, sem textos extras) com estas chaves (use números, não strings):
+            "kcal", "protein", "carbs", "fat", "satFat", "fiber", "sodium" (em mg).
+            Se o alimento for de marca específica (ex: Molico), use os dados dessa marca. Caso contrário, use valores médios.`;
+
+            const responseText = await AIService.ask({ prompt, role: 'professional' });
+            // Limpa possíveis backticks de markdown
+            const jsonText = responseText.replace(/```json|```/g, '').trim();
+            const data = JSON.parse(jsonText);
+
+            if (data.kcal !== undefined) setCustomKcal100(data.kcal.toString());
+            if (data.protein !== undefined) setCustomProtein100(data.protein.toString());
+            if (data.carbs !== undefined) setCustomCarbs100(data.carbs.toString());
+            if (data.fat !== undefined) setCustomFat100(data.fat.toString());
+            if (data.satFat !== undefined) setCustomSatFat100(data.satFat.toString());
+            if (data.fiber !== undefined) setCustomFiber100(data.fiber.toString());
+            if (data.sodium !== undefined) setCustomSodium100(data.sodium.toString());
+
+        } catch (error) {
+            console.error("AI Fill failed:", error);
+            alert("Não foi possível preencher automaticamente. Verifique se o nome está correto.");
+        } finally {
+            setIsAiFilling(false);
+        }
+    };
+
     const handleConfirm = () => {
         if (isCustomItemMode) {
             if (!customItemName.trim()) return;
@@ -101,9 +136,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             const prot100 = parseFloat(customProtein100) || 0;
             const carb100 = parseFloat(customCarbs100) || 0;
             const fat100 = parseFloat(customFat100) || 0;
+            const satFat100 = parseFloat(customSatFat100) || 0;
+            const fiber100 = parseFloat(customFiber100) || 0;
+            const sodium100 = parseFloat(customSodium100) || 0;
             const portGrams = parseFloat(customPortionGrams) || 100;
 
-            // Se o profissional definiu uma porção, calcula proporcionalmente
             const ratio = (portGrams * qty) / 100;
 
             onConfirm({
@@ -115,11 +152,19 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                 calculatedProtein: parseFloat((prot100 * ratio).toFixed(1)),
                 calculatedCarbs: parseFloat((carb100 * ratio).toFixed(1)),
                 calculatedFat: parseFloat((fat100 * ratio).toFixed(1)),
+                snapshot: {
+                    fiber: fiber100 * ratio,
+                    sodium: sodium100 * ratio,
+                    saturatedFat: satFat100 * ratio
+                },
                 manualNutrition: {
                     kcalPer100g: kcal100,
                     proteinPer100g: prot100,
                     carbsPer100g: carb100,
                     fatPer100g: fat100,
+                    saturatedFatPer100g: satFat100,
+                    sodiumPer100g: sodium100,
+                    fiberPer100g: fiber100,
                     portionLabel: customPortionLabel || undefined,
                     portionGrams: portGrams
                 }
@@ -284,27 +329,50 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                             </div>
                             <div>
                                 <label className="text-xs font-bold block mb-1">Nome do Alimento</label>
-                                <input placeholder="Ex: Whey Protein Gold Standard" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`w-full p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                                <div className="flex gap-2">
+                                    <input placeholder="Ex: Whey Protein Gold Standard" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`flex-1 p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                                    <button
+                                        onClick={handleAiFill}
+                                        disabled={isAiFilling || !customItemName.trim()}
+                                        className={`px-3 flex items-center gap-1 text-xs font-bold rounded transition-all ${isAiFilling ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'}`}
+                                        title="Preencher automaticamente com IA"
+                                    >
+                                        <Icons.Sparkles className={`h-3 w-3 ${isAiFilling ? 'animate-pulse' : ''}`} />
+                                        {isAiFilling ? 'Buscando...' : 'Preencher IA'}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className={`p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">📊 Tabela Nutricional (por 100g/100mL)</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-600">Kcal</label>
-                                        <input type="number" step="0.1" placeholder="Ex: 375" value={customKcal100} onChange={e => setCustomKcal100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <input type="number" step="0.1" placeholder="375" value={customKcal100} onChange={e => setCustomKcal100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
                                     </div>
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-600">Proteína (g)</label>
-                                        <input type="number" step="0.1" placeholder="Ex: 80" value={customProtein100} onChange={e => setCustomProtein100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <input type="number" step="0.1" placeholder="80" value={customProtein100} onChange={e => setCustomProtein100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Carboidrato (g)</label>
-                                        <input type="number" step="0.1" placeholder="Ex: 6.7" value={customCarbs100} onChange={e => setCustomCarbs100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className="text-[10px] font-bold text-gray-600">Carbos (g)</label>
+                                        <input type="number" step="0.1" placeholder="6.7" value={customCarbs100} onChange={e => setCustomCarbs100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Gordura (g)</label>
-                                        <input type="number" step="0.1" placeholder="Ex: 3.3" value={customFat100} onChange={e => setCustomFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className="text-[10px] font-bold text-gray-600">Gord. Totais (g)</label>
+                                        <input type="number" step="0.1" placeholder="3.3" value={customFat100} onChange={e => setCustomFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Gord. Sat (g)</label>
+                                        <input type="number" step="0.1" placeholder="0.5" value={customSatFat100} onChange={e => setCustomSatFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-600">Fibra (g)</label>
+                                        <input type="number" step="0.1" placeholder="2.0" value={customFiber100} onChange={e => setCustomFiber100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2">
+                                        <label className="text-[10px] font-bold text-gray-600">Sódio (mg)</label>
+                                        <input type="number" step="1" placeholder="50" value={customSodium100} onChange={e => setCustomSodium100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
                                     </div>
                                 </div>
                             </div>
