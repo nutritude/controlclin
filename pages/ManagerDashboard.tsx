@@ -148,9 +148,14 @@ export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointm
                 />
               ))}
               {(!stats.topPathologies || stats.topPathologies.length === 0) && (
-                <div className="flex flex-col items-center justify-center h-full py-6 text-center">
-                  <Icons.AlertCircle className="text-slate-500 mb-2" size={24} />
-                  <p className="text-xs text-slate-400 italic">As patologias aparecem conforme você preenche a anamnese dos pacientes.</p>
+                <div className="flex flex-col items-center justify-center py-12 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <Icons.Activity className="text-slate-400" size={24} />
+                  </div>
+                  <h4 className="text-sm font-black text-slate-700 uppercase tracking-tight mb-2">Sem Dados Epidemiológicos</h4>
+                  <p className="text-[11px] text-slate-500 max-w-[200px] leading-relaxed italic">
+                    As estatísticas de patologias serão exibidas automaticamente conforme novos diagnósticos forem registrados nas anamneses dos pacientes.
+                  </p>
                 </div>
               )}
             </div>
@@ -178,7 +183,11 @@ export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointm
           <h3 className={`text-lg font-black uppercase tracking-tight mb-4 text-slate-800`}>Agenda Imediata</h3>
           <div className="space-y-4 flex-1">
             {!nextAppointments || nextAppointments.length === 0 ? (
-              <p className={`text-center py-4 text-slate-400 italic font-medium`}>Nenhum agendamento futuro.</p>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Icons.Calendar className="text-slate-300 mb-3" size={32} />
+                <p className={`text-sm font-bold text-slate-500`}>Agenda vazia hoje.</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Nenhum atendimento agendado para o período atual.</p>
+              </div>
             ) : (
               nextAppointments.map((app: Appointment) => {
                 const prof = professionals.find((p: Professional) => p.id === app.professionalId);
@@ -233,8 +242,14 @@ export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointm
             {(!financial || !financial.hasSufficientData) && stats.revenue === 0 ? (
               <div className="p-10 border border-indigo-100 bg-indigo-50/30 rounded-3xl text-center">
                 <Icons.Activity className="text-indigo-600 mx-auto mb-4 animate-pulse" size={32} />
-                <p className="text-sm font-bold text-indigo-900">Aguardando dados de faturamento para gerar projeções.</p>
-                <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest font-black">Registre transações pagas no cadastro para ativar este módulo.</p>
+                <p className="text-sm font-bold text-indigo-900 uppercase tracking-tight mb-2">Dados Insuficientes para Projeção</p>
+                <p className="text-[11px] text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Para que a IA consiga projetar seu crescimento, você precisa registrar transações financeiras (recebimentos) no sistema. Comece cadastrando valores nas consultas ou no módulo financeiro.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-indigo-100 shadow-sm">
+                  <div className="size-2 rounded-full bg-amber-500 animate-ping"></div>
+                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Aguardando histórico financeiro...</span>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -341,10 +356,12 @@ export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointm
                   </div>
                 </div>
               )) : (
-                <div className="py-12 text-center">
-                  <Icons.Zap className="text-slate-400 mx-auto mb-3" size={32} />
-                  <p className="text-slate-400 italic text-sm font-medium">Nenhuma oportunidade identificada com a base atual.</p>
-                  <p className="text-[10px] text-slate-400 uppercase mt-1 tracking-widest font-black">Aumente o preenchimento de diagnósticos para ativar sugestões.</p>
+                <div className="py-12 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                  <Icons.Zap className="text-slate-300 mx-auto mb-4" size={32} />
+                  <h4 className="text-sm font-black text-slate-700 uppercase tracking-tight mb-2">Nenhuma Oportunidade</h4>
+                  <p className="text-[11px] text-slate-500 max-w-[250px] mx-auto leading-relaxed italic">
+                    Nossa IA analisa o comportamento de compra e as necessidades clínicas dos pacientes para sugerir upgrades e novos serviços. Continue alimentando o histórico dos pacientes para ativar.
+                  </p>
                 </div>
               )}
             </div>
@@ -363,7 +380,9 @@ export const ManagerDashboard = ({ stats, aiInsights, intelligence, nextAppointm
                     {marketGaps?.commonDeficiencies && marketGaps.commonDeficiencies.length > 0 ? marketGaps.commonDeficiencies.map((d: string, i: number) => (
                       <span key={i} className={`${isManagerMode ? 'bg-white border-indigo-200 text-indigo-700 shadow-sm' : 'bg-white border-indigo-200 text-indigo-700'} px-3 py-1.5 rounded-xl text-xs font-bold border`}>{d}</span>
                     )) : (
-                      <span className="text-slate-500 italic text-xs font-medium">Mapeando carências nutricionais baseadas em exames e diagnósticos...</span>
+                      <div className="w-full p-4 bg-white/50 rounded-2xl border border-dashed border-indigo-200/50">
+                        <p className="text-[10px] text-indigo-600/60 italic leading-relaxed">IA está cruzando dados de exames laboratoriais com diagnósticos para identificar carências nutricionais predominantes na sua base.</p>
+                      </div>
                     )}
                   </div>
                 </div>

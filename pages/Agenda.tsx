@@ -727,12 +727,24 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                     </div>
                                 ))
                             ) : (
-                                <div className={`flex-1 p-3 text-center ${isManagerMode ? 'bg-blue-50/30' : 'bg-emerald-50/50'}`}>
+                                <div className={`flex-1 p-3 text-center ${isManagerMode ? 'bg-blue-50/30' : 'bg-emerald-50/50'} relative`}>
                                     <div className="flex items-center justify-center gap-2">
                                         <span className={`font-black uppercase tracking-wider text-xs ${isManagerMode ? 'text-blue-900' : 'text-emerald-800'}`}>Agenda do Dia</span>
                                         <span className={`text-xs ${isManagerMode ? 'text-blue-200' : 'text-emerald-600'}`}>|</span>
                                         <span className={`text-xs font-bold uppercase ${isManagerMode ? 'text-slate-600' : 'text-slate-700'}`}>{selectedProfIds.includes('all') ? 'Todos Profissionais' : visibleProfessionals[0]?.name}</span>
                                     </div>
+                                    {(() => {
+                                        const dateStr = currentDate.toISOString().split('T')[0];
+                                        const hInfo = HolidaysService.getHolidayForDate(holidays, dateStr);
+                                        if (hInfo) return (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:block">
+                                                <span className="bg-amber-100 text-amber-800 text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-sm border border-amber-200">
+                                                    🎉 {hInfo.name}
+                                                </span>
+                                            </div>
+                                        );
+                                        return null;
+                                    })()}
                                 </div>
                             )}
                         </div>
@@ -743,32 +755,39 @@ const Agenda: React.FC<AgendaProps> = ({ user, clinic, isManagerMode }) => {
                                     <div className="w-full h-[2px] bg-rose-500/50 shadow-sm relative"><div className="absolute left-0 -mt-1 w-2.5 h-2.5 rounded-full bg-rose-600 shadow-md"></div></div>
                                 </div>
                             )}
-                            {hours.map(hour => (
-                                <div key={hour} className={`flex min-h-[100px] border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-100'} group relative`}>
-                                    <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-[10px] font-black tracking-widest text-slate-400 border-r ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-200 bg-emerald-50'} sticky left-0 z-20`}>{hour}:00</div>
-                                    <div className="absolute inset-0 border-b border-blue-100/30 border-dashed pointer-events-none z-0" style={{ top: '50%' }}></div>
-                                    {viewMode === 'TEAM' || visibleProfessionals.length > 1 ? (
-                                        visibleProfessionals.map(prof => {
-                                            const slotAppts = filteredAppointments.filter(a => a.professionalId === prof.id && new Date(a.startTime).getHours() === hour);
-                                            return (
-                                                <div key={prof.id} className={`flex-1 min-w-[160px] border-r ${isManagerMode ? 'border-blue-50 hover:bg-blue-50/20' : 'border-emerald-100 hover:bg-emerald-50/50'} relative transition-colors`}>
-                                                    <div onClick={() => handleOpenCreate(currentDate, hour, prof.id)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
-                                                        <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
-                                                    </div>
-                                                    {slotAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="full" />)}
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className={`flex-1 relative ${isManagerMode ? 'hover:bg-blue-50/20' : 'hover:bg-emerald-50/50'} transition-colors`}>
-                                            <div onClick={() => handleOpenCreate(currentDate, hour)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
-                                                <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
-                                            </div>
-                                            {filteredAppointments.filter(a => new Date(a.startTime).getHours() === hour).map(appt => (<AppointmentCard key={appt.id} appt={appt} viewType="full" />))}
+                            {(() => {
+                                const dateStr = currentDate.toISOString().split('T')[0];
+                                const hInfo = HolidaysService.getHolidayForDate(holidays, dateStr);
+                                return hours.map(hour => (
+                                    <div key={hour} className={`flex min-h-[100px] border-b ${isManagerMode ? 'border-blue-50' : 'border-slate-100'} group relative ${hInfo ? (isManagerMode ? 'bg-amber-50/10' : 'bg-amber-50/30') : ''}`}>
+                                        <div className={`w-16 flex-shrink-0 py-2 pr-2 text-right text-[10px] font-black tracking-widest text-slate-400 border-r ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-emerald-200 bg-emerald-50'} sticky left-0 z-20`}>
+                                            {hour}:00
+                                            {hInfo && <div className="text-[8px] text-amber-600 font-bold mt-1 uppercase leading-none opacity-60">Feriado</div>}
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                        <div className="absolute inset-0 border-b border-blue-100/30 border-dashed pointer-events-none z-0" style={{ top: '50%' }}></div>
+                                        {viewMode === 'TEAM' || visibleProfessionals.length > 1 ? (
+                                            visibleProfessionals.map(prof => {
+                                                const slotAppts = filteredAppointments.filter(a => a.professionalId === prof.id && new Date(a.startTime).getHours() === hour);
+                                                return (
+                                                    <div key={prof.id} className={`flex-1 min-w-[160px] border-r ${isManagerMode ? 'border-blue-50 hover:bg-blue-50/20' : 'border-emerald-100 hover:bg-emerald-50/50'} relative transition-colors`}>
+                                                        <div onClick={() => handleOpenCreate(currentDate, hour, prof.id)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
+                                                            <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
+                                                        </div>
+                                                        {slotAppts.map(appt => <AppointmentCard key={appt.id} appt={appt} viewType="full" />)}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className={`flex-1 relative ${isManagerMode ? 'hover:bg-blue-50/20' : 'hover:bg-emerald-50/50'} transition-colors`}>
+                                                <div onClick={() => handleOpenCreate(currentDate, hour)} className="absolute inset-0 z-10 cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center">
+                                                    <span className={`${isManagerMode ? 'bg-blue-600' : 'bg-emerald-600'} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>+ Agendar</span>
+                                                </div>
+                                                {filteredAppointments.filter(a => new Date(a.startTime).getHours() === hour).map(appt => (<AppointmentCard key={appt.id} appt={appt} viewType="full" />))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ));
+                            })()}
                         </div>
                     </div>
                 )}
