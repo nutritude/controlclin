@@ -17,6 +17,12 @@ export interface ManagerIntelligenceData {
         mipanClassification?: string,
         lastGoal?: string
     }>;
+    aggregatedData?: {
+        picaDistribution: Record<string, number>;
+        mipanDistribution: Record<string, number>;
+        goalDistribution: Record<string, number>;
+        financialTrend: Array<{ month: string, amount: number }>;
+    };
 }
 
 export const AIManagerIntelligenceService = {
@@ -35,33 +41,43 @@ export const AIManagerIntelligenceService = {
             - Patologias mais comuns: ${data.stats.topPathologies.map(p => `${p.name} (${p.count})`).join(', ')}
             - Total Pacientes Ativos: ${data.stats.activePatients}
 
-            PERFIL DOS PACIENTES (Amostra):
-            ${JSON.stringify(data.patientsSummary.slice(0, 10))}
+            ANÁLISE AGREGADA DE TODOS OS PACIENTES:
+            - Distribuição PICA: ${JSON.stringify(data.aggregatedData?.picaDistribution || {})}
+            - Distribuição MIPAN: ${JSON.stringify(data.aggregatedData?.mipanDistribution || {})}
+            - Objetivos Comuns: ${JSON.stringify(data.aggregatedData?.goalDistribution || {})}
+            - Tendência Financeira (Últimos meses): ${JSON.stringify(data.aggregatedData?.financialTrend || [])}
+
+            AMOSTRA DE PERFIS RECENTES:
+            ${JSON.stringify(data.patientsSummary.slice(0, 5))}
+
+            CRITÉRIO DE FALTA DE DADOS:
+            Se houver poucos pacientes (< 3) ou nenhuma transação paga, informe no campo "analysis" que os dados são preliminares/insuficientes para projeções robustas.
 
             SAÍDA ESPERADA (JSON):
             {
                 "financial": {
-                    "projection30d": 0, // Estimativa monetária
+                    "projection30d": 0, 
                     "projection60d": 0,
-                    "analysis": "Sua análise técnica sobre o fluxo de caixa.",
-                    "bottleneck": "O principal gargalo financeiro detectado."
+                    "analysis": "...",
+                    "bottleneck": "...",
+                    "hasSufficientData": true 
                 },
                 "opportunities": [
                     {
                         "type": "UP-SELL|CROSS-SELL",
-                        "title": "Título da oportunidade",
-                        "description": "Explicação do porquê isso é rentável e benéfico.",
-                        "targetProfile": "Qual tipo de paciente se beneficia."
+                        "title": "...",
+                        "description": "...",
+                        "targetProfile": "..."
                     }
                 ],
                 "marketGaps": {
-                    "commonDeficiencies": ["Dores/Carências comuns"],
-                    "suggestedProducts": ["Ex: Linha de Whey próprio, Kit Detox, etc."],
-                    "supplementOpportunities": ["Suplementos alvo baseados nas patologias"]
+                    "commonDeficiencies": ["..."],
+                    "suggestedProducts": ["..."],
+                    "supplementOpportunities": ["..."]
                 }
             }
 
-            Responda APENAS o JSON em português.
+            Responda APENAS o JSON em português. Sem emojis.
         `;
 
         try {

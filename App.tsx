@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-/* Force Vercel Rebuild - v3.0.0 - Performance Optimization: Lazy Loading & Background CSV Loading */
+/* Force Vercel Rebuild - v3.2.0 - UI: All-Light Mode Manager Dashboard */
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { User, Clinic, Role, Patient } from './types';
 import Layout from './components/Layout';

@@ -9,7 +9,7 @@
 
 // Versão atual do Software (Incremental)
 // Agora usamos a flag injetada pelo Vite build ou um default local
-export const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION || 'v2.1.0-final';
+export const CURRENT_VERSION = 'v3.2.0-light-manager';
 
 const VERSION_KEY = 'CONTROLCLIN_VERSION';
 const TRANSIENT_KEYS = [

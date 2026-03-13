@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Clinic, Appointment, Patient, Exam, ExamRequest } from '../types';
+import { User, Clinic, Appointment, Patient, Exam, ExamRequest, Professional } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { WhatsAppService } from '../services/whatsappService';
@@ -74,6 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
   const [examRequests, setExamRequests] = useState<ExamRequest[]>([]);
   const [allExams, setAllExams] = useState<Exam[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Search state
@@ -86,12 +87,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       const professionalId = !isManagerMode ? user.professionalId : undefined;
       const role = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
 
-      const [pts, apps, s, requests, exams] = await Promise.all([
+      const [pts, apps, s, requests, exams, profs] = await Promise.all([
         db.getPatients(clinic.id, professionalId, role),
         db.getUpcomingAppointments(clinic.id, 50, professionalId, role),
         db.getAdvancedStats(clinic.id, professionalId, role),
         db.getAllExamRequests(clinic.id, professionalId),
-        db.getAllExams(clinic.id)
+        db.getAllExams(clinic.id),
+        db.getProfessionals(clinic.id)
       ]);
 
       const insights = await db.generateDashboardInsights(clinic.id, s);
@@ -100,6 +102,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       setAppointments(apps);
       setStats(s);
       setAiInsights(insights);
+      setProfessionals(profs);
       if (isManagerMode) {
         db.getManagerIntelligence(clinic.id).then(setManagerIntelligence);
       }
@@ -288,6 +291,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
         aiInsights={aiInsights}
         intelligence={managerIntelligence}
         nextAppointments={appointments}
+        professionals={professionals}
+        patients={patients}
+        activeAlerts={activeAlerts}
         navigate={navigate}
         isManagerMode={isManagerMode}
       />
@@ -298,8 +304,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
     <div className="max-w-[1600px] mx-auto pb-20">
       {/* SUCCESS TOAST */}
       {showSuccessToast && (
-        <div className="fixed bottom-10 right-10 z-[100] bg-slate-900 border border-white/10 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
-          <div className="size-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+        <div className="fixed bottom-10 right-10 z-[100] bg-white border border-emerald-100 text-slate-800 px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
+          <div className="size-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
             <Icons.Check className="size-5" />
           </div>
           <span className="font-bold text-sm">Ação enviada com sucesso!</span>
@@ -376,22 +382,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           chartData={patientSparkline}
           onClick={() => navigate('/patients')}
         />
-        <div className={`${isManagerMode ? 'bg-[#0D1B2A] text-white border border-white/5 shadow-2xl' : 'bg-emerald-50 text-slate-800 border border-emerald-100 shadow-sm'} p-8 rounded-[3rem] flex flex-col justify-between relative overflow-hidden group`}>
-          <div className={`absolute -right-10 -bottom-10 ${isManagerMode ? 'opacity-10' : 'opacity-5'} rotate-12 group-hover:scale-110 transition-transform duration-700`}>
+        <div className={`bg-indigo-50 text-slate-800 border border-indigo-100 shadow-sm p-8 rounded-[3rem] flex flex-col justify-between relative overflow-hidden group`}>
+          <div className={`absolute -right-10 -bottom-10 opacity-5 rotate-12 group-hover:scale-110 transition-transform duration-700`}>
             <Icons.Brain size={200} />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Icons.Sparkles className={`${isManagerMode ? 'text-emerald-400' : 'text-emerald-500'} size-5`} />
-              <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${isManagerMode ? 'text-emerald-400/80' : 'text-emerald-600/60'}`}>NutriAI Analytics</span>
+              <Icons.Sparkles className={`text-indigo-500 size-5`} />
+              <span className={`text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600/60`}>NutriAI Analytics</span>
             </div>
             <div className="space-y-3">
-              <p className={`text-lg font-black leading-[1.2] ${isManagerMode ? 'text-white' : 'text-slate-800'}`}>
+              <p className={`text-lg font-black leading-[1.2] text-slate-800`}>
                 {aiInsights?.insight || "Otimizando sua retenção clínica..."}
               </p>
-              <div className={`flex items-center gap-2 py-2 px-3 ${isManagerMode ? 'bg-emerald-500/10' : 'bg-emerald-100/50'} rounded-xl w-fit`}>
-                <Icons.Activity className={`size-3 ${isManagerMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <span className={`text-[9px] font-bold ${isManagerMode ? 'text-emerald-300' : 'text-emerald-700'} uppercase tracking-wider`}>
+              <div className={`flex items-center gap-2 py-2 px-3 bg-indigo-100/50 rounded-xl w-fit`}>
+                <Icons.Activity className={`size-3 text-indigo-600`} />
+                <span className={`text-[9px] font-bold text-indigo-700 uppercase tracking-wider`}>
                   {aiInsights?.secondaryInsight || "Insight Clínico: Planos personalizados aumentam a adesão em 15%"}
                 </span>
               </div>
@@ -399,7 +405,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
           </div>
           <button
             onClick={() => navigate('/reports')}
-            className={`mt-6 ${isManagerMode ? 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/20 shadow-xl' : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200'} text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2`}
+            className={`mt-6 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2`}
           >
             Ver Relatório Completo
             <Icons.ChevronDown className="-rotate-90 size-4" />
@@ -574,25 +580,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
       </div>
 
       {/* FOOTER SUMMARY */}
-      <footer className={`mt-20 ${isManagerMode ? 'bg-[#064E3B] text-white shadow-3xl border-none' : 'bg-emerald-50 text-emerald-900 border border-emerald-100 shadow-sm'} rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden`}>
-        <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l ${isManagerMode ? 'from-white/5' : 'from-emerald-100/20'} to-transparent pointer-events-none`}></div>
+      <footer className={`mt-20 bg-white border border-indigo-100 shadow-lg rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden`}>
+        <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-50/50 to-transparent pointer-events-none`}></div>
         <div className="flex items-center gap-8 relative z-10">
-          <div className={`size-20 rounded-3xl ${isManagerMode ? 'bg-white/10 backdrop-blur-xl text-emerald-400 border border-white/20 shadow-2xl' : 'bg-white text-emerald-500 border border-emerald-100 shadow-sm'} flex items-center justify-center rotate-3`}>
+          <div className={`size-20 rounded-3xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm flex items-center justify-center rotate-3`}>
             <Icons.Activity className="size-10" />
           </div>
           <div>
-            <p className={`text-2xl font-black tracking-tight mb-2 italic ${isManagerMode ? 'text-white' : 'text-emerald-900'}`}>Performance da Clínica</p>
-            <p className={`text-sm ${isManagerMode ? 'text-emerald-100/60' : 'text-emerald-800/60'} font-medium max-w-md`}>Baseado nos dados reais de <b>{patients.length} pacientes</b> vinculados ao seu registro profissional.</p>
+            <p className={`text-2xl font-black tracking-tight mb-2 italic text-slate-800`}>Performance da Clínica</p>
+            <p className={`text-sm text-slate-500 font-medium max-w-md`}>Baseado nos dados reais de <b>{patients.length} pacientes</b> vinculados ao seu registro profissional.</p>
           </div>
         </div>
         <div className="flex gap-6 w-full md:w-auto relative z-10">
-          <div className={`flex-1 md:flex-none ${isManagerMode ? 'bg-white/5 backdrop-blur-md border-white/10' : 'bg-white border-emerald-100 shadow-sm'} px-10 py-6 rounded-[2rem] border text-center`}>
-            <p className={`text-[10px] ${isManagerMode ? 'text-emerald-400/60' : 'text-emerald-600/60'} font-black uppercase tracking-[0.2em] mb-2`}>Aderência Real</p>
-            <p className={`text-4xl font-black ${isManagerMode ? 'text-emerald-400' : 'text-emerald-600'}`}>{adherenceAvg}%</p>
+          <div className={`flex-1 md:flex-none bg-white px-10 py-6 rounded-[2rem] border border-indigo-100 text-center shadow-sm`}>
+            <p className={`text-[10px] text-indigo-600/60 font-black uppercase tracking-[0.2em] mb-2`}>Aderência Real</p>
+            <p className={`text-4xl font-black text-indigo-600`}>{adherenceAvg}%</p>
           </div>
-          <div className={`flex-1 md:flex-none ${isManagerMode ? 'bg-white/5 backdrop-blur-md border-white/10' : 'bg-white border-emerald-100 shadow-sm'} px-10 py-6 rounded-[2rem] border text-center`}>
-            <p className={`text-[10px] ${isManagerMode ? 'text-emerald-400/60' : 'text-emerald-600/60'} font-black uppercase tracking-[0.2em] mb-2`}>Sincronização</p>
-            <p className={`text-4xl font-black ${isManagerMode ? 'text-blue-400' : 'text-blue-500'}`}>100%</p>
+          <div className={`flex-1 md:flex-none bg-white px-10 py-6 rounded-[2rem] border border-indigo-100 text-center shadow-sm`}>
+            <p className={`text-[10px] text-indigo-600/60 font-black uppercase tracking-[0.2em] mb-2`}>Sincronização</p>
+            <p className={`text-4xl font-black text-blue-500`}>100%</p>
           </div>
         </div>
       </footer>

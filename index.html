@@ -167,9 +167,9 @@
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
     window.mermaid = mermaid;
-    mermaid.initialize({ 
-      startOnLoad: false, 
-      theme: 'base', 
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
       securityLevel: 'loose',
       themeVariables: {
         fontFamily: 'Inter, sans-serif',
@@ -190,7 +190,36 @@
 
 <body>
   <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+  <script>
+    // 1. Force Service Worker Unregistration to prevent persistent cache issues
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+          console.log('[System] ServiceWorker unregistered.');
+        }
+      });
+    }
+
+    // 2. Immediate Version Check (Pre-React Load)
+    (async function () {
+      try {
+        const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          const lastVersion = localStorage.getItem('CONTROLCLIN_VERSION');
+          if (lastVersion && data.version !== lastVersion) {
+            console.warn('[System] Nova versão detectada, forçando reload...');
+            localStorage.setItem('CONTROLCLIN_VERSION', data.version);
+            location.reload(true);
+          } else {
+            localStorage.setItem('CONTROLCLIN_VERSION', data.version);
+          }
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <script type="module" src="/index.tsx?v=3.2.0"></script>
 </body>
 
 </html>

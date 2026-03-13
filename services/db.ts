@@ -2257,7 +2257,39 @@ class DatabaseService {
         const stats = await this.getAdvancedStats(clinicId, undefined, 'ADMIN');
         const patients = await this.getPatients(clinicId, undefined, 'ADMIN');
 
-        const patientsSummary = patients.map(p => ({
+        const picaDistribution: Record<string, number> = {};
+        const mipanDistribution: Record<string, number> = {};
+        const goalDistribution: Record<string, number> = {};
+        const financialTrend: Record<string, number> = {};
+
+        patients.forEach(p => {
+            // PICA
+            const diag = p.anthropometry?.picaDiagnosis || 'Não Avaliado';
+            picaDistribution[diag] = (picaDistribution[diag] || 0) + 1;
+
+            // MIPAN
+            const classification = p.mipanAssessments?.[0]?.classification || 'Não Avaliado';
+            mipanDistribution[classification] = (mipanDistribution[classification] || 0) + 1;
+
+            // Goals
+            const goal = p.clinicalSummary?.clinicalGoal || 'Check-up';
+            goalDistribution[goal] = (goalDistribution[goal] || 0) + 1;
+
+            // Financial Trend (last 6 months)
+            p.financial?.transactions?.forEach(t => {
+                if (t.status === 'PAGO' && !t.isDeleted) {
+                    const month = t.date.substring(0, 7); // YYYY-MM
+                    financialTrend[month] = (financialTrend[month] || 0) + t.amount;
+                }
+            });
+        });
+
+        const sortedTrend = Object.entries(financialTrend)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .slice(-6)
+            .map(([month, amount]) => ({ month, amount }));
+
+        const patientsSummary = patients.slice(0, 50).map(p => ({
             id: p.id,
             name: p.name,
             picaDiagnosis: p.anthropometry?.picaDiagnosis,
@@ -2267,8 +2299,14 @@ class DatabaseService {
 
         const intelligence = await AIManagerIntelligenceService.analyzeIntelligence({
             stats,
-            recentTransactions: [], // Can be filled if needed
-            patientsSummary
+            recentTransactions: [],
+            patientsSummary,
+            aggregatedData: {
+                picaDistribution,
+                mipanDistribution,
+                goalDistribution,
+                financialTrend: sortedTrend
+            }
         });
 
         return intelligence;

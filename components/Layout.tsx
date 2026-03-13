@@ -17,10 +17,10 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
       ? isManagerMode
-        ? 'bg-blue-500 text-white font-black shadow-md transform scale-[1.02]'
+        ? 'bg-indigo-50 text-indigo-700 font-black shadow-sm border border-indigo-100 transform scale-[1.02]'
         : 'bg-emerald-50 text-emerald-700 font-black shadow-sm border border-emerald-100'
       : isManagerMode
-        ? 'text-blue-800 hover:text-blue-900 hover:bg-white/50'
+        ? 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50'
         : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50'
     }`;
 
@@ -45,11 +45,11 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <aside className={`
         fixed inset-y-0 left-0 z-[70] w-72 transform transition-transform duration-300 ease-in-out 2xl:relative 2xl:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${isManagerMode ? 'bg-[#f0f7ff] border-r border-blue-100 text-slate-800 shadow-xl' : 'bg-[#FDFDFD] border-r border-slate-100 text-slate-800 shadow-xl'}
+        ${isManagerMode ? 'bg-[#FDFDFD] border-r border-indigo-50 text-slate-800 shadow-xl' : 'bg-[#FDFDFD] border-r border-slate-100 text-slate-800 shadow-xl'}
         flex flex-col flex-shrink-0 print:hidden max-w-[85vw]
       `}>
         {/* BRANDING HEADER */}
-        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-blue-100' : 'border-emerald-100'} flex-none flex flex-col items-center text-center`}>
+        <div className={`p-5 md:p-6 border-b ${isManagerMode ? 'border-indigo-50' : 'border-emerald-100'} flex-none flex flex-col items-center text-center`}>
           <div className="mb-2 w-full flex justify-center">
             {clinic.logoUrl ? (
               <img
@@ -58,18 +58,18 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
                 className={`max-h-12 md:max-h-16 w-auto object-contain`}
               />
             ) : (
-              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg text-white`}>
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg text-white`}>
                 {clinic.name.charAt(0)}
               </div>
             )}
           </div>
 
-          <h1 className={`text-sm md:text-base font-black uppercase tracking-tight w-full break-words leading-tight ${isManagerMode ? 'text-blue-900' : 'text-slate-800'}`}>
+          <h1 className={`text-sm md:text-base font-black uppercase tracking-tight w-full break-words leading-tight ${isManagerMode ? 'text-indigo-900' : 'text-slate-800'}`}>
             {clinic.name}
           </h1>
           <div className="flex items-center justify-center gap-2 mt-2 w-full">
-            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <p className={`text-[10px] uppercase tracking-[0.2em] font-black ${isManagerMode ? 'text-blue-600/60' : 'text-slate-400'}`}>
+            <div className={`size-1.5 rounded-full animate-pulse ${isManagerMode ? 'bg-indigo-500' : 'bg-emerald-500'}`}></div>
+            <p className={`text-[10px] uppercase tracking-[0.2em] font-black ${isManagerMode ? 'text-indigo-400' : 'text-slate-400'}`}>
               Sistema Ativo
             </p>
           </div>
@@ -122,21 +122,21 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
         </nav>
 
         {/* PROFILE FOOTER */}
-        <div className={`p-4 border-t ${isManagerMode ? 'border-blue-100 bg-blue-50/50' : 'border-slate-100 bg-slate-50'} flex-none mt-auto`}>
+        <div className={`p-4 border-t ${isManagerMode ? 'border-indigo-50 bg-indigo-50/30' : 'border-slate-100 bg-slate-50'} flex-none mt-auto`}>
           {isManagerMode ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 bg-blue-600 text-white">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 bg-indigo-600 text-white shadow-md">
                   {user.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-bold truncate text-blue-900">{user.name}</p>
-                  <p className="text-[10px] truncate w-full uppercase font-bold text-blue-600">{user.role.replace('_', ' ')}</p>
+                  <p className="text-sm font-bold truncate text-indigo-950">{user.name}</p>
+                  <p className="text-[10px] truncate w-full uppercase font-bold text-indigo-600 tracking-widest">{user.role.replace('_', ' ')}</p>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-colors text-blue-800 hover:text-blue-900 hover:bg-white"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-colors text-indigo-700 hover:text-indigo-900 hover:bg-white"
               >
                 <Icons.Logout className="size-4" />
                 Sair
@@ -169,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
       <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isManagerMode ? 'bg-slate-50' : 'bg-slate-50'}`}>
 
         {/* Top Header */}
-        <header className={`${isManagerMode ? 'bg-white border-blue-100' : 'bg-white border-slate-200'} border-b px-4 2xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
+        <header className={`${isManagerMode ? 'bg-white border-indigo-50' : 'bg-white border-slate-200'} border-b px-4 2xl:px-8 py-2 md:py-3 flex justify-between items-center flex-none z-30 shadow-sm print:hidden`}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -196,8 +196,8 @@ const Layout: React.FC<LayoutProps> = ({ user, clinic, onLogout, isManagerMode }
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <span className={`text-[9px] md:text-xs font-black px-2 md:px-3 py-1 rounded-full border shadow-sm ${isManagerMode ? 'bg-blue-100 text-blue-800 border-blue-200 uppercase' : 'bg-emerald-100 text-emerald-800 border-emerald-200 uppercase'}`}>
-              {isManagerMode ? 'Foco: Gestão Estratégica' : 'Foco: Clínico'}
+            <span className={`text-[9px] md:text-xs font-black px-2 md:px-3 py-1 rounded-full border shadow-sm ${isManagerMode ? 'bg-indigo-50 text-indigo-700 border-indigo-100 uppercase tracking-widest font-black' : 'bg-emerald-100 text-emerald-800 border-emerald-200 uppercase'}`}>
+              {isManagerMode ? 'Gestão Estratégica' : 'Foco: Clínico'}
             </span>
           </div>
         </header>
