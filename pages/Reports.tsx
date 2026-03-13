@@ -110,6 +110,7 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
     // Date Filters - Default expanded to 90 days to ensure mock data visibility
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 90)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0]);
+    const [quickRange, setQuickRange] = useState<'WEEK' | 'FORTNIGHT' | 'MONTH' | 'CUSTOM'>('CUSTOM');
 
     // Individual Patient Selection
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -170,6 +171,32 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
 
 
     // --- Handlers ---
+
+    const handleQuickRange = (range: 'WEEK' | 'FORTNIGHT' | 'MONTH' | 'CUSTOM') => {
+        setQuickRange(range);
+        if (range === 'CUSTOM') return;
+
+        const end = new Date();
+        const start = new Date();
+
+        const formatDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        if (range === 'WEEK') {
+            start.setDate(end.getDate() - 7);
+        } else if (range === 'FORTNIGHT') {
+            start.setDate(end.getDate() - 15);
+        } else if (range === 'MONTH') {
+            start.setMonth(end.getMonth() - 1);
+        }
+
+        setStartDate(formatDate(start));
+        setEndDate(formatDate(end));
+    };
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -577,10 +604,48 @@ const Reports: React.FC<ReportsProps> = ({ user, clinic, isManagerMode }) => {
                                 {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         ) : (
-                            <div className="flex items-center gap-2">
-                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`} />
-                                <span className={`text-[10px] font-black uppercase ${isManagerMode ? 'text-blue-400' : 'text-gray-500'}`}>até</span>
-                                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`} />
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={e => { setStartDate(e.target.value); setQuickRange('CUSTOM'); }}
+                                        className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`}
+                                    />
+                                    <span className={`text-[10px] font-black uppercase ${isManagerMode ? 'text-blue-400' : 'text-gray-500'}`}>até</span>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={e => { setEndDate(e.target.value); setQuickRange('CUSTOM'); }}
+                                        className={`w-full border rounded-md p-2 font-bold ${isManagerMode ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-white border-gray-300 text-emerald-900'}`}
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => handleQuickRange('WEEK')}
+                                        className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg border transition-all ${quickRange === 'WEEK' ? (isManagerMode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md') : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                    >
+                                        Semanal
+                                    </button>
+                                    <button
+                                        onClick={() => handleQuickRange('FORTNIGHT')}
+                                        className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg border transition-all ${quickRange === 'FORTNIGHT' ? (isManagerMode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md') : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                    >
+                                        Quinzena
+                                    </button>
+                                    <button
+                                        onClick={() => handleQuickRange('MONTH')}
+                                        className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg border transition-all ${quickRange === 'MONTH' ? (isManagerMode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md') : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                    >
+                                        Mês
+                                    </button>
+                                    <button
+                                        onClick={() => handleQuickRange('CUSTOM')}
+                                        className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg border transition-all ${quickRange === 'CUSTOM' ? (isManagerMode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md') : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                    >
+                                        Data Personalizada
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
