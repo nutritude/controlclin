@@ -118,14 +118,16 @@ import { ScientificCatalog } from './foodCatalogScientific';
  * Food Service handles interactions with the food catalog
  */
 export const FoodService = {
-  search: (query: string, protocol?: string): FoodItemCanonical[] => {
+  search: (query: string, protocol?: string, customFoods: FoodItemCanonical[] = []): FoodItemCanonical[] => {
     if (!query || query.length < 2) return [];
-
-    const scientificResults: FoodItemCanonical[] = [];
     const qNorm = query.toLowerCase().trim();
+
+    // 0. Busca em Itens Customizados da Clínica (Máxima Prioridade)
+    const customResults = customFoods.filter(f => f.namePt.toLowerCase().includes(qNorm));
 
     // 1. Busca no Catálogo Científico
     const scientificRecords = ScientificCatalog.searchByName(qNorm);
+    const scientificResults: FoodItemCanonical[] = [];
     scientificRecords.forEach(record => {
       scientificResults.push(ScientificCatalog.recordToCanonical(record));
     });
@@ -135,9 +137,16 @@ export const FoodService = {
       f.namePt.toLowerCase().includes(qNorm)
     );
 
-    // 3. Mesclar (priorizando científico)
-    const combined = [...scientificResults];
-    const seenNames = new Set(scientificResults.map(r => r.namePt.toLowerCase()));
+    // 3. Mesclar (prioridade: Custom > Científico > Legado)
+    const combined = [...customResults];
+    const seenNames = new Set(customResults.map(r => r.namePt.toLowerCase()));
+
+    for (const sci of scientificResults) {
+      if (!seenNames.has(sci.namePt.toLowerCase()) && combined.length < 50) {
+        combined.push(sci);
+        seenNames.add(sci.namePt.toLowerCase());
+      }
+    }
 
     for (const leg of legacyResults) {
       if (!seenNames.has(leg.namePt.toLowerCase()) && combined.length < 30) {
@@ -220,15 +229,23 @@ export const FoodService = {
     return combined;
   },
 
-  searchByCategory: (category: string): FoodItemCanonical[] => {
-    const scientific = ScientificCatalog.searchByCategory(category);
-    const results = scientific.map(r => ScientificCatalog.recordToCanonical(r));
-
-    // Fallback legado
-    const legacy = FOOD_CATALOG.filter(f => f.category.toLowerCase().includes(category.toLowerCase()));
-
-    // Mesclar
+  searchByCategory: (category: string, customFoods: FoodItemCanonical[] = []): FoodItemCanonical[] => {
+    // 0. Customizados
+    const custom = customFoods.filter(f => f.category.toLowerCase().includes(category.toLowerCase()));
+    const results = [...custom];
     const seenIds = new Set(results.map(r => r.id));
+
+    // 1. Científico
+    const scientific = ScientificCatalog.searchByCategory(category);
+    const sciItems = scientific.map(r => ScientificCatalog.recordToCanonical(r));
+    for (const item of sciItems) {
+      if (!seenIds.has(item.id)) {
+        results.push(item);
+        seenIds.add(item.id);
+      }
+    }
+
+    const legacy = FOOD_CATALOG.filter(f => f.category.toLowerCase().includes(category.toLowerCase()));
     for (const leg of legacy) {
       if (!seenIds.has(leg.id)) results.push(leg);
     }
@@ -236,7 +253,11 @@ export const FoodService = {
     return results;
   },
 
-  getById: (id: string): FoodItemCanonical | undefined => {
+  getById: (id: string, customFoods: FoodItemCanonical[] = []): FoodItemCanonical | undefined => {
+    // 0. Tentar catálogo customizado
+    const custom = customFoods.find(f => f.id === id);
+    if (custom) return custom;
+
     // 1. Tentar catálogo legado
     const legacy = FOOD_CATALOG.find(f => f.id === id);
     if (legacy) return legacy;

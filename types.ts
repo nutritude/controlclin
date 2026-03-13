@@ -63,6 +63,44 @@ export interface Clinic {
   // Configurações
   aiConfig?: AIConfig;
   scheduleConfig?: ScheduleConfig;
+  customFoods?: CustomFood[]; // Portfólio de alimentos personalizados da clínica
+}
+
+export interface Portion {
+  label: string;
+  grams: number;
+}
+
+export interface FoodNutrients {
+  kcal: number;
+  protein_g: number;
+  carb_g: number;
+  fat_g: number;
+  fiber_g?: number;
+  sodium_mg?: number;
+  calcium_mg?: number;
+  iron_mg?: number;
+  potassium_mg?: number;
+  vitaminC_mg?: number;
+}
+
+export interface FoodItemCanonical {
+  id: string;
+  namePt: string;
+  category: string;
+  shoppingCategory?: string;
+  nutrientsPer100g: FoodNutrients;
+  portions: Portion[];
+  sem_gluten?: boolean;
+  sem_lactose?: boolean;
+  baixo_fodmap?: boolean;
+  vegano?: boolean;
+}
+
+export interface CustomFood extends FoodItemCanonical {
+  clinicId: string;
+  authorId?: string;
+  createdAt: string;
 }
 
 export interface Professional {

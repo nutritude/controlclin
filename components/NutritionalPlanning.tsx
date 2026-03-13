@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult, Clinic, Professional, NutritionalPlanTemplate } from '../types';
+import { Patient, User, NutritionalPlan, Meal, MealItem, AIAnalysisResult, Clinic, Professional, NutritionalPlanTemplate, CustomFood } from '../types';
 import { db } from '../services/db';
 import { Icons } from '../constants';
 import { FoodService, FoodItemCanonical } from '../services/food/foodCatalog';
@@ -178,6 +178,7 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
     const [showShoppingListModal, setShowShoppingListModal] = useState(false);
     const [showSubstitutesDrawer, setShowSubstitutesDrawer] = useState<{ mealId: string, itemIdx: number, foodId: string } | null>(null);
     const [responsibleProfessional, setResponsibleProfessional] = useState<Professional | null>(null);
+    const [customFoodsList, setCustomFoodsList] = useState<CustomFood[]>([]);
     const [substituteCandidates, setSubstituteCandidates] = useState<SubstitutionSuggestion[]>([]);
     const [subTab, setSubTab] = useState<'SUGGESTIONS' | 'SEARCH'>('SUGGESTIONS');
     const [subQuery, setSubQuery] = useState('');
@@ -427,6 +428,17 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
             }
         }
     }, [calculatedResults.kcalTarget, calcFormula, calcActivityFactor, calcInjuryFactor, caloricGoalAdjustment, amputations]);
+
+    useEffect(() => {
+        const loadCustomFoods = async () => {
+            if (clinic?.id) {
+                const foods = await db.getCustomFoods(clinic.id);
+                setCustomFoodsList(foods);
+            }
+        };
+        loadCustomFoods();
+    }, [clinic?.id]);
+
 
     // --- REAL-TIME TOTALS (MEMOIZED) ---
     const dailyTotals: DailyNutrientTotals = useMemo(() => {
@@ -1737,20 +1749,20 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         <div className="grid grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label className="block text-xs font-bold uppercase mb-1">Estratégia</label>
-                                <input type="text" value={planStrategy} onChange={e => setPlanStrategy(e.target.value)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-emerald-200' : 'bg-white border-slate-200'}`} />
+                                <input type="text" value={planStrategy} onChange={e => setPlanStrategy(e.target.value)} className={`w-full p-2 border rounded text-sm ${!isManagerMode ? 'bg-white border-emerald-200' : 'bg-white border-slate-200'}`} />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold uppercase mb-1">Metodologia</label>
-                                <select value={planMethodology} onChange={e => setPlanMethodology(e.target.value as any)} className={`w-full p-2 border rounded text-sm ${isManagerMode ? 'bg-white border-emerald-200' : 'bg-white border-slate-200'}`}>
+                                <select value={planMethodology} onChange={e => setPlanMethodology(e.target.value as any)} className={`w-full p-2 border rounded text-sm ${!isManagerMode ? 'bg-white border-emerald-200' : 'bg-white border-slate-200'}`}>
                                     <option value="ALIMENTOS">Plano por Alimentos</option>
                                     <option value="EQUIVALENTES">Lista de Substituição</option>
                                 </select>
                             </div>
                         </div>
                         {/* Targets Visualization */}
-                        <div className={`p-4 rounded border ${isManagerMode ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className={`p-4 rounded border ${!isManagerMode ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
                             <div className="flex justify-between mb-2">
-                                <span className="text-xs font-black uppercase tracking-wider text-emerald-800">Metas Diárias</span>
+                                <span className={`text-xs font-black uppercase tracking-wider ${!isManagerMode ? 'text-emerald-800' : 'text-slate-800'}`}>Metas Diárias</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs">Meta Kcal:</span>
                                     <input type="number" value={targetKcal} onChange={e => setTargetKcal(Math.round(parseFloat(e.target.value)))} className="w-16 p-1 text-right border rounded text-xs" />
@@ -1938,10 +1950,16 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
 
             <AddFoodModal
                 isOpen={isAddItemModalOpen}
-                onClose={() => setIsAddItemModalOpen(false)}
+                onClose={() => {
+                    setIsAddItemModalOpen(false);
+                    // Refresh custom foods after modal closes in case one was added
+                    if (clinic?.id) db.getCustomFoods(clinic.id).then(setCustomFoodsList);
+                }}
                 onConfirm={handleConfirmAddItem}
                 isManagerMode={isManagerMode}
                 protocol={planMethodology}
+                customFoods={customFoodsList}
+                user={user}
             />
 
             {editingItem && (

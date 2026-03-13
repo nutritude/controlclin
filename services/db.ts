@@ -15,7 +15,7 @@ import {
     ClinicalAlert, AlertType, AlertSeverity, Anthropometry, FoodItem, NutritionalPlan, Meal,
     PlanSnapshot, AnthroSnapshot, PatientEvent, IndividualReportSnapshot, FinancialInfo,
     ExamRequest, MipanAssessment, Prescription, PrescriptionItem, AdherenceCheckIn,
-    NutritionalPlanTemplate
+    NutritionalPlanTemplate, CustomFood, FoodItemCanonical
 } from '../types';
 import { db as firestore, auth, firebaseConfig } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
@@ -267,6 +267,7 @@ class DatabaseService {
     private mipanAssessments: MipanAssessment[] = []; // NOVO: Perfil Psicocomportamental
     private prescriptions: Prescription[] = []; // NOVO: Prescrição Clínica
     private nutritionalTemplates: NutritionalPlanTemplate[] = []; // NOVO: Modelos de Planos Alimentares
+    private customFoods: CustomFood[] = []; // NOVO: Catálogo de alimentos personalizados da clínica
     private STORAGE_KEY = 'CONTROLCLIN_DB_V10_MASTER';
     public isRemoteEnabled: boolean = false;
     private activeClinicId: string | null = null;
@@ -311,6 +312,7 @@ class DatabaseService {
         this.mipanAssessments = smartMerge(this.mipanAssessments, data.mipanAssessments);
         this.prescriptions = smartMerge(this.prescriptions, data.prescriptions);
         this.nutritionalTemplates = smartMerge(this.nutritionalTemplates, data.nutritionalTemplates);
+        this.customFoods = smartMerge(this.customFoods, data.customFoods);
 
         console.log(`[DB] Sync Result: ${this.patients.length} patients, ${this.appointments.length} apps.`);
 
@@ -361,6 +363,7 @@ class DatabaseService {
                 this.examRequests = data.examRequests || [];
                 this.mipanAssessments = data.mipanAssessments || [];
                 this.prescriptions = data.prescriptions || [];
+                this.customFoods = data.customFoods || [];
 
                 // Keep track of when we last touched local storage
                 if (data.lastModified) {
@@ -527,6 +530,7 @@ class DatabaseService {
                 this.examRequests = mergeArraySmart(this.examRequests, remote.examRequests);
                 this.prescriptions = mergeArraySmart(this.prescriptions, remote.prescriptions);
                 this.mipanAssessments = mergeArraySmart(this.mipanAssessments, remote.mipanAssessments);
+                this.customFoods = mergeArraySmart(this.customFoods, remote.customFoods);
                 this.professionals = mergeArraySmart(this.professionals, remote.professionals);
                 this.users = mergeArraySmart(this.users, remote.users);
             }
@@ -544,6 +548,7 @@ class DatabaseService {
                 examRequests: this.examRequests,
                 mipanAssessments: this.mipanAssessments,
                 prescriptions: this.prescriptions,
+                customFoods: this.customFoods,
                 updatedAt: new Date().toISOString(),
                 lastModified: Date.now()
             };
@@ -643,6 +648,7 @@ class DatabaseService {
             examRequests: this.examRequests,
             mipanAssessments: this.mipanAssessments,
             prescriptions: this.prescriptions,
+            customFoods: this.customFoods,
             lastModified: (this as any)._localLastModified
         };
 
@@ -2975,6 +2981,39 @@ class DatabaseService {
         this.prescriptions = this.prescriptions.filter(rx => rx.id !== id);
         this.saveToStorage();
         console.log(`[DB] 🗑️ Prescrição excluída: ${id}`);
+    }
+
+    async getCustomFoods(clinicId: string) {
+        return this.customFoods.filter(f => f.clinicId === clinicId);
+    }
+
+    async saveCustomFood(user: User, food: Partial<CustomFood>) {
+        if (!food.namePt) throw new Error("Nome do alimento é obrigatório");
+
+        const newFood: CustomFood = {
+            id: food.id || `custom-${Date.now()}`,
+            clinicId: user.clinicId,
+            authorId: user.id,
+            createdAt: new Date().toISOString(),
+            namePt: food.namePt,
+            category: food.category || 'Personalizados',
+            nutrientsPer100g: food.nutrientsPer100g || { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, fiber_g: 0, sodium_mg: 0 },
+            portions: food.portions || [{ label: '100g', grams: 100 }],
+            sem_gluten: food.sem_gluten,
+            sem_lactose: food.sem_lactose,
+            baixo_fodmap: food.baixo_fodmap,
+            vegano: food.vegano
+        };
+
+        const existingIdx = this.customFoods.findIndex(f => f.id === newFood.id);
+        if (existingIdx > -1) {
+            this.customFoods[existingIdx] = newFood;
+        } else {
+            this.customFoods.push(newFood);
+        }
+
+        await this.saveToStorage();
+        return newFood;
     }
 
     private calculateAge(birthDate: string) {

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FoodService, FoodItemCanonical, Portion } from '../services/food/foodCatalog';
 import { Icons } from '../constants';
 import { AIService } from '../services/ai/aiService';
+import { db } from '../services/db';
+import { CustomFood, User } from '../types';
 
 interface AddFoodModalProps {
     isOpen: boolean;
@@ -10,6 +12,8 @@ interface AddFoodModalProps {
     isManagerMode: boolean;
     editingItem?: any;
     protocol?: string;
+    customFoods?: FoodItemCanonical[];
+    user: User;
 }
 
 const AddFoodModal: React.FC<AddFoodModalProps> = ({
@@ -18,7 +22,9 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     onConfirm,
     isManagerMode,
     editingItem,
-    protocol
+    protocol,
+    customFoods = [],
+    user
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<FoodItemCanonical[]>([]);
@@ -48,7 +54,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
     const handleSearch = (q: string) => {
         setSearchQuery(q);
         if (q.length > 1) {
-            const results = FoodService.search(q, protocol);
+            const results = FoodService.search(q, protocol, customFoods);
             setSearchResults(results);
         } else {
             setSearchResults([]);
@@ -128,7 +134,7 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
         }
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (isCustomItemMode) {
             if (!customItemName.trim()) return;
             const qty = parseFloat(customItemQty) || 1;
@@ -141,10 +147,28 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
             const sodium100 = parseFloat(customSodium100) || 0;
             const portGrams = parseFloat(customPortionGrams) || 100;
 
+            const newFoodId = `custom-${user.clinicId}-${Date.now()}`;
+
+            // Salvar permanentemente no banco da clínica/profissional
+            await db.saveCustomFood(user, {
+                id: newFoodId,
+                namePt: customItemName,
+                nutrientsPer100g: {
+                    kcal: kcal100,
+                    protein_g: prot100,
+                    carb_g: carb100,
+                    fat_g: fat100,
+                    fiber_g: fiber100,
+                    sodium_mg: sodium100,
+                    saturatedFat_g: satFat100 // We should add this to types too but keeping it for now
+                } as any,
+                portions: [{ label: customPortionLabel || 'Porção padrão', grams: portGrams }]
+            });
+
             const ratio = (portGrams * qty) / 100;
 
             onConfirm({
-                foodId: `custom-${Date.now()}`,
+                foodId: newFoodId,
                 name: customItemName,
                 quantity: qty,
                 unit: customPortionLabel || `${portGrams}${customItemUnit === 'ml' ? 'mL' : 'g'}`,
@@ -330,11 +354,11 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                             <div>
                                 <label className="text-xs font-bold block mb-1">Nome do Alimento</label>
                                 <div className="flex gap-2">
-                                    <input placeholder="Ex: Whey Protein Gold Standard" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`flex-1 p-2 border rounded ${isManagerMode ? 'bg-white border-blue-300 text-slate-800' : 'bg-white'}`} />
+                                    <input placeholder="Ex: Whey Protein Gold Standard" value={customItemName} onChange={e => setCustomItemName(e.target.value)} className={`flex-1 p-2 border rounded ${!isManagerMode ? 'bg-emerald-50 border-emerald-300 text-emerald-900 placeholder:text-emerald-300' : 'bg-white border-blue-300 text-slate-800'}`} />
                                     <button
                                         onClick={handleAiFill}
                                         disabled={isAiFilling || !customItemName.trim()}
-                                        className={`px-3 flex items-center gap-1 text-xs font-bold rounded transition-all ${isAiFilling ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'}`}
+                                        className={`px-3 flex items-center gap-1 text-xs font-bold rounded transition-all ${isAiFilling ? 'bg-gray-100 text-gray-400' : (!isManagerMode ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm')}`}
                                         title="Preencher automaticamente com IA"
                                     >
                                         <Icons.Sparkles className={`h-3 w-3 ${isAiFilling ? 'animate-pulse' : ''}`} />
@@ -343,36 +367,36 @@ const AddFoodModal: React.FC<AddFoodModalProps> = ({
                                 </div>
                             </div>
 
-                            <div className={`p-3 rounded-lg border ${isManagerMode ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">📊 Tabela Nutricional (por 100g/100mL)</p>
+                            <div className={`p-3 rounded-lg border ${!isManagerMode ? 'bg-emerald-50/50 border-emerald-200' : 'bg-blue-50 border-blue-200'}`}>
+                                <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${!isManagerMode ? 'text-emerald-700' : 'text-blue-700'}`}>📊 Tabela Nutricional (por 100g/100mL)</p>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Kcal</label>
-                                        <input type="number" step="0.1" placeholder="375" value={customKcal100} onChange={e => setCustomKcal100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Kcal</label>
+                                        <input type="number" step="0.1" placeholder="375" value={customKcal100} onChange={e => setCustomKcal100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : ''}`} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Proteína (g)</label>
-                                        <input type="number" step="0.1" placeholder="80" value={customProtein100} onChange={e => setCustomProtein100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Proteína (g)</label>
+                                        <input type="number" step="0.1" placeholder="80" value={customProtein100} onChange={e => setCustomProtein100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : ''}`} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Carbos (g)</label>
-                                        <input type="number" step="0.1" placeholder="6.7" value={customCarbs100} onChange={e => setCustomCarbs100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Carbos (g)</label>
+                                        <input type="number" step="0.1" placeholder="6.7" value={customCarbs100} onChange={e => setCustomCarbs100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : ''}`} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Gord. Totais (g)</label>
-                                        <input type="number" step="0.1" placeholder="3.3" value={customFat100} onChange={e => setCustomFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Gord. Totais (g)</label>
+                                        <input type="number" step="0.1" placeholder="3.3" value={customFat100} onChange={e => setCustomFat100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : ''}`} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Gord. Sat (g)</label>
-                                        <input type="number" step="0.1" placeholder="0.5" value={customSatFat100} onChange={e => setCustomSatFat100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Gord. Sat (g)</label>
+                                        <input type="number" step="0.1" placeholder="0.5" value={customSatFat100} onChange={e => setCustomSatFat100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : 'border-amber-200'}`} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-600">Fibra (g)</label>
-                                        <input type="number" step="0.1" placeholder="2.0" value={customFiber100} onChange={e => setCustomFiber100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Fibra (g)</label>
+                                        <input type="number" step="0.1" placeholder="2.0" value={customFiber100} onChange={e => setCustomFiber100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : 'border-amber-200'}`} />
                                     </div>
                                     <div className="col-span-1 md:col-span-2">
-                                        <label className="text-[10px] font-bold text-gray-600">Sódio (mg)</label>
-                                        <input type="number" step="1" placeholder="50" value={customSodium100} onChange={e => setCustomSodium100(e.target.value)} className="w-full p-1.5 border rounded text-sm bg-white border-amber-200" />
+                                        <label className={`text-[10px] font-bold ${!isManagerMode ? 'text-emerald-600' : 'text-gray-600'}`}>Sódio (mg)</label>
+                                        <input type="number" step="1" placeholder="50" value={customSodium100} onChange={e => setCustomSodium100(e.target.value)} className={`w-full p-1.5 border rounded text-sm bg-white ${!isManagerMode ? 'border-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none' : 'border-amber-200'}`} />
                                     </div>
                                 </div>
                             </div>
