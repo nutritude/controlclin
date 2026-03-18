@@ -337,20 +337,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const renderSuccess = () => (
     <div className="relative w-full max-w-lg text-center p-12 bg-white/95 backdrop-blur-3xl rounded-[40px] shadow-2xl space-y-8 animate-fadeIn mt-24 mb-12 px-4" style={{ zIndex: 10 }}>
-      <div className="mx-auto w-24 h-24 bg-primary text-accent rounded-full flex items-center justify-center shadow-inner">
+      <div className="mx-auto w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
         <Icons.CheckCircle size={48} />
       </div>
       <div className="space-y-4">
         <h2 className="text-4xl font-black text-dark tracking-tight">Workspace Pronto!</h2>
         <p className="text-slate-600 font-medium">Provisionamos sua clínica com sucesso. Verifique seu e-mail para os dados de acesso iniciais.</p>
       </div>
-      <div className="p-6 bg-primary/20 rounded-[28px] border border-secondary/20 flex items-center gap-4 text-left">
-        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-accent">
+      <div className="p-6 bg-emerald-50 rounded-[28px] border border-emerald-100 flex items-center gap-4 text-left">
+        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-emerald-600">
           <Icons.Lock size={24} />
         </div>
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-dark">Senha Padrão Temporal</p>
-          <p className="text-xl font-mono text-accent font-black">123</p>
+          <p className="text-xl font-mono text-emerald-600 font-black">123</p>
         </div>
       </div>
       <button
@@ -373,7 +373,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </button>
       </div>
 
-      <div className="bg-white/95 backdrop-blur-3xl border border-secondary/30 rounded-[40px] overflow-hidden shadow-2xl shadow-black/30 animate-scaleIn">
+      <div className="bg-white/95 backdrop-blur-3xl border border-emerald-100 rounded-[40px] overflow-hidden shadow-2xl shadow-black/30 animate-scaleIn">
 
         <div className="flex border-b border-slate-100">
           <button
@@ -436,11 +436,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               {isSubmitting ? 'Autenticando...' : `Entrar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`}
             </button>
 
-            <button type="button" onClick={() => setView('LANDING')} className="w-full py-2 text-[10px] text-slate-400 hover:text-secondary font-bold uppercase tracking-widest transition-all">
+            <button type="button" onClick={() => setView('LANDING')} className="w-full py-2 text-[10px] text-slate-400 hover:text-emerald-500 font-bold uppercase tracking-widest transition-all">
               Voltar para início
             </button>
 
-            <div className="pt-4 border-t border-secondary/20 mt-4">
+            <div className="pt-4 border-t border-slate-100 mt-4">
               <a href="/#/patient/login" className="w-full py-3 flex items-center justify-center gap-2 text-emerald-600 hover:text-emerald-700 font-black text-sm uppercase tracking-wider transition-all hover:bg-emerald-50 rounded-2xl">
                 <Icons.User className="h-4 w-4" />
                 Sou Paciente
@@ -470,20 +470,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       </div>
 
       {/* Header / Nav */}
-      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/90 border-b border-secondary/30' : 'bg-white/80 border-b border-secondary/20'}`}>
+      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/95 border-b border-emerald-100' : 'bg-white/80 border-b border-emerald-50'}`}>
         <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter text-slate-900`}>
           Control<span className="text-emerald-500">Clin</span>
         </button>
         <div className="flex items-center gap-2 md:gap-4">
           <button
             onClick={() => setView('LOGIN')}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-primary/50 text-dark hover:bg-secondary/40' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
           >
             Entrar
           </button>
           <button
             onClick={() => setView('REGISTER')}
-            className="px-4 md:px-6 py-2 md:py-2.5 bg-accent hover:bg-black text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-accent/20 transition-all"
+            className="px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all"
           >
             Teste Grátis
           </button>
