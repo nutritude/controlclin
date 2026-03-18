@@ -471,9 +471,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       </div>
 
       {/* Header / Nav */}
-      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/95 border-b border-emerald-100' : 'bg-white/80 border-b border-emerald-50'}`}>
-        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter text-slate-900`}>
-          Control<span className="text-emerald-500">Clin</span>
+      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/95 border-b border-emerald-100' : 'bg-emerald-950/90 border-b border-emerald-900/50'}`}>
+        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter ${view === 'LANDING' ? 'text-slate-900' : 'text-white'}`}>
+          Control<span className={`${view === 'LANDING' ? 'text-emerald-500' : 'text-emerald-400'}`}>Clin</span>
         </button>
         <div className="flex items-center gap-2 md:gap-4">
           <button
