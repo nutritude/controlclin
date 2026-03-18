@@ -23,6 +23,8 @@ export interface User {
   role: Role;
   professionalId?: string;
   password?: string; // Mock password for demo purposes
+  isDeleted?: boolean; // Soft delete support
+  updatedAt?: string; // Sync timestamp
 }
 
 export interface AIConfig {
@@ -125,6 +127,8 @@ export interface Professional {
   color: string; // Calendar Color
 
   isActive: boolean;
+  isDeleted?: boolean; // Soft delete support
+  updatedAt?: string; // Sync timestamp
 }
 
 // --- Detalhes do Paciente ---

@@ -273,48 +273,88 @@ class DatabaseService {
     private activeClinicId: string | null = null;
     private syncUnsubscribe: (() => void) | null = null;
     private isUpdatingFromRemote: boolean = false; // Guard to prevent infinite loops during sync
+    private _sessionDeletedIds: Set<string> = new Set(); // ARCHITECTURAL GUARD: Terminal deletion tracking
+
+    /**
+     * Unified Synchronizer: Deep Merge with Deletion Tomstones.
+     * GUARANTEE: isDeleted is a terminal state.
+     */
+    private syncMerge(localArr: any[], remoteArr: any[]) {
+        const local = localArr || [];
+        const remote = remoteArr || [];
+        
+        const allIds = new Set([
+            ...local.map(x => x.id),
+            ...remote.map(x => x.id)
+        ]);
+
+        const localMap = new Map(local.map(x => [x.id, x]));
+        const remoteMap = new Map(remote.map(x => [x.id, x]));
+
+        return Array.from(allIds).map(id => {
+            // Priority 0: session protection
+            if (this._sessionDeletedIds.has(id)) {
+                const existing = localMap.get(id) || remoteMap.get(id);
+                return { ...existing, id, isDeleted: true, isActive: false, updatedAt: new Date().toISOString() };
+            }
+
+            const l = localMap.get(id);
+            const r = remoteMap.get(id);
+
+            // If only exists in one side
+            if (!r) return l; 
+            if (!l) {
+                // If it exists only on remote, check if it was previously deleted
+                if (r.isDeleted) return { ...r, isActive: false };
+                return r;
+            }
+
+            // Dual existence: Merge logic
+            const isDeleted = l.isDeleted === true || r.isDeleted === true;
+            
+            // Priority 1: Deletion (If anyone says deleted, it's deleted)
+            if (isDeleted) {
+                const lUpd = l.updatedAt ? new Date(l.updatedAt).getTime() : 0;
+                const rUpd = r.updatedAt ? new Date(r.updatedAt).getTime() : 0;
+                return {
+                    ...r,
+                    ...l,
+                    isDeleted: true,
+                    isActive: false, // Force inactive
+                    updatedAt: new Date(Math.max(lUpd, rUpd, Date.now())).toISOString()
+                };
+            }
+
+            // Priority 2: Recency
+            const lUpd = l.updatedAt ? new Date(l.updatedAt).getTime() : 0;
+            const rUpd = r.updatedAt ? new Date(r.updatedAt).getTime() : 0;
+
+            if (lUpd >= rUpd) return l;
+            return r;
+        }).filter(item => item !== undefined);
+    }
 
     private applyRemoteData(data: any) {
+        if (!data) return;
+
         // Blindly overwrite non-critical arrays (metadata, lookups)
         this.clinics = data.clinics || [];
         this.alerts = data.alerts || [];
 
-        // --- SMART ARRAY MERGE (Local Wins on Deletions/Recent Updates) ---
-        const smartMerge = (localArr: any[], remoteArr: any[]) => {
-            if (!remoteArr) return localArr;
-            const remoteMap = new Map(remoteArr.map(x => [x.id, x]));
+        // Critical arrays use the unified sync engine
+        this.users = this.syncMerge(this.users, data.users);
+        this.professionals = this.syncMerge(this.professionals, data.professionals);
+        this.patients = this.syncMerge(this.patients, data.patients);
+        this.appointments = this.syncMerge(this.appointments, data.appointments);
+        this.exams = this.syncMerge(this.exams, data.exams);
+        this.patientEvents = this.syncMerge(this.patientEvents, data.patientEvents);
+        this.examRequests = this.syncMerge(this.examRequests, data.examRequests);
+        this.mipanAssessments = this.syncMerge(this.mipanAssessments, data.mipanAssessments);
+        this.prescriptions = this.syncMerge(this.prescriptions, data.prescriptions);
+        this.nutritionalTemplates = this.syncMerge(this.nutritionalTemplates, data.nutritionalTemplates);
+        this.customFoods = this.syncMerge(this.customFoods, data.customFoods);
 
-            // For items in both, if local is newer or deleted, it stays as is
-            return localArr.map(localItem => {
-                const remoteItem = remoteMap.get(localItem.id);
-                if (!remoteItem) return localItem; // Not on server yet
-
-                const isDeleted = !!localItem.isDeleted || !!remoteItem.isDeleted;
-                const localUpdated = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
-                const remoteUpdated = remoteItem.updatedAt ? new Date(remoteItem.updatedAt).getTime() : 0;
-
-                if (isDeleted) return { ...remoteItem, ...localItem, isDeleted: true };
-                if (localUpdated > remoteUpdated) return localItem;
-                return remoteItem;
-            }).concat(
-                // Add items that are ONLY on server
-                remoteArr.filter(r => !localArr.some(l => l.id === r.id))
-            );
-        };
-
-        this.users = smartMerge(this.users, data.users);
-        this.professionals = smartMerge(this.professionals, data.professionals);
-        this.patients = smartMerge(this.patients, data.patients);
-        this.appointments = smartMerge(this.appointments, data.appointments);
-        this.exams = smartMerge(this.exams, data.exams);
-        this.patientEvents = smartMerge(this.patientEvents, data.patientEvents);
-        this.examRequests = smartMerge(this.examRequests, data.examRequests);
-        this.mipanAssessments = smartMerge(this.mipanAssessments, data.mipanAssessments);
-        this.prescriptions = smartMerge(this.prescriptions, data.prescriptions);
-        this.nutritionalTemplates = smartMerge(this.nutritionalTemplates, data.nutritionalTemplates);
-        this.customFoods = smartMerge(this.customFoods, data.customFoods);
-
-        console.log(`[DB] Sync Result: ${this.patients.length} patients, ${this.appointments.length} apps.`);
+        console.log(`[DB] 🛡️ Database Synced: ${this.professionals.length} professionals total (including tombstones).`);
 
         // Update modified flag based on remote
         const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
@@ -492,47 +532,17 @@ class DatabaseService {
                     }
                 });
 
-                // 2. Fusão de Arrays Genéricos (Agendamentos, Eventos, Exames, Solicitações)
-                const mergeArraySmart = (localArr: any[], remoteArr: any[]) => {
-                    if (!remoteArr) return localArr;
+                // Using unified syncMerge
 
-                    // Create a map of IDs for O(1) lookups
-                    const localMap = new Map();
-                    localArr.forEach(item => localMap.set(item.id, item));
-
-                    const remoteItemsToConsider = remoteArr.filter(r => !localMap.has(r.id));
-                    const result = [...localArr];
-
-                    remoteItemsToConsider.forEach(remoteItem => {
-                        // Se o item remoto não existe localmente, adicionamos
-                        result.push(remoteItem);
-                    });
-
-                    // Para itens que existem em ambos, garantimos que se um lado deletou, o resultado final é deletado
-                    // E se ambos estão ativos, pegamos o local (pois acabamos de modificar ele)
-                    return result.map(item => {
-                        const remoteItem = remoteArr.find(r => r.id === item.id);
-                        if (remoteItem) {
-                            // União de Deletados: Se qualquer um marcou como deletado, prevalece o deletado
-                            const isDeleted = !!item.isDeleted || !!remoteItem.isDeleted;
-
-                            // Se o local for mais novo ou igual por createdAt (nossa única referência fixa), ficamos com ele
-                            // mas trazendo o flag de delete se vier do remoto também.
-                            return { ...remoteItem, ...item, isDeleted };
-                        }
-                        return item;
-                    });
-                };
-
-                this.appointments = mergeArraySmart(this.appointments, remote.appointments);
-                this.patientEvents = mergeArraySmart(this.patientEvents, remote.patientEvents);
-                this.exams = mergeArraySmart(this.exams, remote.exams);
-                this.examRequests = mergeArraySmart(this.examRequests, remote.examRequests);
-                this.prescriptions = mergeArraySmart(this.prescriptions, remote.prescriptions);
-                this.mipanAssessments = mergeArraySmart(this.mipanAssessments, remote.mipanAssessments);
-                this.customFoods = mergeArraySmart(this.customFoods, remote.customFoods);
-                this.professionals = mergeArraySmart(this.professionals, remote.professionals);
-                this.users = mergeArraySmart(this.users, remote.users);
+                this.appointments = this.syncMerge(this.appointments, remote.appointments);
+                this.patientEvents = this.syncMerge(this.patientEvents, remote.patientEvents);
+                this.exams = this.syncMerge(this.exams, remote.exams);
+                this.examRequests = this.syncMerge(this.examRequests, remote.examRequests);
+                this.prescriptions = this.syncMerge(this.prescriptions, remote.prescriptions);
+                this.mipanAssessments = this.syncMerge(this.mipanAssessments, remote.mipanAssessments);
+                this.customFoods = this.syncMerge(this.customFoods, remote.customFoods);
+                this.professionals = this.syncMerge(this.professionals, remote.professionals);
+                this.users = this.syncMerge(this.users, remote.users);
             }
             // --- FIM DA PROTEÇÃO ---
 
@@ -1028,8 +1038,8 @@ class DatabaseService {
                 console.warn("[DEV MODE] Bypassing Firebase auth because password is '123'");
             }
 
-            // 3. Find our internal user record by email AND clinicId
-            let user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id);
+            // 3. Find our internal user record by email AND clinicId (Filter out deleted)
+            let user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id && !u.isDeleted);
 
             if (!user) {
                 if (pass === "123" && email.includes("@")) {
@@ -1048,7 +1058,7 @@ class DatabaseService {
                     };
 
                     if (fallbackUser.role === Role.PROFESSIONAL) {
-                        const existingProf = this.professionals.find(p => p.email.toLowerCase() === emailLower);
+                        const existingProf = this.professionals.find(p => p.email.toLowerCase() === emailLower && !p.isDeleted);
                         if (!existingProf) {
                             this.professionals.push({
                                 id: fallbackUser.professionalId!,
@@ -1067,13 +1077,13 @@ class DatabaseService {
                     this.users.push(fallbackUser);
                     user = fallbackUser;
                 } else {
-                    throw new Error("Usuário não cadastrado nesta clínica específica ou slug incorreto.");
+                    throw new Error("Usuário não cadastrado nesta clínica específica ou slug incorreto (Ou conta desativada).");
                 }
             }
 
             console.log(`[DB] Login validado para: ${user.name} na clínica ${clinic.name}`);
             await this.loadFromRemote(clinic.id);
-            user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id) || user;
+            user = this.users.find(u => u.email.toLowerCase() === userEmailToMatch && u.clinicId === clinic.id && !u.isDeleted) || user;
             return { user, clinic };
         } catch (error: any) {
             console.error("[DB] Erro no login:", error);
@@ -1119,7 +1129,9 @@ class DatabaseService {
     async logout() {
         await signOut(auth);
     }
-    async getUsers(clinicId: string) { return this.users.filter(u => u.clinicId === clinicId); }
+    async getUsers(clinicId: string) { 
+        return this.users.filter(u => u.clinicId === clinicId && u.isDeleted !== true); 
+    }
     async getClinic(clinicId: string) { return this.clinics.find(c => c.id === clinicId); }
     async updateClinicSettings(user: User, clinicId: string, data: Partial<Clinic>) {
         const idx = this.clinics.findIndex(c => c.id === clinicId);
@@ -1131,7 +1143,15 @@ class DatabaseService {
         this.patients = []; this.appointments = []; this.exams = [];
         this.saveToStorage();
     }
-    async getProfessionals(clinicId: string) { return this.professionals.filter(p => p.clinicId === clinicId && p.isActive); }
+    async getProfessionals(clinicId: string) { 
+        // ARCHITECTURAL GUARD: Double filter - flags + session tombstones
+        return this.professionals.filter(p => 
+            p.clinicId === clinicId && 
+            p.isDeleted !== true && 
+            p.isActive === true &&
+            !this._sessionDeletedIds.has(p.id)
+        ); 
+    }
     async createProfessional(user: User, data: any) {
         // Enforce Unique Email
         const lowerEmail = data.email.trim().toLowerCase();
@@ -1152,7 +1172,8 @@ class DatabaseService {
             email: data.email,
             role: data.role || Role.PROFESSIONAL,
             professionalId: profId,
-            password: data.password || '123'
+            password: data.password || '123',
+            isDeleted: false
         };
 
         const newProf: Professional = {
@@ -1166,6 +1187,8 @@ class DatabaseService {
             registrationNumber: data.registrationNumber,
             color: data.color || 'bg-blue-200',
             isActive: true,
+            isDeleted: false,
+            updatedAt: new Date().toISOString(),
             cpf: data.cpf,
             whatsapp: data.whatsapp,
             address: data.address,
@@ -1229,6 +1252,10 @@ class DatabaseService {
         if (pIdx > -1) {
             const prof = this.professionals[pIdx];
 
+            // 0. LOCK THE ID (Session Guard)
+            this._sessionDeletedIds.add(id);
+            if (prof.userId) this._sessionDeletedIds.add(prof.userId);
+
             // 1. REMANEJO DE PACIENTES (REASSIGNMENT)
             let reassignedCount = 0;
             if (reassignToId && reassignToId !== 'none') {
@@ -1253,16 +1280,25 @@ class DatabaseService {
                 }
             });
 
-            // 3. EXCLUSÃO PERMANENTE (HARD DELETE)
-            this.professionals.splice(pIdx, 1);
+            // 3. EXCLUSÃO LOGICA (SOFT DELETE)
+            // Brute force update of the memory array
+            const now = new Date().toISOString();
+            this.professionals = this.professionals.map(p => {
+                if (p.id === id) {
+                    return { ...p, isDeleted: true, isActive: false, updatedAt: now };
+                }
+                return p;
+            });
 
-            // 4. REVOGAÇÃO DE ACESSO (REMOVE USER)
-            const uIdx = this.users.findIndex(u => u.id === prof.userId || u.email.toLowerCase() === prof.email.toLowerCase());
-            if (uIdx > -1) {
-                const targetUser = this.users[uIdx];
-                this.users.splice(uIdx, 1);
-                console.log(`[DB] 🔐 Acesso revogado para o usuário: ${targetUser.email}`);
-            }
+            // 4. REVOGAÇÃO DE ACESSO (SOFT DELETE USER)
+            const lowerEmail = prof.email.toLowerCase();
+            this.users = this.users.map(u => {
+                if (u.id === prof.userId || u.email.toLowerCase() === lowerEmail) {
+                    return { ...u, isDeleted: true, updatedAt: now };
+                }
+                return u;
+            });
+            console.log(`[DB] 🔐 Acesso e perfil revogados para: ${prof.email}`);
 
             // 5. PERSISTÊNCIA NA NUVEM
             await this.saveToStorage(true);
