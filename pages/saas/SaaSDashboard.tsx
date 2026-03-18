@@ -10,6 +10,21 @@ import {
     SubscriptionStatus,
     PaymentCycle
 } from '../../services/saasService';
+
+const SYSTEM_FEATURES = [
+    'Agenda Inteligente',
+    'Prontuário Digital',
+    'Avaliação Antropométrica',
+    'Anamnese Personalizada',
+    'IA Nutricional (NutriAI)',
+    'Gestão Financeira',
+    'Múltiplas Agendas',
+    'Dashboard de BI',
+    'Integração WhatsApp',
+    'Aplicativo do Paciente',
+    'Relatórios Avançados',
+    'Suporte VIP'
+];
 import {
     LayoutDashboard,
     Package,
@@ -33,8 +48,22 @@ import {
     CreditCard,
     Zap
 } from 'lucide-react';
+import { Icons } from '../../constants';
 
 // --- SUB-COMPONENTS ---
+
+const InputField: React.FC<{ label: string, value: any, onChange: (v: string) => void, placeholder?: string, type?: string }> = ({ label, value, onChange, placeholder, type = 'text' }) => (
+    <div className="space-y-2">
+        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
+        <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-6 py-4 text-dark placeholder-slate-300 text-sm focus:outline-none focus:ring-4 focus:ring-accent/5 transition-all font-medium"
+            placeholder={placeholder}
+        />
+    </div>
+);
 
 const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -198,102 +227,127 @@ const PlanModal: React.FC<{ plan: SaaSPlan | null, onClose: () => void, onSave: 
         finally { setLoading(false); }
     };
 
-    const addFeature = () => {
-        if (!newFeature.trim()) return;
-        setFormData({ ...formData, features: [...formData.features, newFeature.trim()] });
-        setNewFeature('');
-    };
 
-    const removeFeature = (idx: number) => {
-        const newFeatures = [...formData.features];
-        newFeatures.splice(idx, 1);
-        setFormData({ ...formData, features: newFeatures });
+    const toggleFeature = (f: string) => {
+        const current = formData.features;
+        if (current.includes(f)) {
+            setFormData({ ...formData, features: current.filter(x => x !== f) });
+        } else {
+            setFormData({ ...formData, features: [...current, f] });
+        }
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white border border-secondary/20 rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[90vh] overflow-y-auto relative custom-scrollbar">
-                <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 font-black hover:text-dark transition-colors">✕</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-dark/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="bg-white border border-secondary/10 rounded-[48px] shadow-2xl w-full max-w-5xl p-12 max-h-[92vh] overflow-y-auto relative custom-scrollbar flex flex-col">
+                <button onClick={onClose} className="absolute top-10 right-10 text-slate-300 hover:text-dark transition-colors bg-slate-50 p-3 rounded-full">
+                    <Icons.X size={20} />
+                </button>
 
-                <div className="mb-10 text-center">
-                    <h2 className="text-2xl font-black text-dark uppercase tracking-tight mb-2">{plan ? 'Editar Plano' : 'Criar Novo Plano'}</h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Configure limites, recursos e preços Marsala</p>
+                <div className="mb-12 border-b border-slate-50 pb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="size-3 rounded-full bg-accent animate-pulse"></div>
+                        <h2 className="text-3xl font-black text-dark tracking-tight">{plan ? 'Refinar Plano' : 'Novo Arquétipo de Plano'}</h2>
+                    </div>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-black">Escalabilidade & Configuração Estratégica</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* IDENTIDADE */}
-                        <div className="space-y-6 md:col-span-2">
-                            <InputField label="Nome do Plano" value={formData.name} onChange={v => setFormData({ ...formData, name: v })} placeholder="Ex: Starter, Pro, Clínica..." />
-                            <div className="space-y-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Descrição Curta</label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-primary/20 border border-secondary/20 rounded-2xl px-5 py-4 text-dark placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-medium h-24"
-                                    placeholder="Ideal para..."
-                                />
+                <form onSubmit={handleSubmit} className="space-y-12">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+                        {/* COLUNA ESQUERDA: INFOS BÁSICAS */}
+                        <div className="md:col-span-5 space-y-8">
+                            <div className="space-y-6">
+                                <InputField label="Nome Comercial" value={formData.name} onChange={v => setFormData({ ...formData, name: v })} placeholder="Ex: Starter Edition" />
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Posicionamento de Mercado</label>
+                                    <textarea
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-6 py-5 text-dark placeholder-slate-300 text-sm focus:outline-none focus:ring-4 focus:ring-accent/5 transition-all font-medium h-32 resize-none"
+                                        placeholder="Descreva a dor que este plano resolve..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 bg-primary/20 p-6 rounded-[32px] border border-secondary/10">
+                                <InputField label="Profissionais (+)" value={formData.maxProfessionals} onChange={v => setFormData({ ...formData, maxProfessionals: parseInt(v) || 0 })} placeholder="0" />
+                                <InputField label="Gestores Máx" value={formData.maxManagers} onChange={v => setFormData({ ...formData, maxManagers: parseInt(v) || 1 })} placeholder="1" />
                             </div>
                         </div>
 
-                        {/* LIMITES SOCIAIS */}
-                        <InputField label="Profissionais Extra (Ex: 2)" value={formData.maxProfessionals} onChange={v => setFormData({ ...formData, maxProfessionals: parseInt(v) || 0 })} placeholder="0" />
-                        <InputField label="Cargos de Gestor (Máx)" value={formData.maxManagers} onChange={v => setFormData({ ...formData, maxManagers: parseInt(v) || 1 })} placeholder="1" />
-
-                        {/* PREIFICAÇÃO */}
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 bg-primary/10 p-8 rounded-[32px] border border-secondary/10">
-                            <div>
-                                <InputField label="Preço Mensal Base (R$)" value={formData.basePrice} onChange={v => setFormData({ ...formData, basePrice: parseFloat(v) || 0 })} placeholder="97.00" />
-                                <p className="text-[9px] text-slate-400 font-bold uppercase mt-2 tracking-widest italic">* Referência para os demais ciclos</p>
-                            </div>
-                            <div className="space-y-4">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Descontos (%)</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="space-y-1">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase">Trim.</span>
-                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.quarterly} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, quarterly: parseFloat(e.target.value) } })} />
+                        {/* COLUNA DIREITA: PREÇO E RECURSOS */}
+                        <div className="md:col-span-7 space-y-10">
+                            {/* FINANCEIRO */}
+                            <div className="bg-dark text-white rounded-[40px] p-10 shadow-xl shadow-dark/20 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 skew-x-12 translate-x-10"></div>
+                                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-1">Investimento Mensal Base</label>
+                                        <div className="flex items-center bg-white/10 rounded-2xl px-6 border border-white/10 focus-within:border-accent transition-all">
+                                            <span className="text-accent font-black mr-2">R$</span>
+                                            <input
+                                                type="number"
+                                                value={formData.basePrice}
+                                                onChange={e => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })}
+                                                className="w-full bg-transparent py-4 text-xl font-black focus:outline-none text-white"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase">Sem.</span>
-                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.semester} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, semester: parseFloat(e.target.value) } })} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase">Anual</span>
-                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.yearly} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, yearly: parseFloat(e.target.value) } })} />
+                                    <div className="space-y-3">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tabela de Descontos (%)</label>
+                                        <div className="flex gap-3">
+                                            {['Trimestral', 'Semestral', 'Anual'].map((c, i) => {
+                                                const key = i === 0 ? 'quarterly' : i === 1 ? 'semester' : 'yearly';
+                                                return (
+                                                    <div key={c} className="flex-1 bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                                                        <span className="block text-[8px] font-black text-slate-500 uppercase mb-1">{c}</span>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={formData.discounts[key as keyof typeof formData.discounts]}
+                                                            onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, [key]: parseFloat(e.target.value) } })}
+                                                            className="w-full bg-transparent text-center font-black text-sm text-accent focus:outline-none"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* RECURSOS */}
-                        <div className="md:col-span-2 space-y-4">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Recursos e Abas Liberadas</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newFeature}
-                                    onChange={e => setNewFeature(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                                    placeholder="Adicionar recurso (ex: Agenda)..."
-                                    className="flex-1 bg-primary/20 border border-secondary/20 rounded-2xl px-5 py-3 text-sm focus:outline-none"
-                                />
-                                <button type="button" onClick={addFeature} className="bg-secondary text-white px-6 rounded-2xl font-black text-xs uppercase tracking-widest">Add</button>
-                            </div>
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {formData.features.map((f, i) => (
-                                    <span key={i} className="group flex items-center gap-2 bg-white border border-secondary/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-dark shadow-sm">
-                                        {f}
-                                        <button type="button" onClick={() => removeFeature(i)} className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
-                                    </span>
-                                ))}
+                            {/* SISTEMA REAL FEATURES */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between ml-1">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Recursos do Ecossistema</label>
+                                    <span className="text-[9px] font-bold text-accent uppercase tracking-widest">{formData.features.length} selecionados</span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {SYSTEM_FEATURES.map(f => (
+                                        <button
+                                            key={f}
+                                            type="button"
+                                            onClick={() => toggleFeature(f)}
+                                            className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-wider text-left transition-all border ${formData.features.includes(f)
+                                                    ? 'bg-accent text-white border-accent shadow-lg shadow-accent/10 scale-[1.02]'
+                                                    : 'bg-white text-slate-500 border-slate-100 hover:border-accent/30'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{f}</span>
+                                                {formData.features.includes(f) && <Icons.CheckCircle size={12} />}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-10 mt-8 border-t border-secondary/10">
-                        <button type="button" onClick={onClose} className="px-8 py-3 rounded-2xl border border-secondary/20 text-slate-500 font-black text-[10px] uppercase tracking-widest">Cancelar</button>
-                        <button type="submit" disabled={loading} className="px-12 py-3 rounded-2xl bg-accent text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-accent/20">
-                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                    <div className="flex justify-end gap-4 pt-10 border-t border-slate-50">
+                        <button type="button" onClick={onClose} className="px-10 py-4 rounded-2xl bg-slate-50 text-slate-400 hover:text-dark font-black text-[10px] uppercase tracking-widest transition-all">Descartar</button>
+                        <button type="submit" disabled={loading} className="px-16 py-4 rounded-2xl bg-accent text-white font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-accent/20 hover:shadow-accent/40 transition-all active:scale-95">
+                            {loading ? 'Sincronizando...' : 'Publicar Alterações'}
                         </button>
                     </div>
                 </form>
@@ -585,18 +639,6 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
     );
 };
 
-const InputField: React.FC<{ label: string, value: any, onChange: (v: string) => void, placeholder: string }> = ({ label, value, onChange, placeholder }) => (
-    <div className="space-y-2">
-        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{label}</label>
-        <input
-            type="text"
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            className="w-full bg-primary/20 border border-secondary/20 rounded-2xl px-5 py-4 text-dark placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-medium"
-            placeholder={placeholder}
-        />
-    </div>
-);
 
 const SelectField: React.FC<{ label: string, value: any, options: { label: string, value: string }[], onChange: (v: string) => void }> = ({ label, value, options, onChange }) => (
     <div className="space-y-2">

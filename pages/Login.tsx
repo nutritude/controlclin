@@ -373,35 +373,54 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   );
 
   const renderPricing = () => (
-    <div className="w-full bg-white font-sans py-24 px-4 overflow-y-auto">
-      <div className="max-w-7xl mx-auto text-center mb-16">
-        <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">Escolha o seu nível de <span className="text-emerald-500 italic">Excelência.</span></h2>
-        <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Planos desenhados para todas as fases da sua clínica, do início autônomo às grandes operações multi-profissionais.</p>
+    <div className="w-full bg-slate-50 font-sans py-32 px-4 overflow-y-auto">
+      <div className="max-w-7xl mx-auto text-center mb-24">
+        <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-emerald-200 bg-white shadow-sm mb-6">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+          <span className="text-[9px] font-black tracking-[0.2em] text-emerald-800 uppercase">Investimento com Retorno Real</span>
+        </div>
+        <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">Potencialize sua <span className="text-emerald-500 italic">Clínica.</span></h2>
+        <p className="text-lg text-slate-500 max-w-xl mx-auto font-medium">Modelos de assinatura pensados para escalar sua produtividade e faturamento.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-6xl mx-auto items-stretch">
         {plans.map((plan) => (
-          <div key={plan.id} className="bg-white border border-emerald-100 rounded-[48px] p-10 flex flex-col shadow-xl shadow-emerald-500/5 hover:border-emerald-300 transition-all group relative overflow-hidden">
-            <h3 className="text-2xl font-black text-slate-900 mb-2">{plan.name}</h3>
-            <p className="text-sm text-slate-500 mb-8 font-bold leading-relaxed">{plan.description}</p>
+          <div key={plan.id} className="bg-white border border-slate-100 rounded-[40px] p-10 flex flex-col shadow-2xl shadow-slate-200/50 hover:border-emerald-200 hover:shadow-emerald-500/5 transition-all group relative">
+            {plan.id === 'PROFESSIONAL' && (
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2 rounded-full shadow-lg">Mais Escolhido</div>
+            )}
             
             <div className="mb-10">
-              <span className="text-5xl font-black text-slate-900Tracking-tight">R$ {plan.basePrice}</span>
-              <span className="text-slate-400 font-bold uppercase tracking-widest text-xs ml-2">/mês</span>
+              <h3 className="text-2xl font-black text-slate-900 mb-1">{plan.name}</h3>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{plan.maxProfessionals === 0 ? 'Individual' : 'Equipe'}</p>
+            </div>
+            
+            <div className="mb-10 flex items-baseline gap-1">
+              <span className="text-sm font-black text-slate-400 uppercase tracking-tighter">R$</span>
+              <span className="text-5xl font-black text-slate-900 tracking-tighter">{plan.basePrice}</span>
+              <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] ml-1">/mês</span>
             </div>
 
-            <div className="space-y-4 mb-10 flex-grow">
-              <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
-                <Icons.CheckCircle className="text-emerald-500" size={18} />
+            <p className="text-xs text-slate-500 mb-10 font-medium leading-relaxed border-b border-slate-50 pb-8">{plan.description}</p>
+
+            <div className="space-y-4 mb-12 flex-grow">
+              <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-wider text-slate-600">
+                <div className="size-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Icons.CheckCircle size={14} />
+                </div>
                 <span>{plan.maxProfessionals === 0 ? '1 Profissional Autônomo' : `${1 + plan.maxProfessionals} Profissionais`}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
-                <Icons.CheckCircle className="text-emerald-500" size={18} />
+              <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-wider text-slate-600">
+                <div className="size-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Icons.CheckCircle size={14} />
+                </div>
                 <span>Pacientes Ilimitados</span>
               </div>
               {plan.features.map((feature: string) => (
-                <div key={feature} className="flex items-center gap-3 text-sm font-bold text-slate-700">
-                  <Icons.CheckCircle className="text-emerald-500" size={18} />
+                <div key={feature} className="flex items-center gap-3 text-[11px] font-black uppercase tracking-wider text-slate-600">
+                  <div className="size-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Icons.CheckCircle size={14} />
+                  </div>
                   <span>{feature}</span>
                 </div>
               ))}
@@ -412,9 +431,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 setRegData({...regData, planId: plan.id});
                 setView('REGISTER');
               }}
-              className="w-full py-5 rounded-[24px] bg-emerald-600 hover:bg-slate-900 text-white font-black text-lg transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+              className={`w-full py-5 rounded-[20px] font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-xl ${plan.id === 'PROFESSIONAL' ? 'bg-emerald-600 text-white shadow-emerald-500/20 hover:bg-emerald-700' : 'bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200 shadow-slate-200/20'}`}
             >
-              Começar agora
+              Assinar agora
             </button>
           </div>
         ))}
@@ -535,23 +554,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           Control<span className={`${view === 'LANDING' || view === 'PRICING' ? 'text-emerald-500' : 'text-emerald-400'}`}>Clin</span>
         </button>
 
-        <div className="hidden lg:flex items-center gap-8 ml-10">
-          <button onClick={() => setView('LANDING')} className={`text-xs font-black uppercase tracking-widest ${view === 'LANDING' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}>Início</button>
-          <button onClick={() => setView('PRICING')} className={`text-xs font-black uppercase tracking-widest ${view === 'PRICING' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}>Planos</button>
+        <div className="hidden lg:flex items-center gap-6 ml-10">
+          <button onClick={() => setView('LANDING')} className={`text-[10px] font-black uppercase tracking-widest ${view === 'LANDING' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}>Início</button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-4 ml-auto">
+        <div className="flex items-center gap-3 md:gap-4 ml-auto">
           <button
             onClick={() => setView('LOGIN')}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' || view === 'PRICING' ? 'bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${view === 'LANDING' || view === 'PRICING' ? 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
           >
             Entrar
           </button>
           <button
             onClick={() => setView('REGISTER')}
-            className="px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all"
+            className="px-6 py-2.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
           >
             Teste Grátis
+          </button>
+          <button
+            onClick={() => setView('PRICING')}
+            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all"
+          >
+            Assinatura
           </button>
         </div>
       </header>
