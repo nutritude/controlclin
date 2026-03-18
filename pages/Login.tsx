@@ -13,10 +13,11 @@ type LoginMode = 'ADMIN' | 'PROFESSIONAL';
 type ViewState = 'LANDING' | 'LOGIN' | 'REGISTER' | 'SUCCESS';
 
 const BACKGROUND_IMAGES = [
-  'https://images.unsplash.com/photo-1576091160550-217359f4ecf8?auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80'
+  '/imagebk/Tela de fundo01.jpg',
+  '/imagebk/Tela de fundo02.jpg',
+  '/imagebk/Tela de fundo03.jpg',
+  '/imagebk/Tela de fundo04.jpg',
+  '/imagebk/Tela de fundo05.jpg'
 ];
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
