@@ -24,7 +24,7 @@ export const AIService = {
      * Envia um prompt via Proxy Seguro (/api/ai) com fallback direto para Gemini em Modo Dev.
      */
     async ask({ prompt, role, systemPrompt, temperature, model }: AIAskRequest): Promise<string> {
-        const finalModel = model || "google/gemini-2.5-flash";
+        const finalModel = model || "google/gemini-1.5-flash";
 
         console.log(`[AI Service] Iniciando requisição Gemini (${finalModel})`);
 

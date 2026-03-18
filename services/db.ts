@@ -367,13 +367,15 @@ class DatabaseService {
     }
 
     private async initializeData() {
-        // First try to load from local storage to have something immediate
-        this.loadFromStorage();
-
-        // Then if remote is enabled, try to load from remote and update
+        // CLOUD-FIRST: Nunca carrega do localStorage.
+        // A única fonte de verdade é o Firebase (Nuvem).
         if (this.isRemoteEnabled) {
-            console.log("DatabaseService: Attempting remote sync on init...");
+            console.log("[DB] ☁️ Cloud-First: carregando dados direto do Firebase...");
             await this.loadFromRemote();
+        } else {
+            // Fallback offline: sem Firebase configurado, usa defaults em memória apenas
+            console.warn("[DB] ⚠️ Firebase não configurado. Usando dados padrão em memória (sem persistência).");
+            this.seedInitialData();
         }
     }
 
@@ -387,40 +389,9 @@ class DatabaseService {
     }
 
     // --- PERSISTENCE HELPERS ---
-    private loadFromStorage() {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-            try {
-                const data = JSON.parse(stored);
-                this.clinics = data.clinics || [];
-                this.users = data.users || [];
-                this.professionals = data.professionals || [];
-                this.patients = data.patients || [];
-                this.appointments = data.appointments || [];
-                this.exams = data.exams || [];
-                this.alerts = data.alerts || [];
-                this.patientEvents = data.patientEvents || [];
-                this.examRequests = data.examRequests || [];
-                this.mipanAssessments = data.mipanAssessments || [];
-                this.prescriptions = data.prescriptions || [];
-                this.customFoods = data.customFoods || [];
-
-                // Keep track of when we last touched local storage
-                if (data.lastModified) {
-                    (this as any)._localLastModified = new Date(data.lastModified).getTime();
-                } else {
-                    (this as any)._localLastModified = Date.now();
-                }
-
-                // this.ensureDemoIntegrity();
-            } catch (err) {
-                console.error("DatabaseService: Shared database corrupted. Resetting to defaults.", err);
-                this.seedInitialData();
-            }
-        } else {
-            this.seedInitialData();
-        }
-    }
+    // CLOUD-FIRST: loadFromStorage foi removido.
+    // O sistema NÃO usa localStorage como fonte de dados.
+    // Todos os dados vêm exclusivamente do Firebase.
 
     private ensureDemoIntegrity() {
         DEFAULT_PATIENTS.forEach(stdP => {
@@ -525,9 +496,52 @@ class DatabaseService {
                             localP.clinicalSummary.psychobehavioral = remoteP.clinicalSummary.psychobehavioral;
                         }
 
-                        // Merge de Planos Nutricionais (se houver novos na nuvem)
-                        if (remoteP.nutritionalPlans && (!localP.nutritionalPlans || localP.nutritionalPlans.length < remoteP.nutritionalPlans.length)) {
-                            localP.nutritionalPlans = remoteP.nutritionalPlans;
+                        // Merge de Planos Nutricionais (SAFE REMOTE-WINS MERGE)
+                        // REGRA DE OURO: Dados na nuvem são a fonte primária da verdade.
+                        // O plano remoto SEMPRE vence se tiver mais conteúdo (refeições com itens).
+                        const remotePlans = remoteP.nutritionalPlans || [];
+                        const localPlans = localP.nutritionalPlans || [];
+
+                        if (remotePlans.length > 0) {
+                            // Contar total de itens de refeição no remoto vs local
+                            const remoteItemCount = remotePlans.reduce((sum: number, p: any) =>
+                                sum + (p.meals?.reduce((ms: number, m: any) => ms + (m.items?.length || 0), 0) || 0), 0);
+                            const localItemCount = localPlans.reduce((sum: number, p: any) =>
+                                sum + (p.meals?.reduce((ms: number, m: any) => ms + (m.items?.length || 0), 0) || 0), 0);
+
+                            // Se o remoto tem MAIS alimentos, ele prevalece SEMPRE (garante que restaurações na nuvem não sejam revertidas)
+                            if (remoteItemCount > localItemCount) {
+                                console.log(`[DB] 🛡️ Cloud-First: Planos remotos têm mais itens (${remoteItemCount} vs ${localItemCount}). Priorizando nuvem.`);
+                                localP.nutritionalPlans = remotePlans;
+                            } else if (!localPlans.length || remoteUpdated > localUpdated) {
+                                // Remoto mais novo por timestamp
+                                localP.nutritionalPlans = remotePlans;
+                            } else {
+                                // Merge bidirecional de planos por ID (preservando o mais novo por updatedAt de cada plano)
+                                const combinedPlansMap = new Map();
+                                // Adiciona remotos primeiro (têm prioridade em caso de empate)
+                                remotePlans.forEach((p: any) => combinedPlansMap.set(p.id, p));
+                                // Substitui apenas se o local for estritamente mais novo E tiver mais itens
+                                localPlans.forEach((p: any) => {
+                                    const existing = combinedPlansMap.get(p.id);
+                                    if (existing) {
+                                        const localPlanItems = p.meals?.reduce((ms: number, m: any) => ms + (m.items?.length || 0), 0) || 0;
+                                        const remotePlanItems = existing.meals?.reduce((ms: number, m: any) => ms + (m.items?.length || 0), 0) || 0;
+                                        // Local vence apenas se tiver mais itens E for mais novo
+                                        const localPlanTs = new Date(p.updatedAt).getTime();
+                                        const remotePlanTs = new Date(existing.updatedAt).getTime();
+                                        if (localPlanItems > remotePlanItems && localPlanTs > remotePlanTs) {
+                                            combinedPlansMap.set(p.id, p);
+                                        }
+                                    } else {
+                                        // Plano local não existe no remoto: preservar
+                                        combinedPlansMap.set(p.id, p);
+                                    }
+                                });
+                                localP.nutritionalPlans = Array.from(combinedPlansMap.values()).sort(
+                                    (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                                );
+                            }
                         }
                     }
                 });
@@ -603,11 +617,11 @@ class DatabaseService {
 
             if (snap.exists()) {
                 const data = snap.data();
-                console.log(`[DB] 🔄 Sincronização automática em curso...`);
+                console.log(`[DB] 🔄 Dados carregados do Firebase (Cloud-First).`);
                 this.applyRemoteData(data);
-
+                // CLOUD-FIRST: Não salva no localStorage. Apenas atualiza o estado em memória.
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : Date.now();
-                this.saveToStorage(false, remoteModified);
+                (this as any)._localLastModified = remoteModified;
             }
             else {
                 console.warn(`[DB] ⚠️ Clínica ${targetClinicId} sem dados na nuvem.`);
@@ -623,9 +637,10 @@ class DatabaseService {
                 const remoteModified = data.lastModified ? new Date(data.lastModified).getTime() : 0;
 
                 this.isUpdatingFromRemote = true;
-                console.log(`[DB] ☁️ Sincronização em tempo real: Nuvem atualizada.`);
+                console.log(`[DB] ☁️ Sincronização em tempo real: Nuvem atualizada (Cloud-First).`);
                 this.applyRemoteData(data);
-                this.saveToStorage(false, remoteModified);
+                // CLOUD-FIRST: Apenas atualiza memória, sem escrever em localStorage.
+                (this as any)._localLastModified = remoteModified;
                 this.isUpdatingFromRemote = false;
 
                 if (typeof window !== 'undefined') {
@@ -641,37 +656,28 @@ class DatabaseService {
      * Centralized Save (LocalStorage + Cloud)
      * Now returns a promise for operations that need to guarantee remote persistence.
      */
+    /**
+     * CLOUD-FIRST + SEGURANÇA DE DADOS: saveToStorage salva APENAS no Firebase.
+     * localStorage foi completamente removido.
+     * 
+     * GARANTIA: Se syncRemote=true e o Firebase falhar, o erro é RELANÇADO
+     * para que o chamador (UI) possa alertar o usuário IMEDIATAMENTE.
+     * Nenhuma falha de salvamento passa despercebida.
+     */
     public async saveToStorage(syncRemote = true, manualTimestamp?: number) {
-        if (this.isUpdatingFromRemote && syncRemote) return; // Guard
+        if (this.isUpdatingFromRemote && syncRemote) return; // Guard contra loop de sync
 
         (this as any)._localLastModified = manualTimestamp || Date.now();
 
-        const dataToStore = {
-            clinics: this.clinics,
-            users: this.users,
-            professionals: this.professionals,
-            patients: this.patients,
-            appointments: this.appointments,
-            patientEvents: this.patientEvents,
-            exams: this.exams,
-            alerts: this.alerts,
-            examRequests: this.examRequests,
-            mipanAssessments: this.mipanAssessments,
-            prescriptions: this.prescriptions,
-            customFoods: this.customFoods,
-            lastModified: (this as any)._localLastModified
-        };
-
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToStore));
-
+        // CLOUD-FIRST: Salva APENAS no Firebase. Sem localStorage.
         if (syncRemote && this.isRemoteEnabled) {
-            try {
-                // If this is a high-priority operation, we might want to await it. 
-                // For background sync, we fire and forget but catch for errors.
-                await this.saveToRemote();
-            } catch (err) {
-                console.error('[DB] ❌ Sincronização automática com Firebase falhou:', err);
-            }
+            // NÃO usamos try-catch aqui: o erro deve propagar ao chamador
+            // para que a UI possa alertar o usuário imediatamente.
+            await this.saveToRemote();
+        } else if (syncRemote && !this.isRemoteEnabled) {
+            // Se Firebase não está configurado, lançamos erro para que o usuário saiba
+            console.error('[DB] 🚨 Firebase não configurado — dado NÃO foi salvo na nuvem!');
+            throw new Error('Firebase não configurado. Configure as variáveis de ambiente para garantir a persistência dos dados.');
         }
     }
 

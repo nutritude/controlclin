@@ -266,7 +266,7 @@ mindmap
         prompt,
         role: 'professional',
         temperature: 0.2,
-        model: 'google/gemini-2.5-flash' // O Proxy redirecionará para o 2.5 Flash ou 2.0 conforme configurado
+        model: 'google/gemini-1.5-flash' // O Proxy redirecionará para o 2.5 Flash ou 2.0 conforme configurado
       });
 
       const cleanCode = sanitizeMermaidMindmap(response);

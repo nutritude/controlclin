@@ -24,7 +24,7 @@ export default async function handler(req: Request) {
         console.log(`[Proxy AI] Roteando para Google Gemini (${model})`);
 
         // Mapeia o nome do modelo para o formato da Google se necessário
-        const googleModel = model?.includes('/') ? model.split('/')[1] : (model || "gemini-2.5-flash");
+        const googleModel = model?.includes('/') ? model.split('/')[1] : (model || "gemini-1.5-flash");
         const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
 
         const response = await fetch(apiEndpoint, {

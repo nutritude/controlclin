@@ -15,7 +15,7 @@ export const AIClinicalSummaryService = {
         prompt: prompt,
         role: 'professional',
         temperature: 0.3,
-        model: 'google/gemini-2.5-flash'
+        model: 'google/gemini-1.5-flash'
       });
 
       if (aiResponse) {
