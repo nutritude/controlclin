@@ -10,7 +10,7 @@ interface LoginProps {
 }
 
 type LoginMode = 'ADMIN' | 'PROFESSIONAL';
-type ViewState = 'LANDING' | 'LOGIN' | 'REGISTER' | 'SUCCESS';
+type ViewState = 'LANDING' | 'LOGIN' | 'REGISTER' | 'SUCCESS' | 'PRICING';
 
 const BACKGROUND_IMAGES = [
   '/imagebk/Tela de fundo01.jpg',
@@ -29,6 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState('');
+  const [plans, setPlans] = useState<any[]>([]);
 
   // Registration State
   const [regData, setRegData] = useState({
@@ -50,6 +51,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setBackgroundImage(BACKGROUND_IMAGES[idx]);
     }
   }, [view]);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      const p = await saasService.getPlans();
+      setPlans(p);
+    };
+    fetchPlans();
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,6 +372,56 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     </div>
   );
 
+  const renderPricing = () => (
+    <div className="w-full bg-white font-sans py-24 px-4 overflow-y-auto">
+      <div className="max-w-7xl mx-auto text-center mb-16">
+        <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">Escolha o seu nível de <span className="text-emerald-500 italic">Excelência.</span></h2>
+        <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Planos desenhados para todas as fases da sua clínica, do início autônomo às grandes operações multi-profissionais.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {plans.map((plan) => (
+          <div key={plan.id} className="bg-white border border-emerald-100 rounded-[48px] p-10 flex flex-col shadow-xl shadow-emerald-500/5 hover:border-emerald-300 transition-all group relative overflow-hidden">
+            <h3 className="text-2xl font-black text-slate-900 mb-2">{plan.name}</h3>
+            <p className="text-sm text-slate-500 mb-8 font-bold leading-relaxed">{plan.description}</p>
+            
+            <div className="mb-10">
+              <span className="text-5xl font-black text-slate-900Tracking-tight">R$ {plan.basePrice}</span>
+              <span className="text-slate-400 font-bold uppercase tracking-widest text-xs ml-2">/mês</span>
+            </div>
+
+            <div className="space-y-4 mb-10 flex-grow">
+              <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                <Icons.CheckCircle className="text-emerald-500" size={18} />
+                <span>{plan.maxProfessionals === 0 ? '1 Profissional Autônomo' : `${1 + plan.maxProfessionals} Profissionais`}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                <Icons.CheckCircle className="text-emerald-500" size={18} />
+                <span>Pacientes Ilimitados</span>
+              </div>
+              {plan.features.map((feature: string) => (
+                <div key={feature} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                  <Icons.CheckCircle className="text-emerald-500" size={18} />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => {
+                setRegData({...regData, planId: plan.id});
+                setView('REGISTER');
+              }}
+              className="w-full py-5 rounded-[24px] bg-emerald-600 hover:bg-slate-900 text-white font-black text-lg transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+            >
+              Começar agora
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const renderLogin = () => (
     <div className="relative w-full max-w-lg mt-24 mb-24 animate-fadeIn px-4" style={{ zIndex: 10 }}>
       <div className="text-center mb-8">
@@ -471,14 +530,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       </div>
 
       {/* Header / Nav */}
-      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/95 border-b border-emerald-100' : 'bg-emerald-950/90 border-b border-emerald-900/50'}`}>
-        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter ${view === 'LANDING' ? 'text-slate-900' : 'text-white'}`}>
-          Control<span className={`${view === 'LANDING' ? 'text-emerald-500' : 'text-emerald-400'}`}>Clin</span>
+      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' || view === 'PRICING' ? 'bg-white/95 border-b border-emerald-100' : 'bg-emerald-950/90 border-b border-emerald-900/50'}`}>
+        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter ${view === 'LANDING' || view === 'PRICING' ? 'text-slate-900' : 'text-white'}`}>
+          Control<span className={`${view === 'LANDING' || view === 'PRICING' ? 'text-emerald-500' : 'text-emerald-400'}`}>Clin</span>
         </button>
-        <div className="flex items-center gap-2 md:gap-4">
+
+        <div className="hidden lg:flex items-center gap-8 ml-10">
+          <button onClick={() => setView('LANDING')} className={`text-xs font-black uppercase tracking-widest ${view === 'LANDING' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}>Início</button>
+          <button onClick={() => setView('PRICING')} className={`text-xs font-black uppercase tracking-widest ${view === 'PRICING' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}>Planos</button>
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-4 ml-auto">
           <button
             onClick={() => setView('LOGIN')}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' || view === 'PRICING' ? 'bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
           >
             Entrar
           </button>
@@ -497,6 +562,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {view === 'LOGIN' && renderLogin()}
         {view === 'REGISTER' && renderRegister()}
         {view === 'SUCCESS' && renderSuccess()}
+        {view === 'PRICING' && renderPricing()}
       </div>
     </div>
   );

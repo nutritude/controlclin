@@ -84,53 +84,223 @@ const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
     </div>
 );
 
-const PlansTab: React.FC<{ plans: SaaSPlan[] }> = ({ plans }) => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex justify-between items-center bg-white border border-secondary/20 p-6 rounded-[24px]">
-            <div>
-                <h2 className="text-lg font-black text-dark">Configuração de Planos</h2>
-                <p className="text-xs text-slate-500 font-medium">Gerencie limites, preços e features de cada nível de assinatura.</p>
-            </div>
-            <button className="flex items-center gap-2 bg-accent hover:bg-dark text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-accent/10">
-                <Plus size={18} /> Novo Plano
-            </button>
-        </div>
+const PlansTab: React.FC<{ plans: SaaSPlan[], onRefresh: () => void }> = ({ plans, onRefresh }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<SaaSPlan | null>(null);
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map(plan => (
-                <div key={plan.id} className="bg-white border border-secondary/10 rounded-[32px] p-8 relative overflow-hidden group hover:border-accent/30 transition-all shadow-sm">
-                    {!plan.isActive && <div className="absolute top-4 right-4 bg-red-100 text-red-500 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Inativo</div>}
-                    <h4 className="text-xl font-black text-dark mb-2">{plan.name}</h4>
-                    <p className="text-xs text-slate-500 mb-6 font-medium line-clamp-2">{plan.description}</p>
+    const handleOpenModal = (plan?: SaaSPlan) => {
+        setEditingPlan(plan || null);
+        setIsModalOpen(true);
+    };
 
-                    <div className="text-2xl font-black text-dark mb-8">
-                        R$ {plan.basePrice.toLocaleString()} <span className="text-xs font-medium text-slate-400">/mês</span>
-                    </div>
-
-                    <div className="space-y-4 mb-8">
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Usuários</span>
-                            <span className="text-dark font-black">{1 + plan.maxProfessionals} (1+ {plan.maxProfessionals})</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Pacientes</span>
-                            <span className="text-dark font-black">{plan.maxPatients === 'unlimited' ? '∞ Ilimitado' : plan.maxPatients}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-8">
-                        {plan.features.slice(0, 3).map(f => (
-                            <span key={f} className="text-[9px] font-black uppercase tracking-wider bg-primary/30 text-secondary px-2.5 py-1.5 rounded-lg border border-secondary/10">{f}</span>
-                        ))}
-                        {plan.features.length > 3 && <span className="text-[9px] font-black text-accent px-1 py-1">+{plan.features.length - 3}</span>}
-                    </div>
-
-                    <button className="w-full py-3 rounded-2xl bg-primary/20 hover:bg-primary/40 text-dark text-xs font-black uppercase tracking-widest transition-all border border-secondary/10">Editar Plano</button>
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center bg-white border border-secondary/20 p-6 rounded-[24px]">
+                <div>
+                    <h2 className="text-lg font-black text-dark">Configuração de Planos</h2>
+                    <p className="text-xs text-slate-500 font-medium">Gerencie limites, preços e features de cada nível de assinatura.</p>
                 </div>
-            ))}
+                <button
+                    onClick={() => handleOpenModal()}
+                    className="flex items-center gap-2 bg-accent hover:bg-dark text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-accent/10"
+                >
+                    <Plus size={18} /> Novo Plano
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plans.map(plan => (
+                    <div key={plan.id} className="bg-white border border-secondary/10 rounded-[32px] p-8 relative overflow-hidden group hover:border-accent/30 transition-all shadow-sm flex flex-col h-full">
+                        {!plan.isActive && <div className="absolute top-4 right-4 bg-red-100 text-red-500 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Inativo</div>}
+                        <h4 className="text-xl font-black text-dark mb-2">{plan.name}</h4>
+                        <p className="text-xs text-slate-500 mb-6 font-medium line-clamp-2">{plan.description}</p>
+
+                        <div className="text-2xl font-black text-dark mb-8">
+                            R$ {plan.basePrice.toLocaleString()} <span className="text-xs font-medium text-slate-400">/mês</span>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Usuários</span>
+                                <span className="text-dark font-black">{1 + (plan.maxProfessionals || 0)} (1+ {(plan.maxProfessionals || 0)})</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Gestores Totais</span>
+                                <span className="text-dark font-black">{plan.maxManagers || 1}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Pacientes</span>
+                                <span className="text-dark font-black">{plan.maxPatients === 'unlimited' ? '∞ Ilimitado' : plan.maxPatients}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-8 flex-grow">
+                            {plan.features.map(f => (
+                                <span key={f} className="text-[9px] font-black uppercase tracking-wider bg-primary/30 text-secondary px-2.5 py-1.5 rounded-lg border border-secondary/10">{f}</span>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => handleOpenModal(plan)}
+                            className="w-full py-3 mt-auto rounded-2xl bg-primary/20 hover:bg-primary/40 text-dark text-xs font-black uppercase tracking-widest transition-all border border-secondary/10"
+                        >
+                            Editar Plano
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            {isModalOpen && (
+                <PlanModal
+                    plan={editingPlan}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={async (p) => {
+                        const allPlans = [...plans];
+                        const idx = allPlans.findIndex(x => x.id === p.id);
+                        if (idx >= 0) allPlans[idx] = p;
+                        else allPlans.push(p);
+                        await saasService.updatePlans(allPlans);
+                        onRefresh();
+                    }}
+                />
+            )}
         </div>
-    </div>
-);
+    );
+};
+
+const PlanModal: React.FC<{ plan: SaaSPlan | null, onClose: () => void, onSave: (p: SaaSPlan) => Promise<void> }> = ({ plan, onClose, onSave }) => {
+    const [formData, setFormData] = useState<SaaSPlan>(plan || {
+        id: 'CUSTOM' as any,
+        name: '',
+        slug: '',
+        description: '',
+        maxManagers: 1,
+        maxProfessionals: 0,
+        maxPatients: 'unlimited',
+        features: [],
+        availableCycles: ['monthly', 'yearly'],
+        basePrice: 0,
+        discounts: { monthly: 0, quarterly: 0.1, semester: 0.15, yearly: 0.2 },
+        isActive: true
+    });
+    const [loading, setLoading] = useState(false);
+    const [newFeature, setNewFeature] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            if (!formData.slug) formData.slug = saasService.generateSlug(formData.name);
+            if (formData.id === 'CUSTOM' as any) formData.id = formData.slug.toUpperCase() as any;
+            await onSave(formData);
+            onClose();
+        } catch (err: any) { alert(err.message); }
+        finally { setLoading(false); }
+    };
+
+    const addFeature = () => {
+        if (!newFeature.trim()) return;
+        setFormData({ ...formData, features: [...formData.features, newFeature.trim()] });
+        setNewFeature('');
+    };
+
+    const removeFeature = (idx: number) => {
+        const newFeatures = [...formData.features];
+        newFeatures.splice(idx, 1);
+        setFormData({ ...formData, features: newFeatures });
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-white border border-secondary/20 rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[90vh] overflow-y-auto relative custom-scrollbar">
+                <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 font-black hover:text-dark transition-colors">✕</button>
+
+                <div className="mb-10 text-center">
+                    <h2 className="text-2xl font-black text-dark uppercase tracking-tight mb-2">{plan ? 'Editar Plano' : 'Criar Novo Plano'}</h2>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Configure limites, recursos e preços Marsala</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* IDENTIDADE */}
+                        <div className="space-y-6 md:col-span-2">
+                            <InputField label="Nome do Plano" value={formData.name} onChange={v => setFormData({ ...formData, name: v })} placeholder="Ex: Starter, Pro, Clínica..." />
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Descrição Curta</label>
+                                <textarea
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    className="w-full bg-primary/20 border border-secondary/20 rounded-2xl px-5 py-4 text-dark placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-medium h-24"
+                                    placeholder="Ideal para..."
+                                />
+                            </div>
+                        </div>
+
+                        {/* LIMITES SOCIAIS */}
+                        <InputField label="Profissionais Extra (Ex: 2)" value={formData.maxProfessionals} onChange={v => setFormData({ ...formData, maxProfessionals: parseInt(v) || 0 })} placeholder="0" />
+                        <InputField label="Cargos de Gestor (Máx)" value={formData.maxManagers} onChange={v => setFormData({ ...formData, maxManagers: parseInt(v) || 1 })} placeholder="1" />
+
+                        {/* PREIFICAÇÃO */}
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 bg-primary/10 p-8 rounded-[32px] border border-secondary/10">
+                            <div>
+                                <InputField label="Preço Mensal Base (R$)" value={formData.basePrice} onChange={v => setFormData({ ...formData, basePrice: parseFloat(v) || 0 })} placeholder="97.00" />
+                                <p className="text-[9px] text-slate-400 font-bold uppercase mt-2 tracking-widest italic">* Referência para os demais ciclos</p>
+                            </div>
+                            <div className="space-y-4">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Descontos (%)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="space-y-1">
+                                        <span className="text-[8px] font-black text-slate-400 uppercase">Trim.</span>
+                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.quarterly} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, quarterly: parseFloat(e.target.value) } })} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-[8px] font-black text-slate-400 uppercase">Sem.</span>
+                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.semester} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, semester: parseFloat(e.target.value) } })} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-[8px] font-black text-slate-400 uppercase">Anual</span>
+                                        <input type="number" step="0.01" className="w-full bg-white border border-secondary/20 rounded-lg p-2 text-xs font-black" value={formData.discounts.yearly} onChange={e => setFormData({ ...formData, discounts: { ...formData.discounts, yearly: parseFloat(e.target.value) } })} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RECURSOS */}
+                        <div className="md:col-span-2 space-y-4">
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Recursos e Abas Liberadas</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newFeature}
+                                    onChange={e => setNewFeature(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                                    placeholder="Adicionar recurso (ex: Agenda)..."
+                                    className="flex-1 bg-primary/20 border border-secondary/20 rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                                />
+                                <button type="button" onClick={addFeature} className="bg-secondary text-white px-6 rounded-2xl font-black text-xs uppercase tracking-widest">Add</button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {formData.features.map((f, i) => (
+                                    <span key={i} className="group flex items-center gap-2 bg-white border border-secondary/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-dark shadow-sm">
+                                        {f}
+                                        <button type="button" onClick={() => removeFeature(i)} className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-4 pt-10 mt-8 border-t border-secondary/10">
+                        <button type="button" onClick={onClose} className="px-8 py-3 rounded-2xl border border-secondary/20 text-slate-500 font-black text-[10px] uppercase tracking-widest">Cancelar</button>
+                        <button type="submit" disabled={loading} className="px-12 py-3 rounded-2xl bg-accent text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-accent/20">
+                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 const CouponsTab: React.FC<{ coupons: SaaSCoupon[] }> = ({ coupons }) => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -565,7 +735,10 @@ const SaaSDashboard: React.FC = () => {
                 ) : (
                     <>
                         {activeTab === 'dashboard' && metrics && <AnalyticsTab metrics={metrics} />}
-                        {activeTab === 'plans' && <PlansTab plans={plans} />}
+                        {activeTab === 'plans' && <PlansTab plans={plans} onRefresh={async () => {
+                            const p = await saasService.getPlans();
+                            setPlans(p);
+                        }} />}
                         {activeTab === 'coupons' && <CouponsTab coupons={coupons} />}
                         {activeTab === 'subscribers' && (
                             <SubscribersTab
