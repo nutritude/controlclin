@@ -90,7 +90,9 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
         setIsModalOpen(true);
     };
 
-    // REFACTORED DELETE: Custom Confirm Modal + Optimistic Updates
+    const [reassignToId, setReassignToId] = useState<string>('none');
+
+    // REFACTORED DELETE: Custom Confirm Modal + Reassignment + Optimistic Updates
     const requestDelete = (id: string | null) => {
         if (!id) return;
         // Protection against deleting self
@@ -99,11 +101,16 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
             return;
         }
         setDeleteConfirmId(id);
+        setReassignToId('none'); // Reset reassignment logic
     };
 
     const confirmDelete = async () => {
         const id = deleteConfirmId;
         if (!id) return;
+        
+        const professionalToDelete = professionals.find(p => p.id === id);
+        if (!professionalToDelete) return;
+
         setDeleteConfirmId(null);
 
         // 1. Optimistic Update (Remove from UI immediately)
@@ -112,9 +119,9 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
         setIsModalOpen(false);
 
         try {
-            // 2. Perform DB Operation
-            const result = await db.deleteProfessional(user, id);
-            showToast(`Excluído com sucesso. ${result.cancelled} agendamentos cancelados.`);
+            // 2. Perform DB Operation with Reassignment
+            const result = await db.deleteProfessional(user, id, reassignToId);
+            showToast(`✅ ${professionalToDelete.name} removido. ${result.reassigned} pacientes remanejados e ${result.cancelled} agendamentos cancelados.`);
 
             // 3. Confirm with real data fetch
             fetchData();
@@ -125,6 +132,13 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
             showToast('❌ Falha ao excluir: ' + e);
         }
     };
+
+    // ... (rendering remains similar but with redistributed logic in the modal)
+
+    // Filter available professionals for reassignment (exclude the one being deleted)
+    const availableForReassignment = professionals.filter(p => p.id !== deleteConfirmId);
+
+    // [...]
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -507,32 +521,51 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
             {/* Delete Confirmation Modal */}
             {deleteConfirmId && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
-                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100' : 'bg-white text-gray-900 border-gray-200'} rounded-xl shadow-2xl w-full max-w-md overflow-hidden border`}>
-                        <div className={`p-6 text-center`}>
-                            <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center">
-                                <svg className="w-7 h-7 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <div className={`${isManagerMode ? 'bg-white text-slate-800 border-blue-100' : 'bg-white text-gray-900 border-gray-200'} rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border`}>
+                        <div className={`p-8 text-center`}>
+                            <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center animate-pulse">
+                                <svg className="w-8 h-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-bold mb-2">Confirmar Exclusão</h3>
-                            <p className={`text-sm mb-1 ${isManagerMode ? 'text-slate-700' : 'text-gray-600'}`}>
-                                <strong>{professionals.find(p => p.id === deleteConfirmId)?.name}</strong>
+                            <h3 className="text-xl font-bold mb-2">Exclusão Permanente</h3>
+                            <p className={`text-sm mb-4 ${isManagerMode ? 'text-slate-700' : 'text-gray-600'}`}>
+                                Você está excluindo <strong>{professionals.find(p => p.id === deleteConfirmId)?.name}</strong> da clínica. 
+                                Esta ação é irreversível e removerá o acesso do usuário imediatamente.
                             </p>
-                            <p className={`text-xs mb-6 ${isManagerMode ? 'text-slate-500' : 'text-gray-500'}`}>
-                                A exclusão é irreversível. O acesso do usuário será revogado e agendamentos futuros serão cancelados.
-                            </p>
-                            <div className="flex gap-3 justify-center">
+
+                            {/* Reassignment Section */}
+                            <div className={`mt-6 mb-8 p-5 rounded-2xl border text-left ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
+                                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isManagerMode ? 'text-blue-900' : 'text-slate-500'}`}>
+                                    Remanejar Pacientes Para:
+                                </label>
+                                <select 
+                                    className={`w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 appearance-none`}
+                                    value={reassignToId}
+                                    onChange={(e) => setReassignToId(e.target.value)}
+                                >
+                                    <option value="none">Ninguém (Remover Profess. do Paciente)</option>
+                                    {availableForReassignment.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                                <p className="mt-2 text-[10px] text-gray-500 leading-relaxed font-medium">
+                                    Os pacientes serão transferidos para o profissional selecionado. Agendamentos futuros serão cancelados para evitar conflitos de horário.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4 justify-center">
                                 <button
                                     onClick={() => setDeleteConfirmId(null)}
-                                    className={`px-5 py-2.5 rounded-lg font-bold text-sm border transition-colors ${isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                    className={`flex-1 px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest border transition-all ${isManagerMode ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     onClick={confirmDelete}
-                                    className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors shadow-sm"
+                                    className="flex-1 px-5 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95"
                                 >
-                                    Sim, Excluir
+                                    Confirmar Exclusão
                                 </button>
                             </div>
                         </div>

@@ -1224,37 +1224,53 @@ class DatabaseService {
         throw new Error("Profissional não encontrado");
     }
 
-    async deleteProfessional(user: User, id: string) {
+    async deleteProfessional(user: User, id: string, reassignToId?: string) {
         const pIdx = this.professionals.findIndex(p => p.id === id);
         if (pIdx > -1) {
             const prof = this.professionals[pIdx];
 
-            // Logic to check impacted future appointments BEFORE deletion
-            const futureAppts = this.appointments.filter(a => a.professionalId === id && new Date(a.startTime) > new Date());
-            const count = futureAppts.length;
+            // 1. REMANEJO DE PACIENTES (REASSIGNMENT)
+            let reassignedCount = 0;
+            if (reassignToId && reassignToId !== 'none') {
+                this.patients.forEach(p => {
+                    if (p.professionalId === id) {
+                        p.professionalId = reassignToId;
+                        reassignedCount++;
+                    }
+                });
+                console.log(`[DB] 🔄 ${reassignedCount} pacientes remanejados de ${prof.name} para o profissional ID: ${reassignToId}`);
+            }
 
-            // Cancel impacted future appointments
+            // 2. TRATAMENTO DE AGENDAMENTOS FUTUROS
+            const futureAppts = this.appointments.filter(a => a.professionalId === id && new Date(a.startTime) > new Date());
+            const cancelledCount = futureAppts.length;
+
             futureAppts.forEach(appt => {
                 const aIdx = this.appointments.findIndex(a => a.id === appt.id);
                 if (aIdx > -1) {
                     this.appointments[aIdx].status = AppointmentStatus.CANCELED;
+                    this.appointments[aIdx].notes = (this.appointments[aIdx].notes || '') + `\n[SISTEMA] Cancelado devido a exclusão do profissional ${prof.name}.`;
                 }
             });
 
-            // HARD DELETE: Remove professional from array
+            // 3. EXCLUSÃO PERMANENTE (HARD DELETE)
             this.professionals.splice(pIdx, 1);
 
-            // Also remove the associated user to revoke login access
-            const uIdx = this.users.findIndex(u => u.id === prof.userId);
+            // 4. REVOGAÇÃO DE ACESSO (REMOVE USER)
+            const uIdx = this.users.findIndex(u => u.id === prof.userId || u.email.toLowerCase() === prof.email.toLowerCase());
             if (uIdx > -1) {
+                const targetUser = this.users[uIdx];
                 this.users.splice(uIdx, 1);
+                console.log(`[DB] 🔐 Acesso revogado para o usuário: ${targetUser.email}`);
             }
 
-            this.saveToStorage();
-            console.log(`[DB] 🗑️ Profissional excluído: ${prof.name} (ID: ${id}). ${count} agendamentos cancelados.`);
-            return { reassigned: 0, cancelled: count };
+            // 5. PERSISTÊNCIA NA NUVEM
+            await this.saveToStorage(true);
+            console.log(`[DB] 🗑️ Profissional excluído permanentemente: ${prof.name} (ID: ${id}).`);
+            
+            return { reassigned: reassignedCount, cancelled: cancelledCount };
         }
-        throw new Error("Profissional não encontrado");
+        throw new Error("Profissional não encontrado no banco de dados.");
     }
     /**
      * getPatients: Central hub for patient retrieval.

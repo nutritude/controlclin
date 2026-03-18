@@ -1,11 +1,13 @@
 
 // ============================================================
 // saasService.ts — ControlClin Backoffice Service
-// Gerencia todas as operações administrativas SaaS globais
+// Gerencia todas as operações administrativas SaaS globais via Firebase
 // ============================================================
 
-import { db } from './db';
 import { Clinic } from '../types';
+import { db as firestore } from './firebase';
+import { doc, setDoc, getDoc, getDocs, collection, query, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from './db';
 
 // ─── TIPOS DO BACKOFFICE ────────────────────────────────────
 
@@ -162,17 +164,18 @@ const SAAS_ADMIN: SaaSAdmin = {
     name: 'Admin ControlClin',
 };
 
-// ─── STORAGE KEYS ──────────────────────────────────────────
+// ─── STORAGE KEYS (SESSION ONLY) ──────────────────────────
 const SAAS_SESSION_KEY = 'saas_admin_session';
-const SAAS_CLINICS_KEY = 'saas_clinics_registry';
-const SAAS_PLANS_KEY = 'saas_plans_registry';
-const SAAS_COUPONS_KEY = 'saas_coupons_registry';
+
+// ─── FIRESTORE PATHS ──────────────────────────────────────
+const SAAS_COLLECTION = 'saas_config';
+const SAAS_CLINICS_COLLECTION = 'saas_clinics';
 
 // ─── SERVIÇO ──────────────────────────────────────────────
 
 export const saasService = {
 
-    // ── Autenticação ────────────────────────────────────────
+    // ── Autenticação (Mantida local p/ sessão simples) ────────
     login(email: string, password: string): boolean {
         if (email.trim().toLowerCase() === SAAS_ADMIN.email && password === SAAS_ADMIN.password) {
             localStorage.setItem(SAAS_SESSION_KEY, JSON.stringify({ email, name: SAAS_ADMIN.name, loginAt: new Date().toISOString() }));
@@ -196,106 +199,108 @@ export const saasService = {
         } catch { return 'Admin'; }
     },
 
-    // ── Gestão de Planos ─────────────────────────────────────
+    // ── Gestão de Planos (Nuvem) ──────────────────────────────
     async getPlans(): Promise<SaaSPlan[]> {
-        const stored = localStorage.getItem(SAAS_PLANS_KEY);
-        if (!stored) {
-            this._savePlans(DEFAULT_PLANS);
+        try {
+            const docRef = doc(firestore, SAAS_COLLECTION, 'plans');
+            const snap = await getDoc(docRef);
+            
+            if (snap.exists()) {
+                return snap.data().items || DEFAULT_PLANS;
+            } else {
+                // Initial seed
+                await setDoc(docRef, { items: DEFAULT_PLANS });
+                return DEFAULT_PLANS;
+            }
+        } catch (err) {
+            console.error('[SaaS] Erro ao buscar planos no Firebase:', err);
             return DEFAULT_PLANS;
         }
-        return JSON.parse(stored);
     },
 
-    _savePlans(plans: SaaSPlan[]): void {
-        localStorage.setItem(SAAS_PLANS_KEY, JSON.stringify(plans));
+    async updatePlans(plans: SaaSPlan[]): Promise<void> {
+        const docRef = doc(firestore, SAAS_COLLECTION, 'plans');
+        await setDoc(docRef, { items: plans });
     },
 
-    // ── Gestão de Cupons ─────────────────────────────────────
+    // ── Gestão de Cupons (Nuvem) ──────────────────────────────
     async getCoupons(): Promise<SaaSCoupon[]> {
-        const stored = localStorage.getItem(SAAS_COUPONS_KEY);
-        if (!stored) {
-            const defaultCoupons: SaaSCoupon[] = [
-                {
-                    id: '1',
-                    code: 'LANCAMENTO50',
-                    type: 'PERCENTAGE',
-                    value: 50,
-                    expiresAt: '2026-03-31',
-                    maxUses: 100,
-                    currentUses: 12,
-                    maxPerCustomer: 1,
-                    applicablePlans: 'ALL',
-                    firstCycleOnly: true,
-                    isActive: true
-                }
-            ];
-            this._saveCoupons(defaultCoupons);
-            return defaultCoupons;
+        try {
+            const docRef = doc(firestore, SAAS_COLLECTION, 'coupons');
+            const snap = await getDoc(docRef);
+            
+            if (snap.exists()) {
+                return snap.data().items || [];
+            } else {
+                const defaultCoupons: SaaSCoupon[] = [
+                    {
+                        id: '1',
+                        code: 'LANCAMENTO50',
+                        type: 'PERCENTAGE',
+                        value: 50,
+                        expiresAt: '2026-12-31',
+                        maxUses: 100,
+                        currentUses: 0,
+                        maxPerCustomer: 1,
+                        applicablePlans: 'ALL',
+                        firstCycleOnly: true,
+                        isActive: true
+                    }
+                ];
+                await setDoc(docRef, { items: defaultCoupons });
+                return defaultCoupons;
+            }
+        } catch (err) {
+            console.error('[SaaS] Erro ao buscar cupons no Firebase:', err);
+            return [];
         }
-        return JSON.parse(stored);
     },
 
-    _saveCoupons(coupons: SaaSCoupon[]): void {
-        localStorage.setItem(SAAS_COUPONS_KEY, JSON.stringify(coupons));
+    async updateCoupons(coupons: SaaSCoupon[]): Promise<void> {
+        const docRef = doc(firestore, SAAS_COLLECTION, 'coupons');
+        await setDoc(docRef, { items: coupons });
     },
 
-    // ── Gestão de Assinantes ───────────────────────────────────
+    // ── Gestão de Assinantes (Nuvem) ───────────────────────────
     async getAllClinics(): Promise<SaaSClinic[]> {
         try {
-            const stored = localStorage.getItem(SAAS_CLINICS_KEY);
-            const registry: SaaSClinic[] = stored ? JSON.parse(stored) : [];
-
-            // Mock de dados se estiver vazio
-            if (registry.length === 0) {
-                const mainClinic = await db.getClinic('c1');
-                const demo: SaaSClinic = {
-                    ...(mainClinic || { id: 'c1', name: 'Clínica Demo', slug: 'demo', isActive: true }),
+            const colRef = collection(firestore, SAAS_CLINICS_COLLECTION);
+            const snap = await getDocs(colRef);
+            
+            if (snap.empty) {
+                // Seed inicial se estiver vazio para demonstração
+                const demoId = 'c1';
+                const demoClinic: SaaSClinic = {
+                    id: demoId,
+                    name: 'ControlClin Excellence',
+                    slug: 'control',
+                    isActive: true,
                     planId: 'PROFESSIONAL',
                     status: 'active',
                     cycle: 'monthly',
                     startDate: '2025-01-01T00:00:00Z',
                     nextBillingDate: '2026-04-01T00:00:00Z',
-                    responsibleName: 'Administrador Demo',
-                    responsibleEmail: 'admin@clinicademo.com',
+                    responsibleName: 'Admin Demo',
+                    responsibleEmail: 'admin@clinica.com',
                     responsiblePhone: '(11) 99999-9999',
                     patientsCount: 156,
                     professionalsCount: 3,
                     activeUsersCount: 3,
-                    isActive: true
                 };
-
-                const fake1: SaaSClinic = {
-                    ...demo,
-                    id: 'fake-1',
-                    name: 'ControlClin Excellence',
-                    slug: 'excellence',
-                    planId: 'PROFESSIONAL',
-                    status: 'active',
-                    cycle: 'yearly',
-                    startDate: '2025-06-15T10:00:00Z',
-                    nextBillingDate: '2026-06-15T10:00:00Z',
-                };
-                const fake2: SaaSClinic = {
-                    ...demo,
-                    id: 'fake-2',
-                    name: 'Clínica Nutri Vida',
-                    slug: 'nutrivida',
-                    planId: 'ESSENTIAL',
-                    status: 'trial',
-                    cycle: 'monthly',
-                    startDate: '2026-02-20T14:30:00Z',
-                    nextBillingDate: '2026-03-20T14:30:00Z',
-                    patientsCount: 12,
-                };
-
-                registry.push(demo, fake1, fake2);
-                this._saveRegistry(registry);
+                await this.saveClinicToCloud(demoClinic);
+                return [demoClinic];
             }
 
-            return registry;
-        } catch {
+            return snap.docs.map(d => d.data() as SaaSClinic);
+        } catch (err) {
+            console.error('[SaaS] Erro ao buscar clínicas no Firebase:', err);
             return [];
         }
+    },
+
+    async saveClinicToCloud(clinic: SaaSClinic): Promise<void> {
+        const docRef = doc(firestore, SAAS_CLINICS_COLLECTION, clinic.id);
+        await setDoc(docRef, clinic);
     },
 
     async getMetrics(): Promise<SaaSMetrics> {
@@ -311,7 +316,9 @@ export const saasService = {
         const dist: Record<PlanType, number> = {
             STARTER: 0, ESSENTIAL: 0, PROFESSIONAL: 0, CLINIC: 0, ENTERPRISE: 0, CUSTOM: 0
         };
-        clinics.forEach(c => dist[c.planId]++);
+        clinics.forEach(c => {
+            if (dist[c.planId] !== undefined) dist[c.planId]++;
+        });
 
         return {
             totalClinics: clinics.length,
@@ -321,8 +328,8 @@ export const saasService = {
             pastDueClinics: clinics.filter(c => c.status === 'past_due').length,
             mrr,
             arr: mrr * 12,
-            ltv: mrr * 24 / (clinics.length || 1), // Simulado
-            cac: 450, // Simulado
+            ltv: mrr * 24 / (clinics.length || 1),
+            cac: 450,
             churnRate: 2.4,
             conversionRate: 67,
             plansDistribution: dist
@@ -334,12 +341,11 @@ export const saasService = {
             throw new Error('Dados obrigatórios ausentes: Nome, Email ou Plano.');
         }
 
-        const clinics = await this.getAllClinics();
         const id = `clinic-${Date.now()}`;
-
-        // Cálculo da próxima cobrança
         const startDate = new Date();
         const nextBillingDate = new Date();
+        
+        // Cálculo do ciclo
         switch (data.cycle) {
             case 'monthly': nextBillingDate.setMonth(startDate.getMonth() + 1); break;
             case 'quarterly': nextBillingDate.setMonth(startDate.getMonth() + 3); break;
@@ -354,7 +360,7 @@ export const saasService = {
             slug: data.slug || this.generateSlug(data.name),
             isActive: true,
             status: data.status || 'trial',
-            planId: data.planId,
+            planId: data.planId as PlanType,
             cycle: data.cycle || 'monthly',
             startDate: startDate.toISOString(),
             nextBillingDate: nextBillingDate.toISOString(),
@@ -367,99 +373,67 @@ export const saasService = {
             activeUsersCount: 1,
         };
 
-        // --- AUTOPROVISIONING NA BASE DE DADOS PRINCIPAL ---
+        // 1. Salva no Registro do SaaS (Nuvem)
+        await this.saveClinicToCloud(newClinic);
+
+        // 2. Autoprovisionamento na Base de Dados da Clínica
         try {
-            // 1. Cria a Clínica no Workspace
             await db.createClinic({
                 id: newClinic.id,
                 name: newClinic.name,
                 slug: newClinic.slug
             });
 
-            // 2. Cria o Usuário Administrador da Clínica
             await db.createUser({
                 clinicId: newClinic.id,
                 name: newClinic.responsibleName,
                 email: newClinic.responsibleEmail,
                 role: 'CLINIC_ADMIN' as any,
-                password: '123' // Senha padrão para primeiro login (deve ser alterada)
+                password: '123'
             });
-            console.log(`[SaaS] Workspace provisionado para ${newClinic.name} (${newClinic.id})`);
+            console.log(`[SaaS] Workspace provisionado na nuvem para ${newClinic.name}`);
         } catch (err) {
             console.error('[SaaS] Erro no autoprovisionamento:', err);
-            // Mesmo se o provisionamento falhar no DB principal, registramos no SaaS 
-            // para permitir tentativas manuais de "Retry Provisoning" no futuro.
         }
 
-        const updated = [newClinic, ...clinics];
-        this._saveRegistry(updated);
         return newClinic;
     },
 
-    // ── Fluxo de Captação (Landing Page) ───────────────────────
-    // Este método seria chamado por uma API pública após preenchimento no site
-    async registerFromLandingPage(data: {
-        name: string,
-        email: string,
-        phone: string,
-        planId: PlanType,
-        cycle: PaymentCycle
-    }): Promise<SaaSClinic> {
-        console.log('[SaaS] Nova captação da Landing Page:', data.name);
-
-        // 1. Validações básicas
-        if (!this.validateEmail(data.email)) throw new Error('E-mail inválido');
-
-        // 2. Cria o registro com status TRIAL (liberação imediata por 7 dias p/ exemplo)
-        const clinic = await this.createClinic({
-            name: data.name,
-            responsibleEmail: data.email,
-            responsiblePhone: data.phone,
-            responsibleName: data.name, // Nome da clínica como nome inicial do resp.
-            planId: data.planId,
-            cycle: data.cycle,
-            status: 'trial'
-        });
-
-        return clinic;
-    },
-
-    // ── Simulação de Checkout / Pagamento ─────────────────────
+    // ── Checkout / Pagamento (Nuvem) ──────────────────────────
     async processPayment(clinicId: string, transactionId: string): Promise<boolean> {
-        console.log(`[SaaS] Processando pagamento para clínica ${clinicId}. Transação: ${transactionId}`);
+        console.log(`[SaaS] Processando pagamento Cloud para ${clinicId}`);
 
-        const clinics = await this.getAllClinics();
-        const idx = clinics.findIndex(c => c.id === clinicId);
+        const docRef = doc(firestore, SAAS_CLINICS_COLLECTION, clinicId);
+        const snap = await getDoc(docRef);
 
-        if (idx === -1) throw new Error('Clínica não encontrada');
+        if (!snap.exists()) throw new Error('Clínica não encontrada');
 
-        // Simula verificação com gateway de pagamento
-        const isSuccess = true;
+        const clinic = snap.data() as SaaSClinic;
+        
+        // Simula checkout sucesso
+        const updateData: Partial<SaaSClinic> = {
+            status: 'active',
+            isActive: true
+        };
 
-        if (isSuccess) {
-            clinics[idx].status = 'active';
-            clinics[idx].isActive = true;
+        const nextDate = new Date();
+        if (clinic.cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+        else if (clinic.cycle === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
+        
+        updateData.nextBillingDate = nextDate.toISOString();
 
-            // Recalcula billing date baseado na data de pagamento
-            const nextDate = new Date();
-            const cycle = clinics[idx].cycle;
-            if (cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
-            else if (cycle === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
-
-            clinics[idx].nextBillingDate = nextDate.toISOString();
-
-            this._saveRegistry(clinics);
-            console.log(`[SaaS] Conta ${clinicId} ativada com sucesso após pagamento.`);
-            return true;
-        }
-
-        return false;
+        await updateDoc(docRef, updateData);
+        return true;
     },
 
     async getClinicStatus(clinicId: string): Promise<SubscriptionStatus> {
-        const clinics = await this.getAllClinics();
-        const clinic = clinics.find(c => c.id === clinicId);
-        return clinic ? clinic.status : 'active'; // Default active if not found (legacy)
+        try {
+            const docRef = doc(firestore, SAAS_CLINICS_COLLECTION, clinicId);
+            const snap = await getDoc(docRef);
+            return snap.exists() ? (snap.data() as SaaSClinic).status : 'active';
+        } catch {
+            return 'active';
+        }
     },
 
     validateEmail(email: string): boolean {
@@ -469,10 +443,6 @@ export const saasService = {
     validateCNPJ(cnpj: string): boolean {
         const cleaned = cnpj.replace(/\D/g, '');
         return cleaned.length === 14;
-    },
-
-    _saveRegistry(clinics: SaaSClinic[]): void {
-        localStorage.setItem(SAAS_CLINICS_KEY, JSON.stringify(clinics));
     },
 
     generateSlug(name: string): string {
