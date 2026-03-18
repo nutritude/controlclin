@@ -1311,6 +1311,9 @@ const NutritionalPlanning: React.FC<NutritionalPlanningProps> = ({ patient, user
                         <button type="button" onClick={() => setShowTemplateModal(true)} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 ${isManagerMode ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                             <Icons.BookOpen className="w-3.5 h-3.5" /> Modelos
                         </button>
+                        <button type="button" onClick={handleSaveTemplate} className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border flex items-center gap-1.5 transition-all active:scale-95 bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700`}>
+                            <span className="text-base leading-none -mt-0.5">⭐</span> Salvar Modelo
+                        </button>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
