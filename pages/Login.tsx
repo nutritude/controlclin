@@ -367,9 +367,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="text-center mb-8">
         <button
           onClick={() => setView('LANDING')}
-          className="text-4xl font-black text-white tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] hover:scale-105 transition-all"
+          className="text-4xl font-black text-white tracking-tight drop-shadow-2xl hover:scale-105 transition-all"
         >
-          Control<span className="text-emerald-500">Clin</span>
+          Control<span className={`${loginMode === 'ADMIN' ? 'text-blue-400' : 'text-emerald-400'}`}>Clin</span>
         </button>
       </div>
 
@@ -379,9 +379,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <button
             type="button"
             onClick={() => { setLoginMode('ADMIN'); setError(''); }}
-            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'ADMIN' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-400'}`}
+            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'ADMIN' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-400'}`}
           >
-            {loginMode === 'ADMIN' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[4px] bg-emerald-500 rounded-full" />}
+            {loginMode === 'ADMIN' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[4px] bg-blue-500 rounded-full" />}
             Gestor
           </button>
           <button
@@ -395,8 +395,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <div className="p-10 space-y-6">
-          <div className={`rounded-2xl p-6 border transition-all duration-500 bg-emerald-50 border-emerald-100`}>
-            <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 text-emerald-600`}>
+          <div className={`rounded-2xl p-6 border transition-all duration-500 ${loginMode === 'ADMIN' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 ${loginMode === 'ADMIN' ? 'text-blue-600' : 'text-emerald-600'}`}>
               {loginMode === 'ADMIN' ? 'Visão Estratégica: GESTOR' : 'Excelência Clínica: PROFISSIONAL'}
             </h3>
             <p className="text-[11px] text-slate-700 font-bold leading-relaxed">
@@ -432,7 +432,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white text-slate-900 focus:outline-none focus:border-emerald-500 text-sm shadow-sm" placeholder="••••••••" />
             </div>
 
-            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : 'bg-emerald-600 shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:bg-emerald-700'}`}>
+            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : loginMode === 'ADMIN' ? 'bg-blue-600 shadow-blue-500/30 hover:shadow-blue-500/50 hover:bg-blue-700' : 'bg-emerald-600 shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:bg-emerald-700'}`}>
               {isSubmitting ? 'Autenticando...' : `Entrar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`}
             </button>
 
@@ -440,8 +440,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               Voltar para início
             </button>
 
-            <div className="pt-4 border-t border-slate-100 mt-4">
-              <a href="/#/patient/login" className="w-full py-3 flex items-center justify-center gap-2 text-emerald-600 hover:text-emerald-700 font-black text-sm uppercase tracking-wider transition-all hover:bg-emerald-50 rounded-2xl">
+            <div className="pt-4 border-t border-secondary/20 mt-4">
+              <a href="/#/patient/login" className={`w-full py-3 flex items-center justify-center gap-2 font-black text-sm uppercase tracking-wider transition-all rounded-2xl ${loginMode === 'ADMIN' ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}>
                 <Icons.User className="h-4 w-4" />
                 Sou Paciente
               </a>
