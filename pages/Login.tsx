@@ -13,11 +13,10 @@ type LoginMode = 'ADMIN' | 'PROFESSIONAL';
 type ViewState = 'LANDING' | 'LOGIN' | 'REGISTER' | 'SUCCESS';
 
 const BACKGROUND_IMAGES = [
-  '/imagebk/Tela de fundo01.jpg',
-  '/imagebk/Tela de fundo02.jpg',
-  '/imagebk/Tela de fundo03.jpg',
-  '/imagebk/Tela de fundo04.jpg',
-  '/imagebk/Tela de fundo05.jpg',
+  'https://images.unsplash.com/photo-1576091160550-217359f4ecf8?auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80'
 ];
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -45,11 +44,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   // Sorteia a imagem de fundo ao montar o componente ou mudar para LOGIN/REGISTER
   useEffect(() => {
-    if (view !== 'LANDING') {
-      const randomImg = BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)];
-      setBackgroundImage(randomImg);
-    } else {
-      setBackgroundImage(''); // Reseta para economizar quando for landing
+    if (view === 'LOGIN' || view === 'REGISTER' || view === 'SUCCESS') {
+      const idx = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
+      setBackgroundImage(BACKGROUND_IMAGES[idx]);
     }
   }, [view]);
 
@@ -254,46 +251,46 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="relative w-full max-w-xl animate-fadeIn mt-24 mb-12 px-4" style={{ zIndex: 10 }}>
       <div className="bg-white/95 backdrop-blur-3xl border border-white/50 rounded-[40px] overflow-hidden shadow-2xl p-10 space-y-8">
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Comece sua Jornada</h2>
+          <h2 className="text-3xl font-black text-dark tracking-tight">Comece sua Jornada</h2>
           <p className="text-slate-500 text-sm font-medium">Provisionamento imediato do seu workspace.</p>
         </div>
 
         <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label className="block text-xs font-black text-slate-800 mb-2 uppercase tracking-widest">Nome Completo</label>
+            <label className="block text-xs font-black text-dark mb-2 uppercase tracking-widest">Nome Completo</label>
             <input
               required
               type="text"
               value={regData.name}
               onChange={e => setRegData({ ...regData, name: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
               placeholder="Ex: Dr. João Silva"
             />
           </div>
           <div>
-            <label className="block text-xs font-black text-slate-800 mb-2 uppercase tracking-widest">E-mail</label>
+            <label className="block text-xs font-black text-dark mb-2 uppercase tracking-widest">E-mail</label>
             <input
               required
               type="email"
               value={regData.email}
               onChange={e => setRegData({ ...regData, email: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
               placeholder="joao@clinica.com"
             />
           </div>
           <div>
-            <label className="block text-xs font-black text-slate-800 mb-2 uppercase tracking-widest">WhatsApp</label>
+            <label className="block text-xs font-black text-dark mb-2 uppercase tracking-widest">WhatsApp</label>
             <input
               required
               type="tel"
               value={regData.phone}
               onChange={e => setRegData({ ...regData, phone: e.target.value })}
-              className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium"
+              className="w-full p-4 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
               placeholder="(11) 99999-9999"
             />
           </div>
           <div className="md:col-span-2 space-y-4">
-            <label className="block text-xs font-black text-slate-800 mb-2 uppercase tracking-widest text-center">Escolha seu Plano</label>
+            <label className="block text-xs font-black text-dark mb-2 uppercase tracking-widest text-center">Escolha seu Plano</label>
             <div className="grid grid-cols-2 gap-4">
               {['ESSENTIAL', 'PROFESSIONAL'].map((p) => (
                 <button
@@ -301,10 +298,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="button"
                   onClick={() => setRegData({ ...regData, planId: p as PlanType })}
                   className={`p-6 rounded-3xl border-2 transition-all text-left ${regData.planId === p
-                    ? 'border-emerald-600 bg-emerald-50'
-                    : 'border-slate-100 bg-slate-50 hover:border-slate-300'}`}
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-slate-100 bg-white hover:border-emerald-200'}`}
                 >
-                  <p className={`font-black text-lg ${regData.planId === p ? 'text-emerald-600' : 'text-slate-800'}`}>{p === 'ESSENTIAL' ? 'Essencial' : 'Pro'}</p>
+                  <p className={`font-black text-lg ${regData.planId === p ? 'text-emerald-600' : 'text-slate-900'}`}>{p === 'ESSENTIAL' ? 'Essencial' : 'Pro'}</p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                     {p === 'ESSENTIAL' ? 'R$ 147/mês' : 'R$ 197/mês'}
                   </p>
@@ -319,7 +316,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               disabled={regStatus === 'loading'}
               type="submit"
-              className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+              className="w-full py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-500/20 transition-all disabled:opacity-50"
             >
               {regStatus === 'loading' ? 'Provisionando...' : 'Criar minha Clínica agora'}
             </button>
@@ -340,25 +337,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const renderSuccess = () => (
     <div className="relative w-full max-w-lg text-center p-12 bg-white/95 backdrop-blur-3xl rounded-[40px] shadow-2xl space-y-8 animate-fadeIn mt-24 mb-12 px-4" style={{ zIndex: 10 }}>
-      <div className="mx-auto w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
+      <div className="mx-auto w-24 h-24 bg-primary text-accent rounded-full flex items-center justify-center shadow-inner">
         <Icons.CheckCircle size={48} />
       </div>
       <div className="space-y-4">
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Workspace Pronto!</h2>
+        <h2 className="text-4xl font-black text-dark tracking-tight">Workspace Pronto!</h2>
         <p className="text-slate-600 font-medium">Provisionamos sua clínica com sucesso. Verifique seu e-mail para os dados de acesso iniciais.</p>
       </div>
-      <div className="p-6 bg-slate-50 rounded-[28px] border border-slate-100 flex items-center gap-4 text-left">
-        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-emerald-500">
+      <div className="p-6 bg-primary/20 rounded-[28px] border border-secondary/20 flex items-center gap-4 text-left">
+        <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center text-accent">
           <Icons.Lock size={24} />
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-slate-800">Senha Padrão Temporal</p>
-          <p className="text-xl font-mono text-emerald-600 font-black">123</p>
+          <p className="text-xs font-black uppercase tracking-widest text-dark">Senha Padrão Temporal</p>
+          <p className="text-xl font-mono text-accent font-black">123</p>
         </div>
       </div>
       <button
         onClick={() => setView('LOGIN')}
-        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-black transition-all"
+        className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20"
       >
         Acessar minha conta
       </button>
@@ -370,39 +367,39 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="text-center mb-8">
         <button
           onClick={() => setView('LANDING')}
-          className="text-4xl font-black text-white tracking-tight drop-shadow-2xl hover:scale-105 transition-all"
+          className="text-4xl font-black text-white tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] hover:scale-105 transition-all"
         >
-          Control<span className={`${loginMode === 'ADMIN' ? 'text-blue-400' : 'text-emerald-400'}`}>Clin</span>
+          Control<span className="text-emerald-500">Clin</span>
         </button>
       </div>
 
-      <div className="bg-white/85 backdrop-blur-3xl border border-white/50 rounded-[40px] overflow-hidden shadow-2xl shadow-black/30 animate-scaleIn">
+      <div className="bg-white/95 backdrop-blur-3xl border border-secondary/30 rounded-[40px] overflow-hidden shadow-2xl shadow-black/30 animate-scaleIn">
 
-        <div className="flex border-b border-slate-200/50">
+        <div className="flex border-b border-slate-100">
           <button
             type="button"
             onClick={() => { setLoginMode('ADMIN'); setError(''); }}
-            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'ADMIN' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'ADMIN' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-400'}`}
           >
-            {loginMode === 'ADMIN' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[3px] bg-blue-500 rounded-full" />}
+            {loginMode === 'ADMIN' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[4px] bg-emerald-500 rounded-full" />}
             Gestor
           </button>
           <button
             type="button"
             onClick={() => { setLoginMode('PROFESSIONAL'); setError(''); }}
-            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'PROFESSIONAL' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 py-5 text-sm font-black text-center transition-all duration-300 relative ${loginMode === 'PROFESSIONAL' ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-400'}`}
           >
-            {loginMode === 'PROFESSIONAL' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[3px] bg-emerald-500 rounded-full" />}
+            {loginMode === 'PROFESSIONAL' && <div className="absolute bottom-0 left-[15%] right-[15%] h-[4px] bg-emerald-500 rounded-full" />}
             Profissional
           </button>
         </div>
 
         <div className="p-10 space-y-6">
-          <div className={`rounded-2xl p-6 border transition-all duration-500 ${loginMode === 'ADMIN' ? 'bg-blue-50/90 border-blue-200' : 'bg-emerald-50/90 border-emerald-200'}`}>
-            <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 ${loginMode === 'ADMIN' ? 'text-blue-800' : 'text-emerald-800'}`}>
+          <div className={`rounded-2xl p-6 border transition-all duration-500 bg-emerald-50 border-emerald-100`}>
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 text-emerald-600`}>
               {loginMode === 'ADMIN' ? 'Visão Estratégica: GESTOR' : 'Excelência Clínica: PROFISSIONAL'}
             </h3>
-            <p className="text-[11px] text-slate-800 font-bold leading-relaxed">
+            <p className="text-[11px] text-slate-700 font-bold leading-relaxed">
               {loginMode === 'ADMIN'
                 ? 'Auditoria completa, análise epidemiológica e performance de profissionais em tempo real.'
                 : 'Prontuários dinâmicos, antropometria avançada e fidelização de pacientes com ciência.'}
@@ -419,32 +416,32 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-[10px] font-black text-slate-800 mb-2 uppercase tracking-widest">Slug da Clínica</label>
-              <div className="flex rounded-2xl overflow-hidden border border-slate-200 focus-within:border-slate-400 transition-colors bg-white/50">
-                <span className="inline-flex items-center px-4 bg-slate-100 text-slate-400 text-xs font-bold border-r border-slate-200">https://</span>
-                <input type="text" required value={slug} onChange={(e) => setSlug(e.target.value)} className="flex-1 px-4 py-3.5 bg-transparent text-slate-800 text-sm focus:outline-none" placeholder="control" />
+              <div className="flex rounded-2xl overflow-hidden border border-slate-200 focus-within:border-emerald-500 transition-colors bg-white">
+                <span className="inline-flex items-center px-4 bg-slate-50 text-slate-400 text-xs font-bold border-r border-slate-100">https://</span>
+                <input type="text" required value={slug} onChange={(e) => setSlug(e.target.value)} className="flex-1 px-4 py-3.5 bg-transparent text-slate-900 text-sm focus:outline-none" placeholder="control" />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-800 mb-2 uppercase tracking-widest">E-mail</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white/50 text-slate-800 focus:outline-none focus:border-slate-400 text-sm shadow-sm" placeholder="seu@email.com" />
+              <label className="block text-[10px] font-black text-dark mb-2 uppercase tracking-widest">E-mail</label>
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white text-slate-900 focus:outline-none focus:border-emerald-500 text-sm shadow-sm" placeholder="seu@email.com" />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-800 mb-2 uppercase tracking-widest">Senha</label>
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white/50 text-slate-800 focus:outline-none focus:border-slate-400 text-sm shadow-sm" placeholder="••••••••" />
+              <label className="block text-[10px] font-black text-dark mb-2 uppercase tracking-widest">Senha</label>
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl bg-white text-slate-900 focus:outline-none focus:border-emerald-500 text-sm shadow-sm" placeholder="••••••••" />
             </div>
 
-            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : loginMode === 'ADMIN' ? 'bg-blue-600 shadow-blue-500/30' : 'bg-emerald-600 shadow-emerald-500/30'}`}>
+            <button type="submit" disabled={isSubmitting} className={`w-full py-5 rounded-[20px] flex items-center justify-center gap-3 text-white font-black text-lg transition-all shadow-xl active:scale-[0.98] ${isSubmitting ? 'bg-slate-400' : 'bg-emerald-600 shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:bg-emerald-700'}`}>
               {isSubmitting ? 'Autenticando...' : `Entrar como ${loginMode === 'ADMIN' ? 'Gestor' : 'Profissional'}`}
             </button>
 
-            <button type="button" onClick={() => setView('LANDING')} className="w-full py-2 text-[10px] text-slate-400 hover:text-slate-600 font-bold uppercase tracking-widest transition-all">
-              Voltar para ínicio
+            <button type="button" onClick={() => setView('LANDING')} className="w-full py-2 text-[10px] text-slate-400 hover:text-secondary font-bold uppercase tracking-widest transition-all">
+              Voltar para início
             </button>
 
-            <div className="pt-4 border-t border-slate-200/50 mt-4">
-              <a href="/#/patient/login" className="w-full py-3 flex items-center justify-center gap-2 text-purple-600 hover:text-purple-700 font-black text-sm uppercase tracking-wider transition-all hover:bg-purple-50 rounded-2xl">
+            <div className="pt-4 border-t border-secondary/20 mt-4">
+              <a href="/#/patient/login" className="w-full py-3 flex items-center justify-center gap-2 text-emerald-600 hover:text-emerald-700 font-black text-sm uppercase tracking-wider transition-all hover:bg-emerald-50 rounded-2xl">
                 <Icons.User className="h-4 w-4" />
                 Sou Paciente
               </a>
@@ -458,35 +455,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className={`min-h-screen w-full relative ${view === 'LANDING' ? 'bg-white overflow-y-auto' : 'bg-slate-950 overflow-y-auto lg:overflow-hidden'} transition-colors duration-700`}>
 
-      {/* Background Random Image (only visible when outside landing) */}
+      {/* Background (only visible when outside landing) */}
       <div
         className={`fixed inset-0 transition-opacity duration-1000 ${view === 'LANDING' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{
           zIndex: 0,
-          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : 'none',
+          backgroundImage: `url("${backgroundImage}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       >
-        <div className="absolute inset-0 bg-slate-950/50" />
+        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
       </div>
 
       {/* Header / Nav */}
-      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/90 border-b border-slate-200' : 'bg-slate-950/30 border-b border-white/5'}`}>
-        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter ${view === 'LANDING' ? 'text-slate-900' : 'text-white'}`}>
+      <header className={`fixed top-0 left-0 right-0 h-20 px-4 md:px-6 lg:px-12 flex items-center justify-between z-50 transition-all duration-500 backdrop-blur-xl ${view === 'LANDING' ? 'bg-white/90 border-b border-secondary/30' : 'bg-white/80 border-b border-secondary/20'}`}>
+        <button onClick={() => setView('LANDING')} className={`text-2xl font-black tracking-tighter text-slate-900`}>
           Control<span className="text-emerald-500">Clin</span>
         </button>
         <div className="flex items-center gap-2 md:gap-4">
           <button
             onClick={() => setView('LOGIN')}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${view === 'LANDING' ? 'bg-primary/50 text-dark hover:bg-secondary/40' : 'bg-white/10 hover:bg-white/20 text-white'}`}
           >
             Entrar
           </button>
           <button
             onClick={() => setView('REGISTER')}
-            className="px-4 md:px-6 py-2 md:py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all"
+            className="px-4 md:px-6 py-2 md:py-2.5 bg-accent hover:bg-black text-white rounded-xl text-xs md:text-sm font-black shadow-lg shadow-accent/20 transition-all"
           >
             Teste Grátis
           </button>
@@ -500,8 +497,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {view === 'REGISTER' && renderRegister()}
         {view === 'SUCCESS' && renderSuccess()}
       </div>
-
-
     </div>
   );
 };

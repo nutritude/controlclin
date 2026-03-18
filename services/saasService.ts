@@ -448,4 +448,16 @@ export const saasService = {
     generateSlug(name: string): string {
         return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').substring(0, 30);
     },
+
+    async registerFromLandingPage(data: { name: string, email: string, phone: string, planId: PlanType, cycle: PaymentCycle }): Promise<void> {
+        await this.createClinic({
+            name: data.name + " (Workspace)",
+            responsibleName: data.name,
+            responsibleEmail: data.email,
+            responsiblePhone: data.phone,
+            planId: data.planId,
+            cycle: data.cycle,
+            status: 'trial'
+        });
+    },
 };
