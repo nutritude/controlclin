@@ -43,14 +43,9 @@ const SaaSLogin: React.FC = () => {
             </div>
 
             {/* Header / Logo */}
-            <div className="text-center mb-8 relative z-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent shadow-2xl shadow-accent/20 mb-4 border border-white/50">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-                <h1 className="text-3xl font-black text-dark tracking-tight">Control<span className="text-accent underline decoration-secondary">Clin</span></h1>
-                <p className="text-secondary text-[11px] font-black uppercase tracking-[0.25em] mt-2">Backoffice Administration</p>
+            <div className="text-center mb-10 relative z-10">
+                <h1 className="text-4xl font-black text-dark tracking-tight">Control<span className="text-accent underline decoration-secondary">Clin</span></h1>
+                <p className="text-accent text-[11px] font-black uppercase tracking-[0.3em] mt-3">PAINEL ADMINISTRATIVO E VENDAS</p>
             </div>
 
             {/* Card */}
