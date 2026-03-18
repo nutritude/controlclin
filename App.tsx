@@ -76,12 +76,19 @@ function App() {
       // 1. Session restore
       const storedUserRaw = localStorage.getItem('app_user');
       const storedClinicRaw = localStorage.getItem('app_clinic');
+      const storedPatientRaw = localStorage.getItem('app_patient');
+      const storedPatientClinicRaw = localStorage.getItem('app_patient_clinic');
       let clinicIdToLoad: string | undefined;
 
       if (storedClinicRaw) {
         try {
           const c = JSON.parse(storedClinicRaw);
           clinicIdToLoad = c.id;
+        } catch (e) { }
+      } else if (storedPatientClinicRaw) {
+        try {
+          const pc = JSON.parse(storedPatientClinicRaw);
+          clinicIdToLoad = pc.id;
         } catch (e) { }
       }
 
@@ -95,8 +102,6 @@ function App() {
           const storedLoginMode = localStorage.getItem('app_login_mode') as 'ADMIN' | 'PROFESSIONAL' | null;
 
           // --- CRITICAL SESSION RE-SYNC ---
-          // After loading from remote, the internal professionalId might have changed. 
-          // We must ensure the session 'user' object reflects the latest database state.
           const clinicId = parsedClinic.id;
           const allUsers = await serviceDb.getUsers(clinicId);
           const freshUser = allUsers.find(u => u.email.toLowerCase() === parsedUser.email.toLowerCase());
@@ -110,11 +115,9 @@ function App() {
           setUser(parsedUser);
           setClinic(parsedClinic);
 
-          // Se não houver modo salvo ou se for um usuário comum, sempre PROFESSIONAL
           const isAdmin = parsedUser.role === Role.CLINIC_ADMIN || parsedUser.role === Role.SUPER_ADMIN;
           const targetMode = (isAdmin && storedLoginMode) ? storedLoginMode : 'PROFESSIONAL';
 
-          console.log(`[System] Session Restore: ${parsedUser.name} (${parsedUser.role}) -> Mode: ${targetMode}`);
           setLoginMode(targetMode);
         } catch (err) {
           console.error('[App] Stored session corrupted. Clearing...', err);
@@ -123,14 +126,29 @@ function App() {
       }
 
       // 1.5 Patient Session Restore
-      const storedPatientRaw = localStorage.getItem('app_patient');
-      const storedPatientClinicRaw = localStorage.getItem('app_patient_clinic');
       if (storedPatientRaw && storedPatientClinicRaw) {
         try {
-          setPatient(JSON.parse(storedPatientRaw));
-          setPatientClinic(JSON.parse(storedPatientClinicRaw));
+          let parsedPatient = JSON.parse(storedPatientRaw);
+          const parsedPatientClinic = JSON.parse(storedPatientClinicRaw);
+
+          // --- CRITICAL PATIENT RE-SYNC ---
+          // Fetch the freshest data from Cloud before rendering
+          const allPatients = await serviceDb.getPatients(parsedPatientClinic.id);
+          const freshPatient = allPatients.find(p => p.id === parsedPatient.id);
+
+          if (freshPatient) {
+            console.log(`[System] Session Re-sync: Updated Patient ${freshPatient.name}`);
+            parsedPatient = freshPatient;
+            localStorage.setItem('app_patient', JSON.stringify(freshPatient));
+          }
+
+          setPatient(parsedPatient);
+          setPatientClinic(parsedPatientClinic);
           console.log('[System] Patient Session Restored');
-        } catch (e) { }
+        } catch (e) {
+          console.error('[App] Stored patient session corrupted. Clearing...', e);
+          handlePatientLogout();
+        }
       }
 
       // 2. Catalog load - MOVIDO PARA BACKGROUND: Não bloqueia o carregamento inicial da UI

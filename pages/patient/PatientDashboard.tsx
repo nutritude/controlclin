@@ -53,8 +53,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({ patient, cli
         return (val !== undefined && val !== null && val > 0) ? `${val}%` : '--';
     })();
 
-    const activePlan = patient.nutritionalPlans
-        ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[patient.nutritionalPlans.length - 1]
+    const activePlan = patient.nutritionalPlans && patient.nutritionalPlans.length > 0
+        ? patient.nutritionalPlans.find(p => p.status === 'ATIVO') || patient.nutritionalPlans[0]
         : patient.nutritionalPlan || null;
 
     useEffect(() => {
