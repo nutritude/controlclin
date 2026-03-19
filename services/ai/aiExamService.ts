@@ -37,7 +37,7 @@ export const AIExamService = {
                 role: 'professional',
                 temperature: 0.1,
                 fileData: fileData, 
-                model: "google/gemini-1.5-pro" // Upgrade para Pro para extrações complexas
+                model: "google/gemini-2.0-flash" // Modelo v2.0 Flash: Equilíbrio perfeito entre Pro e Flash 1.5
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
@@ -52,10 +52,10 @@ export const AIExamService = {
             const raw = JSON.parse(jsonStr);
             return LaboratService.processMarkers(raw);
         } catch (error) {
-            console.error("Erro na extração AI:", error);
-            // Fallback: se o Pro falhar/não existir, tenta o Flash como última instância
+            console.error("Erro na extração AI (2.0 Flash):", error);
+            // Fallback: se o 2.0 falhar, tenta o 1.5 Flash
             if (fileData) {
-                 console.log("[AI Exam] Tentando fallback para Flash...");
+                 console.log("[AI Exam] Tentando fallback para 1.5 Flash...");
                  try {
                      const flashResponse = await AIService.ask({
                          prompt: prompt,
