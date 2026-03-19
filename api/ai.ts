@@ -18,65 +18,71 @@ export default async function handler(req: Request) {
         const geminiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
         if (!geminiKey) {
-            return new Response(JSON.stringify({ error: 'Configuração de API Gemini pendente no servidor.' }), { status: 500 });
+            return new Response(JSON.stringify({ error: 'Configuração de API Gemini pendente (VITE_GEMINI_API_KEY).' }), { status: 500 });
         }
 
-        console.log(`[Proxy AI] Roteando para Google Gemini (${model}) ${fileData ? 'com arquivo' : ''}`);
+        console.log(`[Proxy AI] Modelo: ${model} | Arquivo: ${fileData ? 'Sim' : 'Não'}`);
 
-        // Mapeia o nome do modelo para o formato da Google se necessário
-        const googleModel = model?.includes('/') ? model.split('/')[1] : (model || "gemini-1.5-flash");
+        // Mapeia o nome do modelo para o formato da Google
+        let googleModel = model || "gemini-1.5-flash";
+        if (googleModel.includes('/')) googleModel = googleModel.split('/')[1];
+
         const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
 
-        // Prepara as partes da mensagem (Texto + Arquivo se houver)
-        const parts: any[] = [
-            { text: (systemPrompt ? systemPrompt + "\n\n" : "") + prompt }
-        ];
+        // Prepara as partes da mensagem
+        const parts: any[] = [];
+        
+        // Texto combinado
+        parts.push({ text: (systemPrompt ? systemPrompt + "\n\n" : "") + prompt });
 
-        if (fileData) {
-            // Extrai o base64 puro removendo o prefixo data:*/*;base64,
-            const base64Data = fileData.base64.split(',')[1] || fileData.base64;
-            parts.push({
-                inline_data: {
-                    mime_type: fileData.mimeType,
-                    data: base64Data
-                }
-            });
+        // Arquivo Multimodal
+        if (fileData && fileData.base64) {
+            try {
+                const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+                parts.push({
+                    inline_data: {
+                        mime_type: fileData.mimeType,
+                        data: base64Data
+                    }
+                });
+            } catch (err) {
+                console.error("[Proxy AI] Erro no processamento de anexo:", err);
+            }
         }
 
         const response = await fetch(apiEndpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [
-                    { role: "user", parts }
-                ],
+                contents: [{ role: "user", parts }],
                 generationConfig: {
                     temperature: temperature ?? 0.1,
-                    maxOutputTokens: 2048,
-                }
+                    maxOutputTokens: 8192, // Aumentado para suportar exames longos
+                },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ]
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("[Proxy AI] Erro Gemini:", errorText);
-            return new Response(JSON.stringify({ error: `Erro na API Gemini: ${response.status}` }), { status: response.status });
+            console.error("[Proxy AI] Erro Google:", errorText);
+            return new Response(JSON.stringify({ 
+                error: `Erro na API Gemini: ${response.status}`,
+                details: errorText.substring(0, 200)
+            }), { status: response.status });
         }
 
         const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-        // Normaliza a resposta para o formato que o front espera (estilo OpenAI/OpenRouter)
-        const normalizedResponse = {
-            choices: [{
-                message: {
-                    content: data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro: Resposta vazia do Gemini."
-                }
-            }]
-        };
-
-        return new Response(JSON.stringify(normalizedResponse), {
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return new Response(JSON.stringify({
+            choices: [{ message: { content } }]
+        }), { headers: { 'Content-Type': 'application/json' } });
 
     } catch (error: any) {
         console.error("[Proxy AI] Erro Crítico:", error.message);

@@ -36,18 +36,41 @@ export const AIExamService = {
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.1,
-                fileData: fileData, // Agora enviamos o arquivo de fato
-                model: "google/gemini-1.5-flash" // Flash é rápido e bom para extração
+                fileData: fileData, 
+                model: "google/gemini-1.5-pro" // Upgrade para Pro para extrações complexas
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
 
-            const jsonStr = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            const raw = JSON.parse(jsonStr);
+            // Parser resiliente: busca o bloco JSON mesmo se houver texto em volta
+            let jsonStr = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[0];
+            }
 
+            const raw = JSON.parse(jsonStr);
             return LaboratService.processMarkers(raw);
         } catch (error) {
             console.error("Erro na extração AI:", error);
+            // Fallback: se o Pro falhar/não existir, tenta o Flash como última instância
+            if (fileData) {
+                 console.log("[AI Exam] Tentando fallback para Flash...");
+                 try {
+                     const flashResponse = await AIService.ask({
+                         prompt: prompt,
+                         role: 'professional',
+                         temperature: 0.1,
+                         fileData: fileData,
+                         model: "google/gemini-1.5-flash"
+                     });
+                     const clean = flashResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                     const match = clean.match(/\[\s*\{[\s\S]*\}\s*\]/);
+                     return LaboratService.processMarkers(JSON.parse(match ? match[0] : clean));
+                 } catch (e) {
+                     return [];
+                 }
+            }
             return [];
         }
     },
