@@ -13,7 +13,7 @@ export default async function handler(req: Request) {
     }
 
     try {
-        const { prompt, systemPrompt, temperature, model } = await req.json();
+        const { prompt, systemPrompt, temperature, model, fileData } = await req.json();
 
         const geminiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
@@ -21,18 +21,34 @@ export default async function handler(req: Request) {
             return new Response(JSON.stringify({ error: 'Configuração de API Gemini pendente no servidor.' }), { status: 500 });
         }
 
-        console.log(`[Proxy AI] Roteando para Google Gemini (${model})`);
+        console.log(`[Proxy AI] Roteando para Google Gemini (${model}) ${fileData ? 'com arquivo' : ''}`);
 
         // Mapeia o nome do modelo para o formato da Google se necessário
         const googleModel = model?.includes('/') ? model.split('/')[1] : (model || "gemini-1.5-flash");
         const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
+
+        // Prepara as partes da mensagem (Texto + Arquivo se houver)
+        const parts: any[] = [
+            { text: (systemPrompt ? systemPrompt + "\n\n" : "") + prompt }
+        ];
+
+        if (fileData) {
+            // Extrai o base64 puro removendo o prefixo data:*/*;base64,
+            const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+            parts.push({
+                inline_data: {
+                    mime_type: fileData.mimeType,
+                    data: base64Data
+                }
+            });
+        }
 
         const response = await fetch(apiEndpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 contents: [
-                    { role: "user", parts: [{ text: (systemPrompt ? systemPrompt + "\n\n" : "") + prompt }] }
+                    { role: "user", parts }
                 ],
                 generationConfig: {
                     temperature: temperature ?? 0.1,

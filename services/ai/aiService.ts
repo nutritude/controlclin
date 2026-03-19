@@ -17,16 +17,17 @@ export interface AIAskRequest {
     systemPrompt?: string;
     temperature?: number;
     model?: string;
+    fileData?: { base64: string, mimeType: string };
 }
 
 export const AIService = {
     /**
      * Envia um prompt via Proxy Seguro (/api/ai) com fallback direto para Gemini em Modo Dev.
      */
-    async ask({ prompt, role, systemPrompt, temperature, model }: AIAskRequest): Promise<string> {
+    async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest): Promise<string> {
         const finalModel = model || "google/gemini-1.5-flash";
 
-        console.log(`[AI Service] Iniciando requisição Gemini (${finalModel})`);
+        console.log(`[AI Service] Iniciando requisição Gemini (${finalModel}) ${fileData ? 'com arquivo' : ''}`);
 
         try {
             const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
@@ -42,7 +43,8 @@ export const AIService = {
                         prompt,
                         systemPrompt: finalSystemPrompt,
                         temperature: finalTemperature,
-                        model: finalModel
+                        model: finalModel,
+                        fileData // Passa os dados do arquivo para o proxy
                     })
                 });
             } catch (e) {
@@ -61,11 +63,28 @@ export const AIService = {
                 const googleModel = finalModel.includes('/') ? finalModel.split('/')[1] : finalModel;
                 const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
 
+                // Formata partes para Gemini (Texto + Arquivo se houver)
+                const parts: any[] = [{ text: finalSystemPrompt + "\n\n" + prompt }];
+                
+                if (fileData) {
+                    // Extrai apenas o base64 puro (sem o prefixo data:mime/type;base64,)
+                    const pureBase64 = fileData.base64.includes('base64,') 
+                        ? fileData.base64.split('base64,')[1] 
+                        : fileData.base64;
+                        
+                    parts.push({
+                        inline_data: {
+                            mime_type: fileData.mimeType,
+                            data: pureBase64
+                        }
+                    });
+                }
+
                 const directResponse = await fetch(apiEndpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{ role: "user", parts: [{ text: finalSystemPrompt + "\n\n" + prompt }] }],
+                        contents: [{ role: "user", parts }],
                         generationConfig: { temperature: finalTemperature, maxOutputTokens: 2048 }
                     })
                 });

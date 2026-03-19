@@ -7,28 +7,37 @@ export const AIExamService = {
      * Extrai marcadores de um documento (PDF/Imagem) ou texto utilizando Gemini
      */
     extractMarkers: async (fileData?: { base64: string, mimeType: string }, text?: string): Promise<ExamMarker[]> => {
-        console.log("[AI Exam] Iniciando extração com OpenRouter...");
+        console.log("[AI Exam] Iniciando extração profunda de marcadores...");
 
         const prompt = `
-      Você é um especialista em biomedicina e extração de dados laboratoriais.
-      Analise o texto fornecido e retorne os dados estruturados no formato JSON.
-      Ignore cabeçalhos e rodapés irrelevantes. Foque em: Nome do exame/marcador, Valor numérico, Unidade de medida.
+      Você é um especialista em biomedicina e extração de dados estruturados de laudos laboratoriais.
+      Analise TODO o documento fornecido (pode conter várias páginas e múltiplos exames diferentes).
+      
+      OBJETIVO:
+      Extraia TODOS os biomarcadores encontrados em todos os exames presentes no arquivo.
+      Retorne uma lista única contendo cada marcador identificado.
 
-      REGRAS:
-      1. Extraia apenas o valor numérico (remova vírgulas por pontos se necessário).
-      2. Tente identificar a unidade (mg/dL, %, uUI/mL, etc).
-      3. Se o marcador tiver um valor de referência no documento, ignore-o e foque no resultado do paciente.
-      4. Retorne EXATAMENTE um JSON como este: [{"name": "Glicose", "value": 95, "unit": "mg/dL"}]
+      REGRAS DE EXTRAÇÃO:
+      1. Extraia o Nome do marcador (ex: Glicose, Hemoglobina, TSH).
+      2. Extraia o Valor numérico (converta vírgulas para pontos se necessário).
+      3. Identifique a Unidade de medida (ex: mg/dL, %, uUI/mL).
+      4. IGNORE valores de referência. Foque apenas no resultado do paciente.
+      5. Capture dados de TODAS as páginas e de todos os títulos de exames presentes.
+      6. Se houver resultados qualitativos importantes (ex: Ausência de nitritos), ignore-os desta extração numérica.
 
-      ${text ? `TEXTO PARA ANÁLISE:\n${text}` : ''}
-      ${fileData ? `[Nota: O sistema enviou um arquivo, mas a análise textual será priorizada se houver conteúdo no prompt]` : ''}
+      FORMATO DE RETORNO (APENAS JSON):
+      [{"name": "Marcador", "value": 12.3, "unit": "unidade"}]
+
+      ${text ? `CONTEÚDO TEXTUAL AUXILIAR:\n${text}` : ''}
     `;
 
         try {
             const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                temperature: 0.1
+                temperature: 0.1,
+                fileData: fileData, // Agora enviamos o arquivo de fato
+                model: "google/gemini-1.5-flash" // Flash é rápido e bom para extração
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
