@@ -35,8 +35,7 @@ export const AIExamService = {
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.1,
-                fileData: fileData, 
-                model: "google/gemini-1.5-flash" // Usando 1.5 Flash para extração (mais rápido e estável para OCR)
+                model: "google/gemini-flash-latest" // Usando Flash Latest para extração (mais rápido e estável para OCR)
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
@@ -123,8 +122,7 @@ export const AIExamService = {
             const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                temperature: 0.3,
-                model: "google/gemini-2.0-flash"
+                model: "google/gemini-flash-latest"
             });
 
             if (aiResponse) {

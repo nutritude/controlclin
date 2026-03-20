@@ -26,7 +26,7 @@ export const AIService = {
      * Tenta chamada direta (Browser -> Google) para evitar limites de timeout de proxies (Vercel).
      */
     async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest): Promise<string> {
-        const finalModel = model || "google/gemini-1.5-flash";
+        const finalModel = model || "google/gemini-flash-latest";
         const googleModel = finalModel.includes('/') ? finalModel.split('/')[1] : finalModel;
         const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
         const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
