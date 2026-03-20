@@ -21,17 +21,13 @@ export const AIExamService = {
       Se houver 10 páginas e 100 marcadores, extraia os 100. NÃO SUPRIMA DADOS.
       
       REGRAS TÉCNICAS:
-      1. NOME: Use o nome clínico padrão do marcador (ex: "Glicose", "Hemoglobina Glicada", "Vitamina D").
-      2. VALOR: Extraia o valor numérico exato. Converta vírgulas para pontos. Ex: "12,5" -> 12.5.
-      3. UNIDADE: Identifique a unidade correta (mg/dL, %, ng/mL, etc). Se for resultado sem unidade, use "un".
-      4. IGNORE INTERPRETAÇÕES E REFERÊNCIAS: Não extraia o que é normal/baixo para o laboratório; foque APENAS no nome, valor e unidade do paciente.
-      5. COMPLETUDE: Busque por marcadores em tabelas, textos corridos e rodapés técnicos de todas as páginas.
-      6. QUALITATIVOS: Ignore resultados qualitativos binários (ex: "Ausente", "Negativo") para esta extração de biomarcadores.
+      1. NOME: Use o nome clínico padrão (ex: Glicose, TSH).
+      2. VALOR: Numérico apenas (use . para decimais).
+      3. UNIDADE: Identifique a unidade (mg/dl, %, etc).
+      4. FILTRAGEM: Ignore referências e textos longos.
+      5. TODOS: Revise todas as páginas do arquivo.
 
-      FORMATO DE RETORNO (OBRIGATÓRIO JSON ARRAY):
-      [{"name": "Marcador", "value": 12.3, "unit": "unidade"}]
-
-      ${text ? `DADOS OCR ADICIONAIS:\n${text}` : ''}
+      FORMATO (JSON ARRAY): [{"name": "Marcador", "value": 12.3, "unit": "un"}]
     `;
 
         try {
@@ -40,7 +36,7 @@ export const AIExamService = {
                 role: 'professional',
                 temperature: 0.1,
                 fileData: fileData, 
-                model: "google/gemini-2.0-flash"
+                model: "google/gemini-1.5-flash" // Usando 1.5 Flash para extração (mais rápido e estável para OCR)
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");

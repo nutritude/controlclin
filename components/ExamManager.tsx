@@ -548,10 +548,20 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
                                             {manualMarkers.map((m, i) => (
-                                                <div key={i} className="flex flex-col bg-slate-50/80 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:border-indigo-100">
+                                                <div key={i} className={`flex flex-col p-4 rounded-2xl border transition-all group ${m.name && getReferencePlaceholder(m.name).includes('-') ? 'bg-white border-indigo-100 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
                                                     <div className="flex justify-between items-start mb-2">
-                                                        <span className="text-[10px] font-black uppercase text-slate-400 leading-tight truncate w-32">{m.name}</span>
-                                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500">✕</button>
+                                                        <input 
+                                                            type="text"
+                                                            value={m.name}
+                                                            onChange={(e) => {
+                                                                const newMarkers = [...manualMarkers];
+                                                                newMarkers[i].name = e.target.value;
+                                                                setManualMarkers(newMarkers);
+                                                            }}
+                                                            className="text-[10px] font-black uppercase text-slate-500 bg-transparent border-none focus:ring-0 w-full outline-none"
+                                                            placeholder="Nome do Marcador"
+                                                        />
+                                                        <button onClick={() => setManualMarkers(manualMarkers.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500 transition-colors ml-2">✕</button>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <input
@@ -567,7 +577,9 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                         />
                                                         <span className="text-[10px] font-black text-slate-400 uppercase">{m.unit}</span>
                                                     </div>
-                                                    <p className="text-[8px] text-slate-300 font-bold mt-2 uppercase tracking-tighter">Ref: {getReferencePlaceholder(m.name)}</p>
+                                                    <p className="text-[8px] text-slate-300 font-bold mt-2 uppercase tracking-tighter">
+                                                        Ref: {m.name ? getReferencePlaceholder(m.name) : '---'}
+                                                    </p>
                                                 </div>
                                             ))}
                                             {manualMarkers.length === 0 && (
@@ -1030,21 +1042,97 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                         </div>
 
                                                         {exam.analysisResult && (
-                                                            <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-2xl relative overflow-hidden group">
-                                                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-50"></div>
-                                                                <div className="relative z-10 space-y-4">
-                                                                    <div className="flex items-center gap-2 mb-2">
-                                                                        <div className="w-8 h-8 bg-indigo-500 flex items-center justify-center rounded-lg shadow-lg rotate-12 group-hover:rotate-0 transition-transform">✨</div>
-                                                                        <h6 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Insight Biomédico IA</h6>
-                                                                    </div>
-                                                                    <p className="text-xs font-medium leading-relaxed opacity-90">"{exam.analysisResult.summary}"</p>
-                                                                    <div className="pt-4 border-t border-white/10 space-y-3">
-                                                                        {exam.analysisResult.findings.slice(0, 3).map((f, i) => (
-                                                                            <div key={i} className="flex gap-3 items-start">
-                                                                                <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${f.impact === 'NEGATIVO' ? 'bg-rose-500' : (f.impact === 'POSITIVO' ? 'bg-emerald-500' : 'bg-slate-500')}`}></span>
-                                                                                <p className="text-[10px] font-bold leading-normal">{f.correlation}</p>
+                                                            <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-2xl relative overflow-hidden group border border-slate-800">
+                                                                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                                                                <div className="relative z-10 space-y-6">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-10 h-10 bg-indigo-600 flex items-center justify-center rounded-xl shadow-lg border border-indigo-400 rotate-3 group-hover:rotate-0 transition-transform">✨</div>
+                                                                            <div>
+                                                                                <h6 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Insight Biomédico Avançado</h6>
+                                                                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Powered by ClinIQ AI v2.5</p>
                                                                             </div>
-                                                                        ))}
+                                                                        </div>
+                                                                        {exam.analysisResult.isFallback && (
+                                                                            <span className="bg-rose-500/20 text-rose-400 text-[8px] font-bold px-2 py-0.5 rounded-full border border-rose-500/30">MODO OFFLINE</span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 italic">
+                                                                        <p className="text-xs font-medium leading-relaxed opacity-95">"{exam.analysisResult.summary}"</p>
+                                                                    </div>
+
+                                                                    <div className="space-y-6 pt-2">
+                                                                        {/* Cruzamento de Dados */}
+                                                                        <div className="space-y-3">
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                                                                                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                                                                Padrões e Fisiopatologia
+                                                                            </p>
+                                                                            <div className="space-y-4 ml-2">
+                                                                                {exam.analysisResult.findings.map((f, i) => (
+                                                                                    <div key={i} className="flex gap-4 items-start group/finding">
+                                                                                        <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${f.impact === 'NEGATIVO' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]' : (f.impact === 'POSITIVO' ? 'bg-emerald-500' : 'bg-slate-500')}`}></div>
+                                                                                        <p className="text-[11px] font-medium leading-normal text-slate-300">
+                                                                                            <b className="text-white block mb-0.5">{f.marker}</b>
+                                                                                            {f.correlation}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Fisiopatologia e Causas */}
+                                                                        {exam.analysisResult.possibleCauses && exam.analysisResult.possibleCauses.length > 0 && (
+                                                                            <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-amber-400">Hipóteses e Causas Fundamentais</p>
+                                                                                <ul className="space-y-2">
+                                                                                    {exam.analysisResult.possibleCauses.map((c, i) => (
+                                                                                        <li key={i} className="text-[10px] text-slate-400 leading-tight flex gap-2">
+                                                                                            <span className="text-amber-500">•</span> {c}
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Intervenção Dietoterápica */}
+                                                                        {exam.analysisResult.suggestedTreatments && exam.analysisResult.suggestedTreatments.length > 0 && (
+                                                                            <div className="space-y-3 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Nutrição Funcional e Condutas</p>
+                                                                                <ul className="space-y-2">
+                                                                                    {exam.analysisResult.suggestedTreatments.map((t, i) => (
+                                                                                        <li key={i} className="text-[10px] text-emerald-100/80 leading-tight flex gap-2">
+                                                                                            <span className="text-emerald-500 font-black">✓</span> {t}
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Próximos Passos e Riscos */}
+                                                                        {exam.analysisResult.nextSteps && exam.analysisResult.nextSteps.length > 0 && (
+                                                                            <div className="space-y-3 p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-rose-400">Investigação e Riscos Associados</p>
+                                                                                <ul className="space-y-2">
+                                                                                    {exam.analysisResult.nextSteps.map((s, i) => (
+                                                                                        <li key={i} className="text-[10px] text-rose-100/80 leading-tight flex gap-2">
+                                                                                            <span className="text-rose-500 font-bold">!</span> {s}
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="pt-4 flex justify-between items-baseline">
+                                                                        <p className="text-[7px] text-slate-600 font-black uppercase tracking-widest">Relatório Confidencial • Uso Profissional</p>
+                                                                        <button 
+                                                                            onClick={() => handleRunAnalysis(exam)}
+                                                                            className="text-[8px] font-black text-indigo-400 uppercase hover:text-white transition-colors"
+                                                                        >
+                                                                            Recalcular com Novos Dados ➔
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             </div>

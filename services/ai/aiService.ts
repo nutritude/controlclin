@@ -106,9 +106,13 @@ export const AIService = {
             return data.choices?.[0]?.message?.content || "";
 
         } catch (error: any) {
-            console.error("[AI Service] Erro em todas as rotas de IA:", error);
-            if (error.name === 'AbortError') throw new Error("A análise excedeu o tempo limite. Tente simplificar o PDF ou verifique sua internet.");
-            throw new Error(`IA Offline: ${error.message || "Falha na comunicação"}`);
+            const isTimeout = error.name === 'AbortError' || error.message?.includes('timeout') || error.message?.includes('504');
+            console.error("[AI Service] Erro Crítico:", error);
+            
+            if (isTimeout) {
+                throw new Error("⚠️ BLOQUEIO DE INFRAESTRUTURA: A análise deste PDF é complexa e excedeu os 10 segundos do servidor (Vercel). Para sanar definitivamente: adicione 'VITE_GEMINI_API_KEY' nas Settings do Vercel e faça um Redeploy.");
+            }
+            throw new Error(`IA Offline: ${error.message || "Erro de comunicação"}`);
         }
     }
 };
