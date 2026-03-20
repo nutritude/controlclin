@@ -86,7 +86,10 @@ export default async function handler(req: Request) {
 
     } catch (error: any) {
         console.error("[Proxy AI] Erro Crítico:", error.message);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });

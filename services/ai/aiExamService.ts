@@ -35,7 +35,8 @@ export const AIExamService = {
                 prompt: prompt,
                 role: 'professional',
                 temperature: 0.1,
-                model: "google/gemini-flash-latest" // Usando Flash Latest para extração (mais rápido e estável para OCR)
+                fileData: fileData,
+                model: "google/gemini-1.5-flash" // Padronizado: 1.5 Flash pela estabilidade com multimodal (OCR)
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
@@ -50,26 +51,7 @@ export const AIExamService = {
             console.log(`[AI Exam] ${raw.length} marcadores brutos extraídos.`);
             return LaboratService.processMarkers(raw);
         } catch (error: any) {
-            console.error("Erro na extração AI (2.0 Flash):", error);
-            
-            // Fallback: se o 2.0 falhar/timeout e houver arquivo carregado
-            if (fileData) {
-                 console.log("[AI Exam] Tentando fallback para 1.5 Flash pela robustez...");
-                 try {
-                     const flashResponse = await AIService.ask({
-                         prompt: prompt,
-                         role: 'professional',
-                         temperature: 0.1,
-                         fileData: fileData,
-                         model: "google/gemini-1.5-flash"
-                     });
-                     const clean = flashResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-                     const match = clean.match(/\[\s*\{[\s\S]*\}\s*\]/);
-                     return LaboratService.processMarkers(JSON.parse(match ? match[0] : clean));
-                 } catch (e) {
-                     return [];
-                 }
-            }
+            console.error("[AI Exam] Falha na extração:", error.message);
             return [];
         }
     },

@@ -6,7 +6,7 @@ export const AIClinicalSummaryService = {
    * Generates a clinical summary text based on the report snapshot.
    */
   generateSummary: async (snapshot: IndividualReportSnapshot): Promise<string> => {
-    console.log('[AI Clinical] Iniciando resumo com OpenRouter...');
+    console.log('[AI Clinical] Iniciando resumo inteligente...');
 
     try {
       const prompt = buildPrompt(snapshot);

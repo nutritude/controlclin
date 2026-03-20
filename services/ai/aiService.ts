@@ -25,23 +25,40 @@ export const AIService = {
      * AIService: Gerencia chamadas à IA priorizando Performance e Estabilidade.
      * Tenta chamada direta (Browser -> Google) para evitar limites de timeout de proxies (Vercel).
      */
-    async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest): Promise<string> {
-        const finalModel = model || "google/gemini-flash-latest";
-        const googleModel = finalModel.includes('/') ? finalModel.split('/')[1] : finalModel;
+    async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest, retries = 1): Promise<string> {
+        const primaryModel = model || "google/gemini-flash-latest";
+        const stabilityModel = "google/gemini-flash-latest";
+        
         const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
         const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
         const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
 
-        console.log(`[AI Service] Processando requisição (${finalModel})...`);
+        const callGoogle = async (targetModel: string, useProxy: boolean) => {
+            const googleModel = targetModel.includes('/') ? targetModel.split('/')[1] : targetModel;
+            const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-        // 1. ESTRATÉGIA HIGH-PERFORMANCE: Tenta chamada DIRETA (Client-side)
-        // Isso burla o limite de 10s do Vercel e permite análises complexas de até 90s.
-        const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        console.log(`[AI Service] Configuração: API_KEY=${geminiKey ? 'PRESENTE' : 'AUSENTE (Usando fallback Vercel)'}`);
+            if (useProxy) {
+                console.log(`[AI] Proxy: ${googleModel}...`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 28000);
 
-        if (geminiKey) {
-            try {
-                console.log(`[AI Service] Iniciando chamada direta Browser-to-Google (${finalModel})...`);
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
+                    body: JSON.stringify({ prompt, systemPrompt: finalSystemPrompt, temperature: finalTemperature, model: targetModel, fileData })
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Erro Proxy: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.choices?.[0]?.message?.content || "";
+            } else {
+                if (!geminiKey) throw new Error("VITE_GEMINI_API_KEY ausente.");
+                console.log(`[AI] Direto: ${googleModel}...`);
                 const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
                 
                 const parts: any[] = [{ text: finalSystemPrompt + "\n\n" + prompt }];
@@ -51,70 +68,66 @@ export const AIService = {
                 }
 
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos para exames pesados
+                const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-                const directResponse = await fetch(apiEndpoint, {
+                const response = await fetch(apiEndpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     signal: controller.signal,
                     body: JSON.stringify({
                         contents: [{ role: "user", parts }],
-                        generationConfig: { temperature: finalTemperature, maxOutputTokens: 8192 }
+                        generationConfig: { temperature: finalTemperature, maxOutputTokens: 8192 },
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
                     })
                 });
                 clearTimeout(timeoutId);
 
-                if (directResponse.ok) {
-                    const data = await directResponse.json();
-                    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                    if (content) {
-                        console.log("[AI Service] Sucesso via conexão direta.");
-                        return content;
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error("Resposta sem conteúdo.");
+                return text;
+            }
+        };
+
+        // LOOP DE TENTATIVAS PADRONIZADO
+        let lastError: any = null;
+        for (let i = 0; i <= retries; i++) {
+            try {
+                if (i > 0) await new Promise(r => setTimeout(r, 1000 * i));
+                
+                // FLUXO DE RESILIÊNCIA EXECUTIVO
+                // 1. Tenta Direto Primário
+                try {
+                    return await callGoogle(primaryModel, false);
+                } catch (e1) {
+                    // 2. Tenta Proxy Primário
+                    try {
+                        return await callGoogle(primaryModel, true);
+                    } catch (e2) {
+                        // 3. Se falhou e o modelo primário era 'latest' ou diferente, tenta 1.5-flash (Estabilidade)
+                        if (primaryModel !== stabilityModel) {
+                            console.log("[AI] Iniciando modo de estabilidade (1.5 Flash)...");
+                            try {
+                                return await callGoogle(stabilityModel, false);
+                            } catch (e3) {
+                                return await callGoogle(stabilityModel, true);
+                            }
+                        }
+                        throw e2;
                     }
-                } else {
-                    console.warn(`[AI Service] Chamada direta falhou (${directResponse.status}). Tentando Proxy...`);
                 }
             } catch (err: any) {
-                console.warn("[AI Service] Conexão direta bloqueada ou lenta. Recuando para Proxy Vercel...", err.message);
+                lastError = err;
+                console.error(`[AI] Falha na camada ${i+1}:`, err.message);
             }
         }
 
-        // 2. ESTRATÉGIA COMPATIBILIDADE: Proxy /api/ai
-        try {
-            console.log("[AI Service] Estabelecendo conexão via Proxy Secundário...");
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 28000); // Limite próximo ao do Vercel Pro (30s)
-
-            const response = await fetch('/api/ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal,
-                body: JSON.stringify({
-                    prompt,
-                    systemPrompt: finalSystemPrompt,
-                    temperature: finalTemperature,
-                    model: finalModel,
-                    fileData
-                })
-            });
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `Erro de Gateway: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data.choices?.[0]?.message?.content || "";
-
-        } catch (error: any) {
-            const isTimeout = error.name === 'AbortError' || error.message?.includes('timeout') || error.message?.includes('504');
-            console.error("[AI Service] Erro Crítico:", error);
-            
-            if (isTimeout) {
-                throw new Error("⚠️ BLOQUEIO DE INFRAESTRUTURA: A análise deste PDF é complexa e excedeu os 10 segundos do servidor (Vercel). Para sanar definitivamente: adicione 'VITE_GEMINI_API_KEY' nas Settings do Vercel e faça um Redeploy.");
-            }
-            throw new Error(`IA Offline: ${error.message || "Erro de comunicação"}`);
-        }
+        throw new Error(`ESTABILIDADE IA COMPROMETIDA Corretiva: ${lastError?.message || "Sem sinal de IA"}`);
     }
 };

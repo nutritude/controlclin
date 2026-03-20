@@ -3,10 +3,10 @@ import { AIService } from './ai/aiService';
 
 export const AIPlanAnalysisService = {
   /**
-   * Analyzes the nutritional plan using OpenRouter (Qwen) or falls back to a deterministic analysis.
+   * Analisa o plano alimentar utilizando a AIService (Gemini) com failover robusto.
    */
   analyzePlan: async (snapshot: PlanSnapshot): Promise<AIAnalysisResult> => {
-    console.log('[AI Plan] Iniciando análise com OpenRouter...');
+    console.log('[AI Plan] Iniciando análise inteligente...');
 
     try {
       const prompt = buildPrompt(snapshot);
