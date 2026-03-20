@@ -1042,96 +1042,104 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
                                                         </div>
 
                                                         {exam.analysisResult && (
-                                                            <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-2xl relative overflow-hidden group border border-slate-800">
-                                                                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-                                                                <div className="relative z-10 space-y-6">
+                                                            <div className="p-8 bg-white rounded-3xl text-slate-900 shadow-xl relative overflow-hidden group border border-slate-100 mb-8">
+                                                                <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700"></div>
+                                                                <div className="relative z-10 space-y-8">
                                                                     <div className="flex items-center justify-between">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className="w-10 h-10 bg-indigo-600 flex items-center justify-center rounded-xl shadow-lg border border-indigo-400 rotate-3 group-hover:rotate-0 transition-transform">✨</div>
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="w-12 h-12 bg-indigo-50 flex items-center justify-center rounded-2xl shadow-sm border border-indigo-100 rotate-3 group-hover:rotate-0 transition-transform text-2xl">✨</div>
                                                                             <div>
-                                                                                <h6 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Insight Biomédico Avançado</h6>
-                                                                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Powered by ClinIQ AI v2.5</p>
+                                                                                <h6 className="text-[11px] font-black uppercase tracking-widest text-indigo-600">Insight Biomédico Avançado</h6>
+                                                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Powered by ClinIQ AI v2.5 • Professional Mode</p>
                                                                             </div>
                                                                         </div>
                                                                         {exam.analysisResult.isFallback && (
-                                                                            <span className="bg-rose-500/20 text-rose-400 text-[8px] font-bold px-2 py-0.5 rounded-full border border-rose-500/30">MODO OFFLINE</span>
+                                                                            <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-3 py-1 rounded-full border border-amber-200 animate-pulse">MODO OFFLINE</span>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 italic">
-                                                                        <p className="text-xs font-medium leading-relaxed opacity-95">"{exam.analysisResult.summary}"</p>
+                                                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 italic">
+                                                                        <p className="text-sm font-semibold leading-relaxed text-slate-700">"{exam.analysisResult.summary}"</p>
                                                                     </div>
 
-                                                                    <div className="space-y-6 pt-2">
-                                                                        {/* Cruzamento de Dados */}
-                                                                        <div className="space-y-3">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                                                                                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                                                                                Padrões e Fisiopatologia
-                                                                            </p>
-                                                                            <div className="space-y-4 ml-2">
-                                                                                {exam.analysisResult.findings.map((f, i) => (
-                                                                                    <div key={i} className="flex gap-4 items-start group/finding">
-                                                                                        <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${f.impact === 'NEGATIVO' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]' : (f.impact === 'POSITIVO' ? 'bg-emerald-500' : 'bg-slate-500')}`}></div>
-                                                                                        <p className="text-[11px] font-medium leading-normal text-slate-300">
-                                                                                            <b className="text-white block mb-0.5">{f.marker}</b>
-                                                                                            {f.correlation}
-                                                                                        </p>
-                                                                                    </div>
-                                                                                ))}
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                                        <div className="space-y-8">
+                                                                            {/* Cruzamento de Dados */}
+                                                                            <div className="space-y-4">
+                                                                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
+                                                                                    <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
+                                                                                    Correlações de Marcadores
+                                                                                </p>
+                                                                                <div className="space-y-5 ml-2">
+                                                                                    {exam.analysisResult.findings.map((f, i) => (
+                                                                                        <div key={i} className="flex gap-4 items-start">
+                                                                                            <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${f.impact === 'NEGATIVO' ? 'bg-rose-500 shadow-sm' : (f.impact === 'POSITIVO' ? 'bg-emerald-500' : 'bg-slate-300')}`}></div>
+                                                                                            <p className="text-[12px] font-medium leading-snug text-slate-600">
+                                                                                                <b className="text-slate-900 block mb-0.5">{f.marker}</b>
+                                                                                                {f.correlation}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
                                                                             </div>
+
+                                                                            {/* Hipóteses Diagnósticas */}
+                                                                            {exam.analysisResult.possibleCauses && exam.analysisResult.possibleCauses.length > 0 && (
+                                                                                <div className="space-y-4 p-5 bg-amber-50/50 rounded-3xl border border-amber-100">
+                                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Mecanismos e Causas Prováveis</p>
+                                                                                    <ul className="space-y-3">
+                                                                                        {exam.analysisResult.possibleCauses.map((c, i) => (
+                                                                                            <li key={i} className="text-[11px] text-slate-600 font-medium leading-relaxed flex gap-3">
+                                                                                                <span className="text-amber-500 font-bold">•</span> {c}
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
 
-                                                                        {/* Fisiopatologia e Causas */}
-                                                                        {exam.analysisResult.possibleCauses && exam.analysisResult.possibleCauses.length > 0 && (
-                                                                            <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-amber-400">Hipóteses e Causas Fundamentais</p>
-                                                                                <ul className="space-y-2">
-                                                                                    {exam.analysisResult.possibleCauses.map((c, i) => (
-                                                                                        <li key={i} className="text-[10px] text-slate-400 leading-tight flex gap-2">
-                                                                                            <span className="text-amber-500">•</span> {c}
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        )}
+                                                                        <div className="space-y-8">
+                                                                            {/* Condutas e Nutrição */}
+                                                                            {exam.analysisResult.suggestedTreatments && exam.analysisResult.suggestedTreatments.length > 0 && (
+                                                                                <div className="space-y-4 p-5 bg-emerald-50/50 rounded-3xl border border-emerald-100">
+                                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Estratégias de Intervenção</p>
+                                                                                    <ul className="space-y-3">
+                                                                                        {exam.analysisResult.suggestedTreatments.map((t, i) => (
+                                                                                            <li key={i} className="text-[11px] text-emerald-900/80 font-medium leading-relaxed flex gap-3">
+                                                                                                <span className="text-emerald-500 font-black">✓</span> {t}
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
 
-                                                                        {/* Intervenção Dietoterápica */}
-                                                                        {exam.analysisResult.suggestedTreatments && exam.analysisResult.suggestedTreatments.length > 0 && (
-                                                                            <div className="space-y-3 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Nutrição Funcional e Condutas</p>
-                                                                                <ul className="space-y-2">
-                                                                                    {exam.analysisResult.suggestedTreatments.map((t, i) => (
-                                                                                        <li key={i} className="text-[10px] text-emerald-100/80 leading-tight flex gap-2">
-                                                                                            <span className="text-emerald-500 font-black">✓</span> {t}
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Próximos Passos e Riscos */}
-                                                                        {exam.analysisResult.nextSteps && exam.analysisResult.nextSteps.length > 0 && (
-                                                                            <div className="space-y-3 p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
-                                                                                <p className="text-[9px] font-black uppercase tracking-widest text-rose-400">Investigação e Riscos Associados</p>
-                                                                                <ul className="space-y-2">
-                                                                                    {exam.analysisResult.nextSteps.map((s, i) => (
-                                                                                        <li key={i} className="text-[10px] text-rose-100/80 leading-tight flex gap-2">
-                                                                                            <span className="text-rose-500 font-bold">!</span> {s}
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        )}
+                                                                            {/* Urgências e Riscos */}
+                                                                            {exam.analysisResult.nextSteps && exam.analysisResult.nextSteps.length > 0 && (
+                                                                                <div className="space-y-4 p-5 bg-rose-50/50 rounded-3xl border border-rose-100">
+                                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-rose-600">Pontos de Alerta e Investigação</p>
+                                                                                    <ul className="space-y-3">
+                                                                                        {exam.analysisResult.nextSteps.map((s, i) => (
+                                                                                            <li key={i} className="text-[11px] text-rose-900/80 font-medium leading-relaxed flex gap-3">
+                                                                                                <span className="text-rose-500 font-black text-xs">!</span> {s}
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
 
-                                                                    <div className="pt-4 flex justify-between items-baseline">
-                                                                        <p className="text-[7px] text-slate-600 font-black uppercase tracking-widest">Relatório Confidencial • Uso Profissional</p>
+                                                                    <div className="pt-8 border-t border-slate-100 flex justify-between items-center">
+                                                                        <div className="flex gap-4">
+                                                                           <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1.5">
+                                                                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Relatório de Prática Avançada
+                                                                           </p>
+                                                                        </div>
                                                                         <button 
                                                                             onClick={() => handleRunAnalysis(exam)}
-                                                                            className="text-[8px] font-black text-indigo-400 uppercase hover:text-white transition-colors"
+                                                                            className="px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                                                         >
-                                                                            Recalcular com Novos Dados ➔
+                                                                            Recalcular Análise ➔
                                                                         </button>
                                                                     </div>
                                                                 </div>

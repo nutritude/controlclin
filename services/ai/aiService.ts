@@ -37,9 +37,11 @@ export const AIService = {
         // 1. ESTRATÉGIA HIGH-PERFORMANCE: Tenta chamada DIRETA (Client-side)
         // Isso burla o limite de 10s do Vercel e permite análises complexas de até 90s.
         const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        console.log(`[AI Service] Configuração: API_KEY=${geminiKey ? 'PRESENTE' : 'AUSENTE (Usando fallback Vercel)'}`);
+
         if (geminiKey) {
             try {
-                console.log("[AI Service] Iniciando chamada direta Browser-to-Google...");
+                console.log(`[AI Service] Iniciando chamada direta Browser-to-Google (${finalModel})...`);
                 const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
                 
                 const parts: any[] = [{ text: finalSystemPrompt + "\n\n" + prompt }];

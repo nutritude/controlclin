@@ -14,9 +14,25 @@ export const LaboratService = {
                 m.aliases.some(a => a.toUpperCase() === nameUpper)
             );
 
-            const parsedValue = typeof rm.value === 'number'
-                ? rm.value
-                : parseFloat(String(rm.value).replace(',', '.'));
+            // Limpeza de nomenclatura numérica brasileira
+            let rawStr = String(rm.value).trim();
+            
+            // Se tem vírgula, o ponto é milhar. Ex: 1.091,50 -> 1091.50
+            if (rawStr.includes(',')) {
+                rawStr = rawStr.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Se NÃO tem vírgula, mas tem ponto, decidimos se é milhar ou decimal
+                // Heurística de milhar: 1.091 -> Se tem 3 dígitos após o ponto, assume milhar em valores clínicos comuns
+                const parts = rawStr.split('.');
+                if (parts.length === 2 && parts[1].length === 3 && parseInt(parts[0]) > 0) {
+                   rawStr = rawStr.replace('.', '');
+                } else {
+                   // Caso contrário (ex: 1.5 ou 12.50), assume decimal universal
+                   rawStr = rawStr; 
+                }
+            }
+
+            const parsedValue = parseFloat(rawStr);
 
             const value = isNaN(parsedValue) ? 0 : parsedValue;
 
