@@ -82,40 +82,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    const loadData = async (isInitial = false) => {
+      if (isInitial) setLoading(true);
+      
       const professionalId = !isManagerMode ? user.professionalId : undefined;
       const role = isManagerMode ? 'ADMIN' : 'PROFESSIONAL';
 
-      const [pts, apps, s, requests, exams, profs] = await Promise.all([
-        db.getPatients(clinic.id, professionalId, role),
-        db.getUpcomingAppointments(clinic.id, 50, professionalId, role),
-        db.getAdvancedStats(clinic.id, professionalId, role),
-        db.getAllExamRequests(clinic.id, professionalId),
-        db.getAllExams(clinic.id),
-        db.getProfessionals(clinic.id)
-      ]);
+      try {
+        const [pts, apps, s, requests, exams, profs] = await Promise.all([
+          db.getPatients(clinic.id, professionalId, role),
+          db.getUpcomingAppointments(clinic.id, 50, professionalId, role),
+          db.getAdvancedStats(clinic.id, professionalId, role),
+          db.getAllExamRequests(clinic.id, professionalId),
+          db.getAllExams(clinic.id),
+          db.getProfessionals(clinic.id)
+        ]);
 
-      const insights = await db.generateDashboardInsights(clinic.id, s);
+        setPatients(pts);
+        setAppointments(apps);
+        setStats(s);
+        setProfessionals(profs);
+        setExamRequests(requests);
+        setAllExams(exams);
 
-      setPatients(pts);
-      setAppointments(apps);
-      setStats(s);
-      setAiInsights(insights);
-      setProfessionals(profs);
-      if (isManagerMode) {
-        db.getManagerIntelligence(clinic.id).then(setManagerIntelligence);
+        // Background tasks (non-blocking)
+        db.generateDashboardInsights(clinic.id, s).then(setAiInsights);
+        if (isManagerMode) {
+          db.getManagerIntelligence(clinic.id).then(setManagerIntelligence);
+        }
+      } catch (err) {
+        console.error("Dashboard load error:", err);
+      } finally {
+        if (isInitial) setLoading(false);
       }
-      setExamRequests(requests);
-      setAllExams(exams);
-      setLoading(false);
     };
 
-    loadData();
+    // Initial load
+    loadData(true);
 
-    // Listen for remote sync events to refresh UI when background sync completes
-    window.addEventListener('db-remote-sync', loadData);
-    return () => window.removeEventListener('db-remote-sync', loadData);
+    // Sync listener: only refreshes data WITHOUT setting loading=true
+    const handleSync = () => loadData(false);
+    window.addEventListener('db-remote-sync', handleSync);
+    return () => window.removeEventListener('db-remote-sync', handleSync);
   }, [clinic.id, user.professionalId, isManagerMode]);
 
   // Handle Search
@@ -392,15 +400,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, clinic, isManagerMode }) =>
               <span className={`text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600/60`}>NutriAI Analytics</span>
             </div>
             <div className="space-y-3">
-              <p className={`text-lg font-black leading-[1.2] text-slate-800`}>
-                {aiInsights?.insight || "Otimizando sua retenção clínica..."}
-              </p>
-              <div className={`flex items-center gap-2 py-2 px-3 bg-indigo-100/50 rounded-xl w-fit`}>
-                <Icons.Activity className={`size-3 text-indigo-600`} />
-                <span className={`text-[9px] font-bold text-indigo-700 uppercase tracking-wider`}>
-                  {aiInsights?.secondaryInsight || "Insight Clínico: Planos personalizados aumentam a adesão em 15%"}
-                </span>
-              </div>
+              {aiInsights ? (
+                <>
+                  <p className={`text-lg font-black leading-[1.2] text-slate-800`}>
+                    {aiInsights?.insight}
+                  </p>
+                  <div className={`flex items-center gap-2 py-2 px-3 bg-indigo-100/50 rounded-xl w-fit`}>
+                    <Icons.Activity className={`size-3 text-indigo-600`} />
+                    <span className={`text-[9px] font-bold text-indigo-700 uppercase tracking-wider`}>
+                      {aiInsights?.secondaryInsight}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-indigo-100 rounded-full w-3/4"></div>
+                  <div className="h-3 bg-indigo-50 rounded-full w-1/2"></div>
+                </div>
+              )}
             </div>
           </div>
           <button
