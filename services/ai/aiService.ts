@@ -22,107 +22,93 @@ export interface AIAskRequest {
 
 export const AIService = {
     /**
-     * Envia um prompt via Proxy Seguro (/api/ai) com fallback direto para Gemini em Modo Dev.
+     * AIService: Gerencia chamadas à IA priorizando Performance e Estabilidade.
+     * Tenta chamada direta (Browser -> Google) para evitar limites de timeout de proxies (Vercel).
      */
     async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest): Promise<string> {
         const finalModel = model || "google/gemini-1.5-flash";
+        const googleModel = finalModel.includes('/') ? finalModel.split('/')[1] : finalModel;
+        const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
+        const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
+        const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
 
-        console.log(`[AI Service] Iniciando requisição Gemini (${finalModel}) ${fileData ? 'com arquivo' : ''}`);
+        console.log(`[AI Service] Processando requisição (${finalModel})...`);
 
-        try {
-            const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
-            const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
-            const finalTemperature = temperature ?? (role === 'manager' ? 0.7 : 0.1);
-
-            let response;
+        // 1. ESTRATÉGIA HIGH-PERFORMANCE: Tenta chamada DIRETA (Client-side)
+        // Isso burla o limite de 10s do Vercel e permite análises complexas de até 90s.
+        const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (geminiKey) {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
-
-                response = await fetch('/api/ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    signal: controller.signal,
-                    body: JSON.stringify({
-                        prompt,
-                        systemPrompt: finalSystemPrompt,
-                        temperature: finalTemperature,
-                        model: finalModel,
-                        fileData // Passa os dados do arquivo para o proxy
-                    })
-                });
-                clearTimeout(timeoutId);
-            } catch (e: any) {
-                if (e.name === 'AbortError') throw new Error("A requisição demorou muito e foi cancelada (Timeout)");
-                console.warn("[AI Service] Falha na rede ao contactar /api/ai. Tentando fallback direto...");
-                // Simula 404 para acionar o fallback
-                response = { status: 404, ok: false };
-            }
-
-            // FALLBACK PARA LOCALHOST / Modo Dev (Se o proxy /api/ai der 404, tentamos chamada direta via client)
-            if (response.status === 404) {
-                console.info("[AI Service] Proxy /api/ai não encontrado (Modo Local). Tentando chamada direta ao Gemini...");
-
-                const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-                if (!geminiKey) throw new Error("Chave Gemini (VITE_GEMINI_API_KEY) não encontrada no .env.local");
-
-                const googleModel = finalModel.includes('/') ? finalModel.split('/')[1] : finalModel;
+                console.log("[AI Service] Iniciando chamada direta Browser-to-Google...");
                 const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
-
-                // Formata partes para Gemini (Texto + Arquivo se houver)
-                const parts: any[] = [{ text: finalSystemPrompt + "\n\n" + prompt }];
                 
+                const parts: any[] = [{ text: finalSystemPrompt + "\n\n" + prompt }];
                 if (fileData) {
-                    // Extrai apenas o base64 puro (sem o prefixo data:mime/type;base64,)
-                    const pureBase64 = fileData.base64.includes('base64,') 
-                        ? fileData.base64.split('base64,')[1] 
-                        : fileData.base64;
-                        
-                    parts.push({
-                        inline_data: {
-                            mime_type: fileData.mimeType,
-                            data: pureBase64
-                        }
-                    });
+                    const pureBase64 = fileData.base64.includes('base64,') ? fileData.base64.split('base64,')[1] : fileData.base64;
+                    parts.push({ inline_data: { mime_type: fileData.mimeType, data: pureBase64 } });
                 }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos para exames pesados
 
                 const directResponse = await fetch(apiEndpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    signal: controller.signal,
                     body: JSON.stringify({
                         contents: [{ role: "user", parts }],
-                        generationConfig: { temperature: finalTemperature, maxOutputTokens: 2048 }
+                        generationConfig: { temperature: finalTemperature, maxOutputTokens: 8192 }
                     })
                 });
+                clearTimeout(timeoutId);
 
-                if (!directResponse.ok) {
-                    const errorDetails = await directResponse.text();
-                    throw new Error(`Erro API Gemini Direta (${directResponse.status}): ${errorDetails}`);
+                if (directResponse.ok) {
+                    const data = await directResponse.json();
+                    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    if (content) {
+                        console.log("[AI Service] Sucesso via conexão direta.");
+                        return content;
+                    }
+                } else {
+                    console.warn(`[AI Service] Chamada direta falhou (${directResponse.status}). Tentando Proxy...`);
                 }
-
-                const data = await directResponse.json();
-                const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-                if (!content) {
-                    console.error("[AI Service] Resposta vazia da API Gemini", data);
-                    throw new Error("Resposta da IA retornou vazia.");
-                }
-
-                return content;
+            } catch (err: any) {
+                console.warn("[AI Service] Conexão direta bloqueada ou lenta. Recuando para Proxy Vercel...", err.message);
             }
+        }
+
+        // 2. ESTRATÉGIA COMPATIBILIDADE: Proxy /api/ai
+        try {
+            console.log("[AI Service] Estabelecendo conexão via Proxy Secundário...");
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 28000); // Limite próximo ao do Vercel Pro (30s)
+
+            const response = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    prompt,
+                    systemPrompt: finalSystemPrompt,
+                    temperature: finalTemperature,
+                    model: finalModel,
+                    fileData
+                })
+            });
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
-                const errorData = await (response as Response).json().catch(() => ({}));
-                throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Erro de Gateway: ${response.status}`);
             }
 
-            // Resposta JSON normalizada do Proxy
-            const data = await (response as Response).json();
+            const data = await response.json();
             return data.choices?.[0]?.message?.content || "";
 
         } catch (error: any) {
-            console.error("[AI Service] Erro Crítico:", error);
-            throw new Error(`IA Offline: ${error.message || "Erro de comunicação"}`);
+            console.error("[AI Service] Erro em todas as rotas de IA:", error);
+            if (error.name === 'AbortError') throw new Error("A análise excedeu o tempo limite. Tente simplificar o PDF ou verifique sua internet.");
+            throw new Error(`IA Offline: ${error.message || "Falha na comunicação"}`);
         }
     }
 };
