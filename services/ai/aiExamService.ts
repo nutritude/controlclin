@@ -119,12 +119,13 @@ export const AIExamService = {
 
             if (aiResponse) {
                 const cleanJson = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-                return JSON.parse(cleanJson) as ExamAnalysisResult;
+                const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+                return JSON.parse(jsonMatch ? jsonMatch[0] : cleanJson) as ExamAnalysisResult;
             }
             throw new Error("Empty response from AI");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro na análise AI:", error);
-            return getFallbackAnalysis(allMarkers);
+            return getFallbackAnalysis(allMarkers, error.message);
         }
     }
 };
@@ -139,18 +140,18 @@ function calculateAge(birthDate: string): number {
     return age;
 }
 
-function getFallbackAnalysis(markers: ExamMarker[]): ExamAnalysisResult {
+function getFallbackAnalysis(markers: ExamMarker[], errorMsg?: string): ExamAnalysisResult {
     const altered = markers.filter(m => m.interpretation !== 'NORMAL');
     return {
-        summary: "Análise offline baseada em indicadores individuais.",
+        summary: "⚠️ Modo offline (IA não respondeu).",
         findings: altered.map(m => ({
             marker: m.name,
             correlation: `Marcador identificado como ${m.interpretation}.`,
             impact: m.interpretation === 'NORMAL' ? 'POSITIVO' : 'NEGATIVO'
         })),
-        possibleCauses: ["Necessário conexão com IA para cruzamento de dados."],
-        suggestedTreatments: ["Consulte as diretrizes individuais de cada marcador na tabela."],
-        nextSteps: ["Habilitar chave da IA para análise preditiva."],
+        possibleCauses: ["Não foi possível realizar a análise cruzada via IA."],
+        suggestedTreatments: ["Aguarde o deploy completo ou verifique sua conexão."],
+        nextSteps: [`MOTIVO: ${errorMsg || 'Erro de comunicação desconhecido'}`],
         isFallback: true
     };
 }
