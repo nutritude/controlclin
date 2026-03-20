@@ -7,28 +7,31 @@ export const AIExamService = {
      * Extrai marcadores de um documento (PDF/Imagem) ou texto utilizando Gemini
      */
     extractMarkers: async (fileData?: { base64: string, mimeType: string }, text?: string): Promise<ExamMarker[]> => {
-        console.log("[AI Exam] Iniciando extração profunda de marcadores...");
+        console.log("[AI Exam] Iniciando extração profunda de marcadores (Gemini 2.0 Flash)...");
 
         const prompt = `
-      Você é um especialista em biomedicina e extração de dados estruturados de laudos laboratoriais.
-      Analise TODO o documento fornecido (pode conter várias páginas e múltiplos exames diferentes).
+      Você é um especialista sênior em biomedicina e extração de dados estruturados de laudos laboratoriais complexos.
+      
+      TAREFA:
+      Analise EXAUSTIVAMENTE o documento fornecido (PDF ou Imagem). 
+      Este arquivo pode conter múltiplas páginas, tabelas densas, múltiplos cabeçalhos e diversos exames (ex: Hemograma completo, Bioquímica, Tireoide, Urina, etc).
       
       OBJETIVO:
-      Extraia TODOS os biomarcadores encontrados em todos os exames presentes no arquivo.
-      Retorne uma lista única contendo cada marcador identificado.
+      Extraia TODOS os biomarcadores laboratoriais numéricos encontrados em TODO o documento.
+      Se houver 10 páginas e 100 marcadores, extraia os 100. NÃO SUPRIMA DADOS.
+      
+      REGRAS TÉCNICAS:
+      1. NOME: Use o nome clínico padrão do marcador (ex: "Glicose", "Hemoglobina Glicada", "Vitamina D").
+      2. VALOR: Extraia o valor numérico exato. Converta vírgulas para pontos. Ex: "12,5" -> 12.5.
+      3. UNIDADE: Identifique a unidade correta (mg/dL, %, ng/mL, etc). Se for resultado sem unidade, use "un".
+      4. IGNORE INTERPRETAÇÕES E REFERÊNCIAS: Não extraia o que é normal/baixo para o laboratório; foque APENAS no nome, valor e unidade do paciente.
+      5. COMPLETUDE: Busque por marcadores em tabelas, textos corridos e rodapés técnicos de todas as páginas.
+      6. QUALITATIVOS: Ignore resultados qualitativos binários (ex: "Ausente", "Negativo") para esta extração de biomarcadores.
 
-      REGRAS DE EXTRAÇÃO:
-      1. Extraia o Nome do marcador (ex: Glicose, Hemoglobina, TSH).
-      2. Extraia o Valor numérico (converta vírgulas para pontos se necessário).
-      3. Identifique a Unidade de medida (ex: mg/dL, %, uUI/mL).
-      4. IGNORE valores de referência. Foque apenas no resultado do paciente.
-      5. Capture dados de TODAS as páginas e de todos os títulos de exames presentes.
-      6. Se houver resultados qualitativos importantes (ex: Ausência de nitritos), ignore-os desta extração numérica.
-
-      FORMATO DE RETORNO (APENAS JSON):
+      FORMATO DE RETORNO (OBRIGATÓRIO JSON ARRAY):
       [{"name": "Marcador", "value": 12.3, "unit": "unidade"}]
 
-      ${text ? `CONTEÚDO TEXTUAL AUXILIAR:\n${text}` : ''}
+      ${text ? `DADOS OCR ADICIONAIS:\n${text}` : ''}
     `;
 
         try {
@@ -37,12 +40,11 @@ export const AIExamService = {
                 role: 'professional',
                 temperature: 0.1,
                 fileData: fileData, 
-                model: "google/gemini-2.0-flash" // Modelo v2.0 Flash: Equilíbrio perfeito entre Pro e Flash 1.5
+                model: "google/gemini-2.0-flash"
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
 
-            // Parser resiliente: busca o bloco JSON mesmo se houver texto em volta
             let jsonStr = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
             const jsonMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/);
             if (jsonMatch) {
@@ -50,12 +52,14 @@ export const AIExamService = {
             }
 
             const raw = JSON.parse(jsonStr);
+            console.log(`[AI Exam] ${raw.length} marcadores brutos extraídos.`);
             return LaboratService.processMarkers(raw);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro na extração AI (2.0 Flash):", error);
-            // Fallback: se o 2.0 falhar, tenta o 1.5 Flash
+            
+            // Fallback: se o 2.0 falhar/timeout e houver arquivo carregado
             if (fileData) {
-                 console.log("[AI Exam] Tentando fallback para 1.5 Flash...");
+                 console.log("[AI Exam] Tentando fallback para 1.5 Flash pela robustez...");
                  try {
                      const flashResponse = await AIService.ask({
                          prompt: prompt,
@@ -76,20 +80,20 @@ export const AIExamService = {
     },
 
     /**
-     * Realiza a análise clínica e cruzamento de dados de um ou mais exames
+     * Realiza a análise clínica e cruzamento de dados conforme Prática Clínica Avançada
      */
     analyzeResults: async (patient: Patient, exams: Exam[]): Promise<ExamAnalysisResult> => {
         const allMarkers = exams.flatMap(e => e.markers || []);
 
         const prompt = `
-      Você é um Nutricionista Clínico Funcional e Especialista em Medicina Laboratorial.
-      Analise os resultados laboratoriais do paciente ${patient.name} (${patient.gender}, ${calculateAge(patient.birthDate)} anos).
+      Você é um Nutricionista Clínico Funcional e Especialista em Bioquímica e Medicina Laboratorial.
+      Sua missão é realizar uma ANÁLISE PROFISSIONAL AVANÇADA do Prontuário Laboratorial de ${patient.name} (${patient.gender}, ${calculateAge(patient.birthDate)} anos).
       
-      CONTEXTO CLÍNICO:
-      Diagnósticos: ${patient.clinicalSummary?.activeDiagnoses?.join(', ') || 'Nenhum'}
-      Objetivo: ${patient.clinicalSummary?.clinicalGoal || 'Não definido'}
+      CONTEXTO CLÍNICO DO PACIENTE:
+      - Diagnósticos/Queixas: ${patient.clinicalSummary?.activeDiagnoses?.join(', ') || 'Nenhum'}
+      - Objetivo: ${patient.clinicalSummary?.clinicalGoal || 'Otimização metabólica'}
  
-      RESULTADOS PARA ANÁLISE:
+      DADOS DOS EXAMES (VALORES REAIS DO PACIENTE):
       ${JSON.stringify(allMarkers.map(m => ({
             marcador: m.name,
             valor: m.value,
@@ -98,15 +102,24 @@ export const AIExamService = {
             interpretacao: m.interpretation
         })))}
  
-      ESTRUTURA DE RESPOSTA (JSON):
+      REQUISITOS DA ANÁLISE (Responda em modo PRÁTICA CLÍNICA AVANÇADA):
+      1. RESUMO DOS DESVIOS: Identifique claramente os marcadores fora do "alcance desejável" (níveis ótimos, não apenas laboratoriais).
+      2. PONTOS DE ATENÇÃO: Destaque os 3 principais riscos para o quadro atual do paciente.
+      3. CRUZAMENTO DE DADOS (Padrões Laboratoriais): Identifique como um marcador explica o outro. 
+         Ex: "Colesterol alto + TSH elevado sugere hipotiroidismo subclínico impactando o metabolismo lipídico."
+      4. POSSÍVEIS CAUSAS: Apresente justificativas fisiológicas e causas fundamentais para os desvios.
+      5. PONTOS DE INVESTIGAÇÃO: Indique quais sinais, sintomas ou exames de imagem seriam necessários para confirmar as suspeitas.
+      6. RISCOS ASSOCIADOS: Liste os riscos para a saúde futura se estes níveis não forem corrigidos.
+
+      FORMATO DE RETORNO (JSON RIGOROSO):
       {
-        "summary": "Resumo clínico geral focando em saúde metabólica.",
+        "summary": "Resumo clínico executivo de alto impacto",
         "findings": [
-          { "marker": "Nome", "correlation": "Como este indicador afeta os outros ou o objetivo do paciente", "impact": "POSITIVO|NEUTRO|NEGATIVO" }
+          { "marker": "Nome do Marcador/Padrão", "correlation": "Justificativa cruzada e impacto sistêmico", "impact": "POSITIVO|NEUTRO|NEGATIVO" }
         ],
-        "possibleCauses": ["Hipóteses para os valores alterados"],
-        "suggestedTreatments": ["Sugestões nutricionais ou suplementares baseadas em diretrizes"],
-        "nextSteps": ["Exames adicionais ou condutas imediatas"]
+        "possibleCauses": ["Causa fisiológica identificada + breve justificativa"],
+        "suggestedTreatments": ["Sugestões nutricionais/suplementares baseadas em diretrizes funcionais"],
+        "nextSteps": ["Pontos de investigação, riscos identificados e exames para descobrir novos marcadores"]
       }
     `;
 
@@ -114,7 +127,8 @@ export const AIExamService = {
             const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                temperature: 0.3
+                temperature: 0.3,
+                model: "google/gemini-2.0-flash"
             });
 
             if (aiResponse) {
@@ -143,15 +157,19 @@ function calculateAge(birthDate: string): number {
 function getFallbackAnalysis(markers: ExamMarker[], errorMsg?: string): ExamAnalysisResult {
     const altered = markers.filter(m => m.interpretation !== 'NORMAL');
     return {
-        summary: "⚠️ Modo offline (IA não respondeu).",
+        summary: "⚠️ Modo offline ou timeout detectado.",
         findings: altered.map(m => ({
             marker: m.name,
-            correlation: `Marcador identificado como ${m.interpretation}.`,
+            correlation: `Valor de ${m.value} para o marcador ${m.name} está ${m.interpretation}.`,
             impact: m.interpretation === 'NORMAL' ? 'POSITIVO' : 'NEGATIVO'
         })),
-        possibleCauses: ["Não foi possível realizar a análise cruzada via IA."],
-        suggestedTreatments: ["Aguarde o deploy completo ou verifique sua conexão."],
-        nextSteps: [`MOTIVO: ${errorMsg || 'Erro de comunicação desconhecido'}`],
+        possibleCauses: ["Não foi possível realizar o cruzamento de dados devido a um erro na IA."],
+        suggestedTreatments: ["Aguarde o processamento completo do servidor."],
+        nextSteps: [
+            "Justificativa: " + (errorMsg?.includes('Timeout') ? "A análise deste exame foi muito complexa para o tempo limite." : errorMsg || 'Falha na comunicação'),
+            "Ponto de Investigação: Verifique os valores manualmente no laudo.",
+            "Risco: Omissão de tendências clínicas ocultas (necessária análise manual)."
+        ],
         isFallback: true
     };
 }

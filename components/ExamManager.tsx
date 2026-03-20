@@ -260,8 +260,9 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
             let extracted: ExamMarker[] = [];
             try {
                 extracted = await AIExamService.extractMarkers(fileData);
-            } catch (aiErr) {
+            } catch (aiErr: any) {
                 console.warn("IA falhou na extração:", aiErr);
+                alert("Falha na extração automática: " + (aiErr.message || "Serviço ocupado.") + "\n\nO arquivo será salvo para preenchimento manual.");
             }
 
             const score = extracted.length > 0 ? LaboratService.calculateExamScore(extracted) : 0;
@@ -269,21 +270,24 @@ export const ExamManager: React.FC<ExamManagerProps> = ({ patient, exams, onUpda
             const newExam: Partial<Exam> = {
                 name: file.name.replace('.pdf', '').replace('.png', '').replace('.jpg', ''),
                 date: new Date().toISOString().split('T')[0],
-                status: 'PENDENTE',
+                status: extracted.length > 0 ? 'PENDENTE' : 'PENDENTE',
                 markers: extracted,
                 healthScore: score,
                 patientId: patient.id,
                 clinicId: patient.clinicId,
                 requestedByUserId: user.id,
                 fileUrl: file.name,
-                clinicalReason: "Upload via arquivo"
+                clinicalReason: extracted.length > 0 ? "Extração IA Concluída" : "Upload pendente de análise manual"
             };
 
             await db.saveExam(user, patient.id, newExam);
             onUpdate();
-            alert(extracted.length > 0 ? `Sucesso! ${extracted.length} marcadores extraídos.` : "Exame salvo (extração automática falhou).");
-        } catch (err) {
-            alert("Erro no upload: " + err);
+            
+            if (extracted.length > 0) {
+                alert(`Sucesso! ${extracted.length} marcadores identificados e prontos para conferência.`);
+            }
+        } catch (err: any) {
+            alert("Erro crítico no upload: " + (err.message || err));
         } finally {
             setIsExtracting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

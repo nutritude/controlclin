@@ -36,9 +36,13 @@ export const AIService = {
 
             let response;
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
+
                 response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
                     body: JSON.stringify({
                         prompt,
                         systemPrompt: finalSystemPrompt,
@@ -47,7 +51,9 @@ export const AIService = {
                         fileData // Passa os dados do arquivo para o proxy
                     })
                 });
-            } catch (e) {
+                clearTimeout(timeoutId);
+            } catch (e: any) {
+                if (e.name === 'AbortError') throw new Error("A requisição demorou muito e foi cancelada (Timeout)");
                 console.warn("[AI Service] Falha na rede ao contactar /api/ai. Tentando fallback direto...");
                 // Simula 404 para acionar o fallback
                 response = { status: 404, ok: false };
