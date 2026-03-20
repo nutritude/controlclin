@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-/* Force Vercel Rebuild - v3.2.0 - UI: All-Light Mode Manager Dashboard */
+/* Force Vercel Rebuild - v3.2.1 - UI: Added Tran & Weltman Protocol */
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { User, Clinic, Role, Patient } from './types';
 import Layout from './components/Layout';

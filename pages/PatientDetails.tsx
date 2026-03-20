@@ -98,6 +98,10 @@ const SKINFOLD_PROTOCOLS: Record<NonNullable<Anthropometry['skinfoldProtocol']>,
     'Chumlea (Acamados)': {
         label: 'Chumlea (Acamados)',
         folds: () => ['skinfoldTriceps', 'skinfoldSubscapular']
+    },
+    'TranWeltman': {
+        label: 'Tran & Weltman (Perímetros - Online)',
+        folds: () => [] // Não usa dobras, apenas circunferências
     }
 };
 
@@ -782,10 +786,35 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                         bodyDensity = c - (m * Math.log10(sum));
                     } else if (protocol === 'Faulkner') {
                         bodyFatPercentage = (sum * 0.153) + 5.783;
+                    } else if (protocol === 'TranWeltman') {
+                        // Protocolo adequado para consultas online (Perímetros)
+                        if (gender === 'Masculino') {
+                            // Weltman 1987 / Tran & Weltman 1988 (Homens)
+                            if (anthro.circAbdomen && weight) {
+                                bodyFatPercentage = (0.31457 * anthro.circAbdomen) - (0.10969 * weight) + 10.8336;
+                            }
+                        } else {
+                            // Weltman 1987 / Tran & Weltman 1989 (Mulheres) - Density based
+                            if (anthro.circAbdomen && anthro.circHip && weight && height && age) {
+                                const abd = anthro.circAbdomen;
+                                const hip = anthro.circHip;
+                                const hCm = height * 100;
+                                
+                                // Equação da Densidade Corporal (Tran & Weltman, 1989)
+                                bodyDensity = 1.168297 - (0.002824 * abd) + (0.0000122098 * Math.pow(abd, 2)) - (0.000733128 * hip) + (0.000510477 * hCm) - (0.000216161 * age);
+                            } else if (anthro.circAbdomen && weight && height) {
+                                // Versão Simplificada (Online) se quadril não fornecido
+                                const heightCm = height * 100;
+                                bodyFatPercentage = (0.11077 * anthro.circAbdomen) - (0.17666 * heightCm) + (0.14354 * weight) + 51.03301;
+                            }
+                        }
                     }
 
-                    if (bodyDensity > 0 && protocol !== 'Faulkner') {
-                        // Formula de Siri
+                    if (bodyDensity > 0 && protocol !== 'Faulkner' && protocol !== 'TranWeltman') {
+                        // Formula de Siri padrão para dobras
+                        bodyFatPercentage = (495 / bodyDensity) - 450;
+                    } else if (bodyDensity > 0 && protocol === 'TranWeltman') {
+                        // Siri aplicado à densidade de Tran & Weltman
                         bodyFatPercentage = (495 / bodyDensity) - 450;
                     }
 
@@ -2014,6 +2043,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     onChange={e => updateAnthroData('skinfoldProtocol' as any, e.target.value)}
                                                     className={`p-1 border rounded text-xs font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white font-bold' : 'bg-white border-emerald-300 text-emerald-900 font-bold'}`}
                                                 >
+                                                    <option value="TranWeltman">⭐ Tran & Weltman (Online/Perímetros)</option>
                                                     <option value="JacksonPollock7">Pollock (7 Dobras)</option>
                                                     <option value="JacksonPollock3">Pollock (3 Dobras)</option>
                                                     <option value="DurninWomersley">Durnin & Womersley (4)</option>
@@ -2299,7 +2329,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">Massa Residual</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.residualMass > 0 ? `${anthropometryResults.residualMass} kg` : '--'}</div></div>
                                             <div className={`p-2 rounded-lg border text-center ${isManagerMode ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-200'}`}><div className="text-xs font-bold">CMB (Musc. Braço)</div><div className={`text-xl font-bold ${isManagerMode ? 'text-blue-900' : 'text-emerald-900'}`}>{anthropometryResults.cmb > 0 ? `${anthropometryResults.cmb} cm` : '--'}</div></div>
                                         </div>
-
 
 
                                         {/* SUCCESS CARD ACTION - Use Link for cleaner behavior */}

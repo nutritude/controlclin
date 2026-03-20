@@ -774,7 +774,7 @@ export interface AuditLog {
 }
 
 // --- ALERTA DE ATRASO ANTROPOMÉTRICO (NOVO) ---
-export type skinfoldProtocol = 'JacksonPollock7' | 'JacksonPollock3' | 'Guedes' | 'DurninWomersley' | 'Faulkner' | 'ISAK' | 'Chumlea (Acamados)';
+export type skinfoldProtocol = 'JacksonPollock7' | 'JacksonPollock3' | 'Guedes' | 'DurninWomersley' | 'Faulkner' | 'ISAK' | 'Chumlea (Acamados)' | 'TranWeltman';
 
 // --- ALERTAS CLÍNICOS (NOVO) ---
 export type AlertType = 'RETURN_OVERDUE' | 'EXAM_ATTENTION' | 'RECURRING_ABSENCE' | 'GOAL_EXPIRED' | 'MISSED_CRITICAL' | 'ANTHROMETRY_OVERDUE' | 'APP_NOT_LIBERATED';
