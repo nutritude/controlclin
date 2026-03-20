@@ -2043,13 +2043,13 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                     onChange={e => updateAnthroData('skinfoldProtocol' as any, e.target.value)}
                                                     className={`p-1 border rounded text-xs font-bold ${isManagerMode ? 'bg-gray-700 border-gray-600 text-white font-bold' : 'bg-white border-emerald-300 text-emerald-900 font-bold'}`}
                                                 >
-                                                    <option value="TranWeltman">⭐ Tran & Weltman (Online/Perímetros)</option>
                                                     <option value="JacksonPollock7">Pollock (7 Dobras)</option>
                                                     <option value="JacksonPollock3">Pollock (3 Dobras)</option>
                                                     <option value="DurninWomersley">Durnin & Womersley (4)</option>
                                                     <option value="Faulkner">Faulkner (Físico/Esporte)</option>
                                                     <option value="Guedes">Guedes (3 Dobras)</option>
                                                     <option value="ISAK">ISAK (Medidas Completas)</option>
+                                                    <option value="TranWeltman">Tran & Weltman (Online/Perímetros)</option>                                                
                                                 </select>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -2093,7 +2093,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         >
                                             <option value="Direito">Lado Direito</option>
                                             <option value="Esquerdo">Lado Esquerdo</option>
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {[{ id: 'circNeck', label: 'Pescoço' }, { id: 'circChest', label: 'Tórax' }, { id: 'circWaist', label: 'Cintura' }, { id: 'circAbdomen', label: 'Abdômen' }, { id: 'circHip', label: 'Quadril' }, { id: 'circArmRelaxed', label: 'Braço Relaxado' }, { id: 'circArmContracted', label: 'Braço Contraído' }, { id: 'circThigh', label: 'Coxa' }, { id: 'circCalf', label: 'Panturrilha' }].map(item => (
@@ -2145,7 +2146,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <option value="G1">G1: Risco inicial / exames alterados leves</option>
                                                 <option value="G2">G2: Comorbidade instalada (HAS, DM2, etc.)</option>
                                                 <option value="G3">G3: Repercussão funcional ou orgânica grave</option>
-                                            </select>
+                                            
+                                                </select>
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium">Status da Massa Magra (Eixo 3)</label>
@@ -2158,7 +2160,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <option value="Preservado">Preservada: Sem perda de função/massa</option>
                                                 <option value="Limítrofe">Limítrofe: Sinais iniciais de redução</option>
                                                 <option value="Reduzido">Reduzida: Sarcopenia / Perda importante</option>
-                                            </select>
+                                            
+                                                </select>
                                         </div>
                                     </div>
                                     <p className="mt-2 text-[10px] text-gray-500 italic">
@@ -2518,7 +2521,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         >
                                             <option value="PARTICULAR">Particular</option>
                                             <option value="CONVENIO">Convênio Médico</option>
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                     <div>
                                         <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Gênero</label>
@@ -2529,7 +2533,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         >
                                             <option value="Feminino">Feminino</option>
                                             <option value="Masculino">Masculino</option>
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Senha para o Portal do Paciente</label>
@@ -2886,7 +2891,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         className={`w-full border-0 rounded p-2 text-sm font-medium ${isManagerMode ? 'bg-blue-50 text-slate-800' : 'bg-emerald-50 text-emerald-900'}`}
                                         value={apptForm.professionalId} onChange={e => setApptForm({ ...apptForm, professionalId: e.target.value })}>
                                         {professionals.map(p => <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>)}
-                                    </select>
+                                    
+                                                </select>
                                 </div>
 
                                 {/* Type & Status */}
@@ -2898,7 +2904,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <option value="ROTINA">Rotina</option>
                                             <option value="AVALIACAO">Avaliação</option>
                                             <option value="RETORNO">Retorno</option>
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                     <div>
                                         <select
@@ -2907,7 +2914,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                             <option value="AGENDADO">Agendado</option>
                                             <option value="CONFIRMADO">Confirmado</option>
                                             <option value="CANCELADO">Cancelado</option>
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                 </div>
 
@@ -2938,7 +2946,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <option value="PENDENTE">Pendente</option>
                                                 <option value="PAGO">Pago</option>
                                                 <option value="AGUARDANDO_AUTORIZACAO">Aguardando Aut.</option>
-                                            </select>
+                                            
+                                                </select>
                                         </div>
                                         <div className="col-span-2">
                                             <label className={`block text-xs font-bold mb-1 ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Método Previsto</label>
@@ -2952,7 +2961,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <option value="CARTAO_CREDITO">Cartão de Crédito</option>
                                                 <option value="CARTAO_DEBITO">Cartão de Débito</option>
                                                 <option value="GUIA_CONVENIO">Guia Convênio</option>
-                                            </select>
+                                            
+                                                </select>
                                         </div>
                                     </div>
                                 </div>
@@ -2983,16 +2993,19 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Telefone</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.estadoCivil || ''} onChange={e => setFormData({ ...formData, estadoCivil: e.target.value })}><option value="">Selecione...</option><option value="Solteiro(a)">Solteiro(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viúvo(a)">Viúvo(a)</option><option value="União Estável">União Estável</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Estado Civil</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.estadoCivil || ''} onChange={e => setFormData({ ...formData, estadoCivil: e.target.value })}><option value="">Selecione...</option><option value="Solteiro(a)">Solteiro(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viúvo(a)">Viúvo(a)</option><option value="União Estável">União Estável</option>
+                                                </select></div>
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Pessoas em Casa</label><input type="number" min="1" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.pessoasEmCasa || ''} onChange={e => setFormData({ ...formData, pessoasEmCasa: parseInt(e.target.value as string, 10) })} /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>E-mail</label><input type="email" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} /></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.status || 'ATIVO'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Status</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.status || 'ATIVO'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option>
+                                                </select></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Data de Nascimento</label><input type="date" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.birthDate || ''} onChange={e => setFormData({ ...formData, birthDate: e.target.value })} /></div>
-                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sexo</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div>
+                                    <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Sexo</label><select className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option>
+                                                </select></div>
                                 </div>
                                 <div><label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Endereço</label><input type="text" className={`mt-1 block w-full border rounded-md p-2 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} /></div>
 
@@ -3055,7 +3068,8 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         {Object.entries(TIMELINE_TYPES).map(([key, val]) => (
                                             <option key={key} value={key}>{val.label}</option>
                                         ))}
-                                    </select>
+                                    
+                                                </select>
                                 </div>
                                 <div>
                                     <label className={`block text-sm font-medium ${isManagerMode ? 'text-gray-300' : 'text-emerald-700'}`}>Descrição (Opcional)</label>
@@ -3120,6 +3134,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                                 <label className={`block text-xs font-medium mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Nº Parcelas</label>
                                                 <select className={`w-full border rounded p-1.5 text-sm ${isManagerMode ? 'bg-gray-600 border-gray-500 text-gray-100' : 'bg-white border-emerald-300'}`} value={transInstallments} onChange={e => setTransInstallments(parseInt(e.target.value))}>
                                                     {[2, 3, 4, 5, 6, 10, 12].map(n => <option key={n} value={n}>{n}x</option>)}
+                                                
                                                 </select>
                                             </div>
                                             <div>
@@ -3136,13 +3151,15 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ user, clinic, isManager
                                         <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Método</label>
                                         <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transMethod} onChange={e => setTransMethod(e.target.value as PaymentMethod)}>
                                             {Object.entries(PAYMENT_METHODS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                     <div>
                                         <label className={`block text-xs font-bold uppercase mb-1 ${isManagerMode ? 'text-blue-700' : 'text-emerald-700'}`}>Status</label>
                                         <select className={`w-full border rounded p-2 text-sm ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-emerald-300 text-emerald-900'}`} value={transStatus} onChange={e => setTransStatus(e.target.value as FinancialStatus)}>
                                             {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                                        </select>
+                                        
+                                                </select>
                                     </div>
                                 </div>
 
