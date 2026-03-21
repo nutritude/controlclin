@@ -66,8 +66,85 @@ const InputField: React.FC<{ label: string, value: any, onChange: (v: string) =>
     </div>
 );
 
+const AIAdvisorCard: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => {
+    const [insight, setInsight] = useState<{ summary: string, action: string, loading: boolean }>({ summary: '', action: '', loading: true });
+
+    useEffect(() => {
+        const fetchInsights = async () => {
+            try {
+                const prompt = `
+                Dados da minha empresa SaaS B2B de saúde no momento:
+                MRR (Receita Mensal): R$ ${metrics.mrr}
+                ARR (Receita Anual): R$ ${metrics.arr}
+                LTV: R$ ${metrics.ltv}
+                Churn Rate: ${metrics.churnRate}%
+                Conversão do Funil: ${metrics.conversionRate}%
+                Distribuição de Planos: ${JSON.stringify(metrics.plansDistribution)}
+                
+                Retorne EXATAMENTE este JSON limitando as strings a no máximo 150 caracteres:
+                {
+                   "summary": "Resumo analítico curto sobre a saúde financeira do meu negócio",
+                   "action": "Ação tática e direta para aumentar o faturamento imediatamente hoje"
+                }
+                `;
+
+                // Dinamicamente carrega o AIService se ainda não estiver na tela (evita dependências circulares drásticas no import se a arquitetura for complexa, mas aqui já temos o saasService no mesmo módulo? Espera, vamos usar o import nativo)
+                // Import dinâmico para garantir isolamento
+                const { AIService } = await import('../../services/ai/aiService');
+                
+                const response = await AIService.ask({
+                    prompt,
+                    role: 'manager',
+                    temperature: 0.5
+                });
+                
+                const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
+                const data = JSON.parse(cleanJson);
+                setInsight({ summary: data.summary, action: data.action, loading: false });
+            } catch (err) {
+                setInsight({ summary: 'Módulo de Inteligência Indisponível.', action: 'Verifique a saúde da integração de IA do Business.', loading: false });
+            }
+        };
+        fetchInsights();
+    }, [metrics]);
+
+    return (
+        <div className="bg-dark border border-secondary/20 p-8 rounded-[32px] shadow-2xl relative overflow-hidden mb-8">
+            <div className="absolute top-0 right-0 w-1/3 h-full bg-accent/10 skew-x-12 translate-x-10 blur-xl"></div>
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center md:items-start">
+                <div className="p-4 bg-accent/20 border border-accent/30 rounded-3xl animate-pulse">
+                    <Zap className="text-accent" size={32} />
+                </div>
+                <div className="flex-1 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">CFO ControlClin AI</h3>
+                    {insight.loading ? (
+                        <div className="space-y-3 w-full">
+                            <div className="h-4 bg-white/10 rounded-full w-3/4 animate-pulse"></div>
+                            <div className="h-4 bg-white/10 rounded-full w-1/2 animate-pulse"></div>
+                        </div>
+                    ) : (
+                        <>
+                            <p className="text-white text-lg font-black leading-snug tracking-tight">{insight.summary}</p>
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-start gap-4 mt-4">
+                                <Target size={20} className="text-emerald-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-emerald-400 mb-1">Diretriz Executiva Imediata</p>
+                                    <p className="text-slate-300 text-sm font-medium">{insight.action}</p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <AIAdvisorCard metrics={metrics} />
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard label="MRR" value={`R$ ${metrics.mrr.toLocaleString()}`} icon={<DollarSign size={20} />} color="amber" />
             <MetricCard label="ARR" value={`R$ ${metrics.arr.toLocaleString()}`} icon={<TrendingUp size={20} />} color="indigo" />
@@ -75,7 +152,7 @@ const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
             <MetricCard label="Churn Rate" value={`${metrics.churnRate}%`} icon={<ArrowDownRight size={20} />} color="red" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
             <div className="bg-white border border-secondary/20 p-8 rounded-[32px] shadow-sm">
                 <h3 className="text-sm font-black text-dark uppercase tracking-widest flex items-center gap-3 mb-8">
                     <BarChart3 className="text-accent" size={20} />
@@ -105,7 +182,7 @@ const AnalyticsTab: React.FC<{ metrics: SaaSMetrics }> = ({ metrics }) => (
                     Funil de Conversão
                 </h3>
                 <div className="space-y-10 py-4">
-                    <FunilStep label="Novos Leads (Trail)" value={metrics.trialClinics} total={metrics.totalClinics} color="bg-secondary" />
+                    <FunilStep label="Novos Leads (Trial)" value={metrics.trialClinics} total={metrics.totalClinics} color="bg-secondary" />
                     <FunilStep label="Assinantes Pagos" value={metrics.activeClinics} total={metrics.totalClinics} color="bg-emerald-500" />
                     <FunilStep label="Taxa de Conversão" value={`${metrics.conversionRate}%`} total={100} color="bg-accent" />
                 </div>
@@ -357,74 +434,163 @@ const PlanModal: React.FC<{ plan: SaaSPlan | null, onClose: () => void, onSave: 
     );
 };
 
-const CouponsTab: React.FC<{ coupons: SaaSCoupon[] }> = ({ coupons }) => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex justify-between items-center bg-white border border-secondary/20 p-6 rounded-[24px]">
-            <div>
-                <h2 className="text-lg font-black text-dark">Gestão de Cupons</h2>
-                <p className="text-xs text-slate-500 font-medium">Crie códigos promocionais para campanhas de marketing.</p>
+const CouponsTab: React.FC<{ coupons: SaaSCoupon[], onRefresh: () => void }> = ({ coupons, onRefresh }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center bg-white border border-secondary/20 p-6 rounded-[24px]">
+                <div>
+                    <h2 className="text-lg font-black text-dark">Gestão de Cupons</h2>
+                    <p className="text-xs text-slate-500 font-medium">Crie códigos promocionais para campanhas de marketing.</p>
+                </div>
+                <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-accent hover:bg-dark text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-accent/10">
+                    <Plus size={18} /> Criar Cupom
+                </button>
             </div>
-            <button className="flex items-center gap-2 bg-accent hover:bg-dark text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-accent/10">
-                <Plus size={18} /> Criar Cupom
-            </button>
-        </div>
 
-        <div className="bg-white border border-secondary/20 rounded-[32px] overflow-hidden shadow-sm">
-            <table className="w-full">
-                <thead className="bg-primary/20 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                    <tr>
-                        <th className="px-8 py-5 text-left">Código</th>
-                        <th className="px-8 py-5 text-left">Valor / Tipo</th>
-                        <th className="px-8 py-5 text-center">Uso</th>
-                        <th className="px-8 py-5 text-center">Status</th>
-                        <th className="px-8 py-5 text-right">Ações</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-secondary/10">
-                    {coupons.map(coupon => (
-                        <tr key={coupon.id} className="hover:bg-primary/10 transition-colors group">
-                            <td className="px-8 py-5">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-secondary/10 text-secondary p-2 rounded-lg"><Ticket size={16} /></div>
-                                    <span className="font-black text-dark tracking-widest">{coupon.code}</span>
-                                </div>
-                            </td>
-                            <td className="px-8 py-5">
-                                <span className="text-sm font-bold text-slate-700">
-                                    {coupon.type === 'PERCENTAGE' ? `${coupon.value}% de desconto` : `R$ ${coupon.value} OFF`}
-                                </span>
-                                <p className="text-[10px] text-slate-400 uppercase font-black mt-1 tracking-widest">Validade: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</p>
-                            </td>
-                            <td className="px-8 py-5">
-                                <div className="space-y-2 max-w-[120px] mx-auto">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                                        <span className="text-slate-400">Progresso</span>
-                                        <span className="text-dark">{coupon.currentUses}/{coupon.maxUses}</span>
-                                    </div>
-                                    <div className="h-1.5 bg-primary/30 rounded-full overflow-hidden">
-                                        <div className="h-full bg-secondary" style={{ width: `${(coupon.currentUses / coupon.maxUses) * 100}%` }}></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="px-8 py-5 text-center">
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${coupon.isActive ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
-                                    {coupon.isActive ? 'Ativo' : 'Inativo'}
-                                </span>
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                                <button className="p-2 text-slate-400 hover:text-dark transition-colors"><MoreHorizontal size={20} /></button>
-                            </td>
+            <div className="bg-white border border-secondary/20 rounded-[32px] overflow-hidden shadow-sm">
+                <table className="w-full">
+                    <thead className="bg-primary/20 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                        <tr>
+                            <th className="px-8 py-5 text-left">Código</th>
+                            <th className="px-8 py-5 text-left">Valor / Tipo</th>
+                            <th className="px-8 py-5 text-center">Uso</th>
+                            <th className="px-8 py-5 text-center">Status</th>
+                            <th className="px-8 py-5 text-right">Ações</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-secondary/10">
+                        {coupons.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="py-12 text-center text-slate-400 text-sm font-medium">
+                                    Nenhum cupom ativo no momento.
+                                </td>
+                            </tr>
+                        )}
+                        {coupons.map(coupon => (
+                            <tr key={coupon.id} className="hover:bg-primary/10 transition-colors group">
+                                <td className="px-8 py-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-secondary/10 text-secondary p-2 rounded-lg"><Ticket size={16} /></div>
+                                        <span className="font-black text-dark tracking-widest">{coupon.code}</span>
+                                    </div>
+                                </td>
+                                <td className="px-8 py-5">
+                                    <span className="text-sm font-bold text-slate-700">
+                                        {coupon.type === 'PERCENTAGE' ? `${coupon.value}% de desconto` : `R$ ${coupon.value} OFF`}
+                                    </span>
+                                    <p className="text-[10px] text-slate-400 uppercase font-black mt-1 tracking-widest">Validade: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</p>
+                                </td>
+                                <td className="px-8 py-5">
+                                    <div className="space-y-2 max-w-[120px] mx-auto">
+                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                                            <span className="text-slate-400">Progresso</span>
+                                            <span className="text-dark">{coupon.currentUses}/{coupon.maxUses}</span>
+                                        </div>
+                                        <div className="h-1.5 bg-primary/30 rounded-full overflow-hidden">
+                                            <div className="h-full bg-secondary" style={{ width: `${(coupon.currentUses / coupon.maxUses) * 100}%` }}></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-8 py-5 text-center">
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${coupon.isActive ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
+                                        {coupon.isActive ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </td>
+                                <td className="px-8 py-5 text-right">
+                                    <button 
+                                        onClick={async () => {
+                                            if (confirm(`Atenção! Deseja realmente excluir o cupom ${coupon.code}?`)) {
+                                                const allCoupons = coupons.filter(c => c.id !== coupon.id);
+                                                await saasService.updateCoupons(allCoupons);
+                                                onRefresh();
+                                            }
+                                        }}
+                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    >
+                                        <XCircle size={20} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            
+            {isModalOpen && (
+                <CouponModal 
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={async (newCoupon) => {
+                        await saasService.updateCoupons([...coupons, newCoupon]);
+                        onRefresh();
+                        setIsModalOpen(false);
+                    }}
+                />
+            )}
         </div>
-    </div>
-);
+    );
+};
+
+const CouponModal: React.FC<{ onClose: () => void, onSave: (p: SaaSCoupon) => Promise<void> }> = ({ onClose, onSave }) => {
+    const [loading, setLoading] = useState(false);
+    const [coupon, setCoupon] = useState<SaaSCoupon>({
+        id: 'cp-' + Date.now(),
+        code: '',
+        type: 'PERCENTAGE',
+        value: 10,
+        expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+        maxUses: 100,
+        currentUses: 0,
+        maxPerCustomer: 1,
+        applicablePlans: 'ALL',
+        firstCycleOnly: true,
+        isActive: true
+    });
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-dark/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="bg-white border border-secondary/10 rounded-[40px] shadow-2xl w-full max-w-2xl p-10 max-h-[92vh] overflow-y-auto relative custom-scrollbar">
+                <button onClick={onClose} className="absolute top-8 right-8 text-slate-300 hover:text-dark transition-colors bg-slate-50 p-2 rounded-full">
+                    <Icons.X size={20} />
+                </button>
+                <div className="mb-10">
+                    <h2 className="text-2xl font-black text-dark tracking-tight">Criar Cupom</h2>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-black mt-1">Gere novos descontos promocionais</p>
+                </div>
+                <div className="space-y-6">
+                    <InputField label="Código (Ex: BLACKFRIDAY)" value={coupon.code} onChange={v => setCoupon({ ...coupon, code: v.toUpperCase() })} />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <SelectField label="Tipo de Desconto" value={coupon.type} options={[{label:'Porcentagem (%)', value:'PERCENTAGE'}, {label:'Valor Fixo (R$)', value:'FIXED'}]} onChange={v => setCoupon({...coupon, type: v as any})} />
+                        <InputField label="Valor" type="number" value={coupon.value} onChange={v => setCoupon({ ...coupon, value: parseFloat(v) || 0 })} />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputField label="Usos Máximos (Limitar Estoque)" type="number" value={coupon.maxUses} onChange={v => setCoupon({ ...coupon, maxUses: parseInt(v) || 100 })} />
+                        <InputField label="Data de Expiração" type="date" value={coupon.expiresAt} onChange={v => setCoupon({ ...coupon, expiresAt: v })} />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                        <button onClick={onClose} className="px-6 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest transition-all">Cancelar</button>
+                        <button disabled={loading || !coupon.code} onClick={async () => {
+                            setLoading(true);
+                            await onSave(coupon);
+                        }} className="px-8 py-3 rounded-xl bg-accent hover:bg-dark text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-accent/20 disabled:opacity-50">
+                            {loading ? 'Salvando...' : 'Criar Cupom'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], onRefresh: () => void }> = ({ subscribers, plans, onRefresh }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedSub, setSelectedSub] = useState<SaaSClinic | null>(null);
     const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [personType, setPersonType] = useState<PersonType>('PF');
     const [formData, setFormData] = useState<Partial<SaaSClinic>>({
         personType: 'PF',
@@ -438,8 +604,43 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
         responsiblePhone: '',
         planId: 'ESSENTIAL',
         cycle: 'monthly',
-        status: 'trial'
+        status: 'trial',
+        cep: '',
+        address: '',
+        number: '',
+        complement: '',
+        neighborhood: '',
+        city: '',
+        state: ''
     });
+
+    const fetchAddressByCep = async (cep: string) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length !== 8) return;
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            const data = await response.json();
+            if (!data.erro) {
+                setFormData(prev => ({
+                    ...prev,
+                    cep: data.cep,
+                    address: data.logradouro,
+                    neighborhood: data.bairro,
+                    city: data.localidade,
+                    state: data.uf
+                }));
+            }
+        } catch (error) {
+            console.error("Erro ao buscar CEP:", error);
+        }
+    };
+
+    const handleCepChange = (v: string) => {
+        const formatted = v.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').substring(0, 9);
+        setFormData({ ...formData, cep: formatted });
+        if (formatted.length === 9) fetchAddressByCep(formatted);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -469,7 +670,14 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
             responsiblePhone: '',
             planId: 'ESSENTIAL',
             cycle: 'monthly',
-            status: 'trial'
+            status: 'trial',
+            cep: '',
+            address: '',
+            number: '',
+            complement: '',
+            neighborhood: '',
+            city: '',
+            state: ''
         });
         setIsModalOpen(true);
     };
@@ -477,6 +685,13 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
     const handleCPF = (v: string) => setFormData({ ...formData, cpf: saasService.formatCPF(v) });
     const handleCNPJ = (v: string) => setFormData({ ...formData, cnpj: saasService.formatCNPJ(v) });
     const handlePhone = (v: string) => setFormData({ ...formData, responsiblePhone: saasService.formatPhone(v) });
+
+    const filteredSubscribers = subscribers.filter(s => 
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.responsibleEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.cpf && s.cpf.includes(searchQuery)) ||
+        (s.cnpj && s.cnpj.includes(searchQuery))
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -486,6 +701,8 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                     <input
                         type="text"
                         placeholder="Buscar por nome, CPF/CNPJ ou e-mail..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
                         className="bg-transparent border-none text-dark text-sm focus:ring-0 w-full placeholder-slate-400 font-medium"
                     />
                 </div>
@@ -511,7 +728,7 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-emerald-50 text-slate-600">
-                            {subscribers.map(sub => (
+                            {filteredSubscribers.map(sub => (
                                 <tr key={sub.id} className="hover:bg-emerald-50/30 transition-colors">
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
@@ -570,7 +787,13 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                                                     Ativar
                                                 </button>
                                             )}
-                                            <button className="px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-600 border border-emerald-100 transition-all" style={{ background: '#ecfdf5' }}>Detalhes</button>
+                                            <button 
+                                                onClick={() => setSelectedSub(sub)}
+                                                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-600 border border-emerald-100 transition-all hover:bg-emerald-100" 
+                                                style={{ background: '#ecfdf5' }}
+                                            >
+                                                Detalhes
+                                            </button>
                                             <button className="p-2 text-slate-400 hover:text-dark transition-colors"><MoreHorizontal size={18} /></button>
                                         </div>
                                     </td>
@@ -581,15 +804,109 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                 </div>
             </div>
 
+            {/* SUBSCRIBER DETAIL MODAL */}
+            {selectedSub && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[92vh] overflow-y-auto relative custom-scrollbar border border-emerald-100">
+                        <button onClick={() => setSelectedSub(null)} className="absolute top-8 right-8 text-slate-400 hover:text-dark transition-colors font-black w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#f1f5f9' }}>✕</button>
+
+                        <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-50 pb-10">
+                            <div className="flex items-center gap-6">
+                                <div className="size-16 rounded-[24px] flex items-center justify-center text-3xl font-black text-white shadow-xl" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+                                    {selectedSub.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-black text-dark tracking-tight mb-2 uppercase">{selectedSub.name}</h2>
+                                    <div className="flex items-center gap-3">
+                                        <StatusBadge status={selectedSub.status} />
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">• Ciclo: {selectedSub.cycle}</span>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">• Cliente desde: {new Date(selectedSub.startDate).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-emerald-50/50 px-6 py-4 rounded-3xl border border-emerald-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assinatura Atual</p>
+                                <p className="text-lg font-black text-emerald-600 uppercase tracking-tight">{selectedSub.planId}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                            {/* DADOS DE IDENTIFICAÇÃO E FATURAMENTO */}
+                            <div className="space-y-10">
+                                <div>
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                        <ShieldCheck size={14} className="text-emerald-500" /> Identificação e Contato
+                                    </h3>
+                                    <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100/50">
+                                        <DetailRow label="Tipo de Pessoa" value={selectedSub.personType === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
+                                        {selectedSub.personType === 'PF' ? (
+                                            <DetailRow label="CPF" value={selectedSub.cpf || '—'} />
+                                        ) : (
+                                            <>
+                                                <DetailRow label="Razão Social" value={selectedSub.companyName || '—'} />
+                                                <DetailRow label="Nome Fantasia" value={selectedSub.fantasyName || '—'} />
+                                                <DetailRow label="CNPJ" value={selectedSub.cnpj || '—'} />
+                                            </>
+                                        )}
+                                        <DetailRow label="Resp. Administrativo" value={selectedSub.responsibleName || '—'} />
+                                        <DetailRow label="E-mail de Acesso" value={selectedSub.responsibleEmail} isEmail />
+                                        <DetailRow label="WhatsApp / Telefone" value={selectedSub.responsiblePhone || '—'} />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                        <Timer size={14} className="text-emerald-500" /> Métricas de Uso
+                                    </h3>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <MetricMini label="Pacientes" value={selectedSub.patientsCount} icon={<Users size={14} />} />
+                                        <MetricMini label="Profissionais" value={selectedSub.professionalsCount} icon={<Icons.Zap size={14} />} />
+                                        <MetricMini label="Workspace ID" value={selectedSub.id} icon={<Search size={14} />} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ENDEREÇO E FATURAMENTO */}
+                            <div className="space-y-10">
+                                <div>
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                        <CreditCard size={14} className="text-emerald-500" /> Endereço de Cobrança
+                                    </h3>
+                                    <div className="space-y-4 bg-emerald-50/20 p-6 rounded-3xl border border-emerald-100/30">
+                                        <DetailRow label="CEP" value={selectedSub.cep || '—'} />
+                                        <DetailRow label="Logradouro" value={selectedSub.address || '—'} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <DetailRow label="Número" value={selectedSub.number || '—'} />
+                                            <DetailRow label="Complemento" value={selectedSub.complement || '—'} />
+                                        </div>
+                                        <DetailRow label="Bairro" value={selectedSub.neighborhood || '—'} />
+                                        <DetailRow label="Cidade / UF" value={`${selectedSub.city || '—'} / ${selectedSub.state || '—'}`} />
+                                    </div>
+                                </div>
+
+                                <div className="bg-dark text-white p-8 rounded-[32px] shadow-xl shadow-dark/20 relative overflow-hidden">
+                                     <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-500/10 skew-x-12 translate-x-10"></div>
+                                     <div className="relative z-10">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300 mb-1">Próxima Renovação</p>
+                                        <h4 className="text-xl font-black mb-4">{new Date(selectedSub.nextBillingDate).toLocaleDateString()}</h4>
+                                        <button className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest transition-all">Ver Faturas</button>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* CREATE SUBSCRIBER MODAL */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-3xl p-10 max-h-[92vh] overflow-y-auto relative custom-scrollbar">
+                    <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[92vh] overflow-y-auto relative custom-scrollbar">
                         <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-dark transition-colors font-black w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#f1f5f9' }}>✕</button>
 
-                        <div className="mb-8">
+                        <div className="mb-8 text-center md:text-left">
                             <h2 className="text-2xl font-black text-dark uppercase tracking-tight mb-1">Novo Assinante</h2>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Cadastro de clínica ou profissional autônomo</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Cadastro completo para faturamento (PF/PJ)</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-8">
@@ -615,103 +932,129 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                                 </div>
                             </div>
 
-                            <div className="space-y-8">
-                                {/* DADOS PESSOAIS / CLÍNICOS */}
-                                <div>
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: personType === 'PF' ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #3b82f6, #60a5fa)' }}>
-                                            {personType === 'PF' ? '1' : '1'}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-8">
+                                    {/* DADOS PESSOAIS / CLÍNICOS */}
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: personType === 'PF' ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #3b82f6, #60a5fa)' }}>1</div>
+                                            <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em]">Identificação</h3>
                                         </div>
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-                                            {personType === 'PF' ? 'Dados do Profissional' : 'Dados da Empresa'}
-                                        </h3>
+
+                                        {personType === 'PF' ? (
+                                            <div className="space-y-4">
+                                                <InputField label="Nome Completo *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: João Carlos da Silva" />
+                                                <InputField label="CPF *" value={formData.cpf} onChange={handleCPF} placeholder="000.000.000-00" />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@email.com" type="email" />
+                                                    <InputField label="WhatsApp *" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <InputField label="Razão Social *" value={formData.companyName} onChange={v => setFormData({ ...formData, companyName: v })} placeholder="Ex: Silva & Almeida Nutrição LTDA" />
+                                                <InputField label="Nome Fantasia" value={formData.fantasyName} onChange={v => setFormData({ ...formData, fantasyName: v })} placeholder="Ex: Clínica Nutri Vida" />
+                                                <InputField label="CNPJ *" value={formData.cnpj} onChange={handleCNPJ} placeholder="00.000.000/0001-00" />
+                                                <InputField label="Nome do Responsável *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: Dr. João Silva" />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@clinica.com" type="email" />
+                                                    <InputField label="Telefone / WhatsApp" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {personType === 'PF' ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                            <InputField label="Nome Completo *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: João Carlos da Silva" />
-                                            <InputField label="CPF *" value={formData.cpf} onChange={handleCPF} placeholder="000.000.000-00" />
-                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@email.com" type="email" />
-                                                <InputField label="WhatsApp *" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                    {/* PLANO E ASSINATURA */}
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)' }}>2</div>
+                                            <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em]">Plano & Assinatura</h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <SelectField
+                                                label="Selecione o Plano"
+                                                value={formData.planId}
+                                                options={plans.map(p => ({ label: `${p.name} — R$ ${p.basePrice}/mês`, value: p.id }))}
+                                                onChange={v => setFormData({ ...formData, planId: v as PlanType })}
+                                            />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <SelectField
+                                                    label="Ciclo de Pagamento"
+                                                    value={formData.cycle}
+                                                    options={[
+                                                        { label: 'Mensal', value: 'monthly' },
+                                                        { label: 'Trimestral', value: 'quarterly' },
+                                                        { label: 'Semestral', value: 'semester' },
+                                                        { label: 'Anual', value: 'yearly' }
+                                                    ]}
+                                                    onChange={v => setFormData({ ...formData, cycle: v as PaymentCycle })}
+                                                />
+                                                <SelectField
+                                                    label="Status Inicial"
+                                                    value={formData.status}
+                                                    options={[
+                                                        { label: 'Trial', value: 'trial' },
+                                                        { label: 'Ativo', value: 'active' },
+                                                        { label: 'Inadimplente', value: 'past_due' }
+                                                    ]}
+                                                    onChange={v => setFormData({ ...formData, status: v as SubscriptionStatus })}
+                                                />
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                            <InputField label="Razão Social *" value={formData.companyName} onChange={v => setFormData({ ...formData, companyName: v })} placeholder="Ex: Silva & Almeida Nutrição LTDA" />
-                                            <InputField label="Nome Fantasia" value={formData.fantasyName} onChange={v => setFormData({ ...formData, fantasyName: v })} placeholder="Ex: Clínica Nutri Vida" />
-                                            <InputField label="CNPJ *" value={formData.cnpj} onChange={handleCNPJ} placeholder="00.000.000/0001-00" />
-                                            <InputField label="Nome do Responsável *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: Dr. João Silva" />
-                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@clinica.com" type="email" />
-                                                <InputField label="Telefone / WhatsApp" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    {/* ENDEREÇO DE FATURAMENTO */}
+                                    <div className="bg-slate-50/50 p-8 rounded-[32px] border border-slate-100">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)' }}>3</div>
+                                            <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em]">Endereço de Faturamento</h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="md:col-span-1">
+                                                <InputField label="CEP (Busca Automática)" value={formData.cep} onChange={handleCepChange} placeholder="00000-000" />
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                            <div className="md:col-span-1"></div>
+                                            
+                                            <div className="md:col-span-2">
+                                                <InputField label="Logradouro *" value={formData.address} onChange={v => setFormData({ ...formData, address: v })} placeholder="Rua, Av, etc..." />
+                                            </div>
 
-                                {/* PLANO E ASSINATURA */}
-                                <div>
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)' }}>
-                                            2
+                                            <InputField label="Número *" value={formData.number} onChange={v => setFormData({ ...formData, number: v })} placeholder="123" />
+                                            <InputField label="Complemento" value={formData.complement} onChange={v => setFormData({ ...formData, complement: v })} placeholder="Apto, Sala..." />
+                                            
+                                            <InputField label="Bairro *" value={formData.neighborhood} onChange={v => setFormData({ ...formData, neighborhood: v })} placeholder="Centro" />
+                                            <InputField label="Cidade *" value={formData.city} onChange={v => setFormData({ ...formData, city: v })} placeholder="São Paulo" />
+                                            <InputField label="Estado (UF) *" value={formData.state} onChange={v => setFormData({ ...formData, state: v })} placeholder="SP" />
                                         </div>
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plano & Assinatura</h3>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <SelectField
-                                            label="Selecione o Plano"
-                                            value={formData.planId}
-                                            options={plans.map(p => ({ label: `${p.name} — R$ ${p.basePrice}/mês`, value: p.id }))}
-                                            onChange={v => setFormData({ ...formData, planId: v as PlanType })}
-                                        />
-                                        <SelectField
-                                            label="Ciclo de Pagamento"
-                                            value={formData.cycle}
-                                            options={[
-                                                { label: 'Mensal (à vista)', value: 'monthly' },
-                                                { label: 'Trimestral (-10%)', value: 'quarterly' },
-                                                { label: 'Semestral (-20%)', value: 'semester' },
-                                                { label: 'Anual (-30%)', value: 'yearly' }
-                                            ]}
-                                            onChange={v => setFormData({ ...formData, cycle: v as PaymentCycle })}
-                                        />
-                                        <SelectField
-                                            label="Status Inicial"
-                                            value={formData.status}
-                                            options={[
-                                                { label: 'Periodo Trial', value: 'trial' },
-                                                { label: 'Assinatura Ativa', value: 'active' },
-                                                { label: 'Inadimplente', value: 'past_due' }
-                                            ]}
-                                            onChange={v => setFormData({ ...formData, status: v as SubscriptionStatus })}
-                                        />
+                                    {/* INFO BOX */}
+                                    <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(5, 150, 105, 0.04)', border: '1px solid rgba(5, 150, 105, 0.1)' }}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#059669' }}>Provisionamento Imediato</p>
+                                        <p className="text-[11px] text-slate-500 font-medium">Workspace criado via ControlClin Cloud. Credenciais enviadas ao e-mail.</p>
                                     </div>
-                                </div>
-
-                                {/* INFO BOX */}
-                                <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(5, 150, 105, 0.04)', border: '1px solid rgba(5, 150, 105, 0.1)' }}>
-                                    <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#059669' }}>Provisionamento Automatico</p>
-                                    <p className="text-xs text-slate-500 font-medium">Ao clicar em "Finalizar Cadastro", o workspace será criado automaticamente e o responsável receberá os dados de acesso no e-mail informado.</p>
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-4 pt-6 border-t border-slate-100">
+                            <div className="flex justify-end gap-4 pt-8 border-t border-slate-100">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-8 py-3 rounded-2xl border border-slate-200 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                    className="px-10 py-4 rounded-2xl border border-slate-200 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-10 py-3 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
-                                    style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 8px 24px rgba(5, 150, 105, 0.3)' }}
+                                    className="px-16 py-4 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                                    style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 8px 32px rgba(5, 150, 105, 0.3)' }}
                                 >
-                                    {loading ? 'Processando...' : 'Finalizar Cadastro'}
+                                    {loading ? 'Sincronizando...' : 'Finalizar Cadastro'}
                                 </button>
                             </div>
                         </form>
@@ -783,6 +1126,21 @@ const StatusBadge: React.FC<{ status: SubscriptionStatus }> = ({ status }) => {
         </span>
     );
 };
+
+const DetailRow: React.FC<{ label: string, value: string, isEmail?: boolean }> = ({ label, value, isEmail }) => (
+    <div className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+        <span className={`text-xs font-black text-dark ${isEmail ? 'lowercase' : ''}`}>{value}</span>
+    </div>
+);
+
+const MetricMini: React.FC<{ label: string, value: any, icon: any }> = ({ label, value, icon }) => (
+    <div className="bg-white border border-slate-100 p-4 rounded-2xl">
+        <div className="text-emerald-500 mb-2">{icon}</div>
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-sm font-black text-dark">{value}</p>
+    </div>
+);
 
 // --- MAIN DASHBOARD COMPONENT ---
 
@@ -864,7 +1222,10 @@ const SaaSDashboard: React.FC = () => {
                             const p = await saasService.getPlans();
                             setPlans(p);
                         }} />}
-                        {activeTab === 'coupons' && <CouponsTab coupons={coupons} />}
+                        {activeTab === 'coupons' && <CouponsTab coupons={coupons} onRefresh={async () => {
+                            const c = await saasService.getCoupons();
+                            setCoupons(c);
+                        }} />}
                         {activeTab === 'subscribers' && (
                             <SubscribersTab
                                 subscribers={subscribers}

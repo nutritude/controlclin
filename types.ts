@@ -53,7 +53,11 @@ export interface Clinic {
   // Dados Cadastrais
   cnpj?: string;
   phone?: string;
+  cep?: string;
   address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city?: string;
   state?: string;
 
@@ -117,6 +121,9 @@ export interface Professional {
   whatsapp?: string; // Whatsapp específico
   cpf?: string;
   address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   cep?: string;
   city?: string;
   state?: string;
