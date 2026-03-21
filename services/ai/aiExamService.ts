@@ -104,7 +104,7 @@ export const AIExamService = {
             const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                model: "google/gemini-flash-latest"
+                model: "google/gemini-1.5-flash-latest"
             });
 
             if (aiResponse) {

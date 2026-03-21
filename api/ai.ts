@@ -24,7 +24,7 @@ export default async function handler(req: Request) {
         console.log(`[Proxy AI] Modelo: ${model} | Arquivo: ${fileData ? 'Sim' : 'Não'}`);
 
         // Mapeia o nome do modelo para o formato da Google
-        let googleModel = model || "gemini-flash-latest";
+        let googleModel = model || "gemini-1.5-flash-latest";
         if (googleModel.includes('/')) googleModel = googleModel.split('/')[1];
 
         const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${geminiKey}`;
