@@ -59,6 +59,26 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
         setTimeout(() => setToastMessage(null), 3000);
     };
 
+    const fetchAddressByCep = async (cep: string) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+                if (!data.erro) {
+                    setFormData(prev => ({
+                        ...prev,
+                        address: data.logradouro || prev.address,
+                        city: data.localidade || prev.city,
+                        state: data.uf || prev.state,
+                    }));
+                }
+            } catch (err) {
+                console.error("Erro ao buscar CEP:", err);
+            }
+        }
+    };
+
     const handleOpenCreate = () => {
         setEditingId(null);
         setFormData(initialForm);
@@ -339,7 +359,13 @@ const Professionals: React.FC<ProfessionalsProps> = ({ user, clinic, isManagerMo
                                             type="text"
                                             placeholder="00000-000"
                                             className={`mt-1 block w-32 border rounded-md p-2.5 ${isManagerMode ? 'bg-white border-blue-200 text-slate-800' : 'bg-white border-gray-300'}`}
-                                            value={formData.cep} onChange={e => setFormData({ ...formData, cep: e.target.value })}
+                                            value={formData.cep} onChange={e => {
+                                                let val = e.target.value.replace(/\D/g, '');
+                                                if (val.length > 8) val = val.slice(0, 8);
+                                                if (val.length === 8) fetchAddressByCep(val);
+                                                if (val.length > 5) val = val.slice(0, 5) + '-' + val.slice(5);
+                                                setFormData({ ...formData, cep: val });
+                                            }}
                                         />
                                     </div>
 

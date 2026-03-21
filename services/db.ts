@@ -2393,7 +2393,7 @@ class DatabaseService {
             patientIds = inactivePatients.map(p => p.id);
         }
 
-        // 2. AI POWERED INSIGHTS (using OpenRouter/Qwen)
+        // 2. AI POWERED INSIGHTS (using Gemini)
         try {
             const role = stats.revenue !== undefined ? 'manager' : 'professional';
             const contextPrompt = `Dados atuais da clínica:
@@ -2731,7 +2731,7 @@ class DatabaseService {
             return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Operational Error", e);
-            return { clinicalAnalysis: "IA Indisponível. Verifique VITE_OPENROUTER_API_KEY no painel da Vercel.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
+            return { clinicalAnalysis: "IA Indisponível. Verifique VITE_GEMINI_API_KEY no painel da Vercel.", strategicSuggestions: ["Monitorar fluxo de pacientes", "Otimizar agenda"] };
         }
     }
 
@@ -2802,7 +2802,7 @@ class DatabaseService {
             return JSON.parse(cleanJson);
         } catch (e) {
             console.error("AI Attendance Error", e);
-            return { insight: "IA Indisponível.", action: "Revisar lista de riscos e configurar OpenRouter." };
+            return { insight: "IA Indisponível.", action: "Revisar lista de riscos e configurar a chave API do Gemini." };
         }
     }
 

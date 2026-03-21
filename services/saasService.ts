@@ -45,16 +45,29 @@ export interface SaaSCoupon {
     isActive: boolean;
 }
 
+export type PersonType = 'PF' | 'PJ';
+
 export interface SaaSClinic extends Clinic {
+    personType: PersonType;
     planId: PlanType;
     status: SubscriptionStatus;
     cycle: PaymentCycle;
     startDate: string;
     nextBillingDate: string;
+
+    // Dados do Titular / Responsável
     responsibleName: string;
     responsibleEmail: string;
     responsiblePhone: string;
+
+    // Dados PF
+    cpf?: string;
+
+    // Dados PJ
     cnpj?: string;
+    companyName?: string; // Razão Social
+    fantasyName?: string; // Nome Fantasia
+
     usedCouponId?: string;
     patientsCount: number;
     professionalsCount: number;
@@ -275,6 +288,7 @@ export const saasService = {
                     name: 'ControlClin Excellence',
                     slug: 'control',
                     isActive: true,
+                    personType: 'PJ',
                     planId: 'PROFESSIONAL',
                     status: 'active',
                     cycle: 'monthly',
@@ -283,6 +297,9 @@ export const saasService = {
                     responsibleName: 'Admin Demo',
                     responsibleEmail: 'admin@clinica.com',
                     responsiblePhone: '(11) 99999-9999',
+                    cnpj: '12.345.678/0001-90',
+                    companyName: 'ControlClin Excellence LTDA',
+                    fantasyName: 'ControlClin',
                     patientsCount: 156,
                     professionalsCount: 3,
                     activeUsersCount: 3,
@@ -337,14 +354,22 @@ export const saasService = {
     },
 
     async createClinic(data: Partial<SaaSClinic>): Promise<SaaSClinic> {
-        if (!data.name || !data.responsibleEmail || !data.planId) {
-            throw new Error('Dados obrigatórios ausentes: Nome, Email ou Plano.');
+        const personType = data.personType || 'PJ';
+
+        if (!data.responsibleEmail || !data.planId) {
+            throw new Error('Dados obrigatórios ausentes: E-mail e Plano são obrigatórios.');
+        }
+        if (personType === 'PJ' && !data.cnpj) {
+            throw new Error('Para pessoa jurídica, o CNPJ é obrigatório.');
+        }
+        if (personType === 'PF' && !data.cpf) {
+            throw new Error('Para pessoa física, o CPF é obrigatório.');
         }
 
         const id = `clinic-${Date.now()}`;
         const startDate = new Date();
         const nextBillingDate = new Date();
-        
+
         // Cálculo do ciclo
         switch (data.cycle) {
             case 'monthly': nextBillingDate.setMonth(startDate.getMonth() + 1); break;
@@ -354,11 +379,17 @@ export const saasService = {
             default: nextBillingDate.setMonth(startDate.getMonth() + 1);
         }
 
+        // PF: o "nome da clínica" é o próprio nome do profissional
+        const clinicName = personType === 'PF'
+            ? (data.responsibleName || 'Meu Consultório')
+            : (data.name || data.responsibleName || 'Nova Clínica');
+
         const newClinic: SaaSClinic = {
             id,
-            name: data.name,
-            slug: data.slug || this.generateSlug(data.name),
+            name: clinicName,
+            slug: data.slug || this.generateSlug(clinicName),
             isActive: true,
+            personType,
             status: data.status || 'trial',
             planId: data.planId as PlanType,
             cycle: data.cycle || 'monthly',
@@ -367,7 +398,10 @@ export const saasService = {
             responsibleName: data.responsibleName || '',
             responsibleEmail: data.responsibleEmail,
             responsiblePhone: data.responsiblePhone || '',
-            cnpj: data.cnpj || '',
+            cpf: data.cpf,
+            cnpj: data.cnpj,
+            companyName: data.companyName,
+            fantasyName: data.fantasyName,
             patientsCount: 0,
             professionalsCount: 0,
             activeUsersCount: 1,
@@ -391,7 +425,7 @@ export const saasService = {
                 role: 'CLINIC_ADMIN' as any,
                 password: '123'
             });
-            console.log(`[SaaS] Workspace provisionado na nuvem para ${newClinic.name}`);
+            console.log(`[SaaS] Workspace provisionado para ${clinicName} (${personType})`);
         } catch (err) {
             console.error('[SaaS] Erro no autoprovisionamento:', err);
         }
@@ -442,22 +476,103 @@ export const saasService = {
 
     validateCNPJ(cnpj: string): boolean {
         const cleaned = cnpj.replace(/\D/g, '');
-        return cleaned.length === 14;
+        if (cleaned.length !== 14) return false;
+        // Algoritmo completo de validação de CNPJ
+        let sum = 0;
+        let rest = 0;
+        let i = 0;
+        let weight1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        let weight2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        for (i = 0; i < 12; i++) {
+            sum += parseInt(cleaned.charAt(i)) * weight1[i];
+        }
+        rest = sum % 11;
+        rest = rest < 2 ? 0 : 11 - rest;
+        if (parseInt(cleaned.charAt(12)) !== rest) return false;
+        sum = 0;
+        for (i = 0; i < 13; i++) {
+            sum += parseInt(cleaned.charAt(i)) * weight2[i];
+        }
+        rest = sum % 11;
+        rest = rest < 2 ? 0 : 11 - rest;
+        return parseInt(cleaned.charAt(13)) === rest;
+    },
+
+    validateCPF(cpf: string): boolean {
+        const cleaned = cpf.replace(/\D/g, '');
+        if (cleaned.length !== 11) return false;
+        // Verifica CPFs inválidos conhecidos
+        if (/^(\d)\1{10}$/.test(cleaned)) return false;
+        // Algoritmo de validação de CPF
+        let sum = 0;
+        let rest = 0;
+        for (let i = 1; i <= 9; i++) {
+            sum += parseInt(cleaned.charAt(i - 1)) * (11 - i);
+        }
+        rest = (sum * 10) % 11;
+        if (rest === 10 || rest === 11) rest = 0;
+        if (rest !== parseInt(cleaned.charAt(9))) return false;
+        sum = 0;
+        for (let i = 1; i <= 10; i++) {
+            sum += parseInt(cleaned.charAt(i - 1)) * (12 - i);
+        }
+        rest = (sum * 10) % 11;
+        if (rest === 10 || rest === 11) rest = 0;
+        return rest === parseInt(cleaned.charAt(10));
+    },
+
+    formatCPF(value: string): string {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+            .substring(0, 14);
+    },
+
+    formatCNPJ(value: string): string {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1/$2')
+            .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+            .substring(0, 18);
+    },
+
+    formatPhone(value: string): string {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '($1) $2')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .substring(0, 15);
     },
 
     generateSlug(name: string): string {
         return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').substring(0, 30);
     },
 
-    async registerFromLandingPage(data: { name: string, email: string, phone: string, planId: PlanType, cycle: PaymentCycle }): Promise<void> {
+    async registerFromLandingPage(data: {
+        name: string,
+        email: string,
+        phone: string,
+        planId: PlanType,
+        cycle: PaymentCycle,
+        personType?: PersonType,
+        cpf?: string,
+        cnpj?: string
+    }): Promise<void> {
         await this.createClinic({
-            name: data.name + " (Workspace)",
+            name: data.name,
+            personType: data.personType || 'PF',
             responsibleName: data.name,
             responsibleEmail: data.email,
             responsiblePhone: data.phone,
             planId: data.planId,
             cycle: data.cycle,
-            status: 'trial'
+            status: 'trial',
+            cpf: data.cpf,
+            cnpj: data.cnpj,
         });
     },
 };

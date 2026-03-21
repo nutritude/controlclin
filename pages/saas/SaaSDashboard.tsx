@@ -8,7 +8,8 @@ import {
     SaaSCoupon,
     PlanType,
     SubscriptionStatus,
-    PaymentCycle
+    PaymentCycle,
+    PersonType
 } from '../../services/saasService';
 
 const SYSTEM_FEATURES = [
@@ -424,13 +425,18 @@ const CouponsTab: React.FC<{ coupons: SaaSCoupon[] }> = ({ coupons }) => (
 const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], onRefresh: () => void }> = ({ subscribers, plans, onRefresh }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [personType, setPersonType] = useState<PersonType>('PF');
     const [formData, setFormData] = useState<Partial<SaaSClinic>>({
+        personType: 'PF',
         name: '',
+        cpf: '',
         cnpj: '',
+        companyName: '',
+        fantasyName: '',
         responsibleName: '',
         responsibleEmail: '',
         responsiblePhone: '',
-        planId: 'PROFESSIONAL',
+        planId: 'ESSENTIAL',
         cycle: 'monthly',
         status: 'trial'
     });
@@ -439,7 +445,7 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
         e.preventDefault();
         setLoading(true);
         try {
-            await saasService.createClinic(formData);
+            await saasService.createClinic({ ...formData, personType });
             setIsModalOpen(false);
             onRefresh();
         } catch (err: any) {
@@ -449,56 +455,91 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
         }
     };
 
+    const openModal = () => {
+        setPersonType('PF');
+        setFormData({
+            personType: 'PF',
+            name: '',
+            cpf: '',
+            cnpj: '',
+            companyName: '',
+            fantasyName: '',
+            responsibleName: '',
+            responsibleEmail: '',
+            responsiblePhone: '',
+            planId: 'ESSENTIAL',
+            cycle: 'monthly',
+            status: 'trial'
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleCPF = (v: string) => setFormData({ ...formData, cpf: saasService.formatCPF(v) });
+    const handleCNPJ = (v: string) => setFormData({ ...formData, cnpj: saasService.formatCNPJ(v) });
+    const handlePhone = (v: string) => setFormData({ ...formData, responsiblePhone: saasService.formatPhone(v) });
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-center bg-white border border-secondary/20 p-6 rounded-[24px] gap-4">
-                <div className="flex bg-primary/10 p-3 rounded-xl border border-secondary/10 text-slate-500 w-full md:max-w-md">
-                    <Search size={20} className="mr-3 text-secondary" />
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white border border-emerald-200 p-6 rounded-[24px] gap-4">
+                <div className="flex bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-slate-500 w-full md:max-w-md">
+                    <Search size={20} className="mr-3 text-emerald-600" />
                     <input
                         type="text"
-                        placeholder="Buscar por clínica, CNPJ ou responsável..."
+                        placeholder="Buscar por nome, CPF/CNPJ ou e-mail..."
                         className="bg-transparent border-none text-dark text-sm focus:ring-0 w-full placeholder-slate-400 font-medium"
                     />
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center justify-center gap-2 bg-accent hover:bg-dark text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-accent/10 w-full md:w-auto overflow-hidden relative group"
+                    onClick={openModal}
+                    className="flex items-center justify-center gap-2 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg w-full md:w-auto"
+                    style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 8px 24px rgba(5, 150, 105, 0.25)' }}
                 >
                     <Plus size={18} /> Novo Assinante
                 </button>
             </div>
 
-            <div className="bg-white border border-secondary/20 rounded-[32px] overflow-hidden shadow-sm">
+            <div className="bg-white border border-emerald-100 rounded-[32px] overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-primary/20 text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
+                        <thead className="bg-emerald-50 text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
                             <tr>
-                                <th className="px-8 py-6">Clínica / Responsável</th>
+                                <th className="px-8 py-6">Titular / Clínica</th>
+                                <th className="px-8 py-6">Documento</th>
                                 <th className="px-8 py-6">Status / Plano</th>
-                                <th className="px-8 py-6 text-center">Uso (Pac. / Prof.)</th>
+                                <th className="px-8 py-6 text-center">Uso</th>
                                 <th className="px-8 py-6 text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-secondary/10 text-slate-600">
+                        <tbody className="divide-y divide-emerald-50 text-slate-600">
                             {subscribers.map(sub => (
-                                <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
+                                <tr key={sub.id} className="hover:bg-emerald-50/30 transition-colors">
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-black text-secondary shadow-sm overflow-hidden border border-secondary/20">
-                                                {sub.id === 'c1' ? <img src="/logo192.png" alt="logo" className="w-6 h-6" onError={(e) => (e.currentTarget.style.display = 'none')} /> : sub.name.charAt(0)}
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-sm overflow-hidden text-sm" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+                                                {sub.id === 'c1' ? <img src="/logo192.png" alt="logo" className="w-6 h-6" onError={(e) => (e.currentTarget.style.display = 'none')} /> : sub.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
                                                 <p className="font-black text-dark text-sm">{sub.name}</p>
-                                                <p className="text-[11px] text-slate-500 font-medium">{sub.responsibleName} • {sub.responsibleEmail}</p>
+                                                <p className="text-[11px] text-slate-500 font-medium">{sub.responsibleEmail}</p>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider" style={{
+                                            background: sub.personType === 'PF' ? 'rgba(5, 150, 105, 0.08)' : 'rgba(59, 130, 246, 0.08)',
+                                            color: sub.personType === 'PF' ? '#059669' : '#3b82f6',
+                                            border: `1px solid ${sub.personType === 'PF' ? 'rgba(5, 150, 105, 0.15)' : 'rgba(59, 130, 246, 0.15)'}`
+                                        }}>
+                                            {sub.personType === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                                        </span>
+                                        <p className="text-xs text-slate-500 font-mono mt-1">{sub.cpf || sub.cnpj || '—'}</p>
                                     </td>
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-2 mb-1.5">
                                             <StatusBadge status={sub.status} />
                                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">• {sub.cycle}</span>
                                         </div>
-                                        <p className="text-xs font-black text-secondary">{sub.planId}</p>
+                                        <p className="text-xs font-black" style={{ color: '#059669' }}>{sub.planId}</p>
                                     </td>
                                     <td className="px-8 py-5 text-center">
                                         <div className="flex items-center justify-center gap-4">
@@ -506,7 +547,7 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                                                 <p className="text-sm font-black text-dark">{sub.patientsCount}</p>
                                                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pac</p>
                                             </div>
-                                            <div className="w-px h-6 bg-secondary/20"></div>
+                                            <div className="w-px h-6 bg-emerald-100"></div>
                                             <div className="text-center">
                                                 <p className="text-sm font-black text-dark">{sub.professionalsCount}</p>
                                                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Prof</p>
@@ -523,12 +564,13 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                                                             onRefresh();
                                                         }
                                                     }}
-                                                    className="bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-400 border border-emerald-500/10 transition-all"
+                                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all"
+                                                    style={{ background: 'rgba(5, 150, 105, 0.08)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.15)' }}
                                                 >
                                                     Ativar
                                                 </button>
                                             )}
-                                            <button className="bg-primary/20 hover:bg-primary/40 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-secondary border border-secondary/10 transition-all">Detalhes</button>
+                                            <button className="px-4 py-2 rounded-xl text-[10px] font-black uppercase text-emerald-600 border border-emerald-100 transition-all" style={{ background: '#ecfdf5' }}>Detalhes</button>
                                             <button className="p-2 text-slate-400 hover:text-dark transition-colors"><MoreHorizontal size={18} /></button>
                                         </div>
                                     </td>
@@ -541,63 +583,97 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
 
             {/* CREATE SUBSCRIBER MODAL */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                    <div className="bg-white border border-secondary/20 rounded-[40px] shadow-2xl w-full max-w-4xl p-10 max-h-[90vh] overflow-y-auto relative custom-scrollbar">
-                        <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-dark transition-colors font-black">✕</button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-3xl p-10 max-h-[92vh] overflow-y-auto relative custom-scrollbar">
+                        <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-dark transition-colors font-black w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#f1f5f9' }}>✕</button>
 
-                        <div className="mb-10 text-center">
-                            <h2 className="text-2xl font-black text-dark uppercase tracking-tight mb-2">Novo Assinante SaaS</h2>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Registro Administrativo de Clínica / Profissional</p>
+                        <div className="mb-8">
+                            <h2 className="text-2xl font-black text-dark uppercase tracking-tight mb-1">Novo Assinante</h2>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Cadastro de clínica ou profissional autônomo</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {/* DADOS DA CLÍNICA */}
-                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
-                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
-                                        <Zap size={18} className="text-purple-500" />
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Dados da Clínica</h3>
+                            {/* TOGGLE PF / PJ */}
+                            <div className="flex items-center justify-center">
+                                <div className="inline-flex items-center p-1.5 rounded-2xl" style={{ background: '#ecfdf5', border: '1px solid rgba(5, 150, 105, 0.15)' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setPersonType('PF'); setFormData({ ...formData, personType: 'PF', cnpj: '', companyName: '', fantasyName: '' }); }}
+                                        className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${personType === 'PF' ? 'text-white shadow-md' : 'text-slate-500'}`}
+                                        style={personType === 'PF' ? { background: 'linear-gradient(135deg, #059669, #10b981)' } : {}}
+                                    >
+                                        PF - Pessoa Física
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setPersonType('PJ'); setFormData({ ...formData, personType: 'PJ', cpf: '' }); }}
+                                        className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${personType === 'PJ' ? 'text-white shadow-md' : 'text-slate-500'}`}
+                                        style={personType === 'PJ' ? { background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' } : {}}
+                                    >
+                                        PJ - Pessoa Jurídica
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8">
+                                {/* DADOS PESSOAIS / CLÍNICOS */}
+                                <div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: personType === 'PF' ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #3b82f6, #60a5fa)' }}>
+                                            {personType === 'PF' ? '1' : '1'}
+                                        </div>
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                                            {personType === 'PF' ? 'Dados do Profissional' : 'Dados da Empresa'}
+                                        </h3>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <InputField label="Nome da Clínica / Profissional" value={formData.name} onChange={v => setFormData({ ...formData, name: v })} placeholder="Ex: Clínica Nutri Vida" />
-                                        <InputField label="CNPJ / CPF" value={formData.cnpj} onChange={v => setFormData({ ...formData, cnpj: v })} placeholder="00.000.000/0000-00" />
-                                    </div>
+
+                                    {personType === 'PF' ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <InputField label="Nome Completo *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: João Carlos da Silva" />
+                                            <InputField label="CPF *" value={formData.cpf} onChange={handleCPF} placeholder="000.000.000-00" />
+                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@email.com" type="email" />
+                                                <InputField label="WhatsApp *" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <InputField label="Razão Social *" value={formData.companyName} onChange={v => setFormData({ ...formData, companyName: v })} placeholder="Ex: Silva & Almeida Nutrição LTDA" />
+                                            <InputField label="Nome Fantasia" value={formData.fantasyName} onChange={v => setFormData({ ...formData, fantasyName: v })} placeholder="Ex: Clínica Nutri Vida" />
+                                            <InputField label="CNPJ *" value={formData.cnpj} onChange={handleCNPJ} placeholder="00.000.000/0001-00" />
+                                            <InputField label="Nome do Responsável *" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: Dr. João Silva" />
+                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <InputField label="E-mail de Acesso *" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@clinica.com" type="email" />
+                                                <InputField label="Telefone / WhatsApp" value={formData.responsiblePhone} onChange={handlePhone} placeholder="(11) 99999-9999" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* DADOS DO RESPONSÁVEL */}
-                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
-                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
-                                        <Users size={18} className="text-indigo-500" />
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Responsável Administrativo</h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <InputField label="Nome Completo" value={formData.responsibleName} onChange={v => setFormData({ ...formData, responsibleName: v })} placeholder="Ex: Dr. João Silva" />
-                                        <InputField label="E-mail (Login)" value={formData.responsibleEmail} onChange={v => setFormData({ ...formData, responsibleEmail: v })} placeholder="joao@clinica.com" />
-                                        <InputField label="Telefone / WhatsApp" value={formData.responsiblePhone} onChange={v => setFormData({ ...formData, responsiblePhone: v })} placeholder="(11) 99999-9999" />
-                                    </div>
-                                </div>
-
-                                {/* PLANO E CICLO */}
-                                <div className="space-y-6 md:col-span-2 lg:col-span-3">
-                                    <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-2">
-                                        <Package size={18} className="text-amber-500" />
+                                {/* PLANO E ASSINATURA */}
+                                <div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="size-8 rounded-xl flex items-center justify-center text-white text-sm font-black" style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)' }}>
+                                            2
+                                        </div>
                                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plano & Assinatura</h3>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <SelectField
                                             label="Selecione o Plano"
                                             value={formData.planId}
-                                            options={plans.map(p => ({ label: p.name, value: p.id }))}
+                                            options={plans.map(p => ({ label: `${p.name} — R$ ${p.basePrice}/mês`, value: p.id }))}
                                             onChange={v => setFormData({ ...formData, planId: v as PlanType })}
                                         />
                                         <SelectField
                                             label="Ciclo de Pagamento"
                                             value={formData.cycle}
                                             options={[
-                                                { label: 'Mensal', value: 'monthly' },
-                                                { label: 'Trimestral', value: 'quarterly' },
-                                                { label: 'Semestral', value: 'semester' },
-                                                { label: 'Anual', value: 'yearly' }
+                                                { label: 'Mensal (à vista)', value: 'monthly' },
+                                                { label: 'Trimestral (-10%)', value: 'quarterly' },
+                                                { label: 'Semestral (-20%)', value: 'semester' },
+                                                { label: 'Anual (-30%)', value: 'yearly' }
                                             ]}
                                             onChange={v => setFormData({ ...formData, cycle: v as PaymentCycle })}
                                         />
@@ -605,28 +681,35 @@ const SubscribersTab: React.FC<{ subscribers: SaaSClinic[], plans: SaaSPlan[], o
                                             label="Status Inicial"
                                             value={formData.status}
                                             options={[
-                                                { label: 'Período Trial', value: 'trial' },
+                                                { label: 'Periodo Trial', value: 'trial' },
                                                 { label: 'Assinatura Ativa', value: 'active' },
-                                                { label: 'Inadimplente (Bloqueado)', value: 'past_due' }
+                                                { label: 'Inadimplente', value: 'past_due' }
                                             ]}
                                             onChange={v => setFormData({ ...formData, status: v as SubscriptionStatus })}
                                         />
                                     </div>
                                 </div>
+
+                                {/* INFO BOX */}
+                                <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(5, 150, 105, 0.04)', border: '1px solid rgba(5, 150, 105, 0.1)' }}>
+                                    <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#059669' }}>Provisionamento Automatico</p>
+                                    <p className="text-xs text-slate-500 font-medium">Ao clicar em "Finalizar Cadastro", o workspace será criado automaticamente e o responsável receberá os dados de acesso no e-mail informado.</p>
+                                </div>
                             </div>
 
-                            <div className="flex justify-end gap-4 pt-10 mt-8 border-t border-secondary/10">
+                            <div className="flex justify-end gap-4 pt-6 border-t border-slate-100">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-8 py-3 rounded-2xl border border-secondary/20 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-primary/20 transition-all"
+                                    className="px-8 py-3 rounded-2xl border border-slate-200 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-10 py-3 rounded-2xl bg-accent text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-accent/20 active:scale-95 transition-all disabled:opacity-50"
+                                    className="px-10 py-3 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                                    style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 8px 24px rgba(5, 150, 105, 0.3)' }}
                                 >
                                     {loading ? 'Processando...' : 'Finalizar Cadastro'}
                                 </button>
