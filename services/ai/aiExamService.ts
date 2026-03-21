@@ -36,7 +36,7 @@ export const AIExamService = {
                 role: 'professional',
                 temperature: 0.1,
                 fileData: fileData,
-                model: "google/gemini-1.5-flash" // Padronizado: 1.5 Flash pela estabilidade com multimodal (OCR)
+                model: "google/gemini-flash-latest" // Padronizado: 1.5 Flash pela estabilidade com multimodal (OCR)
             });
 
             if (!aiResponse) throw new Error("Resposta vazia da IA");
@@ -104,7 +104,7 @@ export const AIExamService = {
             const aiResponse = await AIService.ask({
                 prompt: prompt,
                 role: 'professional',
-                model: "google/gemini-1.5-flash-latest"
+                model: "google/gemini-flash-latest"
             });
 
             if (aiResponse) {

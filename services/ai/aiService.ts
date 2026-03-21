@@ -26,8 +26,8 @@ export const AIService = {
      * Tenta chamada direta (Browser -> Google) para evitar limites de timeout de proxies (Vercel).
      */
     async ask({ prompt, role, systemPrompt, temperature, model, fileData }: AIAskRequest, retries = 1): Promise<string> {
-        const primaryModel = model || "google/gemini-1.5-flash-latest";
-        const stabilityModel = "google/gemini-1.5-flash-latest";
+        const primaryModel = model || "google/gemini-flash-latest";
+        const stabilityModel = "google/gemini-flash-latest";
         
         const defaultSystemPrompt = role === 'manager' ? SYSTEM_PROMPT_MANAGER : SYSTEM_PROMPT_PROFESSIONAL;
         const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
@@ -87,7 +87,13 @@ export const AIService = {
                 });
                 clearTimeout(timeoutId);
 
-                if (!response.ok) throw new Error(`Status ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 403 || response.status === 401) {
+                        const errBody = await response.text();
+                        throw new Error(`CRITICAL_KEY_ERROR: ${errBody}`);
+                    }
+                    throw new Error(`Status ${response.status}`);
+                }
                 const data = await response.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!text) throw new Error("Resposta sem conteúdo.");
@@ -125,6 +131,9 @@ export const AIService = {
             } catch (err: any) {
                 lastError = err;
                 console.error(`[AI] Falha na camada ${i+1}:`, err.message);
+                if (err.message.includes('CRITICAL_KEY_ERROR')) {
+                    throw new Error("Sua chave da API Google Gemini foi bloqueada por vazamento (Leaked). Por favor, gere uma nova chave.");
+                }
             }
         }
 

@@ -16,7 +16,7 @@ export const AIAnthroAnalysisService = {
         prompt: prompt,
         role: 'professional',
         temperature: 0.2,
-        model: 'google/gemini-1.5-flash'
+        model: 'google/gemini-flash-latest'
       });
 
       if (aiResponse) {
